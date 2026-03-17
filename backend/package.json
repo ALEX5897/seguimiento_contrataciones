@@ -1,0 +1,38 @@
+{
+  "name": "seguimiento-contrataciones-backend",
+  "version": "1.0.0",
+  "description": "API para seguimiento de tareas y contrataciones POA 2026",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "import:matriz": "node scripts/import-matriz.js",
+    "import:empleados": "node scripts/import-empleados-catalogos.js",
+    "repair:encoding": "node scripts/repair-encoding.js",
+    "seed:test": "node scripts/reset-and-seed-test-data.js",
+    "import:base1": "node scripts/import-base-1.js",
+    "demo:reset": "node scripts/prepare-demo-reset-estados-seguimientos.js"
+  },
+  "keywords": [
+    "poa",
+    "seguimiento",
+    "contrataciones"
+  ],
+  "author": "QuitoTurismo",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.13.6",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.19.0",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^8.0.2",
+    "pinia": "^3.0.4",
+    "vue-router": "^5.0.3",
+    "xlsx": "^0.18.5"
+  }
+}

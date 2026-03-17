@@ -1,0 +1,16 @@
+[Unit]
+Description=Seguimiento POA QT Backend
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/seguimiento_contrataciones/backend
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+User=www-data
+Group=www-data
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

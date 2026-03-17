@@ -1,0 +1,1610 @@
+<template>
+  <div class="dashboard-admin">
+    <header class="dashboard-header">
+      <div>
+        <h1>Contrataciones 2026</h1>
+        <p>QUITO TURISMO 2026</p>
+      </div>
+      <div class="header-meta">
+        <span class="meta-pill">📅 {{ fechaActual }}</span>
+      </div>
+    </header>
+
+    <div v-if="cargando" class="loading">Cargando indicadores...</div>
+
+    <template v-else>
+      <section class="context-summary">
+        <div class="filter-chips">
+          <span class="filter-chip primary">Vista: {{ areaSeleccionada || 'General' }}</span>
+          <span class="filter-chip primary" v-if="responsableSeleccionado">Responsable: {{ responsableSeleccionado }}</span>
+          <span class="filter-chip">{{ subtareasFiltradas.length }} procesos</span>
+          <span class="filter-chip">{{ etapas.length }} verificables</span>
+          <span class="filter-chip">Presupuesto: {{ formatearMonto(presupuestoFiltrado) }}</span>
+          <span class="filter-chip success">{{ kpis.porcentajeCumplimiento }}% cumplimiento general</span>
+          <button v-if="areaSeleccionada || responsableSeleccionado" class="btn-clear-filter" @click="restablecerVista">
+            Restablecer vista
+          </button>
+        </div>
+      </section>
+
+      <section class="kpi-grid">
+        <article
+          class="kpi-card has-tooltip"
+          tabindex="0"
+          :data-tooltip="`Semáforo positivo (80/50): actual ${porcentajeProcesosVisibles}%`"
+        >
+          <span class="kpi-title">Total de procesos</span>
+          <strong class="kpi-value">{{ kpis.totalTareas }}</strong>
+          <small class="kpi-foot">Procesos activos con verificables planificados</small>
+          <div class="kpi-mini-track">
+            <div class="kpi-mini-fill" :style="{ width: `${porcentajeProcesosVisibles}%`, backgroundColor: colorProcesosVisibles }"></div>
+          </div>
+          <small class="kpi-mini-label">{{ porcentajeProcesosVisibles }}% del total activo</small>
+        </article>
+        <button
+          type="button"
+          class="kpi-card kpi-card-button success has-tooltip"
+          :data-tooltip="`Semáforo positivo (80/50): actual ${kpis.porcentajeCumplimiento}%`"
+          @click="abrirDetalleKpi('cumplimiento')"
+        >
+          <span class="kpi-title">Cumplimiento general</span>
+          <strong class="kpi-value">{{ kpis.porcentajeCumplimiento }}%</strong>
+          <small class="kpi-foot">Cumplimiento general: {{ kpis.actividadesCompletadas }} de {{ kpis.totalTareas }} procesos completos</small>
+          <div class="kpi-mini-track">
+            <div class="kpi-mini-fill" :style="{ width: `${kpis.porcentajeCumplimiento}%`, backgroundColor: colorCumplimiento }"></div>
+          </div>
+        </button>
+        <button
+          type="button"
+          class="kpi-card kpi-card-button danger has-tooltip"
+          :data-tooltip="`Semáforo riesgo (<=20/<=50): actual ${porcentajeAtraso}%`"
+          @click="abrirDetalleKpi('retraso')"
+        >
+          <span class="kpi-title">Verificables con retraso</span>
+          <strong class="kpi-value">{{ kpis.atrasadas }}</strong>
+          <small class="kpi-foot">Verificables que excedieron la fecha programada</small>
+          <div class="kpi-mini-track">
+            <div class="kpi-mini-fill" :style="{ width: `${porcentajeAtraso}%`, backgroundColor: colorAtraso }"></div>
+          </div>
+          <small class="kpi-mini-label">{{ porcentajeAtraso }}% del total de verificables</small>
+        </button>
+        <button
+          type="button"
+          class="kpi-card kpi-card-button accent has-tooltip"
+          :data-tooltip="`Semáforo riesgo (<=20/<=50): actual ${porcentajeProximas}%`"
+          @click="abrirDetalleKpi('proximas')"
+        >
+          <span class="kpi-title">Próximas a vencer</span>
+          <div class="kpi-donut-row">
+            <strong class="kpi-value">{{ verificablesPorVencer.length }}</strong>
+            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProximas}%`, '--kpi-color': colorProximas }">
+              <span :style="{ color: colorProximas }">{{ porcentajeProximas }}%</span>
+            </div>
+          </div>
+          <small class="kpi-foot">{{ porcentajeProximas }}% de pendientes vence en 2 y 1 día</small>
+        </button>
+      </section>
+
+      <section class="charts-grid">
+        <article class="panel donut-panel">
+          <div class="panel-header">
+            <h2>Cumplimiento general</h2>
+            <span>{{ kpis.actividadesCompletadas }} / {{ kpis.totalTareas }} procesos</span>
+          </div>
+          <div class="donut-wrap">
+            <div class="donut" :style="{ '--value': `${kpis.porcentajeCumplimiento}%` }">
+              <div class="donut-center">
+                <strong>{{ kpis.porcentajeCumplimiento }}%</strong>
+                <span>Ejecutado</span>
+              </div>
+            </div>
+            <div class="donut-legend">
+              <div><i class="dot ok"></i>Procesos completos: {{ kpis.actividadesCompletadas }}</div>
+              <div><i class="dot warn"></i>Procesos en curso: {{ kpis.actividadesPendientes }}</div>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel barras-panel">
+          <div class="panel-header">
+            <h2>Estado general</h2>
+            <span>Total {{ kpis.totalEtapas }} verificables</span>
+          </div>
+          <div class="bars-stack">
+            <div v-for="item in barrasEstado" :key="item.label" class="bar-row">
+              <div class="bar-label">{{ item.label }}</div>
+              <div class="bar-track">
+                <div class="bar-fill" :class="item.className" :style="{ width: item.width }"></div>
+              </div>
+              <div class="bar-value">{{ item.valor }} · {{ item.porcentaje }}%</div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="charts-grid extended-grid">
+        <article class="panel donut-panel">
+          <div class="panel-header">
+            <h2>Procesos por área</h2>
+            <span>{{ subtareasElegibles.length }} procesos</span>
+          </div>
+          <div v-if="procesosPorArea.length" class="donut-wrap area-donut-wrap">
+            <div class="donut area-donut" :style="estiloDonaAreas">
+              <div class="donut-center">
+                <strong>{{ subtareasElegibles.length }}</strong>
+                <span>Procesos</span>
+              </div>
+            </div>
+            <div class="donut-legend area-legend">
+              <button
+                v-for="item in procesosPorArea"
+                :key="item.label"
+                type="button"
+                class="area-legend-item"
+                :class="{ active: areaSeleccionada === item.label }"
+                @click="toggleArea(item.label)"
+              >
+                <div class="area-legend-main">
+                  <i class="dot" :style="{ background: item.color }"></i>
+                  <span class="area-legend-name">{{ item.label }}</span>
+                </div>
+                <span class="area-legend-meta">{{ item.procesos }} · {{ item.porcentajeProcesos }}%</span>
+              </button>
+            </div>
+          </div>
+          <div v-else class="empty">No hay áreas con información disponible.</div>
+        </article>
+
+        <article class="panel barras-panel ranking-panel">
+          <div class="panel-header">
+            <h2>Ranking presupuestario y avance</h2>
+            <span>Total {{ actividadesAvancePresupuesto.length }} · mayor a menor</span>
+          </div>
+          <div v-if="totalPaginasRanking > 1" class="panel-paginator">
+            <button class="panel-pag-btn" :disabled="paginaRanking === 1" @click="paginaRanking--">‹ Anterior</button>
+            <span class="panel-pag-info">Página {{ paginaRanking }} de {{ totalPaginasRanking }}</span>
+            <button class="panel-pag-btn" :disabled="paginaRanking >= totalPaginasRanking" @click="paginaRanking++">Siguiente ›</button>
+          </div>
+          <div v-if="actividadesAvancePresupuestoPaginadas.length" class="bars-stack bars-stack-detailed">
+            <button
+              v-for="item in actividadesAvancePresupuestoPaginadas"
+              :key="item.id"
+              type="button"
+              class="actividad-bar-row actividad-bar-button"
+              :class="{ active: item.destacada && !!responsableSeleccionado, muted: !item.destacada && !!responsableSeleccionado }"
+              @click="abrirActividadDetalle(item.id)"
+            >
+              <div class="actividad-bar-top">
+                <div>
+                  <div class="bar-label">{{ item.nombre }}</div>
+                  <div class="bar-helper">{{ item.area }} · {{ item.responsable }} · selecciona para abrir detalle</div>
+                </div>
+                <div class="actividad-presupuesto">{{ formatearMonto(item.presupuesto) }}</div>
+              </div>
+              <div class="actividad-bar-main">
+                <div class="bar-track actividad-track">
+                  <div
+                    class="bar-fill"
+                    :class="item.avance >= 70 ? 'ok' : item.avance >= 40 ? 'info' : 'warn'"
+                    :style="{ width: item.width }"
+                  ></div>
+                </div>
+                <div class="bar-value actividad-avance">{{ item.avance }}%</div>
+              </div>
+            </button>
+          </div>
+          <div v-if="actividadesAvancePresupuestoPaginadas.length && totalPaginasRanking > 1" class="panel-paginator">
+            <button class="panel-pag-btn" :disabled="paginaRanking === 1" @click="paginaRanking--">‹ Anterior</button>
+            <span class="panel-pag-info">Página {{ paginaRanking }} de {{ totalPaginasRanking }}</span>
+            <button class="panel-pag-btn" :disabled="paginaRanking >= totalPaginasRanking" @click="paginaRanking++">Siguiente ›</button>
+          </div>
+          <div v-if="!actividadesAvancePresupuestoPaginadas.length" class="empty">No hay procesos activos para graficar.</div>
+        </article>
+      </section>
+
+      <div v-if="detalleKpi.activo" class="modal-overlay kpi-detail-overlay" @click="cerrarDetalleKpi">
+        <div class="kpi-detail-modal" @click.stop>
+          <div class="kpi-detail-header">
+            <div>
+              <h3>{{ detalleKpiTitulo }}</h3>
+              <p>{{ detalleKpiSubtitulo }}</p>
+            </div>
+            <button type="button" class="btn-close" @click="cerrarDetalleKpi">✕</button>
+          </div>
+
+          <div v-if="detalleKpi.tipo === 'cumplimiento'" class="kpi-detail-body listado">
+            <div v-if="detalleCumplimiento.length === 0" class="empty">No hay procesos completos para el filtro actual.</div>
+            <div v-for="item in detalleCumplimiento" :key="item.id" class="kpi-detail-item">
+              <div>
+                <strong>{{ item.nombre }}</strong>
+                <p>{{ item.area }} · {{ item.responsable }}</p>
+              </div>
+              <div class="list-meta">{{ formatearMonto(item.presupuesto) }}</div>
+            </div>
+          </div>
+
+          <div v-else-if="detalleKpi.tipo === 'retraso'" class="kpi-detail-body listado">
+            <div v-if="detalleEtapasAtrasadas.length === 0" class="empty">No hay verificables con retraso para el filtro actual.</div>
+            <button
+              v-for="item in detalleEtapasAtrasadas"
+              :key="item.id"
+              type="button"
+              class="kpi-detail-item kpi-detail-item-button"
+              @click="abrirEtapaAtrasadaDetalle(item.subtareaId, item.etapaId)"
+            >
+              <div>
+                <strong>{{ item.etapaNombre }}</strong>
+                <p>{{ item.subtareaNombre }} · {{ item.responsable }} · clic para abrir</p>
+              </div>
+              <div class="list-meta late">{{ item.diasRetraso }}D</div>
+            </button>
+          </div>
+
+          <div v-else-if="detalleKpi.tipo === 'proximas'" class="kpi-detail-body listado">
+            <div v-if="verificablesPorVencer.length === 0" class="empty">No hay verificables por vencer en 2 o 1 día para el filtro actual.</div>
+            <button
+              v-for="item in verificablesPorVencer"
+              :key="item.id"
+              type="button"
+              class="kpi-detail-item kpi-detail-item-button"
+              @click="abrirActividadDetalle(item.subtareaId, item.etapaId)"
+            >
+              <div>
+                <strong>{{ item.etapaNombre }}</strong>
+                <p>{{ item.subtareaNombre }} · {{ item.responsable }} · clic para abrir</p>
+              </div>
+              <div class="list-meta">{{ item.diasRestantes }}D</div>
+            </button>
+          </div>
+
+          <div v-else class="kpi-detail-body listado">
+            <div v-if="detalleMontoEjecutado.length === 0" class="empty">No hay procesos terminados para el filtro actual.</div>
+            <div v-for="item in detalleMontoEjecutado" :key="item.id" class="kpi-detail-item">
+              <div>
+                <strong>{{ item.nombre }}</strong>
+                <p>{{ item.area }} · {{ item.responsable }}</p>
+              </div>
+              <div class="list-meta">{{ formatearMonto(item.presupuesto) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import { subtareasService } from '../services/api';
+
+const router = useRouter();
+const cargando = ref(true);
+const subtareas = ref<any[]>([]);
+const areaSeleccionada = ref('');
+const responsableSeleccionado = ref('');
+const paginaRanking = ref(1);
+const itemsPorPaginaRanking = 8;
+const detalleKpi = ref<{ activo: boolean; tipo: 'cumplimiento' | 'retraso' | 'proximas' | 'monto' }>({
+  activo: false,
+  tipo: 'cumplimiento'
+});
+
+const fechaActual = new Date().toLocaleDateString('es-EC', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+});
+
+function normalizarEstado(estado: string | undefined) {
+  return estado === 'completado' ? 'completado' : 'pendiente';
+}
+
+function colorSemaforoPositivo(valor: number) {
+  if (valor >= 80) return '#22c55e';
+  if (valor >= 50) return '#f59e0b';
+  return '#ef4444';
+}
+
+function colorSemaforoRiesgo(valor: number) {
+  if (valor <= 20) return '#22c55e';
+  if (valor <= 50) return '#f59e0b';
+  return '#ef4444';
+}
+
+function formatearMonto(valor: number) {
+  return new Intl.NumberFormat('es-EC', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(Number(valor || 0));
+}
+
+function calcularAvanceSubtarea(subtarea: any) {
+  const avanceGeneral = Number(subtarea.avanceGeneral ?? subtarea.avance ?? 0);
+  if (!Number.isNaN(avanceGeneral) && avanceGeneral > 0) {
+    return Math.min(100, Math.max(0, Math.round(avanceGeneral)));
+  }
+
+  const etapasSubtarea = getEtapasConFechaSubtarea(subtarea);
+  if (!etapasSubtarea.length) return 0;
+  const completadasSubtarea = etapasSubtarea.filter((etapa: any) => normalizarEstado(etapa.estado) === 'completado').length;
+  return Math.round((completadasSubtarea / etapasSubtarea.length) * 100);
+}
+
+function getEtapasConFechaSubtarea(subtarea: any) {
+  const seguimiento = Array.isArray(subtarea?.seguimientoEtapas) ? subtarea.seguimientoEtapas : [];
+  const etapas = seguimiento.length
+    ? seguimiento
+    : (Array.isArray(subtarea?.etapas)
+      ? subtarea.etapas.filter((etapa: any) => Number(etapa?.aplica) === 1 || etapa?.aplica === true || String(etapa?.aplica).toLowerCase() === 'true')
+      : []);
+  return etapas.filter((etapa: any) => Boolean(etapa?.fechaPlanificada || etapa?.fechaTentativa));
+}
+
+function actividadActiva(subtarea: any) {
+  return Boolean(Number(subtarea?.activo ?? 1));
+}
+
+function actividadCompleta(subtarea: any) {
+  const etapas = getEtapasConFechaSubtarea(subtarea);
+  return etapas.length > 0 && etapas.every((etapa: any) => normalizarEstado(etapa.estado) === 'completado');
+}
+
+function actividadAtrasada(subtarea: any) {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  return getEtapasConFechaSubtarea(subtarea).some((etapa: any) => {
+    if (normalizarEstado(etapa.estado) === 'completado') return false;
+    const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
+    if (!fecha) return false;
+    const plan = new Date(fecha);
+    plan.setHours(0, 0, 0, 0);
+    return plan < hoy;
+  });
+}
+
+function toggleArea(area: string) {
+  areaSeleccionada.value = areaSeleccionada.value === area ? '' : area;
+}
+
+function restablecerVista() {
+  areaSeleccionada.value = '';
+  responsableSeleccionado.value = '';
+}
+
+function responsableBase(subtarea: any) {
+  return subtarea?.responsableNombre || subtarea?.responsable?.nombre || 'Sin responsable';
+}
+
+function abrirActividadDetalle(actividadId: number, etapaId?: number | string) {
+  router.push({
+    name: 'actividades',
+    query: {
+      actividadId: String(actividadId),
+      ...(etapaId ? { etapaId: String(etapaId) } : {})
+    }
+  });
+}
+
+function abrirEtapaAtrasadaDetalle(actividadId: number, etapaId: number | string) {
+  cerrarDetalleKpi();
+  abrirActividadDetalle(actividadId, etapaId);
+}
+
+function abrirDetalleKpi(tipo: 'cumplimiento' | 'retraso' | 'proximas' | 'monto') {
+  detalleKpi.value = { activo: true, tipo };
+}
+
+function cerrarDetalleKpi() {
+  detalleKpi.value.activo = false;
+}
+
+function manejarEscapeModales(event: KeyboardEvent) {
+  if (event.key !== 'Escape') return;
+  if (detalleKpi.value.activo) {
+    cerrarDetalleKpi();
+  }
+}
+
+const subtareasElegibles = computed(() =>
+  subtareas.value.filter((subtarea: any) => actividadActiva(subtarea) && getEtapasConFechaSubtarea(subtarea).length > 0)
+);
+
+const subtareasFiltradasPorArea = computed(() =>
+  areaSeleccionada.value
+    ? subtareasElegibles.value.filter((subtarea: any) => (subtarea.direccionNombre || 'Sin área') === areaSeleccionada.value)
+    : subtareasElegibles.value
+);
+
+const subtareasFiltradas = computed(() =>
+  responsableSeleccionado.value
+    ? subtareasFiltradasPorArea.value.filter((subtarea: any) => responsableBase(subtarea) === responsableSeleccionado.value)
+    : subtareasFiltradasPorArea.value
+);
+
+const etapas = computed(() =>
+  subtareasFiltradas.value.flatMap((subtarea: any) =>
+    (subtarea.seguimientoEtapas || []).map((etapa: any) => ({
+      ...etapa,
+      id: etapa.id || `${subtarea.id}-${etapa.etapaId || etapa.nombre}`,
+      subtareaId: subtarea.id,
+      subtareaNombre: subtarea.nombre,
+      areaNombre: subtarea.direccionNombre || 'Sin área',
+      responsableNombre: etapa.responsableNombre || responsableBase(subtarea)
+    }))
+  )
+);
+
+const completadas = computed(() =>
+  etapas.value.filter((e: any) => normalizarEstado(e.estado) === 'completado').length
+);
+
+const actividadesCompletadas = computed(() => subtareasFiltradas.value.filter((subtarea: any) => actividadCompleta(subtarea)).length);
+
+const actividadesAtrasadas = computed(() => subtareasFiltradas.value.filter((subtarea: any) => actividadAtrasada(subtarea)).length);
+
+const actividadesPendientes = computed(() => Math.max(0, subtareasFiltradas.value.length - actividadesCompletadas.value));
+
+const pendientes = computed(() => etapas.value.length - completadas.value);
+
+const atrasadas = computed(() =>
+  etapas.value.filter((e: any) => {
+    if (!e.fechaPlanificada || normalizarEstado(e.estado) === 'completado') return false;
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const plan = new Date(e.fechaPlanificada);
+    plan.setHours(0, 0, 0, 0);
+    return plan < hoy;
+  }).length
+);
+
+const kpis = computed(() => {
+  const totalTareas = subtareasFiltradas.value.length;
+  const totalEtapas = etapas.value.length;
+  const porcentajeCumplimiento = totalTareas ? Math.round((actividadesCompletadas.value / totalTareas) * 100) : 0;
+  return {
+    totalTareas,
+    totalEtapas,
+    completadas: completadas.value,
+    pendientes: Math.max(0, pendientes.value),
+    atrasadas: atrasadas.value,
+    porcentajeCumplimiento,
+    actividadesCompletadas: actividadesCompletadas.value,
+    actividadesPendientes: actividadesPendientes.value,
+    actividadesAtrasadas: actividadesAtrasadas.value
+  };
+});
+
+const presupuestoFiltrado = computed(() =>
+  subtareasFiltradas.value.reduce((total: number, subtarea: any) => total + Number(subtarea?.presupuesto || 0), 0)
+);
+
+const porcentajeProximas = computed(() => {
+  const totalPendientes = Math.max(1, kpis.value.pendientes);
+  return Math.min(100, Math.round((verificablesPorVencer.value.length / totalPendientes) * 100));
+});
+
+const porcentajeAtraso = computed(() => {
+  const totalEtapas = Math.max(1, kpis.value.totalEtapas);
+  return Math.min(100, Math.round((kpis.value.atrasadas / totalEtapas) * 100));
+});
+
+const porcentajeProcesosVisibles = computed(() => {
+  const total = Math.max(1, subtareasElegibles.value.length);
+  return Math.min(100, Math.round((kpis.value.totalTareas / total) * 100));
+});
+
+const colorCumplimiento = computed(() => colorSemaforoPositivo(kpis.value.porcentajeCumplimiento));
+const colorProcesosVisibles = computed(() => colorSemaforoPositivo(porcentajeProcesosVisibles.value));
+const colorAtraso = computed(() => colorSemaforoRiesgo(porcentajeAtraso.value));
+const colorProximas = computed(() => colorSemaforoRiesgo(porcentajeProximas.value));
+
+const detalleCumplimiento = computed(() =>
+  subtareasFiltradas.value
+    .filter((subtarea: any) => actividadCompleta(subtarea))
+    .map((subtarea: any) => ({
+      id: subtarea.id,
+      nombre: subtarea.nombre || 'Actividad sin nombre',
+      area: subtarea.direccionNombre || 'Sin área',
+      responsable: responsableBase(subtarea),
+      presupuesto: Number(subtarea.presupuesto || 0)
+    }))
+    .sort((a, b) => b.presupuesto - a.presupuesto || a.nombre.localeCompare(b.nombre))
+);
+
+const detalleMontoEjecutado = computed(() => detalleCumplimiento.value);
+
+const detalleEtapasAtrasadas = computed(() => {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  return etapas.value
+    .filter((etapa: any) => {
+      const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
+      if (!fecha || normalizarEstado(etapa.estado) === 'completado') return false;
+      const plan = new Date(fecha);
+      plan.setHours(0, 0, 0, 0);
+      return plan < hoy;
+    })
+    .map((etapa: any) => {
+      const fecha = new Date(etapa?.fechaPlanificada || etapa?.fechaTentativa);
+      fecha.setHours(0, 0, 0, 0);
+      const diasRetraso = Math.max(0, Math.floor((hoy.getTime() - fecha.getTime()) / (1000 * 60 * 60 * 24)));
+      return {
+        id: `${etapa.subtareaId}-${etapa.etapaId || etapa.id}`,
+        subtareaId: etapa.subtareaId,
+        etapaId: etapa.etapaId || etapa.id,
+        subtareaNombre: etapa.subtareaNombre || 'Proceso',
+        etapaNombre: etapa.etapaNombre || etapa.nombre || 'Etapa',
+        responsable: etapa.responsableNombre || 'Sin responsable',
+        diasRetraso
+      };
+    })
+    .sort((a, b) => b.diasRetraso - a.diasRetraso || a.subtareaNombre.localeCompare(b.subtareaNombre));
+});
+
+const verificablesPorVencer = computed(() => {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  return etapas.value
+    .filter((etapa: any) => {
+      const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
+      if (!fecha || normalizarEstado(etapa.estado) === 'completado') return false;
+      const plan = new Date(fecha);
+      plan.setHours(0, 0, 0, 0);
+      const diasRestantes = Math.floor((plan.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+      return diasRestantes === 2 || diasRestantes === 1;
+    })
+    .map((etapa: any) => {
+      const fecha = new Date(etapa?.fechaPlanificada || etapa?.fechaTentativa);
+      fecha.setHours(0, 0, 0, 0);
+      const diasRestantes = Math.floor((fecha.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+      return {
+        id: `${etapa.subtareaId}-${etapa.etapaId || etapa.id}`,
+        subtareaId: etapa.subtareaId,
+        etapaId: etapa.etapaId || etapa.id,
+        subtareaNombre: etapa.subtareaNombre || 'Proceso',
+        etapaNombre: etapa.etapaNombre || etapa.nombre || 'Verificable',
+        areaNombre: etapa.areaNombre || 'Sin área',
+        responsable: etapa.responsableNombre || 'Sin responsable',
+        diasRestantes
+      };
+    })
+    .sort((a, b) => a.diasRestantes - b.diasRestantes || a.subtareaNombre.localeCompare(b.subtareaNombre));
+});
+
+const detalleKpiTitulo = computed(() => {
+  switch (detalleKpi.value.tipo) {
+    case 'proximas': return 'Detalle de verificables próximos a vencer';
+    case 'retraso': return 'Detalle de verificables con retraso';
+    case 'monto': return 'Detalle del monto ejecutado';
+    default: return 'Detalle de cumplimiento';
+  }
+});
+
+const detalleKpiSubtitulo = computed(() => {
+  switch (detalleKpi.value.tipo) {
+    case 'proximas': return 'Verificables pendientes con vencimiento en 2 y 1 día.';
+    case 'retraso': return 'Verificables vencidos pendientes, clasificados por proceso y responsable.';
+    case 'monto': return 'Procesos terminados y monto asignado considerado como ejecutado.';
+    default: return 'Procesos cumplidos con su responsable asignado.';
+  }
+});
+
+const barrasEstado = computed(() => {
+  const totalReal = kpis.value.totalEtapas;
+  const total = totalReal || 1;
+  const data = [
+    { label: 'Completadas', valor: kpis.value.completadas, className: 'ok' },
+    { label: 'Pendientes', valor: kpis.value.pendientes, className: 'warn' },
+    { label: 'Atrasadas', valor: kpis.value.atrasadas, className: 'danger' }
+  ];
+
+  return data.map((item) => ({
+    ...item,
+    porcentaje: totalReal ? Math.round((item.valor / total) * 100) : 0,
+    width: item.valor > 0 ? `${Math.max(6, Math.round((item.valor / total) * 100))}%` : '0%'
+  }));
+});
+
+const procesosPorArea = computed(() => {
+  const mapa = new Map<string, { label: string; procesos: number }>();
+
+  for (const subtarea of subtareasElegibles.value) {
+    const area = subtarea.direccionNombre || 'Sin área';
+    const actual = mapa.get(area) || { label: area, procesos: 0 };
+    actual.procesos += 1;
+    mapa.set(area, actual);
+  }
+
+  const palette = ['#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1'];
+  const total = subtareasElegibles.value.length || 1;
+
+  return Array.from(mapa.values())
+    .sort((a, b) => b.procesos - a.procesos || a.label.localeCompare(b.label))
+    .map((item, index) => ({
+      ...item,
+      color: palette[index % palette.length],
+      porcentajeProcesos: Math.round((item.procesos / total) * 100)
+    }));
+});
+
+const estiloDonaAreas = computed(() => {
+  if (!procesosPorArea.value.length) {
+    return { background: 'conic-gradient(#e2e8f0 0 100%)' };
+  }
+
+  let acumulado = 0;
+  const segmentos: string[] = [];
+
+  for (const item of procesosPorArea.value) {
+    const inicio = acumulado;
+    acumulado += item.porcentajeProcesos;
+    const fin = Math.min(100, acumulado);
+    segmentos.push(`${item.color} ${inicio}% ${fin}%`);
+  }
+
+  if (acumulado < 100) {
+    segmentos.push(`#e2e8f0 ${acumulado}% 100%`);
+  }
+
+  return {
+    background: `conic-gradient(${segmentos.join(', ')})`
+  };
+});
+
+const actividadesAvancePresupuesto = computed(() => {
+  const mayorAvance = 100;
+
+  return subtareasFiltradasPorArea.value
+    .map((subtarea: any) => ({
+      id: subtarea.id,
+      nombre: subtarea.nombre || 'Proceso sin nombre',
+      area: subtarea.direccionNombre || 'Sin área',
+      responsable: responsableBase(subtarea),
+      avance: calcularAvanceSubtarea(subtarea),
+      presupuesto: Number(subtarea.presupuesto || 0)
+    }))
+    .sort((a, b) => b.presupuesto - a.presupuesto || b.avance - a.avance)
+    .map((item) => ({
+      ...item,
+      destacada: !responsableSeleccionado.value || item.responsable === responsableSeleccionado.value,
+      width: item.avance > 0
+        ? `${Math.max(8, Math.round((item.avance / mayorAvance) * 100))}%`
+        : '0%'
+    }));
+});
+
+const totalPaginasRanking = computed(() => Math.max(1, Math.ceil(actividadesAvancePresupuesto.value.length / itemsPorPaginaRanking)));
+
+const actividadesAvancePresupuestoPaginadas = computed(() => {
+  const start = (paginaRanking.value - 1) * itemsPorPaginaRanking;
+  return actividadesAvancePresupuesto.value.slice(start, start + itemsPorPaginaRanking);
+});
+
+onMounted(async () => {
+  window.addEventListener('keydown', manejarEscapeModales);
+  try {
+    const subtareasData = await subtareasService.getAll();
+    subtareas.value = Array.isArray(subtareasData) ? subtareasData : [];
+  } catch (error) {
+    console.error('Error cargando dashboard ejecutivo:', error);
+  } finally {
+    cargando.value = false;
+  }
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', manejarEscapeModales);
+});
+
+watch([actividadesAvancePresupuesto, areaSeleccionada, responsableSeleccionado], () => {
+  if (paginaRanking.value > totalPaginasRanking.value) {
+    paginaRanking.value = totalPaginasRanking.value;
+  }
+  if (paginaRanking.value < 1) {
+    paginaRanking.value = 1;
+  }
+});
+</script>
+
+<style scoped>
+.dashboard-admin {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.dashboard-header {
+  background: linear-gradient(135deg, #0f172a, #1d4ed8);
+  color: #fff;
+  border-radius: 14px;
+  padding: 1.2rem 1.4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.dashboard-header p {
+  margin: 0.25rem 0 0;
+  color: #cbd5e1;
+}
+
+.meta-pill {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+}
+
+.loading,
+.empty {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+  color: #64748b;
+}
+
+.context-summary {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.7rem 0.9rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.btn-clear-filter {
+  padding: 0.55rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-clear-filter:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.filter-chip.primary {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.filter-chip.success {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #15803d;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.kpi-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 0.95rem 1rem;
+  display: grid;
+  gap: 0.35rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.kpi-card.has-tooltip {
+  position: relative;
+}
+
+.kpi-card.has-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%) translateY(6px);
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.4rem 0.55rem;
+  border-radius: 8px;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.28);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  z-index: 25;
+}
+
+.kpi-card.has-tooltip::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%) translateY(6px);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #0f172a;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  z-index: 25;
+}
+
+.kpi-card.has-tooltip:hover::after,
+.kpi-card.has-tooltip:hover::before,
+.kpi-card.has-tooltip:focus::after,
+.kpi-card.has-tooltip:focus::before,
+.kpi-card.has-tooltip:focus-within::after,
+.kpi-card.has-tooltip:focus-within::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.kpi-card-button {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.kpi-card-button:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.08);
+  transform: translateY(-1px);
+}
+
+.kpi-card-button:focus-visible {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+
+.kpi-card.success {
+  border-left: 4px solid #16a34a;
+}
+
+.kpi-card.danger {
+  border-left: 4px solid #dc2626;
+}
+
+.kpi-card.accent {
+  border-left: 4px solid #0f766e;
+}
+
+.kpi-title {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.kpi-value {
+  color: #0f172a;
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.kpi-value-money {
+  font-size: 1.35rem;
+}
+
+.kpi-foot {
+  color: #94a3b8;
+  font-size: 0.76rem;
+}
+
+.kpi-mini-track {
+  height: 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+  margin-top: 0.1rem;
+}
+
+.kpi-mini-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.kpi-mini-fill.ok {
+  background: #22c55e;
+}
+
+.kpi-mini-fill.danger {
+  background: #ef4444;
+}
+
+.kpi-mini-fill.info {
+  background: #3b82f6;
+}
+
+.kpi-mini-label {
+  color: #64748b;
+  font-size: 0.72rem;
+}
+
+.kpi-donut-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.kpi-mini-donut {
+  --value: 0%;
+  --kpi-color: #14b8a6;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: conic-gradient(var(--kpi-color) var(--value), #e2e8f0 var(--value));
+  display: grid;
+  place-items: center;
+}
+
+.kpi-mini-donut span {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  display: grid;
+  place-items: center;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.charts-grid,
+.bottom-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.extended-grid {
+  align-items: start;
+}
+
+.ranking-panel {
+  grid-row: span 2;
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.85rem;
+  gap: 0.8rem;
+}
+
+.panel-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.panel-header span {
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.panel-paginator {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.8rem;
+}
+
+.panel-pag-btn {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.32rem 0.62rem;
+  cursor: pointer;
+}
+
+.panel-pag-btn:hover:not(:disabled) {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.panel-pag-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.panel-pag-info {
+  font-size: 0.76rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.tabla-wrap {
+  overflow: auto;
+  max-height: 360px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.tabla-verificables {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+
+.tabla-verificables th,
+.tabla-verificables td {
+  text-align: left;
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.8rem;
+}
+
+.tabla-verificables th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  color: #475569;
+  background: #f8fafc;
+  font-weight: 700;
+}
+
+.tabla-verificables td {
+  color: #334155;
+}
+
+.tabla-row-click {
+  cursor: pointer;
+  transition: background-color 0.16s ease;
+}
+
+.tabla-row-click:hover {
+  background: #eff6ff;
+}
+
+.donut-wrap {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 1rem;
+}
+
+.donut {
+  --value: 0%;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: conic-gradient(#22c55e var(--value), #e2e8f0 var(--value));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.donut-center {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e2e8f0;
+}
+
+.donut-center strong {
+  color: #0f172a;
+  font-size: 1.05rem;
+}
+
+.donut-center span {
+  color: #64748b;
+  font-size: 0.7rem;
+}
+
+.donut-legend {
+  display: grid;
+  gap: 0.45rem;
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.area-donut-wrap {
+  grid-template-columns: auto 1fr;
+  align-items: flex-start;
+}
+
+.area-donut {
+  background: conic-gradient(#e2e8f0 0 100%);
+}
+
+.area-legend {
+  max-height: 250px;
+  overflow: auto;
+  padding-right: 0.2rem;
+}
+
+.area-legend-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #334155;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.area-legend-item:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.08);
+}
+
+.area-legend-item.active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+}
+
+.area-legend-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.area-legend-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.area-legend-meta {
+  color: #1e40af;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 0.38rem;
+}
+
+.dot.ok {
+  background: #22c55e;
+}
+
+.dot.warn {
+  background: #f59e0b;
+}
+
+.dot.danger {
+  background: #ef4444;
+}
+
+.bars-stack {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 44px;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.bar-row-button {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.7rem 0.75rem;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.bar-row-button:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.08);
+  transform: translateY(-1px);
+}
+
+.bar-row-button:focus-visible {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+}
+
+.bar-row-button.active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+}
+
+.bar-row-button.is-zero {
+  border-style: dashed;
+}
+
+.bar-row-button.is-zero .bar-helper,
+.bar-row-button.is-zero .bar-value {
+  color: #94a3b8;
+}
+
+.bar-row-button.is-zero .bar-track {
+  background: #f1f5f9;
+}
+
+.bar-label {
+  font-size: 0.82rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+.bar-helper {
+  margin-top: 0.18rem;
+  font-size: 0.74rem;
+  color: #94a3b8;
+}
+
+.bar-track {
+  height: 10px;
+  background: #eef2ff;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.bar-fill.ok {
+  background: #22c55e;
+}
+
+.bar-fill.warn {
+  background: #f59e0b;
+}
+
+.bar-fill.danger {
+  background: #ef4444;
+}
+
+.bar-fill.info {
+  background: #3b82f6;
+}
+
+.bar-value {
+  font-size: 0.78rem;
+  color: #334155;
+  text-align: right;
+}
+
+.bars-stack-detailed {
+  gap: 0.95rem;
+}
+
+.bar-row-detailed {
+  grid-template-columns: minmax(140px, 180px) 1fr 48px;
+}
+
+.actividad-bar-row {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.actividad-bar-button {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 10px;
+  padding: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.actividad-bar-button:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.08);
+  transform: translateY(-1px);
+}
+
+.actividad-bar-button:focus-visible {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+}
+
+.actividad-bar-button.active {
+  border-color: #22c55e;
+  background: #f0fdf4;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+}
+
+.actividad-bar-button.muted {
+  opacity: 0.42;
+}
+
+.actividad-bar-top,
+.actividad-bar-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.actividad-track {
+  min-width: 0;
+}
+
+.actividad-presupuesto {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.actividad-avance {
+  min-width: 42px;
+}
+
+.listado {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.list-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.list-item-button {
+  width: 100%;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.list-item-button:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.08);
+  transform: translateY(-1px);
+}
+
+.list-item-button:focus-visible {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+}
+
+.list-item-button.active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+}
+
+.list-item strong {
+  color: #0f172a;
+  font-size: 0.88rem;
+}
+
+.list-item p {
+  margin: 0.15rem 0 0;
+  color: #64748b;
+  font-size: 0.76rem;
+}
+
+.list-meta {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1e40af;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+  border-radius: 999px;
+  padding: 0.24rem 0.54rem;
+}
+
+.list-meta.late {
+  color: #991b1b;
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.kpi-detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.kpi-detail-modal {
+  width: min(820px, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
+}
+
+.kpi-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 1rem 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.kpi-detail-header h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.08rem;
+}
+
+.kpi-detail-header p {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.kpi-detail-body {
+  padding: 1rem;
+}
+
+.kpi-detail-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  background: #fff;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.kpi-detail-item-button {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  background: #fff;
+}
+
+.kpi-detail-item:hover {
+  border-color: #bfdbfe;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+}
+
+.kpi-detail-item strong {
+  color: #0f172a;
+  font-size: 0.9rem;
+}
+
+.kpi-detail-item p {
+  margin: 0.18rem 0 0;
+  color: #64748b;
+  font-size: 0.77rem;
+}
+
+@media (max-width: 1080px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .charts-grid,
+  .bottom-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ranking-panel {
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 680px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .donut-wrap {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .area-donut-wrap {
+    justify-items: stretch;
+  }
+
+  .bar-row {
+    grid-template-columns: 92px 1fr 36px;
+  }
+
+  .bar-row-detailed,
+  .actividad-bar-top,
+  .actividad-bar-main {
+    grid-template-columns: 1fr;
+  }
+
+  .actividad-presupuesto,
+  .actividad-avance,
+  .bar-value {
+    text-align: left;
+  }
+
+  .kpi-detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+</style>
