@@ -1,5 +1,13 @@
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
+import iconv from 'iconv-lite';
+
+const ENV_PATH = process.env.DOTENV_CONFIG_PATH || (process.env.NODE_ENV === 'production' ? '.env.production' : '.env');
+const envLoaded = dotenv.config({ path: ENV_PATH });
+if (envLoaded.error && ENV_PATH !== '.env') {
+  dotenv.config();
+}
 
 const DB_HOST = process.env.DB_HOST || 'localhost';
 const DB_PORT = parseInt(process.env.DB_PORT || '3306', 10);
@@ -18,6 +26,59 @@ const DIRECCIONES_ID_NOMBRE = {
   4: 'DAF / Jefatura de Talento Humano',
   5: 'Dirección de Comercialización'
 };
+
+const MOJIBAKE_PATTERN = /[Ã�├┤│┬┐└┘╔╗╚╝╠╣╦╩╬▒░▓ÔÇ]/;
+
+function countMojibake(value = '') {
+  return (String(value).match(/[Ã�├┤│┬┐└┘╔╗╚╝╠╣╦╩╬▒░▓ÔÇ]/g) || []).length;
+}
+
+function noiseScore(value = '') {
+  const text = String(value || '');
+  const mojibake = countMojibake(text);
+  const replacement = (text.match(/�/g) || []).length;
+  return mojibake + (replacement * 3);
+}
+
+function decodeMojibake(value = '') {
+  const text = String(value || '');
+  if (!MOJIBAKE_PATTERN.test(text)) return text;
+
+  try {
+    const candidates = [text];
+    candidates.push(iconv.encode(text, 'cp850').toString('utf8'));
+    candidates.push(iconv.encode(text, 'cp437').toString('utf8'));
+
+    candidates.sort((a, b) => noiseScore(a) - noiseScore(b));
+    return candidates[0];
+  } catch {
+    return text;
+  }
+}
+
+function normalizeTextEncoding(value, { trim = false, collapseWhitespace = false } = {}) {
+  if (value === null || value === undefined) return value;
+
+  let text = String(value);
+  const decoded = decodeMojibake(text);
+  if (noiseScore(decoded) < noiseScore(text)) {
+    text = decoded;
+  }
+
+  const directReplacements = new Map([
+    ['Ã¡', 'á'], ['Ã©', 'é'], ['Ã­', 'í'], ['Ã³', 'ó'], ['Ãº', 'ú'], ['Ã±', 'ñ'],
+    ['Ã', 'Á'], ['Ã‰', 'É'], ['Ã', 'Í'], ['Ã“', 'Ó'], ['Ãš', 'Ú'], ['Ã‘', 'Ñ'],
+    ['ÔÇô', '–'], ['ÔÇ£', '“'], ['ÔÇ�', '”'], ['ÔÇÖ', '’'], ['ÔÇÿ', ' ']
+  ]);
+
+  for (const [bad, good] of directReplacements.entries()) {
+    text = text.split(bad).join(good);
+  }
+
+  if (trim) text = text.trim();
+  if (collapseWhitespace) text = text.replace(/\s+/g, ' ');
+  return text;
+}
 
 function toCamelRow(row) {
   const map = {
@@ -55,19 +116,22 @@ function toCamelRow(row) {
 
   const output = {};
   for (const [key, value] of Object.entries(row)) {
-    output[map[key] || key] = value;
+    const mappedKey = map[key] || key;
+    output[mappedKey] = typeof value === 'string'
+      ? normalizeTextEncoding(value)
+      : value;
   }
   return output;
 }
 
 async function resolverDireccionEncargada(data = {}) {
-  if (data.direccionEncargada) return String(data.direccionEncargada).trim();
-  if (data.direccionNombre) return String(data.direccionNombre).trim();
+  if (data.direccionEncargada) return normalizeTextEncoding(data.direccionEncargada, { trim: true, collapseWhitespace: true });
+  if (data.direccionNombre) return normalizeTextEncoding(data.direccionNombre, { trim: true, collapseWhitespace: true });
 
   const id = Number(data.direccionId);
   if (Number.isInteger(id) && id > 0) {
     const rows = await query('SELECT nombre FROM direcciones_catalogo WHERE id = ? LIMIT 1', [id]);
-    if (rows[0]?.nombre) return String(rows[0].nombre).trim();
+    if (rows[0]?.nombre) return normalizeTextEncoding(rows[0].nombre, { trim: true, collapseWhitespace: true });
     if (DIRECCIONES_ID_NOMBRE[id]) return DIRECCIONES_ID_NOMBRE[id];
   }
 
@@ -81,12 +145,12 @@ function obtenerDireccionIdDesdeNombre(nombre = '') {
 }
 
 async function resolverResponsableNombre(data = {}) {
-  if (data.responsable) return String(data.responsable).trim();
-  if (data.responsableNombre) return String(data.responsableNombre).trim();
+  if (data.responsable) return normalizeTextEncoding(data.responsable, { trim: true, collapseWhitespace: true });
+  if (data.responsableNombre) return normalizeTextEncoding(data.responsableNombre, { trim: true, collapseWhitespace: true });
   const responsableId = Number(data.responsableId);
   if (Number.isInteger(responsableId) && responsableId > 0) {
     const rows = await query('SELECT nombre FROM responsables_catalogo WHERE id = ? LIMIT 1', [responsableId]);
-    return rows[0]?.nombre ? String(rows[0].nombre).trim() : null;
+    return rows[0]?.nombre ? normalizeTextEncoding(rows[0].nombre, { trim: true, collapseWhitespace: true }) : null;
   }
   return null;
 }
@@ -104,7 +168,7 @@ async function resolverResponsable(data = {}) {
     if (!rows[0]) throw new Error('Responsable no existe en catálogo');
     return {
       id: Number(rows[0].id),
-      nombre: String(rows[0].nombre || '').trim() || null
+      nombre: normalizeTextEncoding(rows[0].nombre || '', { trim: true, collapseWhitespace: true }) || null
     };
   }
 
@@ -128,7 +192,7 @@ async function resolverResponsable(data = {}) {
 
   return {
     id: Number(rows[0].id),
-    nombre: String(rows[0].nombre || '').trim() || nombre
+    nombre: normalizeTextEncoding(rows[0].nombre || '', { trim: true, collapseWhitespace: true }) || nombre
   };
 }
 
@@ -378,6 +442,7 @@ async function seedInitialData() {
   }
 
   const countDirecciones = await query('SELECT COUNT(*) AS total FROM direcciones_catalogo');
+  
   if (Number(countDirecciones[0]?.total || 0) === 0) {
     const direcciones = await getDireccionesDisponibles();
     for (const direccion of direcciones) {
@@ -1125,6 +1190,17 @@ export async function deleteSubtarea(idOrCode) {
   await query('DELETE FROM subtareas WHERE id = ?', [id]);
 }
 
+function normalizarFechaSalida(fecha) {
+  if (!fecha) return null;
+  const str = String(fecha);
+  // Si está en formato ISO (contiene T), extraer solo la parte de fecha
+  if (str.includes('T')) {
+    return str.split('T')[0];
+  }
+  // Si ya está en formato yyyy-MM-dd, devolver como está
+  return str;
+}
+
 export async function getSubtareaEtapas(subtareaId) {
   const rows = await query(
     `SELECT se.id, se.subtarea_id, se.etapa_id, se.aplica, se.fecha_tentativa,
@@ -1145,6 +1221,10 @@ export async function getSubtareaEtapas(subtareaId) {
   return rows.map((row) => {
     const item = toCamelRow(row);
     item.responsableId = row.responsable_id_ref ? Number(row.responsable_id_ref) : null;
+    // Normalizar todas las fechas al formato yyyy-MM-dd
+    item.fechaTentativa = normalizarFechaSalida(item.fechaTentativa);
+    item.fechaPlanificada = normalizarFechaSalida(item.fechaPlanificada);
+    item.fechaReal = normalizarFechaSalida(item.fechaReal);
     return item;
   });
 }
@@ -1159,11 +1239,45 @@ function fechaHoyISO() {
 
 function normalizarFechaManual(fecha) {
   if (!fecha) return null;
-  const valor = String(fecha);
-  return valor.includes('T') ? valor.split('T')[0] : valor;
+  
+  // Si es un objeto Date, convertir a ISO
+  if (fecha instanceof Date) {
+    return fecha.toISOString().split('T')[0];
+  }
+  
+  const valor = String(fecha).trim();
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+    return valor;
+  }
+
+  const soloFechaDesdeDateTime = valor.match(/^(\d{4}-\d{2}-\d{2})[ T]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z)?$/);
+  if (soloFechaDesdeDateTime?.[1]) {
+    return soloFechaDesdeDateTime[1];
+  }
+  
+  // Intentar parseo general (GMT, RFC, etc.)
+  try {
+    const parsed = new Date(valor);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString().split('T')[0];
+    }
+  } catch {
+    return null;
+  }
+  
+  // Si contiene T, extraer solo la fecha
+  if (valor.includes('T')) {
+    const soloFecha = valor.split('T')[0];
+    return /^\d{4}-\d{2}-\d{2}$/.test(soloFecha) ? soloFecha : null;
+  }
+
+  return null;
 }
 
 export async function setSubtareaEtapas(subtareaId, etapas) {
+  console.log(`[setSubtareaEtapas] Iniciando con ${etapas?.length || 0} etapas para subtarea ${subtareaId}`);
+  
   const existentes = await query(
     'SELECT etapa_id, estado, fecha_real FROM seguimiento_etapas WHERE subtarea_id = ?',
     [subtareaId]
@@ -1172,6 +1286,8 @@ export async function setSubtareaEtapas(subtareaId, etapas) {
     existentes.map((row) => [Number(row.etapa_id), row])
   );
 
+  // Resolver responsables ANTES de la transacción para evitar problemas de concurrencia
+  const etapasEnriquecidas = [];
   for (const etapa of etapas) {
     const etapaId = Number(etapa.etapaId);
     const existente = existentesPorEtapa.get(etapaId);
@@ -1185,43 +1301,78 @@ export async function setSubtareaEtapas(subtareaId, etapas) {
         ? (fechaManual || existente?.fecha_real || fechaHoyISO())
         : (existente?.fecha_real || fechaHoyISO()));
 
-    await query(
-      `INSERT INTO subtareas_etapas (subtarea_id, etapa_id, aplica, fecha_tentativa)
-       VALUES (?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE aplica = VALUES(aplica), fecha_tentativa = VALUES(fecha_tentativa)`,
-      [subtareaId, etapaId, Boolean(etapa.aplica), etapa.fechaTentativa || null]
-    );
-
-    await query(
-      `INSERT INTO seguimiento_etapas (subtarea_id, etapa_id, estado, fecha_planificada, fecha_real, responsable_id, observaciones, responsable)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-         estado = VALUES(estado),
-         fecha_planificada = VALUES(fecha_planificada),
-         fecha_real = VALUES(fecha_real),
-         responsable_id = VALUES(responsable_id),
-         observaciones = VALUES(observaciones),
-         responsable = VALUES(responsable)`,
-      [
-        subtareaId,
-        etapaId,
-        estadoFinal,
-        etapa.fechaTentativa || null,
-        fechaRealFinal,
-        responsable.id,
-        etapa.observaciones || null,
-        responsable.nombre
-      ]
-    );
-
-    existentesPorEtapa.set(etapaId, {
-      etapa_id: etapaId,
-      estado: estadoFinal,
-      fecha_real: fechaRealFinal
+    etapasEnriquecidas.push({
+      etapaId,
+      aplica: Boolean(etapa.aplica),
+      fechaTentativa: normalizarFechaManual(etapa.fechaTentativa) || normalizarFechaManual(etapa.fechaPlanificada) || null,
+      estadoFinal,
+      fechaRealFinal,
+      responsableId: responsable.id,
+      responsableNombre: responsable.nombre,
+      observaciones: etapa.observaciones ? normalizeTextEncoding(etapa.observaciones, { trim: true }) : null
     });
   }
 
-  return getSubtareaEtapas(subtareaId);
+  console.log(`[setSubtareaEtapas] Enriquecidas ${etapasEnriquecidas.length} etapas`);
+
+  // Obtener conexión directa para usar transacción
+  const conn = await getPool().getConnection();
+  
+  try {
+    // Iniciar transacción para garantizar que todos los cambios se guarden juntos
+    await conn.beginTransaction();
+    console.log(`[setSubtareaEtapas] Transacción iniciada`);
+
+    let procesadas = 0;
+    for (const etapa of etapasEnriquecidas) {
+      // Usar la conexión de transacción
+      await conn.execute(
+        `INSERT INTO subtareas_etapas (subtarea_id, etapa_id, aplica, fecha_tentativa)
+         VALUES (?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE aplica = VALUES(aplica), fecha_tentativa = VALUES(fecha_tentativa)`,
+        [subtareaId, etapa.etapaId, etapa.aplica, etapa.fechaTentativa]
+      );
+
+      await conn.execute(
+        `INSERT INTO seguimiento_etapas (subtarea_id, etapa_id, estado, fecha_planificada, fecha_real, responsable_id, observaciones, responsable)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           estado = VALUES(estado),
+           fecha_planificada = VALUES(fecha_planificada),
+           fecha_real = VALUES(fecha_real),
+           responsable_id = VALUES(responsable_id),
+           observaciones = VALUES(observaciones),
+           responsable = VALUES(responsable)`,
+        [
+          subtareaId,
+          etapa.etapaId,
+          etapa.estadoFinal,
+          etapa.fechaTentativa,
+          etapa.fechaRealFinal,
+          etapa.responsableId,
+          etapa.observaciones,
+          etapa.responsableNombre
+        ]
+      );
+      procesadas++;
+    }
+
+    // Confirmar transacción
+    await conn.commit();
+    console.log(`[setSubtareaEtapas] Transacción confirmada. ${procesadas} etapas procesadas`);
+  } catch (error) {
+    // Deshacer todos los cambios en caso de error
+    console.error(`[setSubtareaEtapas] Error durante transacción:`, error);
+    await conn.rollback();
+    throw error;
+  } finally {
+    // Liberar la conexión
+    conn.release();
+  }
+
+  const resultado = await getSubtareaEtapas(subtareaId);
+  console.log(`[setSubtareaEtapas] Final: ${resultado?.length || 0} etapas retornadas`);
+  return resultado;
 }
 
 export async function actualizarEtapaSubtarea(codigoOlympo, etapaId, data = {}) {
@@ -1266,7 +1417,7 @@ export async function actualizarEtapaSubtarea(codigoOlympo, etapaId, data = {}) 
       data.fechaPlanificada || null,
       fechaRealFinal,
       responsable.id,
-      data.observaciones || null,
+      data.observaciones ? normalizeTextEncoding(data.observaciones, { trim: true }) : null,
       responsable.nombre || subtarea.responsableNombre || null
     ]
   );
@@ -1383,7 +1534,7 @@ export async function createSeguimientoDiario(data) {
       data.subtareaId,
       data.etapaId,
       data.fecha || new Date().toISOString().slice(0, 10),
-      String(data.comentario || '').trim(),
+      normalizeTextEncoding(data.comentario || '', { trim: true }),
       Boolean(data.tieneAlerta),
       responsable.id,
       responsable.nombre
@@ -1397,7 +1548,7 @@ export async function updateSeguimientoDiario(id, data) {
   const values = [];
   if (data.comentario !== undefined) {
     updates.push('comentario = ?');
-    values.push(String(data.comentario || '').trim());
+    values.push(normalizeTextEncoding(data.comentario || '', { trim: true }));
   }
   if (data.tieneAlerta !== undefined) {
     updates.push('tiene_alerta = ?');

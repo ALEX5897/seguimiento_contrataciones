@@ -3,7 +3,11 @@ import dotenv from 'dotenv';
 import { getDatabaseSnapshot } from '../data/mysql.js';
 import { registrarNotificacion } from '../routes/notificaciones.js';
 
-dotenv.config();
+const ENV_PATH = process.env.DOTENV_CONFIG_PATH || (process.env.NODE_ENV === 'production' ? '.env.production' : '.env');
+const envLoaded = dotenv.config({ path: ENV_PATH });
+if (envLoaded.error && ENV_PATH !== '.env') {
+  dotenv.config();
+}
 
 // Configurar transporter de nodemailer
 let transporter = null;

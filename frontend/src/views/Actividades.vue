@@ -69,7 +69,7 @@
         v-for="(actividad, index) in actividadesActivas"
         :key="actividad.id"
         class="actividad-card"
-        @click="abrirDetalleActividad(actividad)"
+        @click.stop="abrirDetalleActividad(actividad)"
       >
         <div class="actividad-header">
           <h2>{{ actividad.nombre }}</h2>
@@ -121,7 +121,7 @@
       <button type="button" class="btn-limpiar-filtros" @click="limpiarFiltrosActividades">Limpiar filtros</button>
     </div>
 
-    <div v-if="actividadSeleccionada" class="modal-overlay" @click="cerrarDetalleActividad">
+    <div v-if="actividadSeleccionada" class="modal-overlay" @click.self="cerrarDetalleActividad">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h2>{{ actividadSeleccionada.nombre }}</h2>
@@ -253,7 +253,7 @@
       </div>
     </div>
 
-    <div v-if="etapaSeguimiento" class="modal-overlay modal-seguimiento-overlay" @click="cerrarModalSeguimiento">
+    <div v-if="etapaSeguimiento" class="modal-overlay modal-seguimiento-overlay" @click.self="cerrarModalSeguimiento">
       <div class="modal-content modal-seguimiento" @click.stop>
         <div class="modal-header">
           <h2>Seguimiento de etapa: {{ etapaSeguimiento.etapaNombre || etapaSeguimiento.nombre }}</h2>
@@ -286,7 +286,7 @@
             <div v-if="seguimientosEtapa.length === 0">Sin observaciones registradas</div>
             <div v-for="item in seguimientosEtapa" :key="item.id" class="seguimiento-item">
               <div class="seguimiento-meta-row">
-                <div class="seguimiento-meta">{{ formatearFechaConHora(item.fecha) }} · {{ item.responsableNombre || 'Sin responsable' }}</div>
+                <div class="seguimiento-meta">{{ formatearFechaConHora(item.createdAt || item.created_at || item.fecha) }} · {{ item.responsableNombre || 'Sin responsable' }}</div>
                 <button
                   v-if="auth.isAdmin"
                   type="button"
@@ -413,7 +413,13 @@ const timelineContraida = ref(true);
 const permiteEditarFechaCompletado = UI_FLAGS.ALLOW_MANUAL_COMPLETION_DATE;
 
 const etapasConFecha = computed(() =>
-  etapasActividad.value.filter((e: any) => e?.fechaPlanificada || e?.fechaTentativa)
+  etapasActividad.value
+    .filter((e: any) => e?.fechaPlanificada || e?.fechaTentativa)
+    .sort((a: any, b: any) => {
+      const fechaA = new Date(a.fechaPlanificada || a.fechaTentativa);
+      const fechaB = new Date(b.fechaPlanificada || b.fechaTentativa);
+      return fechaA.getTime() - fechaB.getTime();
+    })
 );
 
 onMounted(async () => {
@@ -438,6 +444,32 @@ watch(
     if (!cargando.value) {
       await procesarActividadDesdeRuta();
     }
+  }
+);
+
+// Función auxiliar para validar formato de fecha
+function esFormatoValido(fecha: any): boolean {
+  if (!fecha) return true;
+  if (typeof fecha !== 'string') return false;
+  return /^\d{4}-\d{2}-\d{2}$/.test(fecha);
+}
+
+// Watcher para garantizar que las fechas en etapasActividad siempre sean strings en formato yyyy-MM-dd
+watch(
+  () => etapasActividad.value.length,
+  () => {
+    // Normalizar todas las fechas en todas las etapas solo cuando la longitud cambie
+    etapasActividad.value.forEach((etapa: any) => {
+      if (!esFormatoValido(etapa?.fechaTentativa)) {
+        etapa.fechaTentativa = normalizarFechaInput(etapa?.fechaTentativa);
+      }
+      if (!esFormatoValido(etapa?.fechaPlanificada)) {
+        etapa.fechaPlanificada = normalizarFechaInput(etapa?.fechaPlanificada);
+      }
+      if (!esFormatoValido(etapa?.fechaReal)) {
+        etapa.fechaReal = normalizarFechaInput(etapa?.fechaReal);
+      }
+    });
   }
 );
 
@@ -492,9 +524,43 @@ function formatearFecha(fecha: string) {
   return new Date(fecha).toLocaleDateString('es-EC');
 }
 
-function normalizarFechaInput(fecha?: string | null) {
+function normalizarFechaInput(fecha?: string | null | Date) {
   if (!fecha) return null;
-  return String(fecha).includes('T') ? String(fecha).split('T')[0] : String(fecha);
+  
+  // Si es un objeto Date, convertir a yyyy-MM-dd
+  if (fecha instanceof Date) {
+    // Usar toISOString() para evitar problemas de zona horaria local
+    return fecha.toISOString().split('T')[0];
+  }
+  
+  const fechaStr = String(fecha).trim();
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+    return fechaStr;
+  }
+
+  const soloFechaDesdeDateTime = fechaStr.match(/^(\d{4}-\d{2}-\d{2})[ T]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z)?$/);
+  if (soloFechaDesdeDateTime?.[1]) {
+    return soloFechaDesdeDateTime[1];
+  }
+  
+  // Si es ISO format (contiene T), extraer la parte de fecha
+  if (fechaStr.includes('T')) {
+    const soloFecha = fechaStr.split('T')[0] || '';
+    return /^\d{4}-\d{2}-\d{2}$/.test(soloFecha) ? soloFecha : null;
+  }
+  
+  // Intentar parseo general (GMT, RFC, etc.)
+  try {
+    const parsed = new Date(fechaStr);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString().split('T')[0];
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 }
 
 function estadoNormalizado(estado?: string | null) {
@@ -510,6 +576,29 @@ function getEtapas(actividad: any) {
     fechaReal: normalizarFechaInput(etapa?.fechaReal),
     estado: estadoNormalizado(etapa?.estado) === 'completado' ? 'completado' : 'pendiente'
   }));
+}
+
+function fusionarEtapasPreservandoFechas(actuales: any[], recargadas: any[]) {
+  const actualesNormalizadas = getEtapas({ etapas: actuales || [] });
+  const recargadasNormalizadas = getEtapas({ etapas: recargadas || [] });
+  const actualesPorId = new Map(
+    actualesNormalizadas
+      .map((etapa: any) => [obtenerEtapaId(etapa), etapa] as [number | null, any])
+      .filter((item: [number | null, any]) => Boolean(item[0]))
+  );
+
+  return recargadasNormalizadas.map((etapa: any) => {
+    const etapaId = obtenerEtapaId(etapa);
+    const etapaActual: any = etapaId ? actualesPorId.get(etapaId) : null;
+    if (!etapaActual) return etapa;
+
+    return {
+      ...etapa,
+      fechaTentativa: etapa.fechaTentativa || etapa.fechaPlanificada || etapaActual.fechaTentativa || etapaActual.fechaPlanificada || null,
+      fechaPlanificada: etapa.fechaPlanificada || etapa.fechaTentativa || etapaActual.fechaPlanificada || etapaActual.fechaTentativa || null,
+      fechaReal: etapa.fechaReal || etapaActual.fechaReal || null
+    };
+  });
 }
 
 function getEtapasConFecha(actividad: any) {
@@ -728,34 +817,11 @@ function cerrarDetalleActividad() {
 }
 
 async function abrirDetalleActividad(actividad: any, actualizarRuta = true) {
-  if (actualizarRuta) {
-    router.replace({
-      query: {
-        ...route.query,
-        actividadId: String(actividad.id)
-      }
-    });
-  }
+  if (!actividad) return;
+  const actividadId = Number(actividad.id);
 
   actividadSeleccionada.value = actividad;
   etapasActividad.value = getEtapas(actividad);
-
-  try {
-    const response = await api.get(`/subtareas/${actividad.id}/etapas`);
-    const etapasRecargadas = Array.isArray(response.data)
-      ? response.data
-      : (response.data?.value || []);
-
-    etapasActividad.value = getEtapas({ etapas: etapasRecargadas });
-    actividadSeleccionada.value = {
-      ...actividadSeleccionada.value,
-      etapas: etapasActividad.value,
-      seguimientoEtapas: etapasActividad.value
-    };
-  } catch (error) {
-    console.error('Error al recargar etapas de la actividad:', error);
-  }
-
   timelineContraida.value = true;
   etapaSeguimiento.value = null;
   seguimientosEtapa.value = [];
@@ -763,7 +829,43 @@ async function abrirDetalleActividad(actividad: any, actualizarRuta = true) {
   alertasPorEtapa.value = {};
   cargandoSeguimientos.value = false;
   errorSeguimiento.value = '';
-  await cargarConteosSeguimientosEtapas();
+
+  if (actualizarRuta) {
+    try {
+      await router.replace({
+        query: {
+          ...route.query,
+          actividadId: String(actividad.id)
+        }
+      });
+    } catch (error) {
+      console.error('Error al actualizar ruta de actividad:', error);
+    }
+  }
+
+  try {
+    const response = await api.get(`/subtareas/${actividad.id}/etapas`);
+    const etapasRecargadas = Array.isArray(response.data)
+      ? response.data
+      : (response.data?.value || []);
+
+    etapasActividad.value = fusionarEtapasPreservandoFechas(etapasActividad.value, etapasRecargadas);
+    if (Number(actividadSeleccionada.value?.id) === actividadId) {
+      actividadSeleccionada.value = {
+        ...actividadSeleccionada.value,
+        etapas: etapasActividad.value,
+        seguimientoEtapas: etapasActividad.value
+      };
+    }
+  } catch (error) {
+    console.error('Error al recargar etapas de la actividad:', error);
+  }
+
+  try {
+    await cargarConteosSeguimientosEtapas();
+  } catch (error) {
+    console.error('Error al cargar conteos de seguimientos:', error);
+  }
 }
 
 function cerrarModalSeguimiento() {
@@ -805,20 +907,38 @@ function aplicarSeguimientosEtapa(etapaId: number, payload: any) {
 }
 
 function construirPayloadEtapas() {
-  return etapasActividad.value.map((etapa: any) => ({
-    etapaId: obtenerEtapaId(etapa),
-    aplica: Boolean(Number(etapa?.aplica ?? 1)),
-    fechaTentativa: etapa?.fechaTentativa || etapa?.fechaPlanificada || null,
-    estado: etapa?.estado || 'pendiente',
-    fechaReal: estadoNormalizado(etapa?.estado) === 'completado' ? (etapa?.fechaReal || null) : null,
-    observaciones: etapa?.observaciones || ''
-  })).filter((etapa: any) => Boolean(etapa.etapaId));
+  const payload = etapasActividad.value.map((etapa: any) => {
+    const fechaTentativa = normalizarFechaInput(etapa?.fechaTentativa) || normalizarFechaInput(etapa?.fechaPlanificada);
+    const fechaReal = estadoNormalizado(etapa?.estado) === 'completado' ? normalizarFechaInput(etapa?.fechaReal) : null;
+    
+    // Debug: log para ver qué está pasando
+    if (etapa?.fechaTentativa && !fechaTentativa?.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      console.warn(`[construirPayloadEtapas] fechaTentativa no normalizada: ${etapa?.fechaTentativa} -> ${fechaTentativa}`);
+    }
+    
+    return {
+      etapaId: obtenerEtapaId(etapa),
+      aplica: Boolean(Number(etapa?.aplica ?? 1)),
+      fechaTentativa: fechaTentativa || null,
+      estado: etapa?.estado || 'pendiente',
+      fechaReal: fechaReal || null,
+      observaciones: etapa?.observaciones || ''
+    };
+  }).filter((etapa: any) => Boolean(etapa.etapaId));
+  
+  console.log('[construirPayloadEtapas] Payload final:', JSON.stringify(payload, null, 2));
+  return payload;
 }
 
 function onEstadoEtapaChange(etapa: any) {
   etapa.estado = estadoNormalizado(etapa?.estado) === 'completado' ? 'completado' : 'pendiente';
   if (etapa.estado === 'completado' && !etapa?.fechaReal) {
+    // Asignar fecha de hoy en formato yyyy-MM-dd
     etapa.fechaReal = new Date().toISOString().split('T')[0];
+  }
+  // Si el estado vuelve a pendiente, borrar la fecha real
+  if (etapa.estado === 'pendiente') {
+    etapa.fechaReal = null;
   }
   guardarEstadoEtapa(etapa);
 }
@@ -906,10 +1026,12 @@ async function guardarEstadoEtapa(etapa: any) {
     });
 
     const recarga = await api.get(`/subtareas/${actividadSeleccionada.value.id}/etapas`);
-    etapasActividad.value = Array.isArray(recarga.data)
+    const etapasRecargadas = Array.isArray(recarga.data)
       ? recarga.data
       : (recarga.data?.value || []);
 
+    // Normalizar fechas al cargar desde el servidor
+    etapasActividad.value = fusionarEtapasPreservandoFechas(etapasActividad.value, etapasRecargadas);
     actividadSeleccionada.value.etapas = etapasActividad.value;
   } finally {
     guardandoEstadoEtapaId.value = null;

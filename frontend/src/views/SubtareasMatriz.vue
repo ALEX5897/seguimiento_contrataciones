@@ -203,14 +203,15 @@
     </div>
 
     <!-- Modal de Seguimientos Diarios -->
-    <div v-if="mostrarSeguimientos" class="modal-overlay" @click="cerrarSeguimientosDiarios">
+    <div v-if="mostrarSeguimientos" class="modal-overlay" @click.self="cerrarSeguimientosDiarios">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h2>📋 Seguimiento Diario - {{ etapaActualSeguimiento?.etapaNombre }}</h2>
           <button class="btn-close" @click="cerrarSeguimientosDiarios">✕</button>
         </div>
 
-        <div class="modal-body">
+        <div v-if="cargandoSeguimientos" class="loading">Cargando seguimientos...</div>
+        <div v-else class="modal-body">
           <!-- Formulario para nuevo comentario -->
           <div class="nuevo-comentario-section">
             <h3>➕ Agregar Nuevo Comentario</h3>
@@ -248,7 +249,7 @@
               >
                 <div class="seguimiento-header">
                   <div class="seguimiento-fecha">
-                    📅 {{ formatearFechaConHora(seguimiento.fecha) }}
+                    📅 {{ formatearFechaConHora(seguimiento.createdAt || seguimiento.created_at || seguimiento.fecha) }}
                   </div>
                   <div class="seguimiento-responsable">
                     👤 {{ seguimiento.responsableNombre || 'Sin responsable' }}
@@ -297,6 +298,7 @@ const resumenDiario = ref<any>(null);
 
 // Seguimientos diarios
 const mostrarSeguimientos = ref(false);
+const cargandoSeguimientos = ref(false);
 const etapaActualSeguimiento = ref<any>(null);
 const subtareaActualSeguimiento = ref<any>(null);
 const seguimientosDiarios = ref<any[]>([]);
@@ -539,6 +541,10 @@ async function guardarEtapa(codigoOlympo: string, etapa: EtapaSeguimiento) {
 async function abrirSeguimientosDiarios(subtarea: any, etapa: any) {
   etapaActualSeguimiento.value = etapa;
   subtareaActualSeguimiento.value = subtarea;
+  mostrarSeguimientos.value = true;
+  cargandoSeguimientos.value = true;
+  seguimientosDiarios.value = [];
+
   try {
     const etapaId = obtenerEtapaId(etapa);
     if (!etapaId) {
@@ -552,17 +558,19 @@ async function abrirSeguimientosDiarios(subtarea: any, etapa: any) {
       ? response.data
       : (response.data.seguimientos || response.data || []);
     
-    mostrarSeguimientos.value = true;
     nuevoComentario.value = '';
     nuevoAlerta.value = false;
   } catch (error: any) {
     console.error('Error al cargar seguimientos:', error);
     mostrarNotificacion(obtenerMensajeError(error, 'Error al cargar seguimientos diarios'), 'error');
+  } finally {
+    cargandoSeguimientos.value = false;
   }
 }
 
 function cerrarSeguimientosDiarios() {
   mostrarSeguimientos.value = false;
+  cargandoSeguimientos.value = false;
   etapaActualSeguimiento.value = null;
   subtareaActualSeguimiento.value = null;
   seguimientosDiarios.value = [];

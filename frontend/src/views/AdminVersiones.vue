@@ -180,7 +180,7 @@
     </div>
 
     <!-- Modal Nueva Reforma -->
-    <div v-if="mostrarModalReforma" class="modal-overlay" @click="cerrarModalReforma">
+    <div v-if="mostrarModalReforma" class="modal-overlay" @click.self="cerrarModalReforma">
       <div class="modal-content modal-reforma" @click.stop>
         <div class="modal-header">
           <h2>➕ Crear Nueva Reforma</h2>
@@ -240,14 +240,16 @@
     </div>
 
     <!-- Modal Detalle Versión -->
-    <div v-if="mostrarModalDetalle && versionDetalle" class="modal-overlay" @click="cerrarModalDetalle">
+    <div v-if="mostrarModalDetalle" class="modal-overlay" @click.self="cerrarModalDetalle">
       <div class="modal-content modal-detalle" @click.stop>
         <div class="modal-header">
-          <h2>📄 {{ versionDetalle.nombre }}</h2>
+          <h2>📄 {{ versionDetalle?.nombre || 'Detalle de versión' }}</h2>
           <button class="btn-close" @click="cerrarModalDetalle">✕</button>
         </div>
 
-        <div class="modal-body">
+        <div v-if="cargandoModalDetalle" class="loading">Cargando detalle...</div>
+
+        <div v-else-if="versionDetalle" class="modal-body">
           <div class="detalle-seccion">
             <h3>📊 Información General</h3>
             <div class="info-grid">
@@ -330,7 +332,7 @@
         </div>
 
         <div class="modal-footer">
-          <button class="btn-primary" @click="irAActividades(versionDetalle)">
+          <button class="btn-primary" @click="versionDetalle && irAActividades(versionDetalle)">
             📝 Ver Procesos Completos
           </button>
           <button class="btn-secondary" @click="cerrarModalDetalle">
@@ -424,6 +426,7 @@ const versionActual = ref<Version | null>(null);
 const versionDetalle = ref<Version | null>(null);
 const mostrarModalReforma = ref(false);
 const mostrarModalDetalle = ref(false);
+const cargandoModalDetalle = ref(false);
 const creandoReforma = ref(false);
 const anioFiltro = ref('');
 const estadoFiltro = ref('');
@@ -571,18 +574,24 @@ async function crearReforma() {
 }
 
 async function verDetalleVersion(version: Version) {
+  mostrarModalDetalle.value = true;
+  cargandoModalDetalle.value = true;
+  versionDetalle.value = version;
+
   try {
     const detalle = await versionesService.getVersionById(version.id);
     versionDetalle.value = detalle;
-    mostrarModalDetalle.value = true;
   } catch (error) {
     console.error('Error al cargar detalle:', error);
     mostrarNotificacion('Error al cargar detalle de la versión', 'error');
+  } finally {
+    cargandoModalDetalle.value = false;
   }
 }
 
 function cerrarModalDetalle() {
   mostrarModalDetalle.value = false;
+  cargandoModalDetalle.value = false;
   versionDetalle.value = null;
 }
 

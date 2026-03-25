@@ -99,7 +99,7 @@
     </div>
 
     <!-- Modal de Formulario -->
-    <div v-if="mostrarFormulario" class="modal-overlay" @click="cerrarFormulario">
+    <div v-if="mostrarFormulario" class="modal-overlay" @click.self="cerrarFormulario">
       <div class="modal-content" @click.stop>
         <h2>{{ modoEdicion ? '✏️ Editar Proceso' : '➕ Nuevo Proceso' }}</h2>
         
@@ -269,9 +269,14 @@
     </div>
 
     <!-- Modal de Selector de Etapas -->
-    <div v-if="mostrarSelectorEtapas" class="modal-overlay" @click="cerrarSelectorEtapas">
+    <div v-if="mostrarSelectorEtapas" class="modal-overlay" @click.self="cerrarSelectorEtapas">
       <div class="modal-content modal-etapas" @click.stop>
         <h2>⚙️ Configurar Etapas - {{ actividadSeleccionada?.nombre }}</h2>
+
+        <div v-if="cargandoSelectorEtapas" class="loading-etapas-modal">
+          Cargando etapas...
+        </div>
+        <template v-else>
         
         <!-- Formulario para agregar nueva etapa -->
         <div class="nueva-etapa-form">
@@ -393,18 +398,22 @@
           <button class="btn-primary" @click="guardarEtapas">💾 Guardar Etapas</button>
           <button class="btn-secondary" @click="cerrarSelectorEtapas">❌ Cancelar</button>
         </div>
+        </template>
       </div>
     </div>
 
     <!-- Modal de Seguimientos Diarios -->
-    <div v-if="mostrarSeguimientos" class="modal-overlay" @click="cerrarSeguimientosDiarios">
+    <div v-if="mostrarSeguimientos" class="modal-overlay" @click.self="cerrarSeguimientosDiarios">
       <div class="modal-content modal-seguimientos" @click.stop>
         <div class="seguimientos-header">
           <h2>📋 Seguimiento Diario - {{ etapaActualSeguimiento?.etapaNombre }}</h2>
           <button class="btn-close" @click="cerrarSeguimientosDiarios">✕</button>
         </div>
 
-        <div class="seguimientos-content">
+        <div v-if="cargandoSeguimientosModal" class="loading-etapas-modal">
+          Cargando seguimientos...
+        </div>
+        <div v-else class="seguimientos-content">
           <!-- Formulario para nuevo comentario -->
           <div class="nuevo-comentario-section">
             <h3>➕ Agregar Nuevo Comentario</h3>
@@ -443,7 +452,7 @@
               >
                 <div class="seguimiento-header">
                   <div class="seguimiento-fecha">
-                    📅 {{ formatearFechaConHora(seguimiento.fecha) }}
+                    📅 {{ formatearFechaConHora(seguimiento.createdAt || seguimiento.created_at || seguimiento.fecha) }}
                   </div>
                   <div class="seguimiento-responsable">
                     👤 {{ seguimiento.responsableNombre || 'Sin responsable' }}
@@ -474,14 +483,18 @@
     </div>
 
     <!-- Modal de Visualización -->
-    <div v-if="mostrarVisualizacion" class="modal-overlay" @click="cerrarVisualizacion">
+    <div v-if="mostrarVisualizacion" class="modal-overlay" @click.self="cerrarVisualizacion">
       <div class="modal-content modal-ver" @click.stop>
         <div class="ver-header">
           <h2>👁️ Detalle de Proceso</h2>
           <button class="btn-close" @click="cerrarVisualizacion">✕</button>
         </div>
 
-        <div v-if="actividadVista" class="ver-content">
+        <div v-if="cargandoVisualizacion" class="loading-etapas-modal">
+          Cargando detalle del proceso...
+        </div>
+
+        <div v-else-if="actividadVista" class="ver-content">
           <!-- Información Principal -->
           <div class="ver-seccion">
             <h3 class="seccion-titulo">📌 Información General</h3>
@@ -699,7 +712,9 @@ const actividades = ref<Actividad[]>([]);
 const mostrarFormulario = ref(false);
 const modoEdicion = ref(false);
 const mostrarSelectorEtapas = ref(false);
+const cargandoSelectorEtapas = ref(false);
 const mostrarVisualizacion = ref(false);
+const cargandoVisualizacion = ref(false);
 const mostrarSoloActivas = ref(false);
 const busqueda = ref('');
 const ordenarPor = ref('id-asc');
@@ -713,6 +728,7 @@ const busquedaEtapas = ref('');
 
 // Seguimientos diarios
 const mostrarSeguimientos = ref(false);
+const cargandoSeguimientosModal = ref(false);
 const etapaActualSeguimiento = ref<Etapa | null>(null);
 const seguimientosDiarios = ref<any[]>([]);
 const nuevoComentario = ref('');
@@ -993,6 +1009,10 @@ async function eliminarActividad(actividad: Actividad) {
 }
 
 async function verActividad(actividad: Actividad) {
+  mostrarVisualizacion.value = true;
+  cargandoVisualizacion.value = true;
+  actividadVista.value = actividad as any;
+
   try {
     // Cargar actividad completa con etapas
     const response = await api.get(`/subtareas/${actividad.id}`);
@@ -1008,14 +1028,16 @@ async function verActividad(actividad: Actividad) {
       }
     }
     
-    mostrarVisualizacion.value = true;
   } catch (error: any) {
     mostrarNotificacion('Error al cargar el proceso: ' + (error?.message || 'Desconocido'), 'error');
+  } finally {
+    cargandoVisualizacion.value = false;
   }
 }
 
 function cerrarVisualizacion() {
   mostrarVisualizacion.value = false;
+  cargandoVisualizacion.value = false;
   actividadVista.value = null;
 }
 
@@ -1119,6 +1141,9 @@ async function cargarConteosSeguimientosEtapas() {
 
 async function abrirSelectorEtapas(actividad: Actividad) {
   actividadSeleccionada.value = actividad;
+  mostrarSelectorEtapas.value = true;
+  cargandoSelectorEtapas.value = true;
+
   try {
     // 1. Cargar TODAS las etapas disponibles del catálogo
     const todasEtapasResponse = await api.get('/subtareas/admin/etapas-disponibles');
@@ -1163,18 +1188,20 @@ async function abrirSelectorEtapas(actividad: Actividad) {
         esPersonalizada: Boolean(Number(etapa.esPersonalizada ?? etapa.es_personalizada ?? 0))
       };
     });
-    
+
     console.log('Etapas cargadas:', etapasDisponibles.value);
-    await cargarConteosSeguimientosEtapas();
+    void cargarConteosSeguimientosEtapas();
   } catch (error: any) {
     console.error('Error al cargar etapas:', error);
     mostrarNotificacion('Error al cargar las etapas: ' + obtenerMensajeError(error, 'Desconocido'), 'error');
+  } finally {
+    cargandoSelectorEtapas.value = false;
   }
-  mostrarSelectorEtapas.value = true;
 }
 
 function cerrarSelectorEtapas() {
   mostrarSelectorEtapas.value = false;
+  cargandoSelectorEtapas.value = false;
   actividadSeleccionada.value = null;
   etapasDisponibles.value = [];
   conteoSeguimientosEtapas.value = {};
@@ -1317,6 +1344,10 @@ async function abrirSeguimientosDiarios(etapa: Etapa) {
   if (!actividadSeleccionada.value) return;
 
   etapaActualSeguimiento.value = etapa;
+  mostrarSeguimientos.value = true;
+  cargandoSeguimientosModal.value = true;
+  seguimientosDiarios.value = [];
+
   try {
     const etapaId = obtenerEtapaId(etapa);
     if (!etapaId) {
@@ -1329,18 +1360,20 @@ async function abrirSeguimientosDiarios(etapa: Etapa) {
     );
     seguimientosDiarios.value = normalizarSeguimientos(response.data);
     conteoSeguimientosEtapas.value[etapaId] = seguimientosDiarios.value.length;
-    
-    mostrarSeguimientos.value = true;
+
     nuevoComentario.value = '';
     nuevoAlerta.value = false;
   } catch (error: any) {
     console.error('Error al cargar seguimientos:', error);
     mostrarNotificacion('Error al cargar seguimientos diarios: ' + obtenerMensajeError(error, 'Desconocido'), 'error');
+  } finally {
+    cargandoSeguimientosModal.value = false;
   }
 }
 
 function cerrarSeguimientosDiarios() {
   mostrarSeguimientos.value = false;
+  cargandoSeguimientosModal.value = false;
   etapaActualSeguimiento.value = null;
   seguimientosDiarios.value = [];
   nuevoComentario.value = '';
