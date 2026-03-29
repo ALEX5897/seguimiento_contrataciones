@@ -1,10 +1,10 @@
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
 
-const DB_HOST = process.env.DB_HOST || 'localhost';
+const DB_HOST = process.env.DB_HOST || '172.16.1.80';
 const DB_PORT = parseInt(process.env.DB_PORT || '3306', 10);
-const DB_USER = process.env.DB_USER || 'root';
-const DB_PASSWORD = process.env.DB_PASSWORD || '';
+const DB_USER = process.env.DB_USER || 'usr-cont';
+const DB_PASSWORD = process.env.DB_PASSWORD || 'mas_TER$*25@';
 const DB_NAME = process.env.DB_NAME || 'poa_pac';
 const ALLOW_MANUAL_COMPLETION_DATE = String(process.env.ALLOW_MANUAL_COMPLETION_DATE ?? 'true').toLowerCase() === 'true';
 
