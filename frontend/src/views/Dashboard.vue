@@ -85,41 +85,141 @@
         </button>
       </section>
 
-      <section class="charts-grid">
-        <article class="panel donut-panel">
+      <!-- ── Sección: Velocímetro + Progreso temporal ─────────────────── -->
+      <section class="charts-grid temporal-section">
+
+        <!-- Tarjeta velocímetro -->
+        <article class="panel gauge-panel">
           <div class="panel-header">
-            <h2>Cumplimiento general</h2>
-            <span>{{ kpis.actividadesCompletadas }} / {{ kpis.totalTareas }} procesos</span>
+            <h2>Nivel de cumplimiento</h2>
+            <span>{{ completadosVerificablesConFecha }} de {{ totalVerificablesConFecha }} verificables</span>
           </div>
-          <div class="donut-wrap">
-            <div class="donut" :style="{ '--value': `${kpis.porcentajeCumplimiento}%` }">
-              <div class="donut-center">
-                <strong>{{ kpis.porcentajeCumplimiento }}%</strong>
-                <span>Ejecutado</span>
+          <div class="gauge-wrap">
+            <!--
+              viewBox 0 0 196 108: centro en (98,98); la mitad inferior
+              del círculo queda fuera del viewport (clipping natural).
+              Los arcos de zona son <path>, sin efecto wrap-around.
+            -->
+            <svg class="gauge-svg" viewBox="0 0 196 108" aria-hidden="true">
+              <!-- Zonas coloreadas de referencia -->
+              <path d="M 18 98 A 80 80 0 0 1 98 18"          fill="none" stroke="#fecaca" stroke-width="16" stroke-linecap="butt"/>
+              <path d="M 98 18 A 80 80 0 0 1 162.72 50.98"   fill="none" stroke="#fef08a" stroke-width="16" stroke-linecap="butt"/>
+              <path d="M 162.72 50.98 A 80 80 0 0 1 178 98"  fill="none" stroke="#bbf7d0" stroke-width="16" stroke-linecap="butt"/>
+              <!-- Divisores blancos entre zonas (50% y 80%) -->
+              <line x1="98"  y1="10" x2="98"  y2="26" stroke="white" stroke-width="2"/>
+              <line x1="156" y1="56" x2="169" y2="46" stroke="white" stroke-width="2"/>
+              <!-- Etiquetas de escala -->
+              <text x="6"   y="89" class="gauge-zone-txt">0%</text>
+              <text x="98"  y="12" text-anchor="middle" class="gauge-zone-txt">50%</text>
+            <text x="190" y="89" text-anchor="end"    class="gauge-zone-txt">100%</text>
+              <!-- Arco de progreso delgado (sobre las zonas) -->
+              <circle
+                cx="98" cy="98" :r="GAUGE_R"
+                fill="none"
+                :stroke="gaugeColor"
+                stroke-width="4"
+                stroke-linecap="round"
+                :stroke-dasharray="gaugeDasharray"
+                stroke-dashoffset="0"
+                transform="rotate(-180 98 98)"
+                style="transition: stroke-dasharray 0.6s ease, stroke 0.4s ease;"
+              />
+              <!-- Aguja / pluma (rota CSS alrededor de 98,98) -->
+              <g :style="{ transform: `rotate(${gaugeNeedleRotation}deg)`, transformOrigin: '98px 98px', transition: 'transform 0.6s ease' }">
+                <polygon points="98,28 101,92 95,92" :fill="gaugeColor" style="transition: fill 0.4s ease;"/>
+              </g>
+              <!-- Hub de la aguja -->
+              <circle cx="98" cy="98" r="9" fill="#1e293b"/>
+              <circle cx="98" cy="98" r="4" fill="white"/>
+            </svg>
+            <div class="gauge-value" :style="{ color: gaugeColor }">{{ porcentajeVerificables }}%</div>
+            <div class="gauge-sub">de {{ totalVerificablesConFecha }} verificables con fecha asignada</div>
+            <div class="gauge-legend">
+              <div class="gauge-legend-item">
+                <span class="gauge-dot" style="background:#22c55e"></span>
+                <span>Completados: <strong>{{ completadosVerificablesConFecha }}</strong></span>
               </div>
-            </div>
-            <div class="donut-legend">
-              <div><i class="dot ok"></i>Procesos completos: {{ kpis.actividadesCompletadas }}</div>
-              <div><i class="dot warn"></i>Procesos en curso: {{ kpis.actividadesPendientes }}</div>
+              <div class="gauge-legend-item">
+                <span class="gauge-dot" style="background:#f59e0b"></span>
+                <span>Pendientes: <strong>{{ pendientesVerificablesConFecha }}</strong></span>
+              </div>
+              <div class="gauge-legend-item">
+                <span class="gauge-dot" style="background:#ef4444"></span>
+                <span>Atrasados: <strong>{{ atrasadosVerificablesConFecha }}</strong></span>
+              </div>
             </div>
           </div>
         </article>
 
-        <article class="panel barras-panel">
+        <!-- Tarjeta gráfica temporal -->
+        <article class="panel temporal-panel">
           <div class="panel-header">
-            <h2>Estado general</h2>
-            <span>Total {{ kpis.totalEtapas }} verificables</span>
-          </div>
-          <div class="bars-stack">
-            <div v-for="item in barrasEstado" :key="item.label" class="bar-row">
-              <div class="bar-label">{{ item.label }}</div>
-              <div class="bar-track">
-                <div class="bar-fill" :class="item.className" :style="{ width: item.width }"></div>
+            <h2>Progreso de cumplimiento</h2>
+            <div class="temporal-header-actions">
+              <span class="temporal-overdue-total">Atrasos: {{ totalAtrasadosTemporal }}</span>
+              <div class="temporal-tabs">
+                <button
+                  class="temporal-tab"
+                  :class="{ active: vistaTemporalActiva === 'semanas' }"
+                  @click="vistaTemporalActiva = 'semanas'"
+                >Por semana</button>
+                <button
+                  class="temporal-tab"
+                  :class="{ active: vistaTemporalActiva === 'meses' }"
+                  @click="vistaTemporalActiva = 'meses'"
+                >Por mes</button>
               </div>
-              <div class="bar-value">{{ item.valor }} · {{ item.porcentaje }}%</div>
+            </div>
+          </div>
+
+          <div v-if="datosTemporal.length === 0" class="empty">Sin verificables con fecha planificada para mostrar.</div>
+
+          <div v-else class="temporal-chart">
+            <div class="temporal-bars-wrap">
+              <div
+                v-for="bucket in datosTemporal"
+                :key="bucket.clave"
+                class="temporal-col"
+              >
+                <div class="temporal-bar-group">
+                  <!-- Barra pendientes -->
+                  <div
+                    class="temporal-bar pending"
+                    :style="{ height: `${Math.round((bucket.pendientes / maxTotalTemporal) * 100)}%` }"
+                    :title="`${bucket.pendientes} pendientes`"
+                  ></div>
+                  <!-- Barra completados -->
+                  <div
+                    class="temporal-bar done"
+                    :style="{ height: `${Math.round((bucket.completados / maxTotalTemporal) * 100)}%` }"
+                    :title="`${bucket.completados} completados`"
+                  ></div>
+                  <!-- Barra atrasados -->
+                  <div
+                    class="temporal-bar late"
+                    :style="{ height: `${Math.round((bucket.atrasados / maxTotalTemporal) * 100)}%` }"
+                    :title="`${bucket.atrasados} atrasados`"
+                  ></div>
+                </div>
+                <div class="temporal-label">{{ bucket.clave }}</div>
+                <div class="temporal-pct">
+                  {{ bucket.total ? Math.round((bucket.completados / bucket.total) * 100) : 0 }}%
+                </div>
+                <div class="temporal-counts">
+                  <span class="count pending">P:{{ bucket.pendientes }}</span>
+                  <span class="count done">C:{{ bucket.completados }}</span>
+                  <span class="count late">R:{{ bucket.atrasados }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="temporal-legend">
+              <span><i class="dot ok"></i>Completados</span>
+              <span><i class="dot warn"></i>Pendientes</span>
+              <span><i class="dot danger"></i>Atrasados</span>
             </div>
           </div>
         </article>
+
       </section>
 
       <section class="charts-grid extended-grid">
@@ -157,8 +257,8 @@
 
         <article class="panel barras-panel ranking-panel">
           <div class="panel-header">
-            <h2>Ranking presupuestario y avance</h2>
-            <span>Total {{ actividadesAvancePresupuesto.length }} · mayor a menor</span>
+            <h2>Procesos y avance</h2>
+            <span>Total {{ actividadesAvancePresupuesto.length }} </span>
           </div>
           <div v-if="totalPaginasRanking > 1" class="panel-paginator">
             <button class="panel-pag-btn" :disabled="paginaRanking === 1" @click="paginaRanking--">‹ Anterior</button>
@@ -297,8 +397,14 @@ const fechaActual = new Date().toLocaleDateString('es-EC', {
   day: 'numeric'
 });
 
-function normalizarEstado(estado: string | undefined) {
-  return estado === 'completado' ? 'completado' : 'pendiente';
+function normalizarEstado(estado: string | undefined, fechaReal?: string | null) {
+  // Si tiene fechaReal, está completado (independiente del estado)
+  if (fechaReal && String(fechaReal).trim().length > 0) return 'completado';
+  // Si no tiene fechaReal, verificar el campo estado
+  if (!estado) return 'pendiente';
+  const est = estado.toLowerCase().trim();
+  if (est === 'completada' || est === 'cerrada') return 'completado';
+  return 'pendiente';
 }
 
 function colorSemaforoPositivo(valor: number) {
@@ -330,7 +436,7 @@ function calcularAvanceSubtarea(subtarea: any) {
 
   const etapasSubtarea = getEtapasConFechaSubtarea(subtarea);
   if (!etapasSubtarea.length) return 0;
-  const completadasSubtarea = etapasSubtarea.filter((etapa: any) => normalizarEstado(etapa.estado) === 'completado').length;
+  const completadasSubtarea = etapasSubtarea.filter((etapa: any) => normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado').length;
   return Math.round((completadasSubtarea / etapasSubtarea.length) * 100);
 }
 
@@ -350,7 +456,7 @@ function actividadActiva(subtarea: any) {
 
 function actividadCompleta(subtarea: any) {
   const etapas = getEtapasConFechaSubtarea(subtarea);
-  return etapas.length > 0 && etapas.every((etapa: any) => normalizarEstado(etapa.estado) === 'completado');
+  return etapas.length > 0 && etapas.every((etapa: any) => normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado');
 }
 
 function actividadAtrasada(subtarea: any) {
@@ -358,7 +464,7 @@ function actividadAtrasada(subtarea: any) {
   hoy.setHours(0, 0, 0, 0);
 
   return getEtapasConFechaSubtarea(subtarea).some((etapa: any) => {
-    if (normalizarEstado(etapa.estado) === 'completado') return false;
+    if (normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado') return false;
     const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
     if (!fecha) return false;
     const plan = new Date(fecha);
@@ -439,8 +545,15 @@ const etapas = computed(() =>
   )
 );
 
+const etapasConFechaAsignada = computed(() =>
+  etapas.value.filter((etapa: any) => {
+    const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
+    return typeof fecha === 'string' ? fecha.trim().length > 0 : Boolean(fecha);
+  })
+);
+
 const completadas = computed(() =>
-  etapas.value.filter((e: any) => normalizarEstado(e.estado) === 'completado').length
+  etapas.value.filter((e: any) => normalizarEstado(e.estado, e.fechaReal) === 'completado').length
 );
 
 const actividadesCompletadas = computed(() => subtareasFiltradas.value.filter((subtarea: any) => actividadCompleta(subtarea)).length);
@@ -453,7 +566,7 @@ const pendientes = computed(() => etapas.value.length - completadas.value);
 
 const atrasadas = computed(() =>
   etapas.value.filter((e: any) => {
-    if (!e.fechaPlanificada || normalizarEstado(e.estado) === 'completado') return false;
+    if (!e.fechaPlanificada || normalizarEstado(e.estado, e.fechaReal) === 'completado') return false;
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     const plan = new Date(e.fechaPlanificada);
@@ -525,7 +638,7 @@ const detalleEtapasAtrasadas = computed(() => {
   return etapas.value
     .filter((etapa: any) => {
       const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
-      if (!fecha || normalizarEstado(etapa.estado) === 'completado') return false;
+      if (!fecha || normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado') return false;
       const plan = new Date(fecha);
       plan.setHours(0, 0, 0, 0);
       return plan < hoy;
@@ -554,7 +667,7 @@ const verificablesPorVencer = computed(() => {
   return etapas.value
     .filter((etapa: any) => {
       const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
-      if (!fecha || normalizarEstado(etapa.estado) === 'completado') return false;
+      if (!fecha || normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado') return false;
       const plan = new Date(fecha);
       plan.setHours(0, 0, 0, 0);
       const diasRestantes = Math.floor((plan.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
@@ -594,22 +707,6 @@ const detalleKpiSubtitulo = computed(() => {
     case 'monto': return 'Procesos terminados y monto asignado considerado como ejecutado.';
     default: return 'Procesos cumplidos con su responsable asignado.';
   }
-});
-
-const barrasEstado = computed(() => {
-  const totalReal = kpis.value.totalEtapas;
-  const total = totalReal || 1;
-  const data = [
-    { label: 'Completadas', valor: kpis.value.completadas, className: 'ok' },
-    { label: 'Pendientes', valor: kpis.value.pendientes, className: 'warn' },
-    { label: 'Atrasadas', valor: kpis.value.atrasadas, className: 'danger' }
-  ];
-
-  return data.map((item) => ({
-    ...item,
-    porcentaje: totalReal ? Math.round((item.valor / total) * 100) : 0,
-    width: item.valor > 0 ? `${Math.max(6, Math.round((item.valor / total) * 100))}%` : '0%'
-  }));
 });
 
 const procesosPorArea = computed(() => {
@@ -711,6 +808,142 @@ watch([actividadesAvancePresupuesto, areaSeleccionada, responsableSeleccionado],
     paginaRanking.value = 1;
   }
 });
+
+// ─── Velocímetro ─────────────────────────────────────────────────────────────
+// Parámetros SVG del gauge (semicírculo, radio = 80, strokeWidth = 18)
+const GAUGE_R = 80;
+const GAUGE_CIRCUM = Math.PI * GAUGE_R; // longitud del semicírculo
+
+// Velocímetro basado solo en verificables con fecha asignada
+const totalVerificablesConFecha = computed(() => etapasConFechaAsignada.value.length);
+
+const completadosVerificablesConFecha = computed(() =>
+  etapasConFechaAsignada.value.filter((etapa: any) => normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado').length
+);
+
+const pendientesVerificablesConFecha = computed(() =>
+  Math.max(0, totalVerificablesConFecha.value - completadosVerificablesConFecha.value)
+);
+
+const atrasadosVerificablesConFecha = computed(() => {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  return etapasConFechaAsignada.value.filter((etapa: any) => {
+    if (normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado') return false;
+    const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
+    if (!fecha) return false;
+    const plan = new Date(fecha);
+    if (isNaN(plan.getTime())) return false;
+    plan.setHours(0, 0, 0, 0);
+    return plan < hoy;
+  }).length;
+});
+
+const porcentajeVerificables = computed(() =>
+  totalVerificablesConFecha.value
+    ? Math.round((completadosVerificablesConFecha.value / totalVerificablesConFecha.value) * 100)
+    : 0
+);
+
+// Rotación de la aguja: -90° (0%) → 0° (50%, apunta arriba) → +90° (100%)
+const gaugeNeedleRotation = computed(() => -90 + (porcentajeVerificables.value / 100) * 180);
+
+const gaugeDasharray = computed(() => {
+  const pct = Math.min(100, Math.max(0, porcentajeVerificables.value));
+  const filled = (pct / 100) * GAUGE_CIRCUM;
+  // gap = circunferencia total − filled → la mitad inferior del círculo queda siempre oculta
+  return `${filled.toFixed(2)} ${(GAUGE_CIRCUM * 2 - filled).toFixed(2)}`;
+});
+
+const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeVerificables.value));
+
+// ─── Gráfica temporal (semanas / meses) ──────────────────────────────────────
+const vistaTemporalActiva = ref<'semanas' | 'meses'>('semanas');
+
+/** Formatea una fecha ISO a clave de semana: "S12 Mar" */
+function claveSemanaPorFecha(fechaStr: string): string {
+  const d = new Date(fechaStr);
+  if (isNaN(d.getTime())) return 'Sin fecha';
+  // Número de semana ISO-8601
+  const inicio = new Date(d.getFullYear(), 0, 1);
+  const sem = Math.ceil(((d.getTime() - inicio.getTime()) / 86400000 + inicio.getDay() + 1) / 7);
+  const mes = d.toLocaleString('es-EC', { month: 'short' });
+  return `S${sem} ${(mes[0] ?? '').toUpperCase()}${mes.slice(1)}`;
+}
+
+/** Formatea una fecha ISO a clave de mes: "Ene 26" */
+function claveMesPorFecha(fechaStr: string): string {
+  const d = new Date(fechaStr);
+  if (isNaN(d.getTime())) return 'Sin fecha';
+  const mes = d.toLocaleString('es-EC', { month: 'short' });
+  const anio = String(d.getFullYear()).slice(2);
+  return `${(mes[0] ?? '').toUpperCase()}${mes.slice(1)} '${anio}`;
+}
+
+type BucketTemporal = { clave: string; completados: number; pendientes: number; atrasados: number; total: number; orden: number };
+
+const datosTemporal = computed((): BucketTemporal[] => {
+  const mapa = new Map<string, BucketTemporal>();
+
+  for (const etapa of etapasConFechaAsignada.value) {
+    // Usar fecha planificada/tentativa para agrupar por semana/mes
+    const fechaPlanificadaRaw: string | undefined = etapa?.fechaPlanificada || etapa?.fechaTentativa;
+    if (!fechaPlanificadaRaw) continue;
+    const dPlan = new Date(fechaPlanificadaRaw);
+    if (isNaN(dPlan.getTime())) continue;
+
+    const clave = vistaTemporalActiva.value === 'semanas'
+      ? claveSemanaPorFecha(fechaPlanificadaRaw)
+      : claveMesPorFecha(fechaPlanificadaRaw);
+
+    // Número de orden para ordenar cronológicamente
+    const orden = vistaTemporalActiva.value === 'semanas'
+      ? dPlan.getFullYear() * 100 + Math.ceil(((dPlan.getTime() - new Date(dPlan.getFullYear(), 0, 1).getTime()) / 86400000 + new Date(dPlan.getFullYear(), 0, 1).getDay() + 1) / 7)
+      : dPlan.getFullYear() * 100 + (dPlan.getMonth() + 1);
+
+    const bucket = mapa.get(clave) || { clave, completados: 0, pendientes: 0, atrasados: 0, total: 0, orden };
+    bucket.total += 1;
+
+    const estadoNorm = normalizarEstado(etapa.estado, etapa.fechaReal);
+    if (estadoNorm === 'completado') {
+      // Si está completado, verificar si fue a tiempo o con retraso
+      const fechaRealRaw = etapa?.fechaReal;
+      if (fechaRealRaw) {
+        const dReal = new Date(fechaRealRaw);
+        dReal.setHours(0, 0, 0, 0);
+        const dPlanCopy = new Date(dPlan);
+        dPlanCopy.setHours(0, 0, 0, 0);
+        
+        if (dReal > dPlanCopy) {
+          // Completado DESPUÉS de la fecha planificada = ATRASADO
+          bucket.atrasados += 1;
+        } else {
+          // Completado A TIEMPO
+          bucket.completados += 1;
+        }
+      } else {
+        // No tiene fechaReal registrada, asumir que se completó a tiempo
+        bucket.completados += 1;
+      }
+    } else {
+      // No está completado = PENDIENTE
+      bucket.pendientes += 1;
+    }
+    
+    mapa.set(clave, bucket);
+  }
+
+  return Array.from(mapa.values()).sort((a, b) => a.orden - b.orden);
+});
+
+const maxTotalTemporal = computed(() =>
+  datosTemporal.value.reduce((max, b) => Math.max(max, b.total), 1)
+);
+
+const totalAtrasadosTemporal = computed(() =>
+  datosTemporal.value.reduce((total, b) => total + b.atrasados, 0)
+);
 </script>
 
 <style scoped>
@@ -1550,6 +1783,242 @@ watch([actividadesAvancePresupuesto, areaSeleccionada, responsableSeleccionado],
   margin: 0.18rem 0 0;
   color: #64748b;
   font-size: 0.77rem;
+}
+
+/* ── Velocímetro ──────────────────────────────────────────────────────────── */
+.gauge-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.gauge-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  justify-content: center;
+}
+
+.gauge-svg {
+  width: 100%;
+  max-width: 220px;
+  overflow: visible;
+}
+
+.gauge-pct {
+  font-size: 22px;
+  font-weight: 800;
+  font-family: inherit;
+}
+
+.gauge-label {
+  font-size: 10px;
+  fill: #64748b;
+  font-family: inherit;
+}
+
+.gauge-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.gauge-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.gauge-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.gauge-zone-txt {
+  font-size: 9px;
+  fill: #94a3b8;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.gauge-value {
+  font-size: 1.9rem;
+  font-weight: 800;
+  text-align: center;
+  line-height: 1;
+  margin-top: 0.15rem;
+  transition: color 0.4s ease;
+}
+
+.gauge-sub {
+  font-size: 0.72rem;
+  color: #64748b;
+  text-align: center;
+  margin-bottom: 0.1rem;
+}
+
+/* ── Gráfica temporal ────────────────────────────────────────────────────── */
+.temporal-section {
+  align-items: stretch;
+}
+
+.temporal-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.temporal-tabs {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.temporal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.temporal-overdue-total {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #991b1b;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 999px;
+  padding: 0.22rem 0.5rem;
+  white-space: nowrap;
+}
+
+.temporal-tab {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.28rem 0.65rem;
+  cursor: pointer;
+  transition: border-color 0.16s, background 0.16s, color 0.16s;
+}
+
+.temporal-tab:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.temporal-tab.active {
+  border-color: #3b82f6;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.temporal-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  flex: 1;
+}
+
+.temporal-bars-wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 160px;
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+  flex: 1;
+}
+
+.temporal-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  min-width: 62px;
+}
+
+.temporal-bar-group {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 120px;
+}
+
+.temporal-bar {
+  width: 14px;
+  border-radius: 4px 4px 0 0;
+  min-height: 3px;
+  transition: height 0.4s ease;
+}
+
+.temporal-bar.done {
+  background: #22c55e;
+}
+
+.temporal-bar.pending {
+  background: #f59e0b;
+}
+
+.temporal-bar.late {
+  background: #ef4444;
+}
+
+.temporal-label {
+  font-size: 0.64rem;
+  color: #64748b;
+  text-align: center;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.temporal-pct {
+  font-size: 0.62rem;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.temporal-counts {
+  display: flex;
+  gap: 0.24rem;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.temporal-counts .count {
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.temporal-counts .count.pending {
+  color: #b45309;
+}
+
+.temporal-counts .count.done {
+  color: #15803d;
+}
+
+.temporal-counts .count.late {
+  color: #991b1b;
+}
+
+.temporal-legend {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: #475569;
+  align-items: center;
+}
+
+.temporal-legend .dot {
+  margin-right: 0.25rem;
 }
 
 @media (max-width: 1080px) {

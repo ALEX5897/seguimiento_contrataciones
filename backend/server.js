@@ -16,11 +16,17 @@ import { verificarVencimientos, verificarAtrasos } from './services/alertas.js';
 import { initMySQL } from './data/mysql.js';
 import { requireAuth } from './middleware/auth.js';
 
-dotenv.config();
+const ENV_PATH = process.env.DOTENV_CONFIG_PATH || (process.env.NODE_ENV === 'production' ? '.env.production' : '.env');
+const envLoaded = dotenv.config({ path: ENV_PATH });
+if (envLoaded.error && ENV_PATH !== '.env') {
+  dotenv.config();
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
+const DB_RETRY_ATTEMPTS = parseInt(process.env.DB_RETRY_ATTEMPTS || '10', 10);
+const DB_RETRY_DELAY_MS = parseInt(process.env.DB_RETRY_DELAY_MS || '3000', 10);
 
 // Middleware
 app.use(cors());
@@ -90,7 +96,26 @@ app.use((err, req, res, next) => {
 
 // Iniciar servidor
 async function startServer() {
-  await initMySQL();
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= DB_RETRY_ATTEMPTS; attempt += 1) {
+    try {
+      await initMySQL();
+      lastError = null;
+      break;
+    } catch (error) {
+      lastError = error;
+      const retriable = ['ECONNREFUSED', 'ETIMEDOUT', 'EHOSTUNREACH', 'ENETUNREACH'].includes(error?.code);
+      const isLast = attempt === DB_RETRY_ATTEMPTS;
+
+      if (!retriable || isLast) break;
+
+      console.warn(`⚠️  MySQL no disponible (intento ${attempt}/${DB_RETRY_ATTEMPTS}). Reintentando en ${DB_RETRY_DELAY_MS}ms...`);
+      await new Promise((resolve) => setTimeout(resolve, DB_RETRY_DELAY_MS));
+    }
+  }
+
+  if (lastError) throw lastError;
 
   app.listen(PORT, HOST, () => {
     console.log(`\n🚀 Servidor ejecutándose en http://${HOST}:${PORT}`);
@@ -101,6 +126,10 @@ async function startServer() {
 }
 
 startServer().catch((error) => {
-  console.error('❌ Error al iniciar el servidor:', error.message);
+  const errorMessage = error?.message || error?.sqlMessage || String(error);
+  console.error('❌ Error al iniciar el servidor:', errorMessage);
+  if (error?.code) console.error('Código:', error.code);
+  if (error?.errno) console.error('Errno:', error.errno);
+  if (error?.stack) console.error(error.stack);
   process.exit(1);
 });

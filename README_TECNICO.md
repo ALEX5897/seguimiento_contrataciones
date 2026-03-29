@@ -68,7 +68,11 @@ cd ..
 
 ## 3.3 Configurar variables de entorno backend
 
-Crear archivo `backend/.env` (puede basarse en `backend/.env.example`).
+Para producción, crear archivo `backend/.env.production` (puede basarse en `backend/.env.production.example`).
+
+```bash
+cp backend/.env.production.example backend/.env.production
+```
 
 Variables soportadas por backend:
 
@@ -108,7 +112,13 @@ SMTP_PASS=clave_smtp
 
 ## 3.4 Configurar frontend para producción
 
-Crear/editar `frontend/.env`:
+Crear/editar `frontend/.env.production`:
+
+```bash
+cp frontend/.env.production.example frontend/.env.production
+```
+
+Variables:
 
 ```dotenv
 VITE_API_URL=/api
@@ -116,6 +126,8 @@ VITE_ALLOW_MANUAL_COMPLETION_DATE=true
 ```
 
 > Con `VITE_API_URL=/api`, el frontend funciona detrás de nginx en el mismo dominio.
+>
+> El backend está configurado para cargar automáticamente `backend/.env.production` cuando `NODE_ENV=production`.
 
 ## 3.5 Build de frontend
 
