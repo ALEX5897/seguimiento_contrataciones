@@ -303,6 +303,8 @@ import { UI_FLAGS } from '../config/constants';
 import { useAuthStore } from '../stores/auth';
 import { normalizarTextoBusqueda } from '../utils/search';
 
+const errorCargaActividades = ref('');
+
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
@@ -361,26 +363,6 @@ const actividadesActivas = computed(() => {
 
   return items;
 });
-const etapasTotalesFiltradas = computed(() =>
-  actividadesActivas.value.reduce((acc: number, actividad: any) => acc + totalTareas(actividad), 0)
-);
-const etapasCompletadasFiltradas = computed(() =>
-  actividadesActivas.value.reduce((acc: number, actividad: any) => acc + tareasCompletadas(actividad), 0)
-);
-const porcentajeCumplimientoGlobal = computed(() => {
-  const total = etapasTotalesFiltradas.value;
-  if (!total) return 0;
-  return Math.round((etapasCompletadasFiltradas.value / total) * 100);
-});
-const colorCumplimientoGlobal = computed(() => {
-  const valor = porcentajeCumplimientoGlobal.value;
-  if (valor >= 80) return '#16a34a';
-  if (valor >= 50) return '#f59e0b';
-  return '#dc2626';
-});
-const estiloDonaCumplimiento = computed(() => ({
-  background: `conic-gradient(${colorCumplimientoGlobal.value} 0 ${porcentajeCumplimientoGlobal.value}%, #e2e8f0 ${porcentajeCumplimientoGlobal.value}% 100%)`
-}));
 const actividadSeleccionada = ref<any | null>(null);
 const etapasActividad = ref<any[]>([]);
 const etapaSeguimiento = ref<any | null>(null);
@@ -513,7 +495,7 @@ function manejarEscapeModales(event: KeyboardEvent) {
   }
 }
 
-function formatearFecha(fecha) {
+function formatearFecha(fecha: string | Date | undefined | null) {
   if (!fecha) return 'Sin fecha';
   if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
     return fecha;
