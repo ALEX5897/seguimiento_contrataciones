@@ -73,7 +73,6 @@ router.get('/actual/info', async (req, res) => {
  */
 router.post('/', async (req, res) => {
   try {
-    if (req.user?.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
     const { anio, descripcion, usuario_creacion } = req.body;
     
     if (!anio) {
@@ -93,7 +92,6 @@ router.post('/', async (req, res) => {
  */
 router.put('/:id/aprobar', async (req, res) => {
   try {
-    if (req.user?.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
     const { id } = req.params;
     const { usuario_aprobacion } = req.body;
     
@@ -162,7 +160,6 @@ router.get('/comparar/:id1/:id2', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
   try {
-    if (req.user?.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
     const { id } = req.params;
     
     const version = await mysql.getVersionById(id);

@@ -1,10 +1,10 @@
 import express from 'express';
 import * as mysql from '../data/mysql.js';
-import { requireAuth, requireRoles } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.use(requireAuth, requireRoles('admin'));
+router.use(requireAuth);
 
 router.get('/direcciones', async (req, res) => {
   try {

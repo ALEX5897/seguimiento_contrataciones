@@ -48,22 +48,10 @@
       </div>
     </div>
 
-    <div v-if="!cargando" class="cumplimiento-panel">
-      <div class="cumplimiento-dona-wrap">
-        <div class="cumplimiento-dona" :style="estiloDonaCumplimiento">
-          <div class="cumplimiento-dona-centro">
-            <strong>{{ porcentajeCumplimientoGlobal }}%</strong>
-          </div>
-        </div>
-      </div>
-      <div class="cumplimiento-resumen">
-        <h3>Cumplimiento global</h3>
-        <p>{{ actividadesActivas.length }} procesos</p>
-      </div>
+    <div v-if="errorCargaActividades" class="error-actividades">
+      <p>{{ errorCargaActividades }}</p>
     </div>
-
-    <div v-if="cargando" class="loading">Cargando procesos...</div>
-
+    <div v-else-if="cargando" class="loading">Cargando procesos...</div>
     <div v-else class="actividades-grid">
       <div
         v-for="(actividad, index) in actividadesActivas"
@@ -427,8 +415,14 @@ onMounted(async () => {
   try {
     actividades.value = await actividadesService.getAll();
     await procesarActividadDesdeRuta();
-  } catch (error) {
-    console.error('Error cargando actividades:', error);
+  } catch (error: any) {
+    if (error?.response?.status === 403) {
+      // Mostrar mensaje visual y no error de consola
+      errorCargaActividades.value = 'No tienes permisos para ver procesos de otras direcciones. Solo puedes ver tus propios procesos.';
+    } else {
+      console.error('Error cargando actividades:', error);
+      errorCargaActividades.value = 'Ocurrió un error al cargar los procesos.';
+    }
   } finally {
     cargando.value = false;
   }
@@ -519,8 +513,11 @@ function manejarEscapeModales(event: KeyboardEvent) {
   }
 }
 
-function formatearFecha(fecha: string) {
+function formatearFecha(fecha) {
   if (!fecha) return 'Sin fecha';
+  if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+    return fecha;
+  }
   return new Date(fecha).toLocaleDateString('es-EC');
 }
 

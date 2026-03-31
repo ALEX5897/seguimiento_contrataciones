@@ -12,9 +12,13 @@ import authRouter from './routes/auth.js';
 import usuariosRouter from './routes/usuarios.js';
 import catalogosRouter from './routes/catalogos.js';
 import reportesRouter from './routes/reportes.js';
+import permisosRouter from './routes/permisos.js';
+import auditoriaRouter from './routes/auditoria.js';
 import { verificarVencimientos, verificarAtrasos } from './services/alertas.js';
 import { initMySQL } from './data/mysql.js';
 import { requireAuth } from './middleware/auth.js';
+import { requireApiPermission } from './middleware/permisos.js';
+import { auditApiChanges } from './middleware/auditoria.js';
 
 const ENV_PATH = process.env.DOTENV_CONFIG_PATH || (process.env.NODE_ENV === 'production' ? '.env.production' : '.env');
 const envLoaded = dotenv.config({ path: ENV_PATH });
@@ -48,6 +52,8 @@ app.use('/api', (req, res, next) => {
   if (req.path.startsWith('/auth')) return next();
   return requireAuth(req, res, next);
 });
+app.use('/api', requireApiPermission);
+app.use('/api', auditApiChanges);
 app.use('/api/actividades', actividadesRouter); // Ahora apunta a subtareas (actividades)
 app.use('/api/estados', estadosRouter);
 app.use('/api/notificaciones', notificacionesRouter);
@@ -55,6 +61,8 @@ app.use('/api/subtareas', subtareasRouter);
 app.use('/api/versiones', versionesRouter);
 app.use('/api/catalogos', catalogosRouter);
 app.use('/api/reportes', reportesRouter);
+app.use('/api/permisos', permisosRouter);
+app.use('/api/auditoria', auditoriaRouter);
 
 // Ruta de salud
 app.get('/api/health', (req, res) => {

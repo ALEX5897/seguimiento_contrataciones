@@ -36,6 +36,11 @@
       </div>
     </div>
 
+    <!-- Error de carga de catálogos -->
+    <div v-if="errorCargaCatalogos" class="catalogo-error">
+      <span>⚠️ {{ errorCargaCatalogos }}</span>
+    </div>
+
     <!-- Paginador (inicio) -->
     <div v-if="totalPaginasActs > 1" class="paginator">
       <button class="pag-btn" :disabled="paginaActual === 1" @click="paginaActual--">‹ Anterior</button>
@@ -319,11 +324,13 @@
           <div v-for="etapa in etapasFiltradas" :key="etapa.etapaId" class="etapa-item">
             <div class="etapa-checkbox">
               <label>
-                <input
-                  type="checkbox"
-                  :checked="etapa.aplica"
-                  @change="(e) => toggleEtapa(etapa, (e.target as HTMLInputElement).checked)"
-                />
+
+<input
+  type="checkbox"
+  v-model="etapa.aplica"
+  @change="toggleEtapa(etapa, etapa.aplica)"
+/>
+
                 <span class="etapa-nombre">
                   {{ etapa.etapaNombre }}
                 </span>
@@ -332,11 +339,17 @@
             <div v-if="etapa.aplica" class="etapa-fecha">
               <label>
                 <span class="fecha-label">📅 Fecha tentativa:</span>
-                <input
-                  type="date"
-                  v-model="etapa.fechaTentativa"
-                  class="input-fecha"
-                />
+               
+<input
+  type="date"
+  v-model="etapa.fechaTentativa"
+  class="input-fecha"
+/>
+
+
+
+                <span v-if="!etapa.fechaTentativa" style="color: red; font-size: 0.9em;">(No hay fecha cargada)</span>
+                <span v-else-if="etapa.fechaTentativa && !/^\d{4}-\d{2}-\d{2}$/.test(etapa.fechaTentativa)" style="color: orange; font-size: 0.9em;">(Formato: {{ etapa.fechaTentativa }})</span>
               </label>
               <label>
                 <span class="fecha-label">📌 Estado:</span>
@@ -723,6 +736,7 @@ const actividadVista = ref<Actividad | null>(null);
 const etapasDisponibles = ref<Etapa[]>([]);
 const responsables = ref<Responsable[]>([]);
 const direccionesCatalogo = ref<DireccionCatalogo[]>([]);
+const errorCargaCatalogos = ref('');
 const nuevaEtapaNombre = ref('');
 const busquedaEtapas = ref('');
 
@@ -825,14 +839,22 @@ const etapasFiltradas = computed(() => {
 
 // Métodos
 // Helper para convertir fecha ISO a formato yyyy-MM-dd para input date
-function formatearFechaParaInput(fechaISO: string | undefined | null): string | undefined {
-  if (!fechaISO) return undefined;
+function formatearFechaParaInput(fechaISO: string | Date | undefined | null): string {
+  if (!fechaISO) return '';
+  // Si ya es yyyy-MM-dd, devolver tal cual
+  if (typeof fechaISO === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaISO)) {
+    return fechaISO;
+  }
   try {
-    // Tomar solo la parte de la fecha (yyyy-MM-dd)
-    return fechaISO.split('T')[0];
+    const fecha = new Date(fechaISO);
+    if (isNaN(fecha.getTime())) return '';
+    const yyyy = fecha.getFullYear();
+    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dd = String(fecha.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
   } catch (e) {
-    console.error('Error al formatear fecha:', e);
-    return undefined;
+    console.error('Error al formatear fecha:', fechaISO);
+    return '';
   }
 }
 
@@ -907,7 +929,11 @@ async function cargarResponsables() {
       : (response.data.value || []);
   } catch (error: any) {
     console.error('Error al cargar responsables:', error);
-    mostrarNotificacion('Error al cargar responsables', 'error');
+    if (error?.response?.status === 403) {
+      errorCargaCatalogos.value = 'No tienes permisos para ver el catálogo de responsables.';
+    } else {
+      mostrarNotificacion('Error al cargar responsables', 'error');
+    }
   }
 }
 
@@ -918,7 +944,11 @@ async function cargarDireccionesCatalogo() {
     direccionesCatalogo.value = rows.filter((item: any) => item.activo !== false);
   } catch (error: any) {
     console.error('Error al cargar direcciones del catálogo:', error);
-    mostrarNotificacion('Error al cargar direcciones', 'error');
+    if (error?.response?.status === 403) {
+      errorCargaCatalogos.value = 'No tienes permisos para ver el catálogo de direcciones.';
+    } else {
+      mostrarNotificacion('Error al cargar direcciones', 'error');
+    }
   }
 }
 
@@ -1158,38 +1188,56 @@ async function abrirSelectorEtapas(actividad: Actividad) {
       etapasAsignadas = Array.isArray(asignacionesResponse.data)
         ? asignacionesResponse.data
         : (asignacionesResponse.data.value || []);
+      console.log('ETAPAS ASIGNADAS RAW:', JSON.stringify(etapasAsignadas, null, 2));
     } catch (err) {
       // Si no hay etapas asignadas aún (actividad nueva), es normal
       console.log('No hay etapas asignadas todavía');
     }
-    
+
     // 3. Combinar: todas las etapas con sus asignaciones
     // Soporta distintas variantes de payload (camelCase/snake_case)
     etapasDisponibles.value = todasEtapas.map((etapa: any) => {
       const etapaId = Number(etapa.id ?? etapa.etapaId);
+      // Buscar la asignación por etapaId
       const asignada = etapasAsignadas.find((a: any) => {
         const asignadaEtapaId = Number(a.etapaId ?? a.etapa_id ?? a.id);
         return asignadaEtapaId === etapaId;
       });
 
-      const fechaAsignada = asignada?.fechaTentativa ?? asignada?.fecha_tentativa ?? asignada?.fechaPlanificada;
+      // Si hay asignada, usar su fecha; si no, dejar undefined
+      let fechaTentativa = "";
+      if (asignada && (asignada.fechaTentativa !== undefined && asignada.fechaTentativa !== null)) {
+        console.log(`[ETAPA ${etapaId}] fechaTentativa directa:`, asignada.fechaTentativa);
+        fechaTentativa = formatearFechaParaInput(asignada.fechaTentativa);
+      } else if (asignada && asignada.fecha_tentativa) {
+        console.log(`[ETAPA ${etapaId}] fecha_tentativa snake_case:`, asignada.fecha_tentativa);
+        fechaTentativa = formatearFechaParaInput(asignada.fecha_tentativa);
+      } else if (asignada && (asignada.fechaPlanificada !== undefined && asignada.fechaPlanificada !== null)) {
+        console.log(`[ETAPA ${etapaId}] fechaPlanificada camelCase:`, asignada.fechaPlanificada);
+        fechaTentativa = formatearFechaParaInput(asignada.fechaPlanificada);
+      } else if (asignada && (asignada.fecha_planificada !== undefined && asignada.fecha_planificada !== null)) {
+        console.log(`[ETAPA ${etapaId}] fecha_planificada snake_case:`, asignada.fecha_planificada);
+        fechaTentativa = formatearFechaParaInput(asignada.fecha_planificada);
+      } else {
+        console.log(`[ETAPA ${etapaId}] Sin fecha asignada, se usará por defecto`);
+      }
       const fechaRealAsignada = asignada?.fechaReal ?? asignada?.fecha_real ?? null;
       const estadoAsignado = asignada?.estado ?? 'pendiente';
       const observacionesAsignadas = asignada?.observaciones ?? '';
-
+      console.log(`[ETAPA ${etapaId}] fechaTentativa final para input:`, fechaTentativa);
       return {
         etapaId,
         etapaNombre: etapa.nombre,
-        aplica: Boolean(Number(asignada?.aplica ?? 0)),
-        fechaTentativa: formatearFechaParaInput(fechaAsignada),
-        fechaReal: formatearFechaParaInput(fechaRealAsignada),
+        aplica: Boolean(Number(asignada?.aplica)),
+        fechaTentativa,
+        fechaReal: formatearFechaParaInput(fechaRealAsignada) || '',
         estado: estadoAsignado,
         observaciones: observacionesAsignadas,
         esPersonalizada: Boolean(Number(etapa.esPersonalizada ?? etapa.es_personalizada ?? 0))
       };
     });
 
-    console.log('Etapas cargadas:', etapasDisponibles.value);
+    console.log('Etapas cargadas:', JSON.stringify(etapasDisponibles.value, null, 2));
     void cargarConteosSeguimientosEtapas();
   } catch (error: any) {
     console.error('Error al cargar etapas:', error);
@@ -1197,6 +1245,8 @@ async function abrirSelectorEtapas(actividad: Actividad) {
   } finally {
     cargandoSelectorEtapas.value = false;
   }
+
+  
 }
 
 function cerrarSelectorEtapas() {
@@ -1229,9 +1279,8 @@ function toggleEtapa(etapa: Etapa, valor: boolean) {
   etapa.aplica = valor;
   // Si se desmarca, limpiar fecha tentativa
   if (!valor) {
-    etapa.fechaTentativa = undefined;
+    etapa.fechaTentativa = '';
     etapa.estado = 'pendiente';
-    etapa.observaciones = '';
   }
 }
 
@@ -1280,16 +1329,25 @@ async function guardarEtapas() {
 }
 
 function construirPayloadEtapas() {
-  return etapasDisponibles.value.map(e => ({
-    etapaId: e.etapaId || e.id,
-    aplica: e.aplica,
-    fechaTentativa: formatearFechaParaAPI(e.fechaTentativa),
-    estado: e.aplica ? normalizarEstadoEtapa(e.estado) : 'pendiente',
-    fechaReal: e.aplica && normalizarEstadoEtapa(e.estado) === 'completado'
-      ? formatearFechaParaAPI(e.fechaReal)
-      : null,
-    observaciones: e.aplica ? (e.observaciones || '') : ''
-  }));
+  return etapasDisponibles.value.map(e => {
+    const fechaFormateada = formatearFechaParaAPI(e.fechaTentativa);
+
+    return {
+      etapaId: e.etapaId || e.id,
+      aplica: e.aplica,
+
+      // Enviar fechaTentativa explícitamente, aunque esté vacía
+      fechaTentativa: fechaFormateada || '',
+
+      estado: e.aplica ? normalizarEstadoEtapa(e.estado) : 'pendiente',
+
+      fechaReal: e.aplica && normalizarEstadoEtapa(e.estado) === 'completado'
+        ? formatearFechaParaAPI(e.fechaReal)
+        : null,
+
+      observaciones: e.aplica ? (e.observaciones || '') : ''
+    };
+  });
 }
 
 function normalizarEstadoEtapa(estado?: string | null) {
@@ -1453,6 +1511,8 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
     return 'Fecha inválida';
   }
 }
+
+
 </script>
 
 <style scoped lang="scss">
@@ -2697,7 +2757,7 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
 }
 
 /* Paginador */
-.paginator {
+ paginator {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2887,6 +2947,69 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
 
   .admin-actividades .modal-content.modal-etapas h2 {
     font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-actividades {
+    padding: 0.1rem;
+    .header {
+      padding: 0.7rem 0.5rem;
+      h1 { font-size: 1.15rem; }
+      .subtitle { font-size: 0.8rem; }
+    }
+    .toolbar {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+      .buscador-container { max-width: 100%; min-width: 0; }
+    }
+    .tabla-container {
+      border-radius: 0;
+      box-shadow: none;
+      border: none;
+    }
+    .tabla-actividades {
+      font-size: 0.92rem;
+      th, td { padding: 0.6rem; }
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-actividades {
+    padding: 0;
+    .header {
+      padding: 0.5rem 0.2rem;
+      h1 { font-size: 1rem; }
+      .subtitle { font-size: 0.7rem; }
+    }
+    .toolbar {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.3rem;
+      padding: 0.5rem 0.2rem;
+      .buscador-container { max-width: 100%; min-width: 0; }
+    }
+    .tabla-container {
+      border-radius: 0;
+      box-shadow: none;
+      border: none;
+      overflow-x: auto;
+    }
+    .tabla-actividades {
+      min-width: 420px;
+      font-size: 0.85rem;
+      th, td { padding: 0.45rem; }
+    }
+    .modal-content {
+      padding: 0.7rem;
+      max-width: 99vw;
+    }
+    .modal-content.modal-etapas {
+      padding: 0.5rem;
+      max-width: 99vw;
+    }
   }
 }
 </style>

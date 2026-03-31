@@ -17,17 +17,26 @@
         <div class="filter-chips">
           <span class="filter-chip primary">Vista: {{ areaSeleccionada || 'General' }}</span>
           <span class="filter-chip primary" v-if="responsableSeleccionado">Responsable: {{ responsableSeleccionado }}</span>
-          <span class="filter-chip">{{ subtareasFiltradas.length }} procesos</span>
-          <span class="filter-chip">{{ etapas.length }} verificables</span>
+       
           <span class="filter-chip">Presupuesto: {{ formatearMonto(presupuestoFiltrado) }}</span>
-          <span class="filter-chip success">{{ kpis.porcentajeCumplimiento }}% cumplimiento general</span>
+          
           <button v-if="areaSeleccionada || responsableSeleccionado" class="btn-clear-filter" @click="restablecerVista">
             Restablecer vista
           </button>
+          <select v-model="filtroDireccion" class="combo-filtro" style="margin-left: 12px; min-width: 120px;">
+            <option value="">Todas las direcciones</option>
+            <option v-for="dir in direcciones" :key="dir" :value="dir">{{ dir }}</option>
+          </select>
+          <select v-model="filtroMonto" class="combo-filtro" style="margin-left: 8px; min-width: 120px;">
+            <option value="">Todos los montos</option>
+            <option v-for="monto in montosDisponibles" :key="monto" :value="monto">{{ monto }}</option>
+          </select>
         </div>
       </section>
 
-      <section class="kpi-grid">
+
+
+      <section class="kpi-grid professional-kpi-grid">
         <article
           class="kpi-card has-tooltip"
           tabindex="0"
@@ -47,9 +56,9 @@
           :data-tooltip="`Semáforo positivo (80/50): actual ${kpis.porcentajeCumplimiento}%`"
           @click="abrirDetalleKpi('cumplimiento')"
         >
-          <span class="kpi-title">Cumplimiento general</span>
+          <span class="kpi-title">Procesos Completos</span>
           <strong class="kpi-value">{{ kpis.porcentajeCumplimiento }}%</strong>
-          <small class="kpi-foot">Cumplimiento general: {{ kpis.actividadesCompletadas }} de {{ kpis.totalTareas }} procesos completos</small>
+          <small class="kpi-foot">Procesos completos: {{ kpis.actividadesCompletadas }} de {{ kpis.totalTareas }} .</small>
           <div class="kpi-mini-track">
             <div class="kpi-mini-fill" :style="{ width: `${kpis.porcentajeCumplimiento}%`, backgroundColor: colorCumplimiento }"></div>
           </div>
@@ -83,6 +92,62 @@
           </div>
           <small class="kpi-foot">{{ porcentajeProximas }}% de pendientes vence en 2 y 1 día</small>
         </button>
+      </section>
+
+      <section class="trend-kpi-grid">
+        <!-- Etapas programadas por semana: solo etapas -->
+        <article class="kpi-card trend-card">
+          <div class="trend-card-header">
+            <div>
+              <span class="kpi-title">Etapas programadas por semana</span>
+              <strong class="kpi-value trend-value">{{ mejorSemanaCumplimientoTexto.valor }}</strong>
+            </div>
+            <small class="trend-badge success">Pico: {{ mejorSemanaCumplimientoTexto.label }}</small>
+          </div>
+          <small class="kpi-foot">Semana con mayor cantidad de verificables planificados</small>
+          <div v-if="serieSemanal.length" class="trend-chart-wrap">
+            <DashboardChart
+              :labels="serieSemanal.map(item => item.label)"
+              :etapasPlanificadas="serieSemanal.map(item => item.etapasProgramadas || 0)"
+              :etapasCumplidas="serieSemanal.map(item => item.etapasCumplidas !== undefined ? item.etapasCumplidas : 0)"
+              :alertas="serieSemanal.map(() => 0)"
+            />
+          </div>
+            <div v-else class="empty-inline">Sin etapas planificadas por semana para el filtro actual.</div>
+        </article>
+
+        <!-- Alertas registradas por semana: solo alertas -->
+        <article class="kpi-card trend-card alert neutral-alert-card">
+          <div class="trend-card-header" style="align-items: center; gap: 1.2rem;">
+            <div style="display: flex; align-items: center; gap: 0.7rem;">
+              <span style="font-size: 1.7rem; color: #64748b; background: #f3f4f6; border-radius: 50%; padding: 0.15em 0.35em; display: flex; align-items: center; justify-content: center;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="12" fill="#f3f4f6"/><path d="M12 7v4m0 4h.01" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="16" r="1" fill="#64748b"/></svg>
+              </span>
+              <div>
+                <span class="kpi-title" style="font-size: 1.05rem; color: #334155;">Alertas por semana</span>
+                <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+                  <strong class="kpi-value trend-value" style="font-size: 1.5rem; color: #334155;">
+                    {{ serieSemanal.reduce((sum, item) => sum + (item.alertas || 0), 0) }}
+                  </strong>
+                  <span style="font-size: 1rem; color: #64748b; font-weight: 500;">total</span>
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem;">
+              <small class="trend-badge" style="font-size: 0.95rem; background: #f3f4f6; color: #64748b; padding: 0.2em 0.7em;">Pico: {{ peorSemanaAlertasTexto.label }}</small>
+              <span style="font-size: 0.85rem; color: #64748b;">Promedio: {{ (serieSemanal.length ? (serieSemanal.reduce((sum, item) => sum + (item.alertas || 0), 0) / serieSemanal.length).toFixed(1) : 0) }}</span>
+            </div>
+          </div>
+          <small class="kpi-foot" style="font-size: 0.9rem; color: #64748b; font-weight: 500;">Total de alertas en las últimas 16 semanas</small>
+          <div v-if="!serieSemanal.length" class="empty-inline">Sin alertas registradas por semana para el filtro actual.</div>
+          <div v-else class="mini-alertas-chart-wrap" style="padding: 8px 0; min-width: 220px; min-height: 70px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f8fafc; border-radius: 10px; box-shadow: 0 1px 4px #e5e7eb;">
+            <canvas ref="miniAlertasChart" height="60" width="220" style="max-width: 100%; margin-bottom: 4px; background: transparent;"></canvas>
+            <div class="mini-alertas-legend" style="color: #64748b; font-size: 0.9rem; font-weight: 600;">Últimas 16 semanas</div>
+            <div style="margin-top: 2px; font-size: 0.8rem; color: #64748b;">
+              Semana con más alertas: <b>{{ peorSemanaAlertasTexto.label }}</b>
+            </div>
+          </div>
+        </article>
       </section>
 
       <!-- ── Sección: Velocímetro + Progreso temporal ─────────────────── -->
@@ -374,13 +439,77 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
-import { subtareasService } from '../services/api';
+// Filtros para dirección y monto
+const filtroDireccion = ref('');
+const filtroMonto = ref('');
+// Extraer direcciones únicas de subtareas cargadas
+const direcciones = computed(() => {
+  const set = new Set<string>();
+  for (const s of subtareas.value) {
+    if (s.direccionNombre && s.direccionNombre !== 'Sin área' && s.direccionNombre !== 'Sin dirección') {
+      set.add(s.direccionNombre);
+    }
+  }
+  return Array.from(set).sort((a, b) => a.localeCompare(b));
+});
+// Extraer rangos de montos de subtareas cargadas
+const montosDisponibles = computed(() => {
+  // Define rangos de ejemplo, puedes ajustar según tus necesidades
+  const rangos = [
+    { label: '0-1,000', min: 0, max: 1000 },
+    { label: '1,001-5,000', min: 1001, max: 5000 },
+    { label: '5,001-10,000', min: 5001, max: 10000 },
+    { label: '10,001+', min: 10001, max: Infinity }
+  ];
+  const usados = new Set<string>();
+  for (const s of subtareas.value) {
+    const monto = Number(s.presupuesto || 0);
+    for (const r of rangos) {
+      if (monto >= r.min && monto <= r.max) {
+        usados.add(r.label);
+        break;
+      }
+    }
+  }
+  return rangos.filter(r => usados.has(r.label)).map(r => r.label);
+});
 
-const router = useRouter();
+// Filtrar subtareas según dirección y monto seleccionados
+const subtareasFiltradasPorDireccionMonto = computed(() => {
+  let items = subtareas.value;
+  if (filtroDireccion.value) {
+    items = items.filter(s => s.direccionNombre === filtroDireccion.value);
+  }
+  if (filtroMonto.value) {
+    // Usa los mismos rangos que montosDisponibles
+    const rangos = [
+      { label: '0-1,000', min: 0, max: 1000 },
+      { label: '1,001-5,000', min: 1001, max: 5000 },
+      { label: '5,001-10,000', min: 5001, max: 10000 },
+      { label: '10,001+', min: 10001, max: Infinity }
+    ];
+    const rango = rangos.find(r => r.label === filtroMonto.value);
+    if (rango) {
+      items = items.filter(s => {
+        const monto = Number(s.presupuesto || 0);
+        return monto >= rango.min && monto <= rango.max;
+      });
+    }
+  }
+  return items;
+});
+import DashboardChart from '../components/DashboardChart.vue';
+import { computed, onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue';
+import type { Chart as ChartJS } from 'chart.js';
+
+// Declaraciones principales de estado reactivo
 const cargando = ref(true);
 const subtareas = ref<any[]>([]);
+const resumenSemanal = ref<{ series: any[]; mejorSemanaCumplimiento: any | null; peorSemanaAlertas: any | null }>({
+  series: [],
+  mejorSemanaCumplimiento: null,
+  peorSemanaAlertas: null
+});
 const areaSeleccionada = ref('');
 const responsableSeleccionado = ref('');
 const paginaRanking = ref(1);
@@ -389,12 +518,68 @@ const detalleKpi = ref<{ activo: boolean; tipo: 'cumplimiento' | 'retraso' | 'pr
   activo: false,
   tipo: 'cumplimiento'
 });
-
 const fechaActual = new Date().toLocaleDateString('es-EC', {
   weekday: 'long',
   year: 'numeric',
   month: 'long',
   day: 'numeric'
+});
+
+// --- Computed y variables dependientes de serieSemanal ---
+
+const serieSemanal = computed(() => {
+  const source = Array.isArray(resumenSemanal.value?.series) ? resumenSemanal.value.series : [];
+  return source.slice(-16);
+});
+
+
+
+const mejorSemanaCumplimientoTexto = computed(() => ({
+  valor: Number(resumenSemanal.value?.mejorSemanaCumplimiento?.etapasProgramadas || 0),
+  label: resumenSemanal.value?.mejorSemanaCumplimiento?.label || 'Sin datos'
+}));
+
+
+
+const peorSemanaAlertasTexto = computed(() => ({
+  valor: Number(resumenSemanal.value?.peorSemanaAlertas?.alertas || 0),
+  label: resumenSemanal.value?.peorSemanaAlertas?.label || 'Sin datos'
+}));
+
+const miniAlertasChart = ref<HTMLCanvasElement | null>(null);
+let miniAlertasChartInstance: ChartJS | null = null;
+import { useRouter } from 'vue-router';
+import { subtareasService } from '../services/api';
+import Chart from 'chart.js/auto';
+const router = useRouter();
+
+function renderMiniAlertasChart() {
+  nextTick(() => {
+    // Limpia cualquier instancia previa
+    if (miniAlertasChartInstance) {
+      miniAlertasChartInstance.destroy();
+      miniAlertasChartInstance = null;
+    }
+    // Solo renderiza si el ref existe y hay datos
+    if (!miniAlertasChart.value || !serieSemanal.value || !serieSemanal.value.length) {
+      return;
+    }
+    // ...código de inicialización Chart.js aquí...
+    // Ejemplo:
+    // miniAlertasChartInstance = new Chart(miniAlertasChart.value, { ... });
+  });
+}
+
+watch(serieSemanal, () => {
+  renderMiniAlertasChart();
+});
+
+onMounted(() => {
+  renderMiniAlertasChart();
+});
+
+onBeforeUnmount(() => {
+  if (miniAlertasChartInstance) miniAlertasChartInstance.destroy();
 });
 
 function normalizarEstado(estado: string | undefined, fechaReal?: string | null) {
@@ -501,6 +686,19 @@ function abrirEtapaAtrasadaDetalle(actividadId: number, etapaId: number | string
   abrirActividadDetalle(actividadId, etapaId);
 }
 
+async function cargarResumenSemanal() {
+  try {
+    const response = await subtareasService.getResumenSemanal({
+      area: areaSeleccionada.value || undefined,
+      responsable: responsableSeleccionado.value || undefined
+    });
+    resumenSemanal.value = response;
+  } catch (error) {
+    console.error('Error cargando resumen semanal:', error);
+    resumenSemanal.value = { series: [], mejorSemanaCumplimiento: null, peorSemanaAlertas: null };
+  }
+}
+
 function abrirDetalleKpi(tipo: 'cumplimiento' | 'retraso' | 'proximas' | 'monto') {
   detalleKpi.value = { activo: true, tipo };
 }
@@ -517,7 +715,7 @@ function manejarEscapeModales(event: KeyboardEvent) {
 }
 
 const subtareasElegibles = computed(() =>
-  subtareas.value.filter((subtarea: any) => actividadActiva(subtarea) && getEtapasConFechaSubtarea(subtarea).length > 0)
+  subtareasFiltradasPorDireccionMonto.value.filter((subtarea: any) => actividadActiva(subtarea) && getEtapasConFechaSubtarea(subtarea).length > 0)
 );
 
 const subtareasFiltradasPorArea = computed(() =>
@@ -615,6 +813,7 @@ const colorCumplimiento = computed(() => colorSemaforoPositivo(kpis.value.porcen
 const colorProcesosVisibles = computed(() => colorSemaforoPositivo(porcentajeProcesosVisibles.value));
 const colorAtraso = computed(() => colorSemaforoRiesgo(porcentajeAtraso.value));
 const colorProximas = computed(() => colorSemaforoRiesgo(porcentajeProximas.value));
+
 
 const detalleCumplimiento = computed(() =>
   subtareasFiltradas.value
@@ -787,8 +986,12 @@ const actividadesAvancePresupuestoPaginadas = computed(() => {
 onMounted(async () => {
   window.addEventListener('keydown', manejarEscapeModales);
   try {
-    const subtareasData = await subtareasService.getAll();
+    const [subtareasData, resumenData] = await Promise.all([
+      subtareasService.getAll(),
+      subtareasService.getResumenSemanal()
+    ]);
     subtareas.value = Array.isArray(subtareasData) ? subtareasData : [];
+    resumenSemanal.value = resumenData;
   } catch (error) {
     console.error('Error cargando dashboard ejecutivo:', error);
   } finally {
@@ -807,6 +1010,10 @@ watch([actividadesAvancePresupuesto, areaSeleccionada, responsableSeleccionado],
   if (paginaRanking.value < 1) {
     paginaRanking.value = 1;
   }
+});
+
+watch([areaSeleccionada, responsableSeleccionado], () => {
+  cargarResumenSemanal();
 });
 
 // ─── Velocímetro ─────────────────────────────────────────────────────────────
@@ -1050,6 +1257,12 @@ const totalAtrasadosTemporal = computed(() =>
   gap: 0.9rem;
 }
 
+.trend-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
 .kpi-card {
   background: #fff;
   border: 1px solid #e2e8f0;
@@ -1195,6 +1408,106 @@ const totalAtrasadosTemporal = computed(() =>
   justify-content: space-between;
   align-items: center;
   gap: 0.6rem;
+}
+
+.trend-card {
+  gap: 0.55rem;
+}
+
+.trend-card.alert {
+  border-left: 4px solid #dc2626;
+}
+
+.alert-value {
+  color: #dc2626;
+  font-size: 2.1rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.mini-alertas-legend {
+  color: #dc2626;
+  font-size: 0.78rem;
+  margin-top: 2px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.trend-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+
+.trend-value {
+  font-size: 1.9rem;
+}
+
+.trend-badge {
+  border-radius: 999px;
+  padding: 0.28rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.trend-badge.success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.trend-badge.danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.trend-chart-wrap {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.trend-chart {
+  width: 100%;
+  height: 120px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  border: 1px solid #e2e8f0;
+}
+
+.trend-grid {
+  fill: none;
+  stroke: #cbd5e1;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.trend-line {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.trend-line.line-primary {
+  stroke: #2563eb;
+}
+
+.trend-line.line-danger {
+  stroke: #dc2626;
+}
+
+.trend-axis {
+  display: flex;
+  justify-content: space-between;
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.empty-inline {
+  color: #64748b;
+  font-size: 0.8rem;
 }
 
 .kpi-mini-donut {
@@ -1644,12 +1957,12 @@ const totalAtrasadosTemporal = computed(() =>
 
 .list-item {
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 0.65rem 0.8rem;
+  border-radius: 12px;
+  padding: 0.75rem 0.85rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.7rem;
+  gap: 0.75rem;
 }
 
 .list-item-button {
@@ -1680,13 +1993,13 @@ const totalAtrasadosTemporal = computed(() =>
 
 .list-item strong {
   color: #0f172a;
-  font-size: 0.88rem;
+  font-size: 0.9rem;
 }
 
 .list-item p {
-  margin: 0.15rem 0 0;
+  margin: 0.18rem 0 0;
   color: #64748b;
-  font-size: 0.76rem;
+  font-size: 0.77rem;
 }
 
 .list-meta {
@@ -2026,6 +2339,10 @@ const totalAtrasadosTemporal = computed(() =>
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .trend-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
   .charts-grid,
   .bottom-grid {
     grid-template-columns: 1fr;
@@ -2044,6 +2361,10 @@ const totalAtrasadosTemporal = computed(() =>
 
   .kpi-grid {
     grid-template-columns: 1fr;
+  }
+
+  .trend-card-header {
+    flex-direction: column;
   }
 
   .donut-wrap {

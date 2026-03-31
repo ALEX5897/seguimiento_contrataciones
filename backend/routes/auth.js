@@ -37,7 +37,8 @@ router.post('/login', async (req, res) => {
     }
 
     const token = generarToken(usuario);
-    res.json({ token, user: usuario });
+    const permisos = await mysql.getPermisosSesionRol(usuario.role);
+    res.json({ token, user: usuario, permisos });
   } catch (error) {
     console.error('Error en POST /api/auth/login:', error);
     res.status(500).json({ error: error.message });
@@ -48,7 +49,8 @@ router.get('/me', requireAuth, async (req, res) => {
   try {
     const usuario = await mysql.getUsuarioById(req.user.id);
     if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
-    res.json(usuario);
+    const permisos = await mysql.getPermisosSesionRol(usuario.role);
+    res.json({ ...usuario, permisos });
   } catch (error) {
     console.error('Error en GET /api/auth/me:', error);
     res.status(500).json({ error: error.message });

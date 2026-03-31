@@ -95,6 +95,24 @@ export interface ResumenDiarioSubtareas {
   fecha: string;
 }
 
+export interface DashboardWeeklyPoint {
+  key: string;
+  label: string;
+  year: number;
+  week: number;
+  start: string;
+  end: string;
+  order: number;
+  etapasProgramadas: number;
+  alertas: number;
+}
+
+export interface DashboardWeeklySummary {
+  series: DashboardWeeklyPoint[];
+  mejorSemanaCumplimiento: DashboardWeeklyPoint | null;
+  peorSemanaAlertas: DashboardWeeklyPoint | null;
+}
+
 export interface Subtarea {
   codigoOlympo: string;
   nombre: string;
@@ -200,6 +218,70 @@ export interface ReporteResumenResponse {
   resumenPorDireccion: ReporteDireccion[];
 }
 
+export interface PermisosAcciones {
+  read: boolean;
+  create: boolean;
+  update: boolean;
+  delete: boolean;
+}
+
+export interface PermisosSesion {
+  role: string;
+  modulos: Record<string, PermisosAcciones>;
+  menu: Record<string, boolean>;
+}
+
+export interface PermisoModuloCatalogo {
+  clave: string;
+  nombre: string;
+  descripcion: string | null;
+  activo: boolean;
+  orden: number;
+  permisos: PermisosAcciones;
+}
+
+export interface PermisoMenuCatalogo {
+  clave: string;
+  nombre: string;
+  ruta: string;
+  activo: boolean;
+  orden: number;
+  puedeIngresar: boolean;
+}
+
+export interface PermisosRolDetalle {
+  role: string;
+  modulos: PermisoModuloCatalogo[];
+  menu: PermisoMenuCatalogo[];
+}
+
+export interface AuditoriaEvento {
+  id: number;
+  userId: number | null;
+  username: string | null;
+  role: string | null;
+  direccionNombre: string | null;
+  accion: string;
+  modulo: string | null;
+  recurso: string | null;
+  metodo: string;
+  ruta: string;
+  statusCode: number;
+  exito: boolean;
+  ip: string | null;
+  userAgent: string | null;
+  errorMensaje: string | null;
+  fecha: string;
+}
+
+export interface AuditoriaListadoResponse {
+  items: AuditoriaEvento[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export const tareasService = {
   async getAll(filtros = {}) {
     const response = await api.get('/tareas', { params: filtros });
@@ -274,6 +356,11 @@ export const subtareasService = {
     return response.data as ResumenDiarioSubtareas;
   },
 
+  async getResumenSemanal(params: { area?: string; responsable?: string } = {}) {
+    const response = await api.get('/subtareas/resumen/semanal', { params });
+    return response.data as DashboardWeeklySummary;
+  },
+
   async updateEtapa(codigoOlympo: string, etapaId: number, payload: {
     estado?: string;
     fechaPlanificada?: string | null;
@@ -323,6 +410,40 @@ export const authService = {
   async me() {
     const response = await api.get('/auth/me');
     return response.data;
+  }
+};
+
+export const permisosService = {
+  async getAll() {
+    const response = await api.get('/permisos');
+    return response.data as { roles: string[]; permisos: PermisosRolDetalle[] };
+  },
+
+  async getByRole(role: string) {
+    const response = await api.get(`/permisos/rol/${encodeURIComponent(role)}`);
+    return response.data as PermisosRolDetalle;
+  },
+
+  async updateByRole(role: string, payload: { modulos: Array<{ clave: string; permisos: PermisosAcciones }>; menu: Array<{ clave: string; puedeIngresar: boolean }> }) {
+    const response = await api.put(`/permisos/rol/${encodeURIComponent(role)}`, payload);
+    return response.data as PermisosRolDetalle;
+  },
+
+  async getMine() {
+    const response = await api.get('/permisos/mis-permisos');
+    return response.data as PermisosSesion;
+  }
+};
+
+export const auditoriaService = {
+  async getAll(params: Record<string, string | number | boolean | undefined>) {
+    const response = await api.get('/auditoria', { params });
+    return response.data as AuditoriaListadoResponse;
+  },
+
+  async getById(id: number) {
+    const response = await api.get(`/auditoria/${id}`);
+    return response.data as any;
   }
 };
 

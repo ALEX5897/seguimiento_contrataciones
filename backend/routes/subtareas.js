@@ -23,7 +23,6 @@ async function resolveSubtareaIdFromRef(subtareaRef, scope = {}) {
 // GET /api/subtareas/admin/etapas-disponibles - Compatibilidad con /api/actividades
 router.get('/admin/etapas-disponibles', async (req, res) => {
   try {
-    if (req.user?.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
     const etapas = await mysql.obtenerTodasEtapas();
     res.json(etapas);
   } catch (error) {
@@ -35,7 +34,6 @@ router.get('/admin/etapas-disponibles', async (req, res) => {
 // GET /api/subtareas/admin/responsables - Compatibilidad con /api/actividades
 router.get('/admin/responsables', async (req, res) => {
   try {
-    if (req.user?.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
     const responsables = await mysql.getAllResponsables();
     res.json(responsables);
   } catch (error) {
@@ -47,7 +45,6 @@ router.get('/admin/responsables', async (req, res) => {
 // GET /api/subtareas/admin/direcciones - Direcciones disponibles para asignación de usuarios
 router.get('/admin/direcciones', async (req, res) => {
   try {
-    if (req.user?.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
     const direcciones = await mysql.getDireccionesDisponibles();
     res.json(direcciones);
   } catch (error) {
@@ -59,7 +56,6 @@ router.get('/admin/direcciones', async (req, res) => {
 // POST /api/subtareas/admin/etapas - Compatibilidad con /api/actividades
 router.post('/admin/etapas', async (req, res) => {
   try {
-    if (req.user?.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
     const { nombre } = req.body;
     if (!nombre || String(nombre).trim() === '') {
       return res.status(400).json({ error: 'El nombre de la etapa es requerido' });
@@ -168,6 +164,20 @@ router.get('/resumen/diario', async (req, res) => {
   }
 });
 
+// GET /api/subtareas/resumen/semanal - Tendencias semanales para dashboard
+router.get('/resumen/semanal', async (req, res) => {
+  try {
+    const resumen = await mysql.getDashboardWeeklySummary(getScopeFromReq(req), {
+      area: req.query.area,
+      responsable: req.query.responsable
+    });
+    res.json(resumen);
+  } catch (error) {
+    console.error('Error en GET /api/subtareas/resumen/semanal:', error);
+    res.status(500).json({ error: error.message || 'Error al obtener resumen semanal' });
+  }
+});
+
 // GET /api/subtareas/etapas/lista - Listar todas las etapas del PAC
 router.get('/etapas/lista', async (req, res) => {
   try {
@@ -182,7 +192,6 @@ router.get('/etapas/lista', async (req, res) => {
 // POST /api/subtareas - Crear nueva subtarea
 router.post('/', async (req, res) => {
   try {
-    if (req.user?.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
     const nuevaSubtarea = await mysql.createSubtarea(req.body);
     
     if (!nuevaSubtarea) {
@@ -212,9 +221,6 @@ router.get('/:subtareaRef/etapas', async (req, res) => {
 // PUT /api/subtareas/:subtareaRef/etapas - Compatibilidad con /api/actividades (id o codigo)
 router.put('/:subtareaRef/etapas', async (req, res) => {
   try {
-    if (!['admin', 'direccion'].includes(req.user?.role)) {
-      return res.status(403).json({ error: 'No autorizado' });
-    }
     const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, getScopeFromReq(req));
     if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
     const { etapas } = req.body;
@@ -260,9 +266,6 @@ router.get('/:subtareaRef/seguimientos-resumen', async (req, res) => {
 // POST /api/subtareas/:subtareaRef/etapas/:etapaId/seguimientos - Compatibilidad con /api/actividades
 router.post('/:subtareaRef/etapas/:etapaId/seguimientos', async (req, res) => {
   try {
-    if (!['admin', 'direccion'].includes(req.user?.role)) {
-      return res.status(403).json({ error: 'No autorizado' });
-    }
     const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, getScopeFromReq(req));
     if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
     const etapaId = parseInt(req.params.etapaId, 10);
@@ -293,9 +296,6 @@ router.post('/:subtareaRef/etapas/:etapaId/seguimientos', async (req, res) => {
 // PUT /api/subtareas/:subtareaRef/etapas/:etapaId/seguimientos/:seguimientoId - Compatibilidad con /api/actividades
 router.put('/:subtareaRef/etapas/:etapaId/seguimientos/:seguimientoId', async (req, res) => {
   try {
-    if (!['admin', 'direccion'].includes(req.user?.role)) {
-      return res.status(403).json({ error: 'No autorizado' });
-    }
     const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, getScopeFromReq(req));
     if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
     const etapaId = parseInt(req.params.etapaId, 10);
@@ -324,9 +324,6 @@ router.put('/:subtareaRef/etapas/:etapaId/seguimientos/:seguimientoId', async (r
 // DELETE /api/subtareas/:subtareaRef/etapas/:etapaId/seguimientos/:seguimientoId - Compatibilidad con /api/actividades
 router.delete('/:subtareaRef/etapas/:etapaId/seguimientos/:seguimientoId', async (req, res) => {
   try {
-    if (req.user?.role !== 'admin') {
-      return res.status(403).json({ error: 'No autorizado' });
-    }
     const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, getScopeFromReq(req));
     if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
     const etapaId = parseInt(req.params.etapaId, 10);
@@ -344,9 +341,6 @@ router.delete('/:subtareaRef/etapas/:etapaId/seguimientos/:seguimientoId', async
 // PUT /api/subtareas/:subtareaRef/etapas/:etapaId - Actualizar etapa específica (id o codigo)
 router.put('/:subtareaRef/etapas/:etapaId', async (req, res) => {
   try {
-    if (!['admin', 'direccion'].includes(req.user?.role)) {
-      return res.status(403).json({ error: 'No autorizado' });
-    }
     const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, getScopeFromReq(req));
     if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
     const etapaId = parseInt(req.params.etapaId, 10);
@@ -376,7 +370,6 @@ router.put('/:subtareaRef/etapas/:etapaId', async (req, res) => {
 // PUT /api/subtareas/:subtareaRef - Actualizar subtarea (id o codigo)
 router.put('/:subtareaRef', async (req, res) => {
   try {
-    if (req.user?.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
     const subtareaActualizada = await mysql.updateSubtarea(req.params.subtareaRef, req.body);
     
     if (!subtareaActualizada) {
@@ -408,7 +401,6 @@ router.get('/:subtareaRef', async (req, res) => {
 // DELETE /api/subtareas/:subtareaRef - Eliminar subtarea (id o codigo)
 router.delete('/:subtareaRef', async (req, res) => {
   try {
-    if (req.user?.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
     await mysql.deleteSubtarea(req.params.subtareaRef);
     res.json({ message: 'Subtarea eliminada' });
   } catch (error) {

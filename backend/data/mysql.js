@@ -1,20 +1,39 @@
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ENV_PATH = path.resolve(__dirname, '../.env');
+const envLoaded = dotenv.config({ path: ENV_PATH });
+if (envLoaded.error) {
+  throw new Error('No se pudo cargar el archivo .env en ' + ENV_PATH);
+}
+// Log de depuración para conexión MySQL
+console.log('--- MySQL ENV DEBUG ---');
+console.log('DB_HOST:', process.env.DB_HOST);
+console.log('DB_PORT:', process.env.DB_PORT);
+console.log('DB_USER:', process.env.DB_USER);
+console.log('DB_PASSWORD:', process.env.DB_PASSWORD ? '(set)' : '(empty)');
+console.log('DB_NAME:', process.env.DB_NAME);
+console.log('-----------------------');
+
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
-import dotenv from 'dotenv';
 import iconv from 'iconv-lite';
 
-const ENV_PATH = process.env.DOTENV_CONFIG_PATH || (process.env.NODE_ENV === 'production' ? '.env.production' : '.env');
-const envLoaded = dotenv.config({ path: ENV_PATH });
-if (envLoaded.error && ENV_PATH !== '.env') {
-  dotenv.config();
-}
+const DB_HOST = process.env.DB_HOST;
+const DB_PORT = parseInt(process.env.DB_PORT, 10);
+const DB_USER = process.env.DB_USER;
+const DB_PASSWORD = process.env.DB_PASSWORD;
+const DB_NAME = process.env.DB_NAME;
 
-const DB_HOST = process.env.DB_HOST || '172.16.1.80';
-const DB_PORT = parseInt(process.env.DB_PORT || '3306', 10);
-const DB_USER = process.env.DB_USER || 'usr-cont';
-const DB_PASSWORD = process.env.DB_PASSWORD || 'mas_TER$*25@';
-const DB_NAME = process.env.DB_NAME || 'poa_pac';
+if (!DB_HOST || !DB_PORT || !DB_USER || !DB_PASSWORD || !DB_NAME) {
+  throw new Error('Faltan variables de entorno para la conexión MySQL. Verifica DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME.');
+}
 const ALLOW_MANUAL_COMPLETION_DATE = String(process.env.ALLOW_MANUAL_COMPLETION_DATE ?? 'true').toLowerCase() === 'true';
+const SIN_DIRECCION_NOMBRE = process.env.UNASSIGNED_DIRECCION_NAME || 'Sin dirección';
+const DEFAULT_UNASSIGNED_USERNAME = normalizeUsername(process.env.DEFAULT_UNASSIGNED_USER || 'sin_direccion');
+const DEFAULT_UNASSIGNED_PASSWORD = process.env.DEFAULT_UNASSIGNED_PASSWORD || '12345';
 
 let pool;
 let subtareasColumnsCache = null;
@@ -27,16 +46,123 @@ const DIRECCIONES_ID_NOMBRE = {
   5: 'Dirección de Comercialización'
 };
 
-const MOJIBAKE_PATTERN = /[Ã�├┤│┬┐└┘╔╗╚╝╠╣╦╩╬▒░▓ÔÇ]/;
+const DEFAULT_PERMISSION_MODULES = [
+  { clave: 'dashboard', nombre: 'Dashboard', descripcion: 'Acceso a indicadores generales', orden: 10 },
+  { clave: 'actividades', nombre: 'Procesos / Actividades', descripcion: 'Gestión y consulta de procesos', orden: 20 },
+  { clave: 'reportes', nombre: 'Reportes', descripcion: 'Consulta y exportación de reportes', orden: 30 },
+  { clave: 'versiones', nombre: 'Versiones', descripcion: 'Gestión de reformas y versiones POA', orden: 40 },
+  { clave: 'admin_usuarios', nombre: 'Admin Usuarios', descripcion: 'Administración de usuarios del sistema', orden: 50 },
+  { clave: 'admin_catalogos', nombre: 'Admin Catálogos', descripcion: 'Administración de catálogos maestros', orden: 60 },
+  { clave: 'admin_permisos', nombre: 'Admin Permisos', descripcion: 'Administración de permisos y menús', orden: 70 },
+  { clave: 'admin_auditoria', nombre: 'Admin Auditoría', descripcion: 'Consulta de trazabilidad y bitácora de cambios', orden: 75 },
+  { clave: 'notificaciones', nombre: 'Notificaciones', descripcion: 'Consulta y gestión de notificaciones', orden: 80 },
+  { clave: 'estados', nombre: 'Estados', descripcion: 'Consulta de estados de seguimiento', orden: 90 },
+  { clave: 'admin_actividades', nombre: 'Admin Procesos', descripcion: 'Configuración administrativa de procesos', orden: 100 },
+  { clave: 'admin_versiones', nombre: 'Admin Versiones', descripcion: 'Operaciones administrativas de versiones', orden: 110 }
+];
+
+const DEFAULT_PERMISSION_MENU = [
+  { clave: 'dashboard', nombre: 'Dashboard', ruta: '/', orden: 10 },
+  { clave: 'actividades', nombre: 'Procesos', ruta: '/actividades', orden: 20 },
+  { clave: 'reportes', nombre: 'Reportes', ruta: '/reportes', orden: 30 },
+  { clave: 'admin_actividades', nombre: 'Admin Procesos', ruta: '/admin/actividades', orden: 40 },
+  { clave: 'admin_versiones', nombre: 'Admin Versiones', ruta: '/admin/versiones', orden: 50 },
+  { clave: 'admin_usuarios', nombre: 'Admin Usuarios', ruta: '/admin/usuarios', orden: 60 },
+  { clave: 'admin_catalogos', nombre: 'Admin Catálogos', ruta: '/admin/catalogos', orden: 70 },
+  { clave: 'admin_permisos', nombre: 'Admin Permisos', ruta: '/admin/permisos', orden: 80 },
+  { clave: 'admin_auditoria', nombre: 'Admin Auditoría', ruta: '/admin/auditoria', orden: 90 }
+];
+
+const MENU_TO_MODULE_PERMISSION = {
+  dashboard: 'dashboard',
+  actividades: 'actividades',
+  reportes: 'reportes',
+  admin_actividades: 'admin_actividades',
+  admin_versiones: 'admin_versiones',
+  admin_usuarios: 'admin_usuarios',
+  admin_catalogos: 'admin_catalogos',
+  admin_permisos: 'admin_permisos',
+  admin_auditoria: 'admin_auditoria'
+};
+
+const ROLE_PERMISSION_DEFAULTS = {
+  admin: {
+    modules: DEFAULT_PERMISSION_MODULES.reduce((acc, item) => {
+      acc[item.clave] = { read: true, create: true, update: true, delete: true };
+      return acc;
+    }, {}),
+    menu: DEFAULT_PERMISSION_MENU.reduce((acc, item) => {
+      acc[item.clave] = true;
+      return acc;
+    }, {})
+  },
+  direccion: {
+    modules: {
+      dashboard: { read: true, create: false, update: false, delete: false },
+      actividades: { read: true, create: false, update: true, delete: false },
+      reportes: { read: true, create: false, update: false, delete: false },
+      versiones: { read: true, create: false, update: false, delete: false },
+      admin_usuarios: { read: false, create: false, update: false, delete: false },
+      admin_catalogos: { read: false, create: false, update: false, delete: false },
+      admin_permisos: { read: false, create: false, update: false, delete: false },
+      admin_auditoria: { read: false, create: false, update: false, delete: false },
+      notificaciones: { read: true, create: false, update: true, delete: false },
+      estados: { read: true, create: false, update: false, delete: false },
+      admin_actividades: { read: false, create: false, update: false, delete: false },
+      admin_versiones: { read: false, create: false, update: false, delete: false }
+    },
+    menu: {
+      dashboard: true,
+      actividades: true,
+      reportes: true,
+      admin_actividades: false,
+      admin_versiones: false,
+      admin_usuarios: false,
+      admin_catalogos: false,
+      admin_permisos: false,
+      admin_auditoria: false
+    }
+  },
+  reporteria: {
+    modules: {
+      dashboard: { read: true, create: false, update: false, delete: false },
+      actividades: { read: true, create: false, update: false, delete: false },
+      reportes: { read: true, create: false, update: false, delete: false },
+      versiones: { read: true, create: false, update: false, delete: false },
+      admin_usuarios: { read: false, create: false, update: false, delete: false },
+      admin_catalogos: { read: false, create: false, update: false, delete: false },
+      admin_permisos: { read: false, create: false, update: false, delete: false },
+      admin_auditoria: { read: false, create: false, update: false, delete: false },
+      notificaciones: { read: true, create: false, update: true, delete: false },
+      estados: { read: true, create: false, update: false, delete: false },
+      admin_actividades: { read: false, create: false, update: false, delete: false },
+      admin_versiones: { read: false, create: false, update: false, delete: false }
+    },
+    menu: {
+      dashboard: true,
+      actividades: true,
+      reportes: true,
+      admin_actividades: false,
+      admin_versiones: false,
+      admin_usuarios: false,
+      admin_catalogos: false,
+      admin_permisos: false,
+      admin_auditoria: false
+    }
+  }
+};
+
+const MOJIBAKE_PATTERN = /[Ã├┤│┬┐└┘╔╗╚╝╠╣╦╩╬▒░▓ÔÇ]/;
 
 function countMojibake(value = '') {
-  return (String(value).match(/[Ã�├┤│┬┐└┘╔╗╚╝╠╣╦╩╬▒░▓ÔÇ]/g) || []).length;
+  return (String(value).match(/[Ã├┤│┬┐└┘╔╗╚╝╠╣╦╩╬▒░▓ÔÇ]/g) || []).length;
 }
 
 function noiseScore(value = '') {
   const text = String(value || '');
   const mojibake = countMojibake(text);
-  const replacement = (text.match(/�/g) || []).length;
+  // Contar caracteres de reemplazo Unicode (U+FFFD)
+  const replacement = (text.match(/[\uFFFD]/g) || []).length;
   return mojibake + (replacement * 3);
 }
 
@@ -68,7 +194,7 @@ function normalizeTextEncoding(value, { trim = false, collapseWhitespace = false
   const directReplacements = new Map([
     ['Ã¡', 'á'], ['Ã©', 'é'], ['Ã­', 'í'], ['Ã³', 'ó'], ['Ãº', 'ú'], ['Ã±', 'ñ'],
     ['Ã', 'Á'], ['Ã‰', 'É'], ['Ã', 'Í'], ['Ã“', 'Ó'], ['Ãš', 'Ú'], ['Ã‘', 'Ñ'],
-    ['ÔÇô', '–'], ['ÔÇ£', '“'], ['ÔÇ�', '”'], ['ÔÇÖ', '’'], ['ÔÇÿ', ' ']
+    ['ÔÇô', '–'], ['ÔÇ£', '“'], ['ÔÇ', '”'], ['ÔÇÖ', '’'], ['ÔÇÿ', ' ']
   ]);
 
   for (const [bad, good] of directReplacements.entries()) {
@@ -135,7 +261,7 @@ async function resolverDireccionEncargada(data = {}) {
     if (DIRECCIONES_ID_NOMBRE[id]) return DIRECCIONES_ID_NOMBRE[id];
   }
 
-  return 'Sin dirección';
+  return SIN_DIRECCION_NOMBRE;
 }
 
 function obtenerDireccionIdDesdeNombre(nombre = '') {
@@ -378,6 +504,93 @@ async function createSchema() {
   `);
 
   await query(`
+    CREATE TABLE IF NOT EXISTS permisos_modulos_catalogo (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      clave VARCHAR(80) NOT NULL UNIQUE,
+      nombre VARCHAR(120) NOT NULL,
+      descripcion VARCHAR(255) NULL,
+      activo BOOLEAN NOT NULL DEFAULT true,
+      orden INT NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB;
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS permisos_menu_catalogo (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      clave VARCHAR(80) NOT NULL UNIQUE,
+      nombre VARCHAR(120) NOT NULL,
+      ruta VARCHAR(255) NOT NULL,
+      activo BOOLEAN NOT NULL DEFAULT true,
+      orden INT NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB;
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS permisos_roles_modulos (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      role VARCHAR(50) NOT NULL,
+      modulo_clave VARCHAR(80) NOT NULL,
+      puede_leer BOOLEAN NOT NULL DEFAULT false,
+      puede_crear BOOLEAN NOT NULL DEFAULT false,
+      puede_actualizar BOOLEAN NOT NULL DEFAULT false,
+      puede_borrar BOOLEAN NOT NULL DEFAULT false,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_permisos_roles_modulo (role, modulo_clave),
+      CONSTRAINT fk_permisos_roles_modulos_catalogo
+        FOREIGN KEY (modulo_clave) REFERENCES permisos_modulos_catalogo(clave)
+        ON DELETE CASCADE
+    ) ENGINE=InnoDB;
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS permisos_roles_menu (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      role VARCHAR(50) NOT NULL,
+      menu_clave VARCHAR(80) NOT NULL,
+      puede_ingresar BOOLEAN NOT NULL DEFAULT false,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_permisos_roles_menu (role, menu_clave),
+      CONSTRAINT fk_permisos_roles_menu_catalogo
+        FOREIGN KEY (menu_clave) REFERENCES permisos_menu_catalogo(clave)
+        ON DELETE CASCADE
+    ) ENGINE=InnoDB;
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS auditoria_eventos (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NULL,
+      username VARCHAR(80) NULL,
+      role VARCHAR(50) NULL,
+      direccion_nombre VARCHAR(255) NULL,
+      accion VARCHAR(20) NOT NULL,
+      modulo VARCHAR(80) NULL,
+      recurso VARCHAR(255) NULL,
+      metodo VARCHAR(10) NOT NULL,
+      ruta VARCHAR(255) NOT NULL,
+      status_code INT NOT NULL,
+      exito BOOLEAN NOT NULL DEFAULT false,
+      ip VARCHAR(64) NULL,
+      user_agent VARCHAR(512) NULL,
+      request_query LONGTEXT NULL,
+      request_body LONGTEXT NULL,
+      response_body LONGTEXT NULL,
+      error_mensaje TEXT NULL,
+      fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_auditoria_fecha (fecha),
+      INDEX idx_auditoria_user (user_id),
+      INDEX idx_auditoria_modulo (modulo),
+      INDEX idx_auditoria_accion (accion)
+    ) ENGINE=InnoDB;
+  `);
+
+  await query(`
     CREATE TABLE IF NOT EXISTS direcciones_catalogo (
       id INT AUTO_INCREMENT PRIMARY KEY,
       nombre VARCHAR(255) NOT NULL UNIQUE,
@@ -453,6 +666,13 @@ async function seedInitialData() {
     }
   }
 
+  await query(
+    `INSERT INTO direcciones_catalogo (nombre, activo)
+     VALUES (?, true)
+     ON DUPLICATE KEY UPDATE activo = true`,
+    [SIN_DIRECCION_NOMBRE]
+  );
+
   const countResponsables = await query('SELECT COUNT(*) AS total FROM responsables_catalogo');
   if (Number(countResponsables[0]?.total || 0) === 0) {
     const responsables = await getAllResponsables();
@@ -468,6 +688,101 @@ async function seedInitialData() {
          VALUES (?, NULL, ?, true)`,
         [responsable.nombre, direccionId]
       ).catch(() => {});
+    }
+  }
+
+  const unassignedUser = await query(
+    `SELECT id
+     FROM usuarios
+     WHERE role = 'direccion' AND LOWER(TRIM(direccion_nombre)) = LOWER(TRIM(?))
+     LIMIT 1`,
+    [SIN_DIRECCION_NOMBRE]
+  );
+
+  if (unassignedUser.length === 0) {
+    const passwordHash = await bcrypt.hash(DEFAULT_UNASSIGNED_PASSWORD, 10);
+    await query(
+      `INSERT INTO usuarios (username, nombre, password_hash, role, direccion_nombre, activo)
+       VALUES (?, ?, ?, 'direccion', ?, true)
+       ON DUPLICATE KEY UPDATE
+         role = VALUES(role),
+         direccion_nombre = VALUES(direccion_nombre),
+         activo = true`,
+      [
+        DEFAULT_UNASSIGNED_USERNAME,
+        'Usuario sin dirección',
+        passwordHash,
+        SIN_DIRECCION_NOMBRE
+      ]
+    );
+  }
+
+  await query(
+    `UPDATE subtareas
+     SET direccion_encargada = ?
+     WHERE direccion_encargada IS NULL
+       OR TRIM(direccion_encargada) = ''
+       OR LOWER(TRIM(direccion_encargada)) IN ('sin direccion', 'sin dirección', 'sin asignar', 'n/a', 'na', 'no aplica', '-')`,
+    [SIN_DIRECCION_NOMBRE]
+  );
+
+  await query(
+    `UPDATE subtareas
+     SET responsable_id = NULL, responsable = NULL
+     WHERE responsable_id IS NULL
+       AND (responsable IS NULL OR TRIM(responsable) = '')`
+  );
+
+  await seedPermisosBase();
+}
+
+async function seedPermisosBase() {
+  for (const modulo of DEFAULT_PERMISSION_MODULES) {
+    await query(
+      `INSERT INTO permisos_modulos_catalogo (clave, nombre, descripcion, activo, orden)
+       VALUES (?, ?, ?, true, ?)
+       ON DUPLICATE KEY UPDATE
+         nombre = VALUES(nombre),
+         descripcion = VALUES(descripcion),
+         orden = VALUES(orden)`,
+      [modulo.clave, modulo.nombre, modulo.descripcion || null, modulo.orden]
+    );
+  }
+
+  for (const menu of DEFAULT_PERMISSION_MENU) {
+    await query(
+      `INSERT INTO permisos_menu_catalogo (clave, nombre, ruta, activo, orden)
+       VALUES (?, ?, ?, true, ?)
+       ON DUPLICATE KEY UPDATE
+         nombre = VALUES(nombre),
+         ruta = VALUES(ruta),
+         orden = VALUES(orden)`,
+      [menu.clave, menu.nombre, menu.ruta, menu.orden]
+    );
+  }
+
+  const rolesRows = await query('SELECT DISTINCT role FROM usuarios');
+  const roles = [...new Set(rolesRows.map((row) => String(row.role || '').trim()).filter(Boolean))];
+
+  for (const role of roles) {
+    const defaults = ROLE_PERMISSION_DEFAULTS[role] || { modules: {}, menu: {} };
+
+    for (const modulo of DEFAULT_PERMISSION_MODULES) {
+      const current = defaults.modules[modulo.clave] || { read: false, create: false, update: false, delete: false };
+      await query(
+        `INSERT IGNORE INTO permisos_roles_modulos (role, modulo_clave, puede_leer, puede_crear, puede_actualizar, puede_borrar)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [role, modulo.clave, Boolean(current.read), Boolean(current.create), Boolean(current.update), Boolean(current.delete)]
+      );
+    }
+
+    for (const menu of DEFAULT_PERMISSION_MENU) {
+      const canAccess = defaults.menu[menu.clave] === true;
+      await query(
+        `INSERT IGNORE INTO permisos_roles_menu (role, menu_clave, puede_ingresar)
+         VALUES (?, ?, ?)`,
+        [role, menu.clave, canAccess]
+      );
     }
   }
 }
@@ -543,11 +858,11 @@ export async function getAllSubtareas() {
 
   return subtareas.map((row) => {
     const item = toCamelRow(row);
-    item.direccionNombre = row.direccion_nombre;
-    const direccionKey = String(row.direccion_nombre || '').trim().toLowerCase();
-    item.direccionId = direccionIdPorNombre.get(direccionKey) || obtenerDireccionIdDesdeNombre(row.direccion_nombre);
+    item.direccionNombre = row.direccion_nombre || SIN_DIRECCION_NOMBRE;
+    const direccionKey = String(item.direccionNombre || '').trim().toLowerCase();
+    item.direccionId = direccionIdPorNombre.get(direccionKey) || obtenerDireccionIdDesdeNombre(item.direccionNombre);
     item.responsableId = row.responsable_id_ref ? Number(row.responsable_id_ref) : null;
-    item.responsableNombre = row.responsable_nombre;
+    item.responsableNombre = row.responsable_nombre || null;
     item.tipoPlan = row.pac_no_pac;
     item.presupuesto = Number(row.presupuesto_2026_inicial ?? 0);
     item.costoReforma2 = Number(row.costo_2026 ?? 0);
@@ -923,6 +1238,423 @@ export async function getOpcionesLogin() {
   return Array.from(opciones).sort((a, b) => a.localeCompare(b, 'es'));
 }
 
+export async function getRolesUsuariosDisponibles() {
+  const rows = await query('SELECT DISTINCT role FROM usuarios ORDER BY role');
+  return rows
+    .map((row) => String(row.role || '').trim())
+    .filter(Boolean);
+}
+
+export async function getPermisosModulosCatalogo() {
+  const rows = await query(
+    `SELECT clave, nombre, descripcion, activo, orden
+     FROM permisos_modulos_catalogo
+     WHERE activo = true
+     ORDER BY orden, nombre`
+  );
+
+  return rows.map((row) => ({
+    clave: String(row.clave),
+    nombre: String(row.nombre),
+    descripcion: row.descripcion ? String(row.descripcion) : null,
+    activo: Boolean(row.activo),
+    orden: Number(row.orden || 0)
+  }));
+}
+
+export async function getPermisosMenuCatalogo() {
+  const rows = await query(
+    `SELECT clave, nombre, ruta, activo, orden
+     FROM permisos_menu_catalogo
+     WHERE activo = true
+     ORDER BY orden, nombre`
+  );
+
+  return rows.map((row) => ({
+    clave: String(row.clave),
+    nombre: String(row.nombre),
+    ruta: String(row.ruta),
+    activo: Boolean(row.activo),
+    orden: Number(row.orden || 0)
+  }));
+}
+
+export async function getPermisosRol(role) {
+  const roleName = String(role || '').trim();
+  if (!roleName) throw new Error('role es requerido');
+
+  const [modulosCatalogo, menuCatalogo] = await Promise.all([
+    getPermisosModulosCatalogo(),
+    getPermisosMenuCatalogo()
+  ]);
+
+  const [modulosRows, menuRows] = await Promise.all([
+    query(
+      `SELECT modulo_clave, puede_leer, puede_crear, puede_actualizar, puede_borrar
+       FROM permisos_roles_modulos
+       WHERE role = ?`,
+      [roleName]
+    ),
+    query(
+      `SELECT menu_clave, puede_ingresar
+       FROM permisos_roles_menu
+       WHERE role = ?`,
+      [roleName]
+    )
+  ]);
+
+  const modulosByClave = new Map(
+    modulosRows.map((row) => [
+      String(row.modulo_clave),
+      {
+        read: Boolean(row.puede_leer),
+        create: Boolean(row.puede_crear),
+        update: Boolean(row.puede_actualizar),
+        delete: Boolean(row.puede_borrar)
+      }
+    ])
+  );
+
+  const menuByClave = new Map(
+    menuRows.map((row) => [String(row.menu_clave), Boolean(row.puede_ingresar)])
+  );
+
+  return {
+    role: roleName,
+    modulos: modulosCatalogo.map((modulo) => ({
+      ...modulo,
+      permisos: modulosByClave.get(modulo.clave) || { read: false, create: false, update: false, delete: false }
+    })),
+    menu: menuCatalogo.map((menu) => ({
+      ...menu,
+      puedeIngresar: (() => {
+        const base = Boolean(menuByClave.get(menu.clave));
+        const requiredModule = MENU_TO_MODULE_PERMISSION[menu.clave];
+        if (!requiredModule) return base;
+        const moduleRead = Boolean(modulosByClave.get(requiredModule)?.read);
+        return base && moduleRead;
+      })()
+    }))
+  };
+}
+
+export async function getPermisosRolesResumen() {
+  const roles = await getRolesUsuariosDisponibles();
+  const permisos = await Promise.all(roles.map((role) => getPermisosRol(role)));
+  return { roles, permisos };
+}
+
+export async function updatePermisosRol(role, data = {}) {
+  const roleName = String(role || '').trim();
+  if (!roleName) throw new Error('role es requerido');
+
+  const modulos = Array.isArray(data.modulos) ? data.modulos : [];
+  const menu = Array.isArray(data.menu) ? data.menu : [];
+
+  const conn = await getPool().getConnection();
+  try {
+    await conn.beginTransaction();
+
+    for (const item of modulos) {
+      const clave = String(item?.clave || '').trim();
+      if (!clave) continue;
+      const permisos = item?.permisos || {};
+      await conn.execute(
+        `INSERT INTO permisos_roles_modulos (role, modulo_clave, puede_leer, puede_crear, puede_actualizar, puede_borrar)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           puede_leer = VALUES(puede_leer),
+           puede_crear = VALUES(puede_crear),
+           puede_actualizar = VALUES(puede_actualizar),
+           puede_borrar = VALUES(puede_borrar)`,
+        [
+          roleName,
+          clave,
+          Boolean(permisos.read),
+          Boolean(permisos.create),
+          Boolean(permisos.update),
+          Boolean(permisos.delete)
+        ]
+      );
+    }
+
+    for (const item of menu) {
+      const clave = String(item?.clave || '').trim();
+      if (!clave) continue;
+      const puedeIngresar = Boolean(item?.puedeIngresar);
+
+      if (puedeIngresar) {
+        const requiredModule = MENU_TO_MODULE_PERMISSION[clave];
+        if (requiredModule) {
+          await conn.execute(
+            `INSERT INTO permisos_roles_modulos (role, modulo_clave, puede_leer, puede_crear, puede_actualizar, puede_borrar)
+             VALUES (?, ?, true, false, false, false)
+             ON DUPLICATE KEY UPDATE
+               puede_leer = true`,
+            [roleName, requiredModule]
+          );
+        }
+      }
+
+      await conn.execute(
+        `INSERT INTO permisos_roles_menu (role, menu_clave, puede_ingresar)
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           puede_ingresar = VALUES(puede_ingresar)`,
+        [roleName, clave, puedeIngresar]
+      );
+    }
+
+    await conn.commit();
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  } finally {
+    conn.release();
+  }
+
+  return getPermisosRol(roleName);
+}
+
+export async function hasPermisoModulo(role, moduloClave, accion = 'read') {
+  const roleName = String(role || '').trim();
+  const modulo = String(moduloClave || '').trim();
+  const action = String(accion || 'read').trim().toLowerCase();
+
+  if (!roleName || !modulo) return false;
+
+  const actionMap = {
+    read: 'puede_leer',
+    create: 'puede_crear',
+    update: 'puede_actualizar',
+    delete: 'puede_borrar'
+  };
+  const column = actionMap[action] || actionMap.read;
+
+  const rows = await query(
+    `SELECT ${column} AS permitido
+     FROM permisos_roles_modulos
+     WHERE role = ? AND modulo_clave = ?
+     LIMIT 1`,
+    [roleName, modulo]
+  );
+
+  return Boolean(rows[0]?.permitido);
+}
+
+export async function hasAccesoMenu(role, menuClave) {
+  const roleName = String(role || '').trim();
+  const menu = String(menuClave || '').trim();
+  if (!roleName || !menu) return false;
+
+  const rows = await query(
+    `SELECT puede_ingresar
+     FROM permisos_roles_menu
+     WHERE role = ? AND menu_clave = ?
+     LIMIT 1`,
+    [roleName, menu]
+  );
+
+  return Boolean(rows[0]?.puede_ingresar);
+}
+
+export async function getPermisosSesionRol(role) {
+  const permisos = await getPermisosRol(role);
+  const modulos = {};
+  const menu = {};
+
+  for (const modulo of permisos.modulos) {
+    modulos[modulo.clave] = modulo.permisos;
+  }
+  for (const item of permisos.menu) {
+    menu[item.clave] = Boolean(item.puedeIngresar);
+  }
+
+  return {
+    role: permisos.role,
+    modulos,
+    menu
+  };
+}
+
+function sanitizeAuditData(value) {
+  const redactKeys = ['password', 'passwordHash', 'password_hash', 'token', 'authorization'];
+
+  function walk(input) {
+    if (input === null || input === undefined) return input;
+    if (Array.isArray(input)) return input.map(walk);
+    if (typeof input === 'object') {
+      const out = {};
+      for (const [key, val] of Object.entries(input)) {
+        const shouldRedact = redactKeys.some((k) => String(key).toLowerCase() === k.toLowerCase());
+        out[key] = shouldRedact ? '***REDACTED***' : walk(val);
+      }
+      return out;
+    }
+    if (typeof input === 'string' && input.length > 4000) return `${input.slice(0, 4000)}...`;
+    return input;
+  }
+
+  return walk(value);
+}
+
+function asJsonString(value) {
+  if (value === undefined) return null;
+  try {
+    const sanitized = sanitizeAuditData(value);
+    return JSON.stringify(sanitized);
+  } catch {
+    return JSON.stringify({ error: 'No serializable' });
+  }
+}
+
+export async function registrarEventoAuditoria(evento = {}) {
+  const payload = {
+    userId: evento.userId || null,
+    username: evento.username ? String(evento.username).slice(0, 80) : null,
+    role: evento.role ? String(evento.role).slice(0, 50) : null,
+    direccionNombre: evento.direccionNombre ? String(evento.direccionNombre).slice(0, 255) : null,
+    accion: String(evento.accion || 'read').slice(0, 20),
+    modulo: evento.modulo ? String(evento.modulo).slice(0, 80) : null,
+    recurso: evento.recurso ? String(evento.recurso).slice(0, 255) : null,
+    metodo: String(evento.metodo || 'GET').slice(0, 10),
+    ruta: String(evento.ruta || '/').slice(0, 255),
+    statusCode: Number(evento.statusCode || 500),
+    exito: Boolean(evento.exito),
+    ip: evento.ip ? String(evento.ip).slice(0, 64) : null,
+    userAgent: evento.userAgent ? String(evento.userAgent).slice(0, 512) : null,
+    requestQuery: asJsonString(evento.requestQuery),
+    requestBody: asJsonString(evento.requestBody),
+    responseBody: asJsonString(evento.responseBody),
+    errorMensaje: evento.errorMensaje ? String(evento.errorMensaje).slice(0, 2000) : null
+  };
+
+  await query(
+    `INSERT INTO auditoria_eventos (
+      user_id, username, role, direccion_nombre, accion, modulo, recurso, metodo, ruta,
+      status_code, exito, ip, user_agent, request_query, request_body, response_body, error_mensaje
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      payload.userId,
+      payload.username,
+      payload.role,
+      payload.direccionNombre,
+      payload.accion,
+      payload.modulo,
+      payload.recurso,
+      payload.metodo,
+      payload.ruta,
+      payload.statusCode,
+      payload.exito,
+      payload.ip,
+      payload.userAgent,
+      payload.requestQuery,
+      payload.requestBody,
+      payload.responseBody,
+      payload.errorMensaje
+    ]
+  );
+}
+
+export async function getEventosAuditoria(filters = {}) {
+  const page = Math.max(1, Number(filters.page || 1));
+  const limitRaw = Number(filters.limit || 50);
+  const limit = Math.min(200, Math.max(1, limitRaw));
+  const offset = (page - 1) * limit;
+
+  const where = [];
+  const params = [];
+
+  if (filters.modulo) {
+    where.push('modulo = ?');
+    params.push(String(filters.modulo));
+  }
+  if (filters.accion) {
+    where.push('accion = ?');
+    params.push(String(filters.accion));
+  }
+  if (filters.userId) {
+    where.push('user_id = ?');
+    params.push(Number(filters.userId));
+  }
+  if (filters.role) {
+    where.push('role = ?');
+    params.push(String(filters.role));
+  }
+  if (filters.success === 'true' || filters.success === true) {
+    where.push('exito = true');
+  } else if (filters.success === 'false' || filters.success === false) {
+    where.push('exito = false');
+  }
+  if (filters.desde) {
+    where.push('fecha >= ?');
+    params.push(`${String(filters.desde)} 00:00:00`);
+  }
+  if (filters.hasta) {
+    where.push('fecha <= ?');
+    params.push(`${String(filters.hasta)} 23:59:59`);
+  }
+  if (filters.search) {
+    where.push('(username LIKE ? OR ruta LIKE ? OR recurso LIKE ? OR error_mensaje LIKE ?)');
+    const text = `%${String(filters.search).trim()}%`;
+    params.push(text, text, text, text);
+  }
+
+  const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+  const totalRows = await query(
+    `SELECT COUNT(*) AS total
+     FROM auditoria_eventos
+     ${whereClause}`,
+    params
+  );
+  const total = Number(totalRows[0]?.total || 0);
+
+  const rows = await query(
+    `SELECT id, user_id, username, role, direccion_nombre, accion, modulo, recurso, metodo, ruta,
+            status_code, exito, ip, user_agent, error_mensaje, fecha
+     FROM auditoria_eventos
+     ${whereClause}
+     ORDER BY fecha DESC, id DESC
+     LIMIT ${limit} OFFSET ${offset}`,
+    params
+  );
+
+  return {
+    items: rows.map((row) => toCamelRow(row)),
+    page,
+    limit,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / limit))
+  };
+}
+
+export async function getEventoAuditoriaById(id) {
+  const rows = await query(
+    `SELECT id, user_id, username, role, direccion_nombre, accion, modulo, recurso, metodo, ruta,
+            status_code, exito, ip, user_agent, request_query, request_body, response_body, error_mensaje, fecha
+     FROM auditoria_eventos
+     WHERE id = ?
+     LIMIT 1`,
+    [Number(id)]
+  );
+  if (!rows[0]) return null;
+
+  const item = toCamelRow(rows[0]);
+  const parseField = (value) => {
+    if (!value) return null;
+    try {
+      return JSON.parse(String(value));
+    } catch {
+      return value;
+    }
+  };
+  item.requestQuery = parseField(rows[0].request_query);
+  item.requestBody = parseField(rows[0].request_body);
+  item.responseBody = parseField(rows[0].response_body);
+  return item;
+}
+
 export async function getDireccionesCatalogo() {
   const rows = await query(
     `SELECT id, nombre, activo, created_at, updated_at
@@ -1192,12 +1924,32 @@ export async function deleteSubtarea(idOrCode) {
 
 function normalizarFechaSalida(fecha) {
   if (!fecha) return null;
-  const str = String(fecha);
+  const str = String(fecha).trim();
   // Si está en formato ISO (contiene T), extraer solo la parte de fecha
   if (str.includes('T')) {
     return str.split('T')[0];
   }
   // Si ya está en formato yyyy-MM-dd, devolver como está
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    return str;
+  }
+  // Si está en formato mm/dd/yyyy, convertir a yyyy-MM-dd
+  const mmddyyyy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (mmddyyyy) {
+    const yyyy = mmddyyyy[3];
+    const mm = mmddyyyy[1].padStart(2, '0');
+    const dd = mmddyyyy[2].padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  // Intentar parseo general (GMT, RFC, etc.)
+  try {
+    const parsed = new Date(str);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString().split('T')[0];
+    }
+  } catch {
+    return null;
+  }
   return str;
 }
 
@@ -1222,9 +1974,20 @@ export async function getSubtareaEtapas(subtareaId) {
     const item = toCamelRow(row);
     item.responsableId = row.responsable_id_ref ? Number(row.responsable_id_ref) : null;
     // Normalizar todas las fechas al formato yyyy-MM-dd
-    item.fechaTentativa = normalizarFechaSalida(item.fechaTentativa);
-    item.fechaPlanificada = normalizarFechaSalida(item.fechaPlanificada);
-    item.fechaReal = normalizarFechaSalida(item.fechaReal);
+    function toISODate(val) {
+      if (!val) return null;
+      if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return null;
+      return d.toISOString().split('T')[0];
+    }
+    const fechaTentativa = toISODate(item.fechaTentativa);
+    const fechaPlanificada = toISODate(item.fechaPlanificada);
+    const fechaReal = toISODate(item.fechaReal);
+    // Si no hay fechaTentativa, usar fechaPlanificada; si tampoco, dejar vacío
+    item.fechaTentativa = fechaTentativa || fechaPlanificada || '';
+    item.fechaPlanificada = fechaPlanificada;
+    item.fechaReal = fechaReal;
     return item;
   });
 }
@@ -1239,39 +2002,27 @@ function fechaHoyISO() {
 
 function normalizarFechaManual(fecha) {
   if (!fecha) return null;
-  
-  // Si es un objeto Date, convertir a ISO
+  // Si es un objeto Date, obtener yyyy-MM-dd en local, no UTC
   if (fecha instanceof Date) {
-    return fecha.toISOString().split('T')[0];
+    const yyyy = fecha.getFullYear();
+    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dd = String(fecha.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
   }
-  
   const valor = String(fecha).trim();
-
   if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
     return valor;
   }
-
   const soloFechaDesdeDateTime = valor.match(/^(\d{4}-\d{2}-\d{2})[ T]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z)?$/);
   if (soloFechaDesdeDateTime?.[1]) {
     return soloFechaDesdeDateTime[1];
   }
-  
-  // Intentar parseo general (GMT, RFC, etc.)
-  try {
-    const parsed = new Date(valor);
-    if (!Number.isNaN(parsed.getTime())) {
-      return parsed.toISOString().split('T')[0];
-    }
-  } catch {
-    return null;
-  }
-  
   // Si contiene T, extraer solo la fecha
   if (valor.includes('T')) {
     const soloFecha = valor.split('T')[0];
     return /^\d{4}-\d{2}-\d{2}$/.test(soloFecha) ? soloFecha : null;
   }
-
+  // No intentar parseo general para evitar desfases de zona horaria
   return null;
 }
 
@@ -1342,7 +2093,7 @@ export async function setSubtareaEtapas(subtareaId, etapas) {
            fecha_real = VALUES(fecha_real),
            responsable_id = VALUES(responsable_id),
            observaciones = VALUES(observaciones),
-           responsable = VALUES(responsable)`,
+           responsable = COALESCE(VALUES(responsable), responsable)`,
         [
           subtareaId,
           etapa.etapaId,
@@ -1522,6 +2273,172 @@ export async function getSeguimientosResumenPorSubtarea(subtareaId, dias = 3650)
     total: Number(row.total || 0),
     tieneAlerta: Boolean(row.tiene_alerta)
   }));
+}
+
+function buildIsoWeekMeta(dateValue) {
+  const source = new Date(dateValue);
+  if (Number.isNaN(source.getTime())) return null;
+
+  const date = new Date(Date.UTC(source.getFullYear(), source.getMonth(), source.getDate()));
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - day);
+
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+  const year = date.getUTCFullYear();
+
+  const monday = new Date(date);
+  monday.setUTCDate(date.getUTCDate() - ((date.getUTCDay() || 7) - 1));
+  const sunday = new Date(monday);
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+
+  const start = `${monday.getUTCFullYear()}-${String(monday.getUTCMonth() + 1).padStart(2, '0')}-${String(monday.getUTCDate()).padStart(2, '0')}`;
+  const end = `${sunday.getUTCFullYear()}-${String(sunday.getUTCMonth() + 1).padStart(2, '0')}-${String(sunday.getUTCDate()).padStart(2, '0')}`;
+  const label = `S${String(week).padStart(2, '0')} ${String(monday.getUTCDate()).padStart(2, '0')}/${String(monday.getUTCMonth() + 1).padStart(2, '0')}`;
+
+  return {
+    key: `${year}-W${String(week).padStart(2, '0')}`,
+    year,
+    week,
+    start,
+    end,
+    label,
+    order: (year * 100) + week
+  };
+}
+
+function matchesDashboardFilter(value, expected) {
+  if (!expected) return true;
+  return String(value || '').trim().toLowerCase() === String(expected || '').trim().toLowerCase();
+}
+
+function mergeWeeklySeries(seriesA = [], seriesB = []) {
+  const merged = new Map();
+
+  for (const item of [...seriesA, ...seriesB]) {
+    if (!item?.key) continue;
+    const existing = merged.get(item.key) || {
+      key: item.key,
+      label: item.label,
+      year: item.year,
+      week: item.week,
+      start: item.start,
+      end: item.end,
+      order: item.order,
+      etapasProgramadas: 0,
+      alertas: 0
+    };
+
+    existing.etapasProgramadas += Number(item.etapasProgramadas || 0);
+    existing.alertas += Number(item.alertas || 0);
+    merged.set(item.key, existing);
+  }
+
+  return Array.from(merged.values()).sort((a, b) => a.order - b.order);
+}
+
+export async function getDashboardWeeklySummary(scope = {}, filters = {}) {
+  const subtareas = await getAllSubtareasByScope(scope);
+  const area = String(filters.area || '').trim();
+  const responsable = String(filters.responsable || '').trim();
+
+  const filteredSubtareas = subtareas.filter((subtarea) => {
+    const areaOk = matchesDashboardFilter(subtarea?.direccionNombre || SIN_DIRECCION_NOMBRE, area);
+    const responsableBase = subtarea?.responsableNombre || null;
+    const responsableOk = matchesDashboardFilter(responsableBase, responsable);
+    return areaOk && responsableOk;
+  });
+
+
+  // Mapear semanas: etapas planificadas y cumplidas
+  const etapasSeriesMap = new Map();
+  const cumplidasSeriesMap = new Map();
+  for (const subtarea of filteredSubtareas) {
+    const seguimiento = Array.isArray(subtarea?.seguimientoEtapas) ? subtarea.seguimientoEtapas : [];
+    const etapas = seguimiento.length
+      ? seguimiento
+      : (Array.isArray(subtarea?.etapas) ? subtarea.etapas : []);
+
+    for (const etapa of etapas) {
+      // Planificadas
+      const fechaBase = etapa?.fechaPlanificada || etapa?.fechaTentativa;
+      if (fechaBase) {
+        const meta = buildIsoWeekMeta(fechaBase);
+        if (meta) {
+          const current = etapasSeriesMap.get(meta.key) || { ...meta, etapasProgramadas: 0, alertas: 0, etapasCumplidas: 0 };
+          current.etapasProgramadas += 1;
+          etapasSeriesMap.set(meta.key, current);
+        }
+      }
+      // Cumplidas
+      if (etapa?.fechaReal && String(etapa.fechaReal).trim() !== '') {
+        const metaCumplida = buildIsoWeekMeta(etapa.fechaReal);
+        if (metaCumplida) {
+          const currentC = cumplidasSeriesMap.get(metaCumplida.key) || { ...metaCumplida, etapasProgramadas: 0, alertas: 0, etapasCumplidas: 0 };
+          currentC.etapasCumplidas += 1;
+          cumplidasSeriesMap.set(metaCumplida.key, currentC);
+        }
+      }
+    }
+  }
+
+  const where = ['sd.tiene_alerta = true'];
+  const params = [];
+  if (scope?.role === 'direccion') {
+    where.push('LOWER(TRIM(COALESCE(s.direccion_encargada, ?))) = ?');
+    params.push(SIN_DIRECCION_NOMBRE, String(scope?.direccionNombre || SIN_DIRECCION_NOMBRE).trim().toLowerCase());
+  }
+  if (area) {
+    where.push('LOWER(TRIM(COALESCE(s.direccion_encargada, ?))) = ?');
+    params.push(SIN_DIRECCION_NOMBRE, area.toLowerCase());
+  }
+  if (responsable) {
+    where.push("LOWER(TRIM(COALESCE(sd.responsable, s.responsable, ''))) = ?");
+    params.push(responsable.toLowerCase());
+  }
+
+  const alertRows = await query(
+    `SELECT sd.fecha
+     FROM seguimientos_diarios sd
+     JOIN subtareas s ON s.id = sd.subtarea_id
+     WHERE ${where.join(' AND ')}
+     ORDER BY sd.fecha ASC`,
+    params
+  );
+
+  const alertSeriesMap = new Map();
+  for (const row of alertRows) {
+    const meta = buildIsoWeekMeta(row.fecha);
+    if (!meta) continue;
+    const current = alertSeriesMap.get(meta.key) || { ...meta, etapasProgramadas: 0, alertas: 0 };
+    current.alertas += 1;
+    alertSeriesMap.set(meta.key, current);
+  }
+
+
+  // Unir series: incluir todas las semanas con alertas aunque no haya etapas planificadas/cumplidas
+  const allKeys = new Set([
+    ...Array.from(etapasSeriesMap.keys()),
+    ...Array.from(cumplidasSeriesMap.keys()),
+    ...Array.from(alertSeriesMap.keys())
+  ]);
+  const merged = new Map();
+  for (const key of allKeys) {
+    const base = etapasSeriesMap.get(key) || cumplidasSeriesMap.get(key) || alertSeriesMap.get(key) || {};
+    merged.set(key, {
+      ...base,
+      etapasProgramadas: (etapasSeriesMap.get(key)?.etapasProgramadas) || 0,
+      etapasCumplidas: (cumplidasSeriesMap.get(key)?.etapasCumplidas) || 0,
+      alertas: (alertSeriesMap.get(key)?.alertas) || 0
+    });
+  }
+  const series = Array.from(merged.values()).sort((a, b) => a.order - b.order);
+
+  return {
+    series,
+    mejorSemanaCumplimiento: series.reduce((best, item) => (item.etapasProgramadas > (best?.etapasProgramadas || 0) ? item : best), null),
+    peorSemanaAlertas: series.reduce((best, item) => (item.alertas > (best?.alertas || 0) ? item : best), null)
+  };
 }
 
 export async function createSeguimientoDiario(data) {
