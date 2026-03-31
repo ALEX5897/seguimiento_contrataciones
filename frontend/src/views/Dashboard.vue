@@ -550,7 +550,7 @@ const miniAlertasChart = ref<HTMLCanvasElement | null>(null);
 let miniAlertasChartInstance: ChartJS | null = null;
 import { useRouter } from 'vue-router';
 import { subtareasService } from '../services/api';
-import Chart from 'chart.js/auto';
+
 const router = useRouter();
 
 function renderMiniAlertasChart() {

@@ -66,7 +66,7 @@ import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import logoQt from './assets/logoqt.png';
-import { onBeforeUnmount } from 'vue';
+
 
 interface MenuItem {
   key: string;
