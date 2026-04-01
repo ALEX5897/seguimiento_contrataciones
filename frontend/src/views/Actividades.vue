@@ -30,6 +30,15 @@
           <option value="NO PAC">NO PAC</option>
         </select>
 
+        <select v-model="filtroTipoContratacion" class="filtro-select">
+          <option value="">Todos los tipos de contratación</option>
+          <option
+            v-for="tipo in tiposContratacionDisponibles"
+            :key="tipo.value"
+            :value="tipo.value"
+          >{{ tipo.label }}</option>
+        </select>
+
         <select v-model="filtroCuatrimestre" class="filtro-select">
           <option value="">Todos los cuatrimestres</option>
           <option value="1">Cuatrimestre 1</option>
@@ -46,6 +55,59 @@
           <option value="fecha-fin-asc">Fecha de contratación: menor a mayor</option>
         </select>
       </div>
+    </div>
+
+    <div v-if="!cargando" class="kpis-lectura-rapida">
+      <article class="kpi-card kpi-total">
+        <div class="kpi-head">
+          <p class="kpi-label">Total Etapas</p>
+          <span class="kpi-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <rect x="4" y="5" width="16" height="14" rx="2"></rect>
+              <path d="M8 9h8M8 12h8M8 15h6"></path>
+            </svg>
+          </span>
+        </div>
+        <p class="kpi-value">{{ kpiResumen.totalEtapas }}</p>
+      </article>
+      <article class="kpi-card kpi-completadas">
+        <div class="kpi-head">
+          <p class="kpi-label">Etapas Completadas</p>
+          <span class="kpi-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="m8.5 12 2.4 2.4 4.6-4.8"></path>
+            </svg>
+          </span>
+        </div>
+        <p class="kpi-value">{{ kpiResumen.completadas }}</p>
+      </article>
+      <article class="kpi-card kpi-retraso">
+        <div class="kpi-head">
+          <p class="kpi-label">Con Retraso</p>
+          <span class="kpi-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 4 3.8 18.2a1 1 0 0 0 .9 1.5h14.6a1 1 0 0 0 .9-1.5L12 4Z"></path>
+              <path d="M12 9.2v4.6"></path>
+              <circle cx="12" cy="16.8" r=".8" fill="currentColor" stroke="none"></circle>
+            </svg>
+          </span>
+        </div>
+        <p class="kpi-value">{{ kpiResumen.conRetraso }}</p>
+      </article>
+      <article class="kpi-card kpi-avance">
+        <div class="kpi-head kpi-head-avance">
+          <p class="kpi-label">Avance</p>
+          <p class="kpi-value kpi-value-avance">{{ kpiResumen.avance }}%</p>
+        </div>
+        <div class="kpi-progress-track">
+          <div
+            class="kpi-progress-fill"
+            :class="kpiResumen.avanceClass"
+            :style="{ width: `${kpiResumen.avance}%` }"
+          ></div>
+        </div>
+      </article>
     </div>
 
     <div v-if="errorCargaActividades" class="error-actividades">
@@ -65,6 +127,11 @@
             <span class="badge">{{ actividad.tipoPlan }}</span>
             <span class="badge numero-badge">#{{ index + 1 }}</span>
           </div>
+        </div>
+
+        <div class="actividad-meta-chips">
+          <span class="actividad-meta-chip neutral">{{ obtenerTipoContratacionCabecera(actividad) }}</span>
+          <span class="actividad-meta-chip success">{{ obtenerPacNoPacCabecera(actividad) }}</span>
         </div>
 
         <div class="actividad-info">
@@ -112,7 +179,20 @@
     <div v-if="actividadSeleccionada" class="modal-overlay" @click.self="cerrarDetalleActividad">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h2>{{ actividadSeleccionada.nombre }}</h2>
+          <div class="modal-header-content">
+            <h2>{{ actividadSeleccionada.nombre }}</h2>
+            <div class="seguimiento-contexto-header">
+              <span class="seguimiento-contexto-chip neutral">
+                Contratación: {{ obtenerTipoContratacionCabecera(actividadSeleccionada) }}
+              </span>
+              <span class="seguimiento-contexto-chip success">
+                {{ obtenerPacNoPacCabecera(actividadSeleccionada) }}
+              </span>
+              <span class="seguimiento-contexto-chip amount">
+                {{ formatearMontoCabecera(obtenerPresupuesto(actividadSeleccionada)) }}
+              </span>
+            </div>
+          </div>
           <button type="button" class="btn-close" @click="cerrarDetalleActividad">✕</button>
         </div>
 
@@ -167,35 +247,23 @@
           <table class="tabla-etapas" v-if="etapasConFecha.length">
             <thead>
               <tr>
+                <th>#</th>
                 <th>Etapa</th>
-                <th>Estado</th>
-                <th>Fecha</th>
+                <th>Fecha límite</th>
                 <th>Fecha de completado</th>
+                <th>Estado</th>
                 <th>Retraso</th>
                 <th>Seguimiento</th>
               </tr>
             </thead>
             <tbody>
               <tr
-                v-for="etapa in etapasConFecha"
+                v-for="(etapa, index) in etapasConFecha"
                 :key="etapa.id || etapa.etapaId"
                 :class="{ 'fila-etapa-destacada': esEtapaResaltada(etapa) }"
               >
+                <td><span class="etapa-numero-badge">{{ index + 1 }}</span></td>
                 <td>{{ etapa.etapaNombre || etapa.nombre }}</td>
-                <td>
-                  <div class="estado-editor">
-                    <select
-                      v-model="etapa.estado"
-                      class="estado-select-detalle"
-                      :disabled="guardandoEstadoEtapaId === (etapa.id || etapa.etapaId)"
-                      @change="onEstadoEtapaChange(etapa)"
-                    >
-                      <option value="pendiente">Pendiente</option>
-                      <option value="completado">Completado</option>
-                    </select>
-                    <span v-if="guardandoEstadoEtapaId === (etapa.id || etapa.etapaId)" class="estado-saving">Guardando...</span>
-                  </div>
-                </td>
                 <td>{{ formatearFecha(etapa.fechaPlanificada || etapa.fechaTentativa) }}</td>
                 <td>
                   <input
@@ -212,25 +280,51 @@
                   <span v-else>-</span>
                 </td>
                 <td>
+                  <div class="estado-editor">
+                    <select
+                      v-model="etapa.estado"
+                      :class="['estado-select-detalle', claseEstadoSemaforo(etapa)]"
+                      :disabled="guardandoEstadoEtapaId === (etapa.id || etapa.etapaId)"
+                      @change="onEstadoEtapaChange(etapa)"
+                    >
+                      <option value="pendiente">Pendiente</option>
+                      <option value="completado">Completado</option>
+                    </select>
+                    <span v-if="guardandoEstadoEtapaId === (etapa.id || etapa.etapaId)" class="estado-saving">Guardando...</span>
+                  </div>
+                </td>
+                <td>
                   <span
                     v-if="estadoNormalizado(etapa.estado) === 'completado' && etapa.fechaReal && (etapa.fechaPlanificada || etapa.fechaTentativa)"
                     :class="['cumplimiento-chip', etapaCompletadaATiempo(etapa) ? 'a-tiempo' : 'con-retraso']"
                   >
-                    {{ etapaCompletadaATiempo(etapa) ? 'A tiempo' : `${diasRetrasoCompletado(etapa)} días tarde` }}
+                    {{ etapaCompletadaATiempo(etapa) ? '✅ Completado' : `✅ ${diasRetrasoCompletado(etapa)} días tarde` }}
                   </span>
-                  <span v-else-if="esEtapaAtrasada(etapa)" class="retraso-chip">{{ diasRetraso(etapa) }} días</span>
+                  <span v-else-if="esEtapaAtrasada(etapa)" class="retraso-chip">⚠️ {{ diasRetraso(etapa) }} días tarde</span>
                   <span v-else>-</span>
                 </td>
                 <td>
-                  <button type="button" class="btn-seguimiento" @click="seleccionarEtapaSeguimiento(etapa)">
-                    <span>Observaciones</span>
+                  <button
+                    type="button"
+                    class="btn-seguimiento btn-seguimiento-icono"
+                    @click="seleccionarEtapaSeguimiento(etapa)"
+                    :title="`Observaciones de ${etapa.etapaNombre || etapa.nombre}`"
+                  >
+                    <svg class="icono-mensaje" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M21 12a8.5 8.5 0 0 1-8.5 8.5c-1.3 0-2.6-.3-3.8-.9L4 21l1.4-4.2A8.5 8.5 0 1 1 21 12Z" />
+                      <path d="M8.5 11.5h7" />
+                      <path d="M8.5 14.5h4.5" />
+                    </svg>
                     <span
                       v-if="mostrarCargaSeguimiento(etapa)"
                       class="seguimiento-loading-dot"
                       title="Cargando observaciones"
                     ></span>
-                    <span v-if="etapaTieneAlertas(etapa)" class="seguimiento-alerta-icon" title="Esta etapa tiene alertas registradas">⚠️</span>
-                    <span v-if="obtenerConteoSeguimientos(etapa) > 0" class="seguimiento-count">{{ obtenerConteoSeguimientos(etapa) }}</span>
+                    <span
+                      v-if="obtenerIndicadorSeguimiento(etapa) > 0"
+                      class="seguimiento-badge"
+                      title="Esta etapa tiene observaciones o alertas"
+                    >{{ obtenerIndicadorSeguimiento(etapa) > 99 ? '99+' : obtenerIndicadorSeguimiento(etapa) }}</span>
                   </button>
                 </td>
               </tr>
@@ -244,7 +338,23 @@
     <div v-if="etapaSeguimiento" class="modal-overlay modal-seguimiento-overlay" @click.self="cerrarModalSeguimiento">
       <div class="modal-content modal-seguimiento" @click.stop>
         <div class="modal-header">
-          <h2>Seguimiento de etapa: {{ etapaSeguimiento.etapaNombre || etapaSeguimiento.nombre }}</h2>
+          <div class="modal-header-content">
+            <h2>
+              Seguimiento: {{ actividadSeleccionada?.nombre || 'Proceso' }}
+              · {{ etapaSeguimiento.etapaNombre || etapaSeguimiento.nombre }}
+            </h2>
+            <div class="seguimiento-contexto-header">
+              <span class="seguimiento-contexto-chip neutral">
+                Contratación: {{ obtenerTipoContratacionCabecera(actividadSeleccionada) }}
+              </span>
+              <span class="seguimiento-contexto-chip success">
+                {{ obtenerPacNoPacCabecera(actividadSeleccionada) }}
+              </span>
+              <span class="seguimiento-contexto-chip amount">
+                {{ formatearMontoCabecera(obtenerPresupuesto(actividadSeleccionada)) }}
+              </span>
+            </div>
+          </div>
           <button type="button" class="btn-close" @click="cerrarModalSeguimiento">✕</button>
         </div>
 
@@ -313,6 +423,7 @@ const actividades = ref<any[]>([]);
 const busquedaActividades = ref('');
 const filtroDireccion = ref('');
 const filtroPacNoPac = ref('');
+const filtroTipoContratacion = ref('');
 const filtroCuatrimestre = ref('');
 const ordenPresupuesto = ref('fecha-fin-asc');
 const actividadesVisiblesBase = computed(() =>
@@ -323,6 +434,22 @@ const actividadesVisiblesBase = computed(() =>
 const direccionesDisponibles = computed(() => {
   const direcciones = [...new Set(actividadesVisiblesBase.value.map((actividad: any) => obtenerDireccion(actividad)))] as string[];
   return direcciones.filter((direccion) => direccion !== 'N/A').sort((a, b) => a.localeCompare(b));
+});
+const tiposContratacionDisponibles = computed(() => {
+  const opciones = new Map<string, string>();
+
+  for (const actividad of actividadesVisiblesBase.value) {
+    const label = obtenerTipoContratacionCabecera(actividad);
+    if (!label || label === 'Contratación sugerida no definida') continue;
+    const value = normalizarTextoBusqueda(label);
+    if (value && !opciones.has(value)) {
+      opciones.set(value, label);
+    }
+  }
+
+  return Array.from(opciones.entries())
+    .map(([value, label]) => ({ value, label }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 });
 const actividadesActivas = computed(() => {
   let items = [...actividadesVisiblesBase.value];
@@ -347,6 +474,12 @@ const actividadesActivas = computed(() => {
     });
   }
 
+  if (filtroTipoContratacion.value) {
+    items = items.filter((a: any) =>
+      normalizarTextoBusqueda(obtenerTipoContratacionCabecera(a)) === filtroTipoContratacion.value
+    );
+  }
+
   if (filtroCuatrimestre.value) {
     items = items.filter((a: any) => String(obtenerCuatrimestreOrden(a)) === filtroCuatrimestre.value);
   }
@@ -363,6 +496,35 @@ const actividadesActivas = computed(() => {
 
   return items;
 });
+
+const kpiResumen = computed(() => {
+  let totalEtapas = 0;
+  let completadas = 0;
+  let conRetraso = 0;
+
+  for (const actividad of actividadesActivas.value) {
+    totalEtapas += totalTareas(actividad);
+    completadas += tareasCompletadas(actividad);
+    conRetraso += tareasConRetraso(actividad);
+  }
+
+  const avance = totalEtapas > 0
+    ? Math.round((completadas / totalEtapas) * 100)
+    : 0;
+
+  let avanceClass = 'avance-bajo';
+  if (avance >= 70) avanceClass = 'avance-alto';
+  else if (avance >= 40) avanceClass = 'avance-medio';
+
+  return {
+    totalEtapas,
+    completadas,
+    conRetraso,
+    avance,
+    avanceClass
+  };
+});
+
 const actividadSeleccionada = ref<any | null>(null);
 const etapasActividad = ref<any[]>([]);
 const etapaSeguimiento = ref<any | null>(null);
@@ -453,6 +615,7 @@ function limpiarFiltrosActividades() {
   busquedaActividades.value = '';
   filtroDireccion.value = '';
   filtroPacNoPac.value = '';
+  filtroTipoContratacion.value = '';
   filtroCuatrimestre.value = '';
   ordenPresupuesto.value = 'fecha-fin-asc';
 }
@@ -484,6 +647,39 @@ function obtenerPresupuesto(actividad: any) {
   return Number.isFinite(valor) ? valor : 0;
 }
 
+function obtenerTipoContratacionCabecera(actividad: any) {
+  const valor = String(
+    actividad?.procedimientoSugerido
+    ?? actividad?.procedimiento_sugerido
+    ?? actividad?.tipoContratacion
+    ?? actividad?.tipo_contratacion
+    ?? actividad?.procedimiento
+    ?? ''
+  ).trim();
+
+  return valor || 'Contratación sugerida no definida';
+}
+
+function obtenerPacNoPacCabecera(actividad: any) {
+  const valor = String(
+    actividad?.pacNoPac
+    ?? actividad?.pac_no_pac
+    ?? actividad?.tipoPlan
+    ?? ''
+  ).trim();
+
+  return valor || 'PAC/No PAC no definido';
+}
+
+function formatearMontoCabecera(valor: number) {
+  return new Intl.NumberFormat('es-EC', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(Number(valor || 0));
+}
+
 function manejarEscapeModales(event: KeyboardEvent) {
   if (event.key !== 'Escape') return;
   if (etapaSeguimiento.value) {
@@ -498,9 +694,15 @@ function manejarEscapeModales(event: KeyboardEvent) {
 function formatearFecha(fecha: string | Date | undefined | null) {
   if (!fecha) return 'Sin fecha';
   if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-    return fecha;
+    const [yyyy, mm, dd] = fecha.split('-');
+    return `${dd}/${mm}/${yyyy}`;
   }
-  return new Date(fecha).toLocaleDateString('es-EC');
+  const parsed = new Date(fecha);
+  if (Number.isNaN(parsed.getTime())) return 'Sin fecha';
+  const dd = String(parsed.getDate()).padStart(2, '0');
+  const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+  const yyyy = String(parsed.getFullYear());
+  return `${dd}/${mm}/${yyyy}`;
 }
 
 function normalizarFechaInput(fecha?: string | null | Date) {
@@ -695,6 +897,12 @@ function estadoVisual(etapa: any) {
   return estadoNormalizado(etapa.estado);
 }
 
+function claseEstadoSemaforo(etapa: any) {
+  const estado = estadoNormalizado(etapa?.estado);
+  if (estado === 'completado') return 'estado-semaforo-verde';
+  return 'estado-semaforo-amarillo';
+}
+
 function textoLeyendaTimeline(etapa: any) {
   if (estadoNormalizado(etapa?.estado) === 'completado') {
     return 'Completado';
@@ -721,13 +929,11 @@ function claseBadgeLeyendaTimeline(etapa: any) {
 function formatearFechaConHora(fechaISO: string | undefined | null): string {
   if (!fechaISO) return 'Sin fecha';
   const fecha = new Date(fechaISO);
-  return fecha.toLocaleDateString('es-EC', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  if (Number.isNaN(fecha.getTime())) return 'Sin fecha';
+  const dd = String(fecha.getDate()).padStart(2, '0');
+  const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+  const yyyy = String(fecha.getFullYear());
+  return `${dd}/${mm}/${yyyy}`;
 }
 
 function limpiarQueryActividad() {
@@ -946,6 +1152,12 @@ function onFechaCompletadoChange(etapa: any) {
     return Boolean(alertasPorEtapa.value[etapaId]);
   }
 
+  function obtenerIndicadorSeguimiento(etapa: any): number {
+    const conteo = obtenerConteoSeguimientos(etapa);
+    if (conteo > 0) return conteo;
+    return etapaTieneAlertas(etapa) ? 1 : 0;
+  }
+
   async function cargarConteosSeguimientosEtapas() {
     if (!actividadSeleccionada.value?.id) return;
     cargandoConteosSeguimientos.value = true;
@@ -1114,7 +1326,7 @@ async function eliminarSeguimiento(item: any) {
 
 <style scoped>
 .actividades-view {
-  padding: 0.25rem;
+  padding: 0.35rem;
 }
 
 .actividades-header {
@@ -1123,9 +1335,10 @@ async function eliminarSeguimiento(item: any) {
   gap: 1rem;
   margin-bottom: 1.2rem;
   background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border: 1px solid #d9e2ea;
+  border-radius: 14px;
   padding: 0.85rem 1rem;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
 }
 
 .actividades-toolbar {
@@ -1135,10 +1348,11 @@ async function eliminarSeguimiento(item: any) {
   gap: 0.75rem;
   flex-wrap: wrap;
   background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border: 1px solid #d9e2ea;
+  border-radius: 14px;
   padding: 0.7rem;
   margin-bottom: 1rem;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
 }
 
 .buscador-container {
@@ -1185,15 +1399,155 @@ async function eliminarSeguimiento(item: any) {
   justify-content: flex-end;
 }
 
+.kpis-lectura-rapida {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(170px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.kpi-card {
+  background: #ffffff;
+  border: 1px solid #d9e2ea;
+  border-radius: 14px;
+  padding: 0.8rem 0.9rem;
+  min-height: 98px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+}
+
+.kpi-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.kpi-label {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.kpi-value {
+  margin: 0.45rem 0 0;
+  color: #020617;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.kpi-icon {
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.kpi-icon svg {
+  width: 1.28rem;
+  height: 1.28rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.kpi-total {
+  background: #ffffff;
+  box-shadow: inset 4px 0 0 #64748b, 0 10px 28px rgba(15, 23, 42, 0.05);
+}
+
+.kpi-total .kpi-value {
+  color: #0f172a;
+}
+
+.kpi-total .kpi-icon {
+  color: #6b7280;
+  background: #f1f5f9;
+}
+
+.kpi-completadas {
+  background: #ffffff;
+  box-shadow: inset 4px 0 0 #16a34a, 0 10px 28px rgba(15, 23, 42, 0.05);
+}
+
+.kpi-completadas .kpi-value {
+  color: #166534;
+}
+
+.kpi-completadas .kpi-icon {
+  color: #0b7a3d;
+  background: #ecfdf3;
+}
+
+.kpi-retraso {
+  background: #ffffff;
+  box-shadow: inset 4px 0 0 #dc2626, 0 10px 28px rgba(15, 23, 42, 0.05);
+}
+
+.kpi-retraso .kpi-value {
+  color: #7f1d1d;
+}
+
+.kpi-avance {
+  background: #ffffff;
+  box-shadow: inset 4px 0 0 #0f766e, 0 10px 28px rgba(15, 23, 42, 0.05);
+}
+
+.kpi-head-avance {
+  align-items: center;
+}
+
+.kpi-value-avance {
+  margin: 0;
+  font-size: 2rem;
+  color: #1f2937;
+}
+
+.kpi-progress-track {
+  width: 100%;
+  height: 0.5rem;
+  margin-top: 0.8rem;
+  border-radius: 999px;
+  background: #d1d5db;
+  overflow: hidden;
+}
+
+.kpi-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.25s ease;
+}
+
+.kpi-progress-fill.avance-alto {
+  background: #16a34a;
+}
+
+.kpi-progress-fill.avance-medio {
+  background: #d97706;
+}
+
+.kpi-progress-fill.avance-bajo {
+  background: #dc2626;
+}
+
 .cumplimiento-panel {
   display: flex;
   align-items: center;
   gap: 1rem;
   background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border: 1px solid #d9e2ea;
+  border-radius: 14px;
   padding: 0.85rem 1rem;
   margin-bottom: 1rem;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
 }
 
 .cumplimiento-dona-wrap {
@@ -1245,9 +1599,9 @@ async function eliminarSeguimiento(item: any) {
 }
 
 .total-actividades {
-  background: #eff6ff;
-  color: #1d4ed8;
-  border: 1px solid #bfdbfe;
+  background: #f8fafc;
+  color: #334155;
+  border: 1px solid #d9e2ea;
   border-radius: 20px;
   padding: 0.3rem 0.9rem;
   font-size: 0.9rem;
@@ -1286,18 +1640,18 @@ h1 {
 
 .actividad-card {
   background: white;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  border: 1px solid #d9e2ea;
   padding: 1rem;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.04);
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
   cursor: pointer;
 }
 
 .actividad-card:hover {
   transform: translateY(-2px);
-  border-color: #bfdbfe;
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+  border-color: #cbd5e1;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.07);
 }
 
 .actividad-header {
@@ -1340,6 +1694,37 @@ h1 {
 
 .actividad-info {
   margin-bottom: 1.5rem;
+}
+
+.actividad-meta-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.85rem;
+}
+
+.actividad-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.24rem 0.62rem;
+  border-radius: 999px;
+  border: 1px solid #d9e2ea;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.71rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.actividad-meta-chip.neutral {
+  background: #f8fafc;
+  color: #334155;
+}
+
+.actividad-meta-chip.success {
+  background: #ecfdf3;
+  border-color: #86efac;
+  color: #166534;
 }
 
 .actividad-info p {
@@ -1395,7 +1780,7 @@ h1 {
 
 .progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  background: #334155;
   transition: width 0.3s;
 }
 
@@ -1418,7 +1803,7 @@ h1 {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 40;
+  z-index: 2000;
   padding: 1rem;
 }
 
@@ -1427,17 +1812,66 @@ h1 {
   max-height: 92vh;
   overflow: auto;
   background: #fff;
-  border-radius: 12px;
-  border: 1px solid #dbeafe;
-  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.28);
+  border-radius: 14px;
+  border: 1px solid #d9e2ea;
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.18);
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 1rem 1.2rem;
   border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #fff;
+}
+
+.modal-header-content {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.modal-header-content h2 {
+  margin: 0;
+}
+
+.seguimiento-contexto-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.seguimiento-contexto-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.26rem 0.68rem;
+  border-radius: 999px;
+  border: 1px solid #d9e2ea;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.seguimiento-contexto-chip.neutral {
+  background: #f8fafc;
+  color: #334155;
+}
+
+.seguimiento-contexto-chip.success {
+  background: #ecfdf3;
+  border-color: #86efac;
+  color: #166534;
+}
+
+.seguimiento-contexto-chip.amount {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
 }
 
 .btn-close {
@@ -1642,6 +2076,27 @@ h1 {
   font-size: 0.82rem;
 }
 
+.estado-select-detalle.estado-semaforo-verde {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #166534;
+  font-weight: 700;
+}
+
+.estado-select-detalle.estado-semaforo-amarillo {
+  background: #fef9c3;
+  border-color: #facc15;
+  color: #854d0e;
+  font-weight: 700;
+}
+
+.estado-select-detalle.estado-semaforo-rojo {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #991b1b;
+  font-weight: 700;
+}
+
 .estado-saving {
   font-size: 0.75rem;
   color: #0f766e;
@@ -1662,33 +2117,35 @@ h1 {
 }
 
 .retraso-chip {
-  background: #fee2e2;
   color: #b91c1c;
-  border: 1px solid #fecaca;
-  border-radius: 999px;
-  padding: 0.1rem 0.45rem;
+  border: none;
+  background: transparent;
+  padding: 0;
   font-size: 0.75rem;
   font-weight: 700;
+  white-space: nowrap;
+  text-shadow: none;
+  box-shadow: none;
 }
 
 .cumplimiento-chip {
-  border-radius: 999px;
-  padding: 0.1rem 0.45rem;
+  border-radius: 0;
+  padding: 0;
   font-size: 0.75rem;
   font-weight: 700;
-  border: 1px solid transparent;
+  border: none;
+  background: transparent;
+  white-space: nowrap;
+  text-shadow: none;
+  box-shadow: none;
 }
 
 .cumplimiento-chip.a-tiempo {
-  background: #dcfce7;
   color: #166534;
-  border-color: #bbf7d0;
 }
 
 .cumplimiento-chip.con-retraso {
-  background: #fee2e2;
   color: #b91c1c;
-  border-color: #fecaca;
 }
 
 .btn-seguimiento,
@@ -1726,14 +2183,63 @@ h1 {
   gap: 0.4rem;
 }
 
+.btn-seguimiento-icono {
+  width: 2.05rem;
+  height: 2.05rem;
+  border-radius: 999px;
+  justify-content: center;
+  position: relative;
+  padding: 0;
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #64748b;
+  box-shadow: none;
+}
+
+.btn-seguimiento-icono:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #334155;
+}
+
+.icono-mensaje {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  text-shadow: none;
+}
+
+.seguimiento-badge {
+  position: absolute;
+  top: -0.25rem;
+  right: -0.35rem;
+  min-width: 1.05rem;
+  height: 1.05rem;
+  padding: 0 0.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #334e68;
+  color: #ffffff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1;
+  border: 2px solid #ffffff;
+}
+
 .btn-guardar:disabled {
   opacity: 0.65;
   cursor: not-allowed;
 }
 
 .seguimiento-panel {
-  border: 1px solid #dbeafe;
-  background: #f8fbff;
+  border: 1px solid #d9e2ea;
+  background: #ffffff;
   border-radius: 10px;
   padding: 0.8rem;
 }
@@ -1766,6 +2272,50 @@ h1 {
 .modal-seguimiento {
   width: min(760px, 96vw);
   max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #d9e2ea;
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.18);
+}
+
+.modal-seguimiento .modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #ffffff;
+}
+
+.modal-seguimiento .modal-header h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.02rem;
+}
+
+.modal-seguimiento .modal-body {
+  background: #f8fafc;
+  overflow: auto;
+}
+
+.seguimientos-historial {
+  margin-top: 0.9rem;
+  border: 1px solid #d9e2ea;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.65rem;
+}
+
+.etapa-numero-badge {
+  display: inline-flex;
+  width: 1.4rem;
+  height: 1.4rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #0f172a;
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 
 .seguimiento-estado {
@@ -1887,6 +2437,10 @@ h1 {
 }
 
 @media (max-width: 720px) {
+  .kpis-lectura-rapida {
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
+  }
+
   .cumplimiento-panel {
     align-items: flex-start;
   }
@@ -1904,6 +2458,24 @@ h1 {
     width: 50px;
     height: 50px;
     font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .kpis-lectura-rapida {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-header {
+    gap: 0.75rem;
+  }
+
+  .seguimiento-contexto-header {
+    gap: 0.35rem;
+  }
+
+  .seguimiento-contexto-chip {
+    font-size: 0.7rem;
   }
 }
 </style>

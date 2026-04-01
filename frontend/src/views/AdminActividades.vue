@@ -164,12 +164,10 @@
 
           <div class="form-grupo">
             <label for="tipoPlan">Tipo Plan</label>
-            <input
-              id="tipoPlan"
-              v-model="formulario.tipoPlan"
-              type="text"
-              placeholder="Ej: Plan Anual de Contrataciones"
-            />
+            <select id="tipoPlan" v-model="formulario.tipoPlan">
+              <option value="PAC">PAC</option>
+              <option value="No PAC">No PAC</option>
+            </select>
           </div>
 
           <div class="form-fila">
@@ -408,8 +406,11 @@
         </div>
 
         <div class="botones-modal">
-          <button class="btn-primary" @click="guardarEtapas">💾 Guardar Etapas</button>
-          <button class="btn-secondary" @click="cerrarSelectorEtapas">❌ Cancelar</button>
+          <button class="btn-primary" @click="guardarEtapas" :disabled="guardandoEtapas">
+            <span v-if="guardandoEtapas" class="spinner-btn"></span>
+            <span>{{ guardandoEtapas ? 'Guardando...' : '💾 Guardar Etapas' }}</span>
+          </button>
+          <button class="btn-secondary" @click="cerrarSelectorEtapas" :disabled="guardandoEtapas">❌ Cancelar</button>
         </div>
         </template>
       </div>
@@ -419,7 +420,7 @@
     <div v-if="mostrarSeguimientos" class="modal-overlay" @click.self="cerrarSeguimientosDiarios">
       <div class="modal-content modal-seguimientos" @click.stop>
         <div class="seguimientos-header">
-          <h2>📋 Seguimiento Diario - {{ etapaActualSeguimiento?.etapaNombre }}</h2>
+          <h2>📋 Seguimiento Diario - {{ actividadSeleccionada?.nombre || 'Proceso' }} · {{ etapaActualSeguimiento?.etapaNombre }}</h2>
           <button class="btn-close" @click="cerrarSeguimientosDiarios">✕</button>
         </div>
 
@@ -749,6 +750,7 @@ const nuevoComentario = ref('');
 const nuevoAlerta = ref(false);
 const conteoSeguimientosEtapas = ref<Record<number, number>>({});
 const guardandoEtapasPorId = ref<Record<number, boolean>>({});
+const guardandoEtapas = ref(false);
 const permiteEditarFechaCompletado = UI_FLAGS.ALLOW_MANUAL_COMPLETION_DATE;
 
 function getFormularioVacio(): Partial<Actividad> {
@@ -986,8 +988,16 @@ async function guardarActividad() {
       return;
     }
 
+    const direccionIdNormalizado = Number(formulario.value.direccionId) || null;
+    const {
+      direccionNombre: _direccionNombre,
+      direccionEncargada: _direccionEncargada,
+      ...formularioBase
+    } = formulario.value as any;
+
     const payload = {
-      ...formulario.value,
+      ...formularioBase,
+      direccionId: direccionIdNormalizado,
       responsableId: formulario.value.responsableId ? Number(formulario.value.responsableId) : null,
       responsableNombre: responsables.value.find(r => r.id === Number(formulario.value.responsableId))?.nombre || null,
       fechaInicio: formatearFechaParaAPI(formulario.value.fechaInicio),
@@ -1314,17 +1324,19 @@ async function agregarNuevaEtapa() {
 }
 
 async function guardarEtapas() {
-  if (!actividadSeleccionada.value) return;
+  if (!actividadSeleccionada.value || guardandoEtapas.value) return;
 
+  guardandoEtapas.value = true;
   try {
     await api.put(`/subtareas/${actividadSeleccionada.value.id}/etapas`, {
       etapas: construirPayloadEtapas()
     });
     mostrarNotificacion('Etapas guardadas correctamente', 'success');
     cerrarSelectorEtapas();
-    await cargarActividades();
   } catch (error: any) {
     mostrarNotificacion('Error al guardar las etapas: ' + obtenerMensajeError(error, 'Desconocido'), 'error');
+  } finally {
+    guardandoEtapas.value = false;
   }
 }
 
@@ -1500,15 +1512,13 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
   if (!fechaISO) return 'Sin fecha';
   try {
     const fecha = new Date(fechaISO);
-    return fecha.toLocaleDateString('es-EC', { 
-      year: 'numeric', 
-      month:'short', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (Number.isNaN(fecha.getTime())) return 'Fecha invalida';
+    const dd = String(fecha.getDate()).padStart(2, '0');
+    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+    const yyyy = String(fecha.getFullYear());
+    return `${dd}/${mm}/${yyyy}`;
   } catch (e) {
-    return 'Fecha inválida';
+    return 'Fecha invalida';
   }
 }
 
@@ -1526,9 +1536,11 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
   .header {
     margin-bottom: 1rem;
     text-align: left;
-    background: linear-gradient(135deg, #0f172a, #1d4ed8);
-    border-radius: 12px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 58%, #334155 100%);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 14px;
     padding: 1rem 1.1rem;
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.14);
 
     h1 {
       font-size: 1.55rem;
@@ -1551,9 +1563,10 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
     gap: 1rem;
     flex-wrap: wrap;
     background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    border: 1px solid #d9e2ea;
+    border-radius: 14px;
     padding: 0.75rem;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
 
     .buscador-container {
       position: relative;
@@ -1632,10 +1645,10 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
 
   .tabla-container {
     background: white;
-    border-radius: 12px;
+    border-radius: 14px;
     overflow: hidden;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+    border: 1px solid #d9e2ea;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
   }
 
   .tabla-actividades {
@@ -1726,19 +1739,19 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 2000;
   }
 
   .modal-content {
     background: white;
-    border-radius: 12px;
-    border: 1px solid #dbeafe;
+    border-radius: 14px;
+    border: 1px solid #d9e2ea;
     padding: 2rem;
     max-width: 500px;
     width: 90%;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.22);
+    box-shadow: 0 24px 56px rgba(15, 23, 42, 0.18);
 
     &.modal-etapas {
       max-width: 700px;
@@ -2173,10 +2186,42 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
   background: #2563eb;
   border: 1px solid #1d4ed8;
   color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #1d4ed8;
   }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+}
+
+.btn-secondary {
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+}
+
+.spinner-btn {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin-btn 0.65s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin-btn {
+  to { transform: rotate(360deg); }
 }
 
 .btn-secondary {
@@ -2283,8 +2328,8 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
     justify-content: space-between;
     align-items: center;
     padding: 1.5rem 2rem;
-    border-bottom: 2px solid #f0f0f0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-bottom: 1px solid #d9e2ea;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 58%, #334155 100%);
     color: white;
     position: sticky;
     top: 0;
@@ -2299,19 +2344,20 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
 
   .ver-content {
     padding: 2rem;
-    background: #fafbfc;
+    background: #f8fafc;
   }
 
   .ver-seccion {
     background: white;
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #d9e2ea;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
     transition: all 0.3s;
 
     &:hover {
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.07);
       transform: translateY(-2px);
     }
 
@@ -2321,7 +2367,7 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
       color: #2c3e50;
       margin: 0 0 1.25rem 0;
       padding-bottom: 0.75rem;
-      border-bottom: 2px solid #667eea;
+      border-bottom: 2px solid #cbd5e1;
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -2356,15 +2402,15 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
       color: #2c3e50;
       font-weight: 500;
       padding: 0.5rem;
-      background: #f8f9fa;
+      background: #f8fafc;
       border-radius: 6px;
-      border-left: 3px solid #667eea;
+      border-left: 3px solid #64748b;
 
       &.destacado {
         font-size: 1.2rem;
         font-weight: 700;
         color: #28a745;
-        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        background: #ecfdf3;
       }
     }
   }
@@ -2379,18 +2425,18 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
     letter-spacing: 0.5px;
 
     &.estado-pendiente {
-      background: linear-gradient(135deg, #ffd54f 0%, #ffb300 100%);
+      background: #fef3c7;
       color: #7c5000;
     }
 
     &.estado-en_proceso {
-      background: linear-gradient(135deg, #64b5f6 0%, #2196f3 100%);
-      color: white;
+      background: #dbeafe;
+      color: #1d4ed8;
     }
 
     &.estado-completado {
-      background: linear-gradient(135deg, #81c784 0%, #4caf50 100%);
-      color: white;
+      background: #dcfce7;
+      color: #166534;
     }
   }
 
@@ -2409,10 +2455,10 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
 
       .progreso-fill {
         height: 100%;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        background: #334155;
         border-radius: 12px;
         transition: width 0.4s ease;
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.5);
+        box-shadow: none;
       }
     }
 
@@ -2427,9 +2473,9 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
 
   .observaciones-texto {
     padding: 1rem;
-    background: #f8f9fa;
+    background: #f8fafc;
     border-radius: 8px;
-    border-left: 4px solid #667eea;
+    border-left: 4px solid #64748b;
     font-size: 0.95rem;
     line-height: 1.6;
     color: #2c3e50;
@@ -2442,15 +2488,15 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
     gap: 1rem;
 
     .etapa-card {
-      background: linear-gradient(135deg, #f5f7fa 0%, #f3f4f6 100%);
-      border: 1px solid #e0e0e0;
+      background: #ffffff;
+      border: 1px solid #d9e2ea;
       border-radius: 8px;
       padding: 1rem;
       transition: all 0.2s;
 
       &:hover {
-        border-color: #667eea;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        border-color: #cbd5e1;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
         transform: translateY(-2px);
       }
 
@@ -2496,15 +2542,22 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
   .modal-seguimientos {
     max-width: 600px !important;
     max-height: 80vh !important;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden !important;
   }
 
   .seguimientos-header {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: #fff;
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
-    border-bottom: 2px solid #667eea;
+    border-bottom: 1px solid #d9e2ea;
 
     h2 {
       margin: 0;
@@ -2535,15 +2588,16 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    max-height: calc(80vh - 200px);
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
   }
 
   .nuevo-comentario-section {
-    background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+    background: #ffffff;
     padding: 1.5rem;
     border-radius: 8px;
-    border-left: 4px solid #667eea;
+    border: 1px solid #d9e2ea;
 
     h3 {
       margin: 0 0 1rem 0;
@@ -2593,7 +2647,7 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
     .btn-guardar-comentario {
       width: 100%;
       padding: 0.75rem;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #1d4ed8;
       color: white;
       border: none;
       border-radius: 6px;
@@ -2603,7 +2657,7 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
 
       &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 10px 24px rgba(29, 78, 216, 0.22);
       }
 
       &:active {
@@ -2637,20 +2691,20 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
 
   .seguimiento-item {
     background: white;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #d9e2ea;
     border-radius: 8px;
     padding: 1rem;
     transition: all 0.2s;
 
     &:hover {
-      border-color: #667eea;
+      border-color: #cbd5e1;
       background: #f9f9fa;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
     }
 
     &.con-alerta {
       border-left: 4px solid #e74c3c;
-      background: linear-gradient(90deg, rgba(231, 76, 60, 0.05) 0%, white 100%);
+      background: #fffafa;
     }
 
     .seguimiento-header {
@@ -2720,7 +2774,7 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
     justify-content: space-between;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    background: #2563eb;
     color: white;
     border: none;
     border-radius: 6px;
@@ -2731,7 +2785,7 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.2);
     }
   }
 
@@ -2806,7 +2860,7 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2100;
 }
 
 .confirm-modal {

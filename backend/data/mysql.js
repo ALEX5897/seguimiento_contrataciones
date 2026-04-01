@@ -251,15 +251,15 @@ function toCamelRow(row) {
 }
 
 async function resolverDireccionEncargada(data = {}) {
-  if (data.direccionEncargada) return normalizeTextEncoding(data.direccionEncargada, { trim: true, collapseWhitespace: true });
-  if (data.direccionNombre) return normalizeTextEncoding(data.direccionNombre, { trim: true, collapseWhitespace: true });
-
   const id = Number(data.direccionId);
   if (Number.isInteger(id) && id > 0) {
     const rows = await query('SELECT nombre FROM direcciones_catalogo WHERE id = ? LIMIT 1', [id]);
     if (rows[0]?.nombre) return normalizeTextEncoding(rows[0].nombre, { trim: true, collapseWhitespace: true });
     if (DIRECCIONES_ID_NOMBRE[id]) return DIRECCIONES_ID_NOMBRE[id];
   }
+
+  if (data.direccionEncargada) return normalizeTextEncoding(data.direccionEncargada, { trim: true, collapseWhitespace: true });
+  if (data.direccionNombre) return normalizeTextEncoding(data.direccionNombre, { trim: true, collapseWhitespace: true });
 
   return SIN_DIRECCION_NOMBRE;
 }
@@ -382,6 +382,7 @@ async function createSchema() {
     'id', 'direccion_encargada', 'nombre', 'codigo_olympo', 'partida_presupuestaria',
     'presupuesto_2026_inicial', 'costo_2026', 'cuatrimestre', 'plazo_contrato',
     'pac_no_pac', 'procedimiento_sugerido', 'responsable_id', 'responsable', 'activo', 'observaciones',
+    'fecha_inicio', 'fecha_fin',
     'created_at', 'updated_at'
   ]);
   for (const col of cols) {
@@ -390,8 +391,15 @@ async function createSchema() {
     }
   }
 
-  if (!new Set(cols.map((row) => row.name)).has('responsable_id')) {
+  const subtareasColsSet = new Set(cols.map((row) => row.name));
+  if (!subtareasColsSet.has('responsable_id')) {
     await query('ALTER TABLE subtareas ADD COLUMN responsable_id INT NULL AFTER procedimiento_sugerido').catch(() => {});
+  }
+  if (!subtareasColsSet.has('fecha_inicio')) {
+    await query('ALTER TABLE subtareas ADD COLUMN fecha_inicio DATE NULL AFTER observaciones').catch(() => {});
+  }
+  if (!subtareasColsSet.has('fecha_fin')) {
+    await query('ALTER TABLE subtareas ADD COLUMN fecha_fin DATE NULL AFTER fecha_inicio').catch(() => {});
   }
 
   await query(`
@@ -869,6 +877,8 @@ export async function getAllSubtareas() {
     item.pacNoPac = row.pac_no_pac;
     item.presupuesto2026Inicial = Number(row.presupuesto_2026_inicial ?? 0);
     item.costo2026 = Number(row.costo_2026 ?? 0);
+    item.fechaInicio = normalizarFechaSalida(row.fecha_inicio) || null;
+    item.fechaFin = normalizarFechaSalida(row.fecha_fin) || null;
     item.avanceGeneral = 0;
     item.estado = 'pendiente';
     item.etapas = bySubtarea.get(row.id) || [];
@@ -1842,8 +1852,9 @@ export async function createSubtarea(data) {
     `INSERT INTO subtareas (
       direccion_encargada, nombre, codigo_olympo, partida_presupuestaria,
       presupuesto_2026_inicial, costo_2026, cuatrimestre, plazo_contrato,
-      pac_no_pac, procedimiento_sugerido, responsable_id, responsable, activo, observaciones
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      pac_no_pac, procedimiento_sugerido, responsable_id, responsable, activo, observaciones,
+      fecha_inicio, fecha_fin
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       direccion,
       data.nombre,
@@ -1858,7 +1869,9 @@ export async function createSubtarea(data) {
       responsable.id,
       responsable.nombre,
       data.activo ?? true,
-      data.observaciones || null
+      data.observaciones || null,
+      data.fechaInicio || null,
+      data.fechaFin || null
     ]
   );
 
@@ -1877,16 +1890,15 @@ export async function updateSubtarea(idOrCode, data) {
     codigoOlympo: 'codigo_olympo',
     partidaPresupuestaria: 'partida_presupuestaria',
     presupuesto: 'presupuesto_2026_inicial',
-    presupuesto2026Inicial: 'presupuesto_2026_inicial',
     costoReforma2: 'costo_2026',
-    costo2026: 'costo_2026',
     cuatrimestre: 'cuatrimestre',
     plazoContrato: 'plazo_contrato',
-    pacNoPac: 'pac_no_pac',
     tipoPlan: 'pac_no_pac',
     procedimientoSugerido: 'procedimiento_sugerido',
     observaciones: 'observaciones',
-    activo: 'activo'
+    activo: 'activo',
+    fechaInicio: 'fecha_inicio',
+    fechaFin: 'fecha_fin'
   };
 
   Object.entries(fieldMap).forEach(([camel, sql]) => {
@@ -2309,7 +2321,41 @@ function buildIsoWeekMeta(dateValue) {
 
 function matchesDashboardFilter(value, expected) {
   if (!expected) return true;
-  return String(value || '').trim().toLowerCase() === String(expected || '').trim().toLowerCase();
+  return normalizeDashboardFilterValue(value) === normalizeDashboardFilterValue(expected);
+}
+
+function normalizeDashboardFilterValue(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
+
+function matchesDashboardSearch(subtarea, busqueda) {
+  const query = normalizeDashboardFilterValue(busqueda);
+  if (!query) return true;
+
+  const corpus = [subtarea?.nombre, subtarea?.direccionNombre, subtarea?.responsableNombre]
+    .map((value) => normalizeDashboardFilterValue(value))
+    .join(' ');
+
+  return corpus.includes(query);
+}
+
+function matchesMontoRange(value, selectedRange) {
+  if (!selectedRange) return true;
+
+  const monto = Number(value || 0);
+  const ranges = {
+    '0-1,000': { min: 0, max: 1000 },
+    '1,001-5,000': { min: 1001, max: 5000 },
+    '5,001-10,000': { min: 5001, max: 10000 },
+    '10,001+': { min: 10001, max: Number.POSITIVE_INFINITY }
+  };
+  const range = ranges[selectedRange] || null;
+  if (!range) return true;
+  return monto >= range.min && monto <= range.max;
 }
 
 function mergeWeeklySeries(seriesA = [], seriesB = []) {
@@ -2341,12 +2387,24 @@ export async function getDashboardWeeklySummary(scope = {}, filters = {}) {
   const subtareas = await getAllSubtareasByScope(scope);
   const area = String(filters.area || '').trim();
   const responsable = String(filters.responsable || '').trim();
+  const direccion = String(filters.direccion || '').trim();
+  const tipoPlan = String(filters.tipoPlan || '').trim();
+  const cuatrimestre = String(filters.cuatrimestre || '').trim();
+  const tipoContratacion = String(filters.tipoContratacion || '').trim();
+  const busqueda = String(filters.busqueda || '').trim();
+  const monto = String(filters.monto || '').trim();
 
   const filteredSubtareas = subtareas.filter((subtarea) => {
     const areaOk = matchesDashboardFilter(subtarea?.direccionNombre || SIN_DIRECCION_NOMBRE, area);
     const responsableBase = subtarea?.responsableNombre || null;
     const responsableOk = matchesDashboardFilter(responsableBase, responsable);
-    return areaOk && responsableOk;
+    const direccionOk = matchesDashboardFilter(subtarea?.direccionNombre || SIN_DIRECCION_NOMBRE, direccion);
+    const tipoPlanOk = matchesDashboardFilter(subtarea?.pacNoPac || subtarea?.tipoPlan || '', tipoPlan);
+    const cuatrimestreOk = !cuatrimestre || String(subtarea?.cuatrimestre ?? '').trim() === cuatrimestre;
+    const tipoContratacionOk = matchesDashboardFilter(subtarea?.procedimientoSugerido || subtarea?.procedimiento_sugerido || '', tipoContratacion);
+    const busquedaOk = matchesDashboardSearch(subtarea, busqueda);
+    const montoOk = matchesMontoRange(subtarea?.presupuesto, monto);
+    return areaOk && responsableOk && direccionOk && tipoPlanOk && cuatrimestreOk && tipoContratacionOk && busquedaOk && montoOk;
   });
 
 
@@ -2382,29 +2440,20 @@ export async function getDashboardWeeklySummary(scope = {}, filters = {}) {
     }
   }
 
-  const where = ['sd.tiene_alerta = true'];
-  const params = [];
-  if (scope?.role === 'direccion') {
-    where.push('LOWER(TRIM(COALESCE(s.direccion_encargada, ?))) = ?');
-    params.push(SIN_DIRECCION_NOMBRE, String(scope?.direccionNombre || SIN_DIRECCION_NOMBRE).trim().toLowerCase());
-  }
-  if (area) {
-    where.push('LOWER(TRIM(COALESCE(s.direccion_encargada, ?))) = ?');
-    params.push(SIN_DIRECCION_NOMBRE, area.toLowerCase());
-  }
-  if (responsable) {
-    where.push("LOWER(TRIM(COALESCE(sd.responsable, s.responsable, ''))) = ?");
-    params.push(responsable.toLowerCase());
-  }
+  const filteredSubtareaIds = filteredSubtareas
+    .map((subtarea) => Number(subtarea?.id || 0))
+    .filter((id) => Number.isFinite(id) && id > 0);
 
-  const alertRows = await query(
-    `SELECT sd.fecha
-     FROM seguimientos_diarios sd
-     JOIN subtareas s ON s.id = sd.subtarea_id
-     WHERE ${where.join(' AND ')}
-     ORDER BY sd.fecha ASC`,
-    params
-  );
+  const alertRows = filteredSubtareaIds.length
+    ? await query(
+      `SELECT sd.fecha
+       FROM seguimientos_diarios sd
+       WHERE sd.tiene_alerta = true
+         AND sd.subtarea_id IN (${filteredSubtareaIds.map(() => '?').join(', ')})
+       ORDER BY sd.fecha ASC`,
+      filteredSubtareaIds
+    )
+    : [];
 
   const alertSeriesMap = new Map();
   for (const row of alertRows) {

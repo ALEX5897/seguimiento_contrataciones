@@ -164,25 +164,25 @@ watch(() => route.path, () => {
     grid-template-columns: 1fr;
   }
   .sidebar {
-    position: fixed;
+    position: relative;
     left: 0;
     top: 0;
-    height: 100vh;
-    z-index: 1000;
-    width: 220px;
-    transform: translateX(0);
-    transition: transform 0.3s;
-    box-shadow: 2px 0 8px rgba(0,0,0,0.08);
-  }
-  .sidebar[style*="display: none"] {
-    transform: translateX(-100%);
+    height: auto;
+    max-height: none;
+    z-index: 2;
+    width: 100%;
+    transform: none;
+    transition: none;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    border-right: none;
+    border-bottom: 1px solid #1e293b;
   }
   .menu-hamburger {
     display: block;
-    position: fixed;
+    position: absolute;
     left: 1rem;
     top: 1rem;
-    z-index: 1101;
+    z-index: 3;
   }
 }
 @media (max-width: 600px) {
@@ -222,7 +222,7 @@ watch(() => route.path, () => {
   left: 1rem;
   right: auto;
   top: 1rem;
-  z-index: 1200;
+  z-index: 100;
 }
 .menu-hamburger:hover {
   background: #1e293b;
@@ -268,7 +268,7 @@ watch(() => route.path, () => {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 250px 1fr;
-  background: #f1f5f9;
+  background: linear-gradient(180deg, #eef2f5 0%, #e7edf2 100%);
   position: relative;
 }
 
@@ -292,7 +292,7 @@ watch(() => route.path, () => {
   top: 0;
   height: 100vh;
   overflow-y: auto;
-  z-index: 1000;
+  z-index: 5;
 }
 
 .app-version {
@@ -390,7 +390,7 @@ watch(() => route.path, () => {
 
 .workspace-login {
   min-height: 100vh;
-  background: #f1f5f9;
+  background: linear-gradient(180deg, #eef2f5 0%, #e7edf2 100%);
 }
 
 .workspace {
@@ -423,6 +423,20 @@ watch(() => route.path, () => {
 .workspace-content {
   padding: 1rem;
   min-width: 0;
+  background: transparent;
+}
+
+:deep(.modal-overlay),
+:deep(.confirm-overlay),
+:deep(.kpi-detail-overlay) {
+  z-index: 3000 !important;
+}
+
+:deep(.modal-content),
+:deep(.confirm-modal),
+:deep(.kpi-detail-modal) {
+  position: relative;
+  z-index: 3001;
 }
 
 .menu-toggle {
@@ -449,6 +463,10 @@ watch(() => route.path, () => {
   }
   .sidebar {
     grid-template-rows: auto auto;
+    position: relative;
+    top: 0;
+    height: auto;
+    overflow: visible;
   }
   .sidebar-footer {
     display: none;

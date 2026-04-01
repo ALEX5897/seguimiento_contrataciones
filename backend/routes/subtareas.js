@@ -169,7 +169,13 @@ router.get('/resumen/semanal', async (req, res) => {
   try {
     const resumen = await mysql.getDashboardWeeklySummary(getScopeFromReq(req), {
       area: req.query.area,
-      responsable: req.query.responsable
+      responsable: req.query.responsable,
+      busqueda: req.query.busqueda,
+      direccion: req.query.direccion,
+      tipoPlan: req.query.tipoPlan,
+      cuatrimestre: req.query.cuatrimestre,
+      tipoContratacion: req.query.tipoContratacion,
+      monto: req.query.monto
     });
     res.json(resumen);
   } catch (error) {

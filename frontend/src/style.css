@@ -21,7 +21,7 @@ body,
 body {
   min-width: 320px;
   color: #0f172a;
-  background: #f1f5f9;
+  background: linear-gradient(180deg, #eef2f5 0%, #e7edf2 100%);
 }
 
 a {

@@ -15,22 +15,65 @@
     <template v-else>
       <section class="context-summary">
         <div class="filter-chips">
+          <span class="filter-chip primary" v-if="busquedaDashboard">Búsqueda: {{ busquedaDashboard }}</span>
           <span class="filter-chip primary">Vista: {{ areaSeleccionada || 'General' }}</span>
           <span class="filter-chip primary" v-if="responsableSeleccionado">Responsable: {{ responsableSeleccionado }}</span>
-       
+          <span class="filter-chip" v-if="filtroDireccion">Dirección: {{ filtroDireccion }}</span>
+          <span class="filter-chip" v-if="filtroPacNoPac">Plan: {{ filtroPacNoPac }}</span>
+          <span class="filter-chip" v-if="filtroTipoContratacionLabel">Contratación: {{ filtroTipoContratacionLabel }}</span>
+          <span class="filter-chip" v-if="filtroCuatrimestre">Cuatrimestre: {{ filtroCuatrimestre }}</span>
+          <span class="filter-chip" v-if="filtroMonto">Monto: {{ filtroMonto }}</span>
           <span class="filter-chip">Presupuesto: {{ formatearMonto(presupuestoFiltrado) }}</span>
-          
-          <button v-if="areaSeleccionada || responsableSeleccionado" class="btn-clear-filter" @click="restablecerVista">
+
+          <button v-if="hayFiltrosDashboardActivos" class="btn-clear-filter" @click="restablecerVista">
             Restablecer vista
           </button>
-          <select v-model="filtroDireccion" class="combo-filtro" style="margin-left: 12px; min-width: 120px;">
-            <option value="">Todas las direcciones</option>
-            <option v-for="dir in direcciones" :key="dir" :value="dir">{{ dir }}</option>
-          </select>
-          <select v-model="filtroMonto" class="combo-filtro" style="margin-left: 8px; min-width: 120px;">
-            <option value="">Todos los montos</option>
-            <option v-for="monto in montosDisponibles" :key="monto" :value="monto">{{ monto }}</option>
-          </select>
+        </div>
+
+        <div class="dashboard-toolbar">
+          <div class="buscador-container dashboard-buscador-container">
+            <span class="buscador-icon">🔎</span>
+            <input
+              v-model="busquedaDashboard"
+              class="buscador-input combo-filtro"
+              type="text"
+              placeholder="Buscar por nombre, dirección o responsable..."
+            />
+          </div>
+
+          <div class="dashboard-toolbar-filtros">
+            <select v-model="filtroDireccion" class="combo-filtro">
+              <option value="">Todas las direcciones</option>
+              <option v-for="dir in direccionesDisponiblesDashboard" :key="dir" :value="dir">{{ dir }}</option>
+            </select>
+            <select v-model="filtroPacNoPac" class="combo-filtro">
+              <option value="">PAC y NO PAC</option>
+              <option value="PAC">PAC</option>
+              <option value="NO PAC">NO PAC</option>
+            </select>
+            <select v-model="filtroTipoContratacion" class="combo-filtro">
+              <option value="">Todos los tipos de contratación</option>
+              <option v-for="tipo in tiposContratacionDisponibles" :key="tipo.value" :value="tipo.value">{{ tipo.label }}</option>
+            </select>
+            <select v-model="filtroCuatrimestre" class="combo-filtro">
+              <option value="">Todos los cuatrimestres</option>
+              <option value="1">Cuatrimestre 1</option>
+              <option value="2">Cuatrimestre 2</option>
+              <option value="3">Cuatrimestre 3</option>
+              <option value="4">Cuatrimestre 4</option>
+            </select>
+            <select v-model="filtroMonto" class="combo-filtro">
+              <option value="">Todos los montos</option>
+              <option v-for="monto in montosDisponibles" :key="monto" :value="monto">{{ monto }}</option>
+            </select>
+            <select v-model="ordenProcesosDashboard" class="combo-filtro">
+              <option value="todos">Ordenar por...</option>
+              <option value="presupuesto-desc">Presupuesto: mayor a menor</option>
+              <option value="presupuesto-asc">Presupuesto: menor a mayor</option>
+              <option value="fecha-fin-desc">Fecha de contratación: mayor a menor</option>
+              <option value="fecha-fin-asc">Fecha de contratación: menor a mayor</option>
+            </select>
+          </div>
         </div>
       </section>
 
@@ -44,11 +87,11 @@
         >
           <span class="kpi-title">Total de procesos</span>
           <strong class="kpi-value">{{ kpis.totalTareas }}</strong>
-          <small class="kpi-foot">Procesos activos con verificables planificados</small>
+          <small class="kpi-foot">Procesos activos</small>
           <div class="kpi-mini-track">
             <div class="kpi-mini-fill" :style="{ width: `${porcentajeProcesosVisibles}%`, backgroundColor: colorProcesosVisibles }"></div>
           </div>
-          <small class="kpi-mini-label">{{ porcentajeProcesosVisibles }}% del total activo</small>
+          <small class="kpi-mini-label">{{ porcentajeProcesosVisibles }}% del cumplimiento general</small>
         </article>
         <button
           type="button"
@@ -94,64 +137,7 @@
         </button>
       </section>
 
-      <section class="trend-kpi-grid">
-        <!-- Etapas programadas por semana: solo etapas -->
-        <article class="kpi-card trend-card">
-          <div class="trend-card-header">
-            <div>
-              <span class="kpi-title">Etapas programadas por semana</span>
-              <strong class="kpi-value trend-value">{{ mejorSemanaCumplimientoTexto.valor }}</strong>
-            </div>
-            <small class="trend-badge success">Pico: {{ mejorSemanaCumplimientoTexto.label }}</small>
-          </div>
-          <small class="kpi-foot">Semana con mayor cantidad de verificables planificados</small>
-          <div v-if="serieSemanal.length" class="trend-chart-wrap">
-            <DashboardChart
-              :labels="serieSemanal.map(item => item.label)"
-              :etapasPlanificadas="serieSemanal.map(item => item.etapasProgramadas || 0)"
-              :etapasCumplidas="serieSemanal.map(item => item.etapasCumplidas !== undefined ? item.etapasCumplidas : 0)"
-              :alertas="serieSemanal.map(() => 0)"
-            />
-          </div>
-            <div v-else class="empty-inline">Sin etapas planificadas por semana para el filtro actual.</div>
-        </article>
-
-        <!-- Alertas registradas por semana: solo alertas -->
-        <article class="kpi-card trend-card alert neutral-alert-card">
-          <div class="trend-card-header" style="align-items: center; gap: 1.2rem;">
-            <div style="display: flex; align-items: center; gap: 0.7rem;">
-              <span style="font-size: 1.7rem; color: #64748b; background: #f3f4f6; border-radius: 50%; padding: 0.15em 0.35em; display: flex; align-items: center; justify-content: center;">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="12" fill="#f3f4f6"/><path d="M12 7v4m0 4h.01" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="16" r="1" fill="#64748b"/></svg>
-              </span>
-              <div>
-                <span class="kpi-title" style="font-size: 1.05rem; color: #334155;">Alertas por semana</span>
-                <div style="display: flex; align-items: baseline; gap: 0.5rem;">
-                  <strong class="kpi-value trend-value" style="font-size: 1.5rem; color: #334155;">
-                    {{ serieSemanal.reduce((sum, item) => sum + (item.alertas || 0), 0) }}
-                  </strong>
-                  <span style="font-size: 1rem; color: #64748b; font-weight: 500;">total</span>
-                </div>
-              </div>
-            </div>
-            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem;">
-              <small class="trend-badge" style="font-size: 0.95rem; background: #f3f4f6; color: #64748b; padding: 0.2em 0.7em;">Pico: {{ peorSemanaAlertasTexto.label }}</small>
-              <span style="font-size: 0.85rem; color: #64748b;">Promedio: {{ (serieSemanal.length ? (serieSemanal.reduce((sum, item) => sum + (item.alertas || 0), 0) / serieSemanal.length).toFixed(1) : 0) }}</span>
-            </div>
-          </div>
-          <small class="kpi-foot" style="font-size: 0.9rem; color: #64748b; font-weight: 500;">Total de alertas en las últimas 16 semanas</small>
-          <div v-if="!serieSemanal.length" class="empty-inline">Sin alertas registradas por semana para el filtro actual.</div>
-          <div v-else class="mini-alertas-chart-wrap" style="padding: 8px 0; min-width: 220px; min-height: 70px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f8fafc; border-radius: 10px; box-shadow: 0 1px 4px #e5e7eb;">
-            <canvas ref="miniAlertasChart" height="60" width="220" style="max-width: 100%; margin-bottom: 4px; background: transparent;"></canvas>
-            <div class="mini-alertas-legend" style="color: #64748b; font-size: 0.9rem; font-weight: 600;">Últimas 16 semanas</div>
-            <div style="margin-top: 2px; font-size: 0.8rem; color: #64748b;">
-              Semana con más alertas: <b>{{ peorSemanaAlertasTexto.label }}</b>
-            </div>
-          </div>
-        </article>
-      </section>
-
-      <!-- ── Sección: Velocímetro + Progreso temporal ─────────────────── -->
-      <section class="charts-grid temporal-section">
+      <section class="charts-grid priority-grid">
 
         <!-- Tarjeta velocímetro -->
         <article class="panel gauge-panel">
@@ -216,78 +202,6 @@
           </div>
         </article>
 
-        <!-- Tarjeta gráfica temporal -->
-        <article class="panel temporal-panel">
-          <div class="panel-header">
-            <h2>Progreso de cumplimiento</h2>
-            <div class="temporal-header-actions">
-              <span class="temporal-overdue-total">Atrasos: {{ totalAtrasadosTemporal }}</span>
-              <div class="temporal-tabs">
-                <button
-                  class="temporal-tab"
-                  :class="{ active: vistaTemporalActiva === 'semanas' }"
-                  @click="vistaTemporalActiva = 'semanas'"
-                >Por semana</button>
-                <button
-                  class="temporal-tab"
-                  :class="{ active: vistaTemporalActiva === 'meses' }"
-                  @click="vistaTemporalActiva = 'meses'"
-                >Por mes</button>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="datosTemporal.length === 0" class="empty">Sin verificables con fecha planificada para mostrar.</div>
-
-          <div v-else class="temporal-chart">
-            <div class="temporal-bars-wrap">
-              <div
-                v-for="bucket in datosTemporal"
-                :key="bucket.clave"
-                class="temporal-col"
-              >
-                <div class="temporal-bar-group">
-                  <!-- Barra pendientes -->
-                  <div
-                    class="temporal-bar pending"
-                    :style="{ height: `${Math.round((bucket.pendientes / maxTotalTemporal) * 100)}%` }"
-                    :title="`${bucket.pendientes} pendientes`"
-                  ></div>
-                  <!-- Barra completados -->
-                  <div
-                    class="temporal-bar done"
-                    :style="{ height: `${Math.round((bucket.completados / maxTotalTemporal) * 100)}%` }"
-                    :title="`${bucket.completados} completados`"
-                  ></div>
-                  <!-- Barra atrasados -->
-                  <div
-                    class="temporal-bar late"
-                    :style="{ height: `${Math.round((bucket.atrasados / maxTotalTemporal) * 100)}%` }"
-                    :title="`${bucket.atrasados} atrasados`"
-                  ></div>
-                </div>
-                <div class="temporal-label">{{ bucket.clave }}</div>
-                <div class="temporal-pct">
-                  {{ bucket.total ? Math.round((bucket.completados / bucket.total) * 100) : 0 }}%
-                </div>
-                <div class="temporal-counts">
-                  <span class="count pending">P:{{ bucket.pendientes }}</span>
-                  <span class="count done">C:{{ bucket.completados }}</span>
-                  <span class="count late">R:{{ bucket.atrasados }}</span>
-                </div>
-              </div>
-            </div>
-            <div class="temporal-legend">
-              <span><i class="dot ok"></i>Completados</span>
-              <span><i class="dot warn"></i>Pendientes</span>
-              <span><i class="dot danger"></i>Atrasados</span>
-            </div>
-          </div>
-        </article>
-
-      </section>
-
-      <section class="charts-grid extended-grid">
         <article class="panel donut-panel">
           <div class="panel-header">
             <h2>Procesos por área</h2>
@@ -320,6 +234,9 @@
           <div v-else class="empty">No hay áreas con información disponible.</div>
         </article>
 
+      </section>
+
+      <section class="charts-grid secondary-grid">
         <article class="panel barras-panel ranking-panel">
           <div class="panel-header">
             <h2>Procesos y avance</h2>
@@ -364,6 +281,106 @@
             <button class="panel-pag-btn" :disabled="paginaRanking >= totalPaginasRanking" @click="paginaRanking++">Siguiente ›</button>
           </div>
           <div v-if="!actividadesAvancePresupuestoPaginadas.length" class="empty">No hay procesos activos para graficar.</div>
+        </article>
+
+        <article class="panel temporal-panel">
+          <div class="panel-header">
+            <h2>Progreso de cumplimiento</h2>
+            <div class="temporal-header-actions">
+              <span class="temporal-overdue-total">Cumplidas: {{ totalCumplidasTemporal }}</span>
+              <div class="temporal-tabs">
+                <button
+                  class="temporal-tab"
+                  :class="{ active: vistaTemporalActiva === 'semanas' }"
+                  @click="vistaTemporalActiva = 'semanas'"
+                >Por semana</button>
+                <button
+                  class="temporal-tab"
+                  :class="{ active: vistaTemporalActiva === 'meses' }"
+                  @click="vistaTemporalActiva = 'meses'"
+                >Por mes</button>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="datosTemporal.length === 0" class="empty">Sin etapas cumplidas para mostrar en esta vista.</div>
+
+          <div v-else class="temporal-chart temporal-chart-line">
+            <div class="temporal-summary-grid">
+             
+              <div class="temporal-summary-card muted">
+                <span class="temporal-summary-label">Pico</span>
+                <strong class="temporal-summary-value">{{ picoCumplimientoTemporal.valor }}</strong>
+                <small>{{ picoCumplimientoTemporal.label }}</small>
+              </div>
+            </div>
+
+            <DashboardChart
+              :labels="datosTemporal.map(item => item.clave)"
+              :etapasPlanificadas="datosTemporal.map(() => 0)"
+              :etapasCumplidas="datosTemporal.map(item => item.completados)"
+              :alertas="datosTemporal.map(() => 0)"
+            />
+
+            <div class="temporal-legend">
+              <span><i class="dot ok"></i>Etapas cumplidas</span>
+              <span>{{ vistaTemporalActiva === 'semanas' ? 'Vista semanal' : 'Vista mensual' }}</span>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="trend-kpi-grid">
+        <article class="kpi-card trend-card">
+          <div class="trend-card-header">
+            <div>
+              <span class="kpi-title">Etapas programadas por semana</span>
+              <strong class="kpi-value trend-value">{{ mejorSemanaCumplimientoTexto.valor }}</strong>
+            </div>
+            <small class="trend-badge success">Pico: {{ mejorSemanaCumplimientoTexto.label }}</small>
+          </div>
+          <small class="kpi-foot">Semana con mayor cantidad de verificables planificados</small>
+          <div v-if="serieSemanal.length" class="trend-chart-wrap">
+            <DashboardChart
+              :labels="serieSemanal.map(item => item.label)"
+              :etapasPlanificadas="serieSemanal.map(item => item.etapasProgramadas || 0)"
+              :etapasCumplidas="serieSemanal.map(item => item.etapasCumplidas !== undefined ? item.etapasCumplidas : 0)"
+              :alertas="serieSemanal.map(() => 0)"
+            />
+          </div>
+          <div v-else class="empty-inline">Sin etapas planificadas por semana para el filtro actual.</div>
+        </article>
+
+        <article class="kpi-card trend-card alert neutral-alert-card">
+          <div class="trend-card-header" style="align-items: center; gap: 1.2rem;">
+            <div style="display: flex; align-items: center; gap: 0.7rem;">
+              <span style="font-size: 1.7rem; color: #64748b; background: #f3f4f6; border-radius: 50%; padding: 0.15em 0.35em; display: flex; align-items: center; justify-content: center;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="12" fill="#f3f4f6"/><path d="M12 7v4m0 4h.01" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="16" r="1" fill="#64748b"/></svg>
+              </span>
+              <div>
+                <span class="kpi-title" style="font-size: 1.05rem; color: #334155;">Alertas por semana</span>
+                <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+                  <strong class="kpi-value trend-value" style="font-size: 1.5rem; color: #334155;">
+                    {{ serieSemanal.reduce((sum, item) => sum + (item.alertas || 0), 0) }}
+                  </strong>
+                  <span style="font-size: 1rem; color: #64748b; font-weight: 500;">total</span>
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem;">
+              <small class="trend-badge" style="font-size: 0.95rem; background: #f3f4f6; color: #64748b; padding: 0.2em 0.7em;">Pico: {{ peorSemanaAlertasTexto.label }}</small>
+              <span style="font-size: 0.85rem; color: #64748b;">Promedio: {{ (serieSemanal.length ? (serieSemanal.reduce((sum, item) => sum + (item.alertas || 0), 0) / serieSemanal.length).toFixed(1) : 0) }}</span>
+            </div>
+          </div>
+          <small class="kpi-foot" style="font-size: 0.9rem; color: #64748b; font-weight: 500;">Total de alertas en las últimas 16 semanas</small>
+          <div v-if="!serieSemanal.length" class="empty-inline">Sin alertas registradas por semana para el filtro actual.</div>
+          <div v-else class="mini-alertas-chart-wrap" style="padding: 8px 0; min-width: 220px; min-height: 70px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f8fafc; border-radius: 10px; box-shadow: 0 1px 4px #e5e7eb;">
+            <canvas ref="miniAlertasChart" height="60" width="220" style="max-width: 100%; margin-bottom: 4px; background: transparent;"></canvas>
+            <div class="mini-alertas-legend" style="color: #64748b; font-size: 0.9rem; font-weight: 600;">Últimas 16 semanas</div>
+            <div style="margin-top: 2px; font-size: 0.8rem; color: #64748b;">
+              Semana con más alertas: <b>{{ peorSemanaAlertasTexto.label }}</b>
+            </div>
+          </div>
         </article>
       </section>
 
@@ -439,22 +456,48 @@
 </template>
 
 <script setup lang="ts">
-// Filtros para dirección y monto
+// Filtros de dashboard
+const busquedaDashboard = ref('');
 const filtroDireccion = ref('');
 const filtroMonto = ref('');
-// Extraer direcciones únicas de subtareas cargadas
-const direcciones = computed(() => {
+const filtroPacNoPac = ref('');
+const filtroTipoContratacion = ref('');
+const filtroCuatrimestre = ref('');
+const ordenProcesosDashboard = ref('fecha-fin-asc');
+
+const subtareasActivasBase = computed(() =>
+  subtareas.value.filter((subtarea: any) => actividadActiva(subtarea))
+);
+
+const direccionesDisponiblesDashboard = computed(() => {
   const set = new Set<string>();
-  for (const s of subtareas.value) {
-    if (s.direccionNombre && s.direccionNombre !== 'Sin área' && s.direccionNombre !== 'Sin dirección') {
-      set.add(s.direccionNombre);
+  for (const subtarea of subtareasActivasBase.value) {
+    const direccion = obtenerDireccionDashboard(subtarea);
+    if (direccion !== 'N/A') {
+      set.add(direccion);
     }
   }
   return Array.from(set).sort((a, b) => a.localeCompare(b));
 });
-// Extraer rangos de montos de subtareas cargadas
+
+const tiposContratacionDisponibles = computed(() => {
+  const opciones = new Map<string, string>();
+
+  for (const subtarea of subtareasActivasBase.value) {
+    const label = obtenerTipoContratacionDashboard(subtarea);
+    if (!label || label === 'Contratación sugerida no definida') continue;
+    const value = normalizarTextoBusqueda(label);
+    if (value && !opciones.has(value)) {
+      opciones.set(value, label);
+    }
+  }
+
+  return Array.from(opciones.entries())
+    .map(([value, label]) => ({ value, label }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+});
+
 const montosDisponibles = computed(() => {
-  // Define rangos de ejemplo, puedes ajustar según tus necesidades
   const rangos = [
     { label: '0-1,000', min: 0, max: 1000 },
     { label: '1,001-5,000', min: 1001, max: 5000 },
@@ -462,8 +505,8 @@ const montosDisponibles = computed(() => {
     { label: '10,001+', min: 10001, max: Infinity }
   ];
   const usados = new Set<string>();
-  for (const s of subtareas.value) {
-    const monto = Number(s.presupuesto || 0);
+  for (const subtarea of subtareasActivasBase.value) {
+    const monto = obtenerPresupuestoDashboard(subtarea);
     for (const r of rangos) {
       if (monto >= r.min && monto <= r.max) {
         usados.add(r.label);
@@ -474,14 +517,53 @@ const montosDisponibles = computed(() => {
   return rangos.filter(r => usados.has(r.label)).map(r => r.label);
 });
 
-// Filtrar subtareas según dirección y monto seleccionados
-const subtareasFiltradasPorDireccionMonto = computed(() => {
-  let items = subtareas.value;
+const filtroTipoContratacionLabel = computed(() =>
+  tiposContratacionDisponibles.value.find((tipo) => tipo.value === filtroTipoContratacion.value)?.label || ''
+);
+
+const hayFiltrosDashboardActivos = computed(() =>
+  Boolean(
+    busquedaDashboard.value
+    || areaSeleccionada.value
+    || responsableSeleccionado.value
+    || filtroDireccion.value
+    || filtroMonto.value
+    || filtroPacNoPac.value
+    || filtroTipoContratacion.value
+    || filtroCuatrimestre.value
+  )
+);
+
+const subtareasBaseFiltradas = computed(() => {
+  let items = [...subtareasActivasBase.value];
+
+  const query = normalizarTextoBusqueda(busquedaDashboard.value);
+  if (query) {
+    items = items.filter((subtarea: any) => {
+      const direccion = obtenerDireccionDashboard(subtarea);
+      const responsable = obtenerResponsableDashboard(subtarea);
+      return normalizarTextoBusqueda(`${subtarea?.nombre || ''} ${direccion} ${responsable}`).includes(query);
+    });
+  }
+
   if (filtroDireccion.value) {
-    items = items.filter(s => s.direccionNombre === filtroDireccion.value);
+    items = items.filter((subtarea: any) => obtenerDireccionDashboard(subtarea) === filtroDireccion.value);
+  }
+  if (filtroPacNoPac.value) {
+    items = items.filter((subtarea: any) => {
+      const tipo = String(subtarea?.pacNoPac || subtarea?.pac_no_pac || subtarea?.tipoPlan || '').toUpperCase();
+      return tipo === filtroPacNoPac.value;
+    });
+  }
+  if (filtroTipoContratacion.value) {
+    items = items.filter((subtarea: any) =>
+      normalizarTextoBusqueda(obtenerTipoContratacionDashboard(subtarea)) === filtroTipoContratacion.value
+    );
+  }
+  if (filtroCuatrimestre.value) {
+    items = items.filter((subtarea: any) => String(obtenerCuatrimestreDashboard(subtarea)) === filtroCuatrimestre.value);
   }
   if (filtroMonto.value) {
-    // Usa los mismos rangos que montosDisponibles
     const rangos = [
       { label: '0-1,000', min: 0, max: 1000 },
       { label: '1,001-5,000', min: 1001, max: 5000 },
@@ -490,17 +572,29 @@ const subtareasFiltradasPorDireccionMonto = computed(() => {
     ];
     const rango = rangos.find(r => r.label === filtroMonto.value);
     if (rango) {
-      items = items.filter(s => {
-        const monto = Number(s.presupuesto || 0);
+      items = items.filter((subtarea: any) => {
+        const monto = obtenerPresupuestoDashboard(subtarea);
         return monto >= rango.min && monto <= rango.max;
       });
     }
   }
+
+  if (ordenProcesosDashboard.value === 'presupuesto-desc') {
+    items.sort((a: any, b: any) => obtenerPresupuestoDashboard(b) - obtenerPresupuestoDashboard(a));
+  } else if (ordenProcesosDashboard.value === 'presupuesto-asc') {
+    items.sort((a: any, b: any) => obtenerPresupuestoDashboard(a) - obtenerPresupuestoDashboard(b));
+  } else if (ordenProcesosDashboard.value === 'fecha-fin-desc') {
+    items.sort((a: any, b: any) => obtenerFechaFinDashboard(b) - obtenerFechaFinDashboard(a));
+  } else if (ordenProcesosDashboard.value === 'fecha-fin-asc') {
+    items.sort((a: any, b: any) => obtenerFechaFinDashboard(a) - obtenerFechaFinDashboard(b));
+  }
+
   return items;
 });
 import DashboardChart from '../components/DashboardChart.vue';
 import { computed, onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue';
 import type { Chart as ChartJS } from 'chart.js';
+import { normalizarTextoBusqueda } from '../utils/search';
 
 // Declaraciones principales de estado reactivo
 const cargando = ref(true);
@@ -550,7 +644,6 @@ const miniAlertasChart = ref<HTMLCanvasElement | null>(null);
 let miniAlertasChartInstance: ChartJS | null = null;
 import { useRouter } from 'vue-router';
 import { subtareasService } from '../services/api';
-
 const router = useRouter();
 
 function renderMiniAlertasChart() {
@@ -658,17 +751,75 @@ function actividadAtrasada(subtarea: any) {
   });
 }
 
+function obtenerDireccionDashboard(subtarea: any) {
+  return subtarea?.direccionNombre
+    || subtarea?.direccion?.nombre
+    || subtarea?.direccion_encargada
+    || subtarea?.direccionEncargada
+    || 'N/A';
+}
+
+function obtenerResponsableDashboard(subtarea: any) {
+  return subtarea?.responsableNombre
+    || subtarea?.responsableDirectivo
+    || subtarea?.responsable_directivo
+    || subtarea?.responsable?.nombre
+    || subtarea?.responsable
+    || 'N/A';
+}
+
+function obtenerPresupuestoDashboard(subtarea: any) {
+  const valor = Number(
+    subtarea?.presupuesto
+    ?? subtarea?.presupuesto2026Inicial
+    ?? subtarea?.presupuesto_2026_inicial
+    ?? 0
+  );
+  return Number.isFinite(valor) ? valor : 0;
+}
+
+function obtenerTipoContratacionDashboard(subtarea: any) {
+  const valor = String(
+    subtarea?.procedimientoSugerido
+    ?? subtarea?.procedimiento_sugerido
+    ?? subtarea?.tipoContratacion
+    ?? subtarea?.tipo_contratacion
+    ?? subtarea?.procedimiento
+    ?? ''
+  ).trim();
+
+  return valor || 'Contratación sugerida no definida';
+}
+
+function obtenerCuatrimestreDashboard(subtarea: any) {
+  const valor = Number(subtarea?.cuatrimestre ?? subtarea?.cuatrimestreNombre ?? 999);
+  return Number.isFinite(valor) ? valor : 999;
+}
+
+function obtenerFechaFinDashboard(subtarea: any) {
+  const fechaFin = subtarea?.fechaFin || subtarea?.fecha_fin;
+  const timestamp = fechaFin ? new Date(fechaFin).getTime() : Number.POSITIVE_INFINITY;
+  return Number.isFinite(timestamp) ? timestamp : Number.POSITIVE_INFINITY;
+}
+
 function toggleArea(area: string) {
   areaSeleccionada.value = areaSeleccionada.value === area ? '' : area;
 }
 
 function restablecerVista() {
+  busquedaDashboard.value = '';
   areaSeleccionada.value = '';
   responsableSeleccionado.value = '';
+  filtroDireccion.value = '';
+  filtroMonto.value = '';
+  filtroPacNoPac.value = '';
+  filtroTipoContratacion.value = '';
+  filtroCuatrimestre.value = '';
+  ordenProcesosDashboard.value = 'fecha-fin-asc';
 }
 
 function responsableBase(subtarea: any) {
-  return subtarea?.responsableNombre || subtarea?.responsable?.nombre || 'Sin responsable';
+  return obtenerResponsableDashboard(subtarea).replace(/^N\/A$/i, 'Sin responsable');
 }
 
 function abrirActividadDetalle(actividadId: number, etapaId?: number | string) {
@@ -690,7 +841,13 @@ async function cargarResumenSemanal() {
   try {
     const response = await subtareasService.getResumenSemanal({
       area: areaSeleccionada.value || undefined,
-      responsable: responsableSeleccionado.value || undefined
+      responsable: responsableSeleccionado.value || undefined,
+      busqueda: busquedaDashboard.value.trim() || undefined,
+      direccion: filtroDireccion.value || undefined,
+      tipoPlan: filtroPacNoPac.value || undefined,
+      cuatrimestre: filtroCuatrimestre.value || undefined,
+      tipoContratacion: filtroTipoContratacionLabel.value || undefined,
+      monto: filtroMonto.value || undefined
     });
     resumenSemanal.value = response;
   } catch (error) {
@@ -715,12 +872,12 @@ function manejarEscapeModales(event: KeyboardEvent) {
 }
 
 const subtareasElegibles = computed(() =>
-  subtareasFiltradasPorDireccionMonto.value.filter((subtarea: any) => actividadActiva(subtarea) && getEtapasConFechaSubtarea(subtarea).length > 0)
+  subtareasBaseFiltradas.value.filter((subtarea: any) => getEtapasConFechaSubtarea(subtarea).length > 0)
 );
 
 const subtareasFiltradasPorArea = computed(() =>
   areaSeleccionada.value
-    ? subtareasElegibles.value.filter((subtarea: any) => (subtarea.direccionNombre || 'Sin área') === areaSeleccionada.value)
+    ? subtareasElegibles.value.filter((subtarea: any) => (obtenerDireccionDashboard(subtarea) || 'Sin área') === areaSeleccionada.value)
     : subtareasElegibles.value
 );
 
@@ -737,7 +894,7 @@ const etapas = computed(() =>
       id: etapa.id || `${subtarea.id}-${etapa.etapaId || etapa.nombre}`,
       subtareaId: subtarea.id,
       subtareaNombre: subtarea.nombre,
-      areaNombre: subtarea.direccionNombre || 'Sin área',
+      areaNombre: obtenerDireccionDashboard(subtarea) || 'Sin área',
       responsableNombre: etapa.responsableNombre || responsableBase(subtarea)
     }))
   )
@@ -821,9 +978,9 @@ const detalleCumplimiento = computed(() =>
     .map((subtarea: any) => ({
       id: subtarea.id,
       nombre: subtarea.nombre || 'Actividad sin nombre',
-      area: subtarea.direccionNombre || 'Sin área',
+      area: obtenerDireccionDashboard(subtarea) || 'Sin área',
       responsable: responsableBase(subtarea),
-      presupuesto: Number(subtarea.presupuesto || 0)
+      presupuesto: obtenerPresupuestoDashboard(subtarea)
     }))
     .sort((a, b) => b.presupuesto - a.presupuesto || a.nombre.localeCompare(b.nombre))
 );
@@ -912,7 +1069,7 @@ const procesosPorArea = computed(() => {
   const mapa = new Map<string, { label: string; procesos: number }>();
 
   for (const subtarea of subtareasElegibles.value) {
-    const area = subtarea.direccionNombre || 'Sin área';
+    const area = obtenerDireccionDashboard(subtarea) || 'Sin área';
     const actual = mapa.get(area) || { label: area, procesos: 0 };
     actual.procesos += 1;
     mapa.set(area, actual);
@@ -961,10 +1118,10 @@ const actividadesAvancePresupuesto = computed(() => {
     .map((subtarea: any) => ({
       id: subtarea.id,
       nombre: subtarea.nombre || 'Proceso sin nombre',
-      area: subtarea.direccionNombre || 'Sin área',
+      area: obtenerDireccionDashboard(subtarea) || 'Sin área',
       responsable: responsableBase(subtarea),
       avance: calcularAvanceSubtarea(subtarea),
-      presupuesto: Number(subtarea.presupuesto || 0)
+      presupuesto: obtenerPresupuestoDashboard(subtarea)
     }))
     .sort((a, b) => b.presupuesto - a.presupuesto || b.avance - a.avance)
     .map((item) => ({
@@ -1003,7 +1160,18 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', manejarEscapeModales);
 });
 
-watch([actividadesAvancePresupuesto, areaSeleccionada, responsableSeleccionado], () => {
+watch([
+  actividadesAvancePresupuesto,
+  areaSeleccionada,
+  responsableSeleccionado,
+  busquedaDashboard,
+  filtroDireccion,
+  filtroMonto,
+  filtroPacNoPac,
+  filtroTipoContratacion,
+  filtroCuatrimestre,
+  ordenProcesosDashboard
+], () => {
   if (paginaRanking.value > totalPaginasRanking.value) {
     paginaRanking.value = totalPaginasRanking.value;
   }
@@ -1012,7 +1180,16 @@ watch([actividadesAvancePresupuesto, areaSeleccionada, responsableSeleccionado],
   }
 });
 
-watch([areaSeleccionada, responsableSeleccionado], () => {
+watch([
+  areaSeleccionada,
+  responsableSeleccionado,
+  busquedaDashboard,
+  filtroDireccion,
+  filtroMonto,
+  filtroPacNoPac,
+  filtroTipoContratacionLabel,
+  filtroCuatrimestre
+], () => {
   cargarResumenSemanal();
 });
 
@@ -1088,132 +1265,188 @@ function claveMesPorFecha(fechaStr: string): string {
   return `${(mes[0] ?? '').toUpperCase()}${mes.slice(1)} '${anio}`;
 }
 
-type BucketTemporal = { clave: string; completados: number; pendientes: number; atrasados: number; total: number; orden: number };
+type BucketTemporal = { clave: string; completados: number; total: number; orden: number };
 
 const datosTemporal = computed((): BucketTemporal[] => {
   const mapa = new Map<string, BucketTemporal>();
 
   for (const etapa of etapasConFechaAsignada.value) {
-    // Usar fecha planificada/tentativa para agrupar por semana/mes
-    const fechaPlanificadaRaw: string | undefined = etapa?.fechaPlanificada || etapa?.fechaTentativa;
-    if (!fechaPlanificadaRaw) continue;
-    const dPlan = new Date(fechaPlanificadaRaw);
-    if (isNaN(dPlan.getTime())) continue;
+    const estadoNorm = normalizarEstado(etapa.estado, etapa.fechaReal);
+    if (estadoNorm !== 'completado') continue;
+
+    const fechaBase: string | undefined = etapa?.fechaReal || etapa?.fechaPlanificada || etapa?.fechaTentativa;
+    if (!fechaBase) continue;
+
+    const dBase = new Date(fechaBase);
+    if (isNaN(dBase.getTime())) continue;
 
     const clave = vistaTemporalActiva.value === 'semanas'
-      ? claveSemanaPorFecha(fechaPlanificadaRaw)
-      : claveMesPorFecha(fechaPlanificadaRaw);
+      ? claveSemanaPorFecha(fechaBase)
+      : claveMesPorFecha(fechaBase);
 
-    // Número de orden para ordenar cronológicamente
     const orden = vistaTemporalActiva.value === 'semanas'
-      ? dPlan.getFullYear() * 100 + Math.ceil(((dPlan.getTime() - new Date(dPlan.getFullYear(), 0, 1).getTime()) / 86400000 + new Date(dPlan.getFullYear(), 0, 1).getDay() + 1) / 7)
-      : dPlan.getFullYear() * 100 + (dPlan.getMonth() + 1);
+      ? dBase.getFullYear() * 100 + Math.ceil(((dBase.getTime() - new Date(dBase.getFullYear(), 0, 1).getTime()) / 86400000 + new Date(dBase.getFullYear(), 0, 1).getDay() + 1) / 7)
+      : dBase.getFullYear() * 100 + (dBase.getMonth() + 1);
 
-    const bucket = mapa.get(clave) || { clave, completados: 0, pendientes: 0, atrasados: 0, total: 0, orden };
+    const bucket = mapa.get(clave) || { clave, completados: 0, total: 0, orden };
+    bucket.completados += 1;
     bucket.total += 1;
 
-    const estadoNorm = normalizarEstado(etapa.estado, etapa.fechaReal);
-    if (estadoNorm === 'completado') {
-      // Si está completado, verificar si fue a tiempo o con retraso
-      const fechaRealRaw = etapa?.fechaReal;
-      if (fechaRealRaw) {
-        const dReal = new Date(fechaRealRaw);
-        dReal.setHours(0, 0, 0, 0);
-        const dPlanCopy = new Date(dPlan);
-        dPlanCopy.setHours(0, 0, 0, 0);
-        
-        if (dReal > dPlanCopy) {
-          // Completado DESPUÉS de la fecha planificada = ATRASADO
-          bucket.atrasados += 1;
-        } else {
-          // Completado A TIEMPO
-          bucket.completados += 1;
-        }
-      } else {
-        // No tiene fechaReal registrada, asumir que se completó a tiempo
-        bucket.completados += 1;
-      }
-    } else {
-      // No está completado = PENDIENTE
-      bucket.pendientes += 1;
-    }
-    
     mapa.set(clave, bucket);
   }
 
   return Array.from(mapa.values()).sort((a, b) => a.orden - b.orden);
 });
 
-const maxTotalTemporal = computed(() =>
-  datosTemporal.value.reduce((max, b) => Math.max(max, b.total), 1)
+const totalCumplidasTemporal = computed(() =>
+  datosTemporal.value.reduce((total, b) => total + b.completados, 0)
 );
 
-const totalAtrasadosTemporal = computed(() =>
-  datosTemporal.value.reduce((total, b) => total + b.atrasados, 0)
-);
+const picoCumplimientoTemporal = computed(() => {
+  if (!datosTemporal.value.length) {
+    return { valor: 0, label: 'Sin datos' };
+  }
+
+  const maximo = datosTemporal.value.reduce((previo, actual) =>
+    actual.completados > previo.completados ? actual : previo
+  );
+
+  return {
+    valor: maximo.completados,
+    label: maximo.clave
+  };
+});
 </script>
 
 <style scoped>
-.dashboard-admin {
-  display: grid;
-  gap: 1.25rem;
+/* ── Design Tokens ────────────────────────────────────────────────────────── */
+:root {
+  --c-bg: #f0f4f8;
+  --c-surface: #ffffff;
+  --c-border: #e2e8f0;
+  --c-text-primary: #0f172a;
+  --c-text-secondary: #475569;
+  --c-text-muted: #94a3b8;
+  --c-accent: #2563eb;
+  --c-accent-light: #dbeafe;
+  --c-success: #16a34a;
+  --c-success-light: #dcfce7;
+  --c-warning: #d97706;
+  --c-warning-light: #fef3c7;
+  --c-danger: #dc2626;
+  --c-danger-light: #fee2e2;
+  --c-teal: #0d9488;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --shadow-sm: 0 1px 3px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.04);
+  --shadow-md: 0 4px 16px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.04);
+  --shadow-lg: 0 10px 32px rgba(15,23,42,.12), 0 4px 12px rgba(15,23,42,.06);
 }
 
+/* ── Layout ───────────────────────────────────────────────────────────────── */
+.dashboard-admin {
+  display: grid;
+  gap: 1.1rem;
+  font-family: 'DM Sans', 'Outfit', 'Segoe UI', system-ui, sans-serif;
+  padding: 0.35rem;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
 .dashboard-header {
-  background: linear-gradient(135deg, #0f172a, #1d4ed8);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 58%, #334155 100%);
   color: #fff;
-  border-radius: 14px;
-  padding: 1.2rem 1.4rem;
+  border-radius: var(--radius-lg);
+  padding: 1.4rem 1.8rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.14);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 82% 38%, rgba(148, 163, 184, 0.16) 0%, transparent 62%);
+  pointer-events: none;
 }
 
 .dashboard-header h1 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .dashboard-header p {
-  margin: 0.25rem 0 0;
+  margin: 0.2rem 0 0;
   color: #cbd5e1;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .meta-pill {
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 999px;
-  padding: 0.35rem 0.75rem;
+  padding: 0.4rem 0.85rem;
   font-size: 0.82rem;
+  backdrop-filter: blur(6px);
+  font-weight: 500;
 }
 
 .loading,
 .empty {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1rem;
-  color: #64748b;
+  background: #ffffff;
+  border: 1px solid #d9e2ea;
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  color: var(--c-text-muted);
+  text-align: center;
+  font-size: 0.9rem;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
 }
 
+/* ── Context Summary & Filters ────────────────────────────────────────────── */
 .context-summary {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 0.7rem 0.9rem;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  background: #ffffff;
+  border: 1px solid #d9e2ea;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.dashboard-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.8rem;
 }
 
 .btn-clear-filter {
-  padding: 0.55rem 0.9rem;
+  padding: 0.45rem 0.85rem;
   border-radius: 8px;
-  border: 1px solid #cbd5e1;
-  background: #f8fafc;
-  color: #334155;
-  font-size: 0.85rem;
+  border: 1px dashed #fca5a5;
+  background: #fff5f5;
+  color: #dc2626;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-clear-filter:hover {
+  background: #fee2e2;
+  border-color: #f87171;
 }
 
 .btn-clear-filter:disabled {
@@ -1224,33 +1457,83 @@ const totalAtrasadosTemporal = computed(() =>
 .filter-chips {
   display: flex;
   flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.dashboard-toolbar-filtros {
+  display: flex;
   gap: 0.55rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dashboard-buscador-container {
+  min-width: 280px;
+  flex: 1;
+}
+
+.buscador-container {
+  position: relative;
+}
+
+.buscador-icon {
+  position: absolute;
+  left: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.buscador-input {
+  width: 100%;
+  padding-left: 2rem;
 }
 
 .filter-chip {
   display: inline-flex;
   align-items: center;
-  padding: 0.35rem 0.7rem;
+  padding: 0.3rem 0.7rem;
   border-radius: 999px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--c-border);
   background: #f8fafc;
-  color: #475569;
-  font-size: 0.78rem;
+  color: var(--c-text-secondary);
+  font-size: 0.76rem;
   font-weight: 600;
 }
 
 .filter-chip.primary {
-  background: #dbeafe;
+  background: var(--c-accent-light);
   border-color: #93c5fd;
   color: #1d4ed8;
 }
 
 .filter-chip.success {
-  background: #dcfce7;
+  background: var(--c-success-light);
   border-color: #86efac;
   color: #15803d;
 }
 
+.combo-filtro {
+  border: 1px solid var(--c-border);
+  background: #f8fafc;
+  color: var(--c-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.combo-filtro:focus {
+  outline: none;
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* ── KPI Grid ─────────────────────────────────────────────────────────────── */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1264,13 +1547,20 @@ const totalAtrasadosTemporal = computed(() =>
 }
 
 .kpi-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 0.95rem 1rem;
+  background: #ffffff;
+  border: 1px solid #d9e2ea;
+  border-radius: var(--radius-md);
+  padding: 1.1rem 1.15rem;
   display: grid;
-  gap: 0.35rem;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  gap: 0.4rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.kpi-card:hover {
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
 }
 
 .kpi-card.has-tooltip {
@@ -1285,15 +1575,15 @@ const totalAtrasadosTemporal = computed(() =>
   transform: translateX(-50%) translateY(6px);
   background: #0f172a;
   color: #f8fafc;
-  padding: 0.4rem 0.55rem;
+  padding: 0.45rem 0.65rem;
   border-radius: 8px;
-  font-size: 0.68rem;
-  line-height: 1.2;
+  font-size: 0.7rem;
+  line-height: 1.3;
   white-space: nowrap;
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.28);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.16s ease, transform 0.16s ease;
+  transition: opacity 0.18s ease, transform 0.18s ease;
   z-index: 25;
 }
 
@@ -1308,7 +1598,7 @@ const totalAtrasadosTemporal = computed(() =>
   border-top: 6px solid #0f172a;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.16s ease, transform 0.16s ease;
+  transition: opacity 0.18s ease, transform 0.18s ease;
   z-index: 25;
 }
 
@@ -1326,81 +1616,85 @@ const totalAtrasadosTemporal = computed(() =>
   width: 100%;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
 }
 
 .kpi-card-button:hover {
-  border-color: #93c5fd;
-  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.08);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .kpi-card-button:focus-visible {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
 }
 
+/* KPI accent bar — left colored stripe */
 .kpi-card.success {
-  border-left: 4px solid #16a34a;
+  box-shadow: inset 4px 0 0 var(--c-success), 0 10px 30px rgba(15, 23, 42, 0.05);
 }
 
 .kpi-card.danger {
-  border-left: 4px solid #dc2626;
+  box-shadow: inset 4px 0 0 var(--c-danger), 0 10px 30px rgba(15, 23, 42, 0.05);
 }
 
 .kpi-card.accent {
-  border-left: 4px solid #0f766e;
+  box-shadow: inset 4px 0 0 var(--c-teal), 0 10px 30px rgba(15, 23, 42, 0.05);
+}
+
+/* White executive surfaces with only a slim state accent */
+.kpi-card.success,
+.kpi-card.danger,
+.kpi-card.accent {
+  background: #ffffff;
 }
 
 .kpi-title {
-  color: #64748b;
-  font-size: 0.82rem;
+  color: var(--c-text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .kpi-value {
-  color: #0f172a;
-  font-size: 1.7rem;
+  color: var(--c-text-primary);
+  font-size: 2rem;
+  font-weight: 800;
   line-height: 1;
+  letter-spacing: -0.03em;
 }
 
 .kpi-value-money {
-  font-size: 1.35rem;
+  font-size: 1.45rem;
 }
 
 .kpi-foot {
-  color: #94a3b8;
-  font-size: 0.76rem;
+  color: var(--c-text-muted);
+  font-size: 0.74rem;
 }
 
 .kpi-mini-track {
-  height: 8px;
+  height: 6px;
   border-radius: 999px;
   background: #e2e8f0;
   overflow: hidden;
-  margin-top: 0.1rem;
+  margin-top: 0.2rem;
 }
 
 .kpi-mini-fill {
   height: 100%;
   border-radius: 999px;
+  transition: width 0.6s ease;
 }
 
-.kpi-mini-fill.ok {
-  background: #22c55e;
-}
-
-.kpi-mini-fill.danger {
-  background: #ef4444;
-}
-
-.kpi-mini-fill.info {
-  background: #3b82f6;
-}
+.kpi-mini-fill.ok    { background: var(--c-success); }
+.kpi-mini-fill.danger { background: var(--c-danger); }
+.kpi-mini-fill.info  { background: var(--c-accent); }
 
 .kpi-mini-label {
-  color: #64748b;
-  font-size: 0.72rem;
+  color: var(--c-text-muted);
+  font-size: 0.7rem;
 }
 
 .kpi-donut-row {
@@ -1410,23 +1704,30 @@ const totalAtrasadosTemporal = computed(() =>
   gap: 0.6rem;
 }
 
+/* ── Trend Cards ──────────────────────────────────────────────────────────── */
 .trend-card {
-  gap: 0.55rem;
+  gap: 0.6rem;
 }
 
 .trend-card.alert {
-  border-left: 4px solid #dc2626;
+  box-shadow: inset 4px 0 0 var(--c-danger), 0 10px 30px rgba(15, 23, 42, 0.05);
+  background: #ffffff;
+}
+
+.neutral-alert-card {
+  box-shadow: inset 4px 0 0 #64748b, 0 10px 30px rgba(15, 23, 42, 0.05) !important;
+  background: #ffffff !important;
 }
 
 .alert-value {
-  color: #dc2626;
+  color: var(--c-danger);
   font-size: 2.1rem;
-  font-weight: bold;
-  letter-spacing: 1px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 
 .mini-alertas-legend {
-  color: #dc2626;
+  color: #64748b;
   font-size: 0.78rem;
   margin-top: 2px;
   text-align: center;
@@ -1441,24 +1742,27 @@ const totalAtrasadosTemporal = computed(() =>
 }
 
 .trend-value {
-  font-size: 1.9rem;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 
 .trend-badge {
   border-radius: 999px;
-  padding: 0.28rem 0.6rem;
-  font-size: 0.72rem;
+  padding: 0.28rem 0.7rem;
+  font-size: 0.7rem;
   font-weight: 700;
   white-space: nowrap;
+  letter-spacing: 0.02em;
 }
 
 .trend-badge.success {
-  background: #dcfce7;
+  background: var(--c-success-light);
   color: #166534;
 }
 
 .trend-badge.danger {
-  background: #fee2e2;
+  background: var(--c-danger-light);
   color: #991b1b;
 }
 
@@ -1470,69 +1774,69 @@ const totalAtrasadosTemporal = computed(() =>
 .trend-chart {
   width: 100%;
   height: 120px;
-  border-radius: 10px;
-  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
-  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+  border: 1px solid var(--c-border);
 }
 
 .trend-grid {
   fill: none;
-  stroke: #cbd5e1;
+  stroke: #e2e8f0;
   stroke-width: 1;
   stroke-dasharray: 4 4;
 }
 
 .trend-line {
   fill: none;
-  stroke-width: 3;
+  stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.trend-line.line-primary {
-  stroke: #2563eb;
-}
-
-.trend-line.line-danger {
-  stroke: #dc2626;
-}
+.trend-line.line-primary { stroke: var(--c-accent); }
+.trend-line.line-danger  { stroke: var(--c-danger); }
 
 .trend-axis {
   display: flex;
   justify-content: space-between;
-  color: #64748b;
-  font-size: 0.72rem;
+  color: var(--c-text-muted);
+  font-size: 0.7rem;
   font-weight: 600;
 }
 
 .empty-inline {
-  color: #64748b;
+  color: var(--c-text-muted);
   font-size: 0.8rem;
+  padding: 1rem;
+  text-align: center;
+  background: #f8fafc;
+  border-radius: 8px;
 }
 
 .kpi-mini-donut {
   --value: 0%;
-  --kpi-color: #14b8a6;
-  width: 48px;
-  height: 48px;
+  --kpi-color: #0d9488;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   background: conic-gradient(var(--kpi-color) var(--value), #e2e8f0 var(--value));
   display: grid;
   place-items: center;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
 }
 
 .kpi-mini-donut span {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: #fff;
-  border: 1px solid #e2e8f0;
   display: grid;
   place-items: center;
-  font-size: 0.62rem;
-  font-weight: 700;
+  font-size: 0.6rem;
+  font-weight: 800;
 }
 
+/* ── Charts Grid & Panels ─────────────────────────────────────────────────── */
 .charts-grid,
 .bottom-grid {
   display: grid;
@@ -1549,73 +1853,90 @@ const totalAtrasadosTemporal = computed(() =>
 }
 
 .panel {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 1rem;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  background: #ffffff;
+  border: 1px solid #d9e2ea;
+  border-radius: var(--radius-md);
+  padding: 1.1rem 1.2rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.panel:hover {
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
 }
 
 .panel-header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 0.85rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid #edf2f7;
   gap: 0.8rem;
 }
 
 .panel-header h2 {
   margin: 0;
-  font-size: 1rem;
-  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--c-text-primary);
+  letter-spacing: -0.01em;
 }
 
 .panel-header span {
-  color: #64748b;
-  font-size: 0.78rem;
+  color: var(--c-text-muted);
+  font-size: 0.76rem;
+  background: #f1f5f9;
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  padding: 0.18rem 0.6rem;
+  font-weight: 600;
 }
 
 .panel-paginator {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 0.55rem;
-  margin-bottom: 0.8rem;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .panel-pag-btn {
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  color: #334155;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-text-secondary);
   border-radius: 8px;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 600;
-  padding: 0.32rem 0.62rem;
+  padding: 0.3rem 0.65rem;
   cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
 
 .panel-pag-btn:hover:not(:disabled) {
   border-color: #93c5fd;
-  background: #eff6ff;
+  background: var(--c-accent-light);
   color: #1d4ed8;
 }
 
 .panel-pag-btn:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .panel-pag-info {
-  font-size: 0.76rem;
-  color: #64748b;
+  font-size: 0.74rem;
+  color: var(--c-text-muted);
   font-weight: 600;
 }
 
+/* ── Table ────────────────────────────────────────────────────────────────── */
 .tabla-wrap {
   overflow: auto;
   max-height: 360px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
 }
 
 .tabla-verificables {
@@ -1627,8 +1948,8 @@ const totalAtrasadosTemporal = computed(() =>
 .tabla-verificables th,
 .tabla-verificables td {
   text-align: left;
-  padding: 0.55rem 0.6rem;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid var(--c-border);
   font-size: 0.8rem;
 }
 
@@ -1636,66 +1957,73 @@ const totalAtrasadosTemporal = computed(() =>
   position: sticky;
   top: 0;
   z-index: 1;
-  color: #475569;
+  color: var(--c-text-secondary);
   background: #f8fafc;
   font-weight: 700;
+  letter-spacing: 0.02em;
+  font-size: 0.72rem;
+  text-transform: uppercase;
 }
 
 .tabla-verificables td {
-  color: #334155;
+  color: var(--c-text-secondary);
 }
 
 .tabla-row-click {
   cursor: pointer;
-  transition: background-color 0.16s ease;
+  transition: background-color 0.15s;
 }
 
 .tabla-row-click:hover {
-  background: #eff6ff;
+  background: var(--c-accent-light);
 }
 
+/* ── Donuts ───────────────────────────────────────────────────────────────── */
 .donut-wrap {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 1rem;
+  gap: 1.2rem;
 }
 
 .donut {
   --value: 0%;
-  width: 130px;
-  height: 130px;
+  width: 140px;
+  height: 140px;
   border-radius: 50%;
-  background: conic-gradient(#22c55e var(--value), #e2e8f0 var(--value));
+  background: conic-gradient(#22c55e var(--value), #e8f0fe var(--value));
   display: flex;
   align-items: center;
   justify-content: center;
+  filter: drop-shadow(0 4px 12px rgba(34,197,94,0.2));
 }
 
 .donut-center {
-  width: 84px;
-  height: 84px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
   background: #fff;
   display: grid;
   place-items: center;
-  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .donut-center strong {
-  color: #0f172a;
-  font-size: 1.05rem;
+  color: var(--c-text-primary);
+  font-size: 1.15rem;
+  font-weight: 800;
 }
 
 .donut-center span {
-  color: #64748b;
-  font-size: 0.7rem;
+  color: var(--c-text-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
 }
 
 .donut-legend {
   display: grid;
-  gap: 0.45rem;
-  color: #475569;
+  gap: 0.5rem;
+  color: var(--c-text-secondary);
   font-size: 0.85rem;
 }
 
@@ -1706,46 +2034,50 @@ const totalAtrasadosTemporal = computed(() =>
 
 .area-donut {
   background: conic-gradient(#e2e8f0 0 100%);
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.12));
 }
 
 .area-legend {
-  max-height: 250px;
+  max-height: 260px;
   overflow: auto;
-  padding-right: 0.2rem;
+  padding-right: 0.3rem;
+  display: grid;
+  gap: 0.4rem;
 }
 
 .area-legend-item {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--c-border);
   border-radius: 10px;
-  background: #fff;
-  color: #334155;
+  background: var(--c-surface);
+  color: var(--c-text-secondary);
   width: 100%;
   text-align: left;
-  padding: 0.45rem 0.55rem;
+  padding: 0.5rem 0.65rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.6rem;
   cursor: pointer;
   font-size: 0.8rem;
-  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 
 .area-legend-item:hover {
   border-color: #93c5fd;
-  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.08);
+  box-shadow: var(--shadow-sm);
+  background: #f8fbff;
 }
 
 .area-legend-item.active {
-  border-color: #3b82f6;
-  background: #eff6ff;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+  border-color: var(--c-accent);
+  background: var(--c-accent-light);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
 .area-legend-main {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
   min-width: 0;
 }
 
@@ -1753,34 +2085,34 @@ const totalAtrasadosTemporal = computed(() =>
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: 500;
 }
 
 .area-legend-meta {
   color: #1e40af;
   font-weight: 700;
   white-space: nowrap;
+  background: var(--c-accent-light);
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.72rem;
 }
 
+/* ── Dots ─────────────────────────────────────────────────────────────────── */
 .dot {
   display: inline-block;
   width: 9px;
   height: 9px;
   border-radius: 50%;
   margin-right: 0.38rem;
+  flex-shrink: 0;
 }
 
-.dot.ok {
-  background: #22c55e;
-}
+.dot.ok     { background: #22c55e; }
+.dot.warn   { background: #f59e0b; }
+.dot.danger { background: #ef4444; }
 
-.dot.warn {
-  background: #f59e0b;
-}
-
-.dot.danger {
-  background: #ef4444;
-}
-
+/* ── Bar Stacks ───────────────────────────────────────────────────────────── */
 .bars-stack {
   display: grid;
   gap: 0.7rem;
@@ -1795,31 +2127,31 @@ const totalAtrasadosTemporal = computed(() =>
 
 .bar-row-button {
   width: 100%;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #fff;
-  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+  padding: 0.75rem 0.85rem;
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
 }
 
 .bar-row-button:hover {
   border-color: #93c5fd;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.08);
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
 .bar-row-button:focus-visible {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
 }
 
 .bar-row-button.active {
-  border-color: #3b82f6;
-  background: #eff6ff;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+  border-color: var(--c-accent);
+  background: var(--c-accent-light);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
 .bar-row-button.is-zero {
@@ -1828,7 +2160,7 @@ const totalAtrasadosTemporal = computed(() =>
 
 .bar-row-button.is-zero .bar-helper,
 .bar-row-button.is-zero .bar-value {
-  color: #94a3b8;
+  color: var(--c-text-muted);
 }
 
 .bar-row-button.is-zero .bar-track {
@@ -1837,18 +2169,18 @@ const totalAtrasadosTemporal = computed(() =>
 
 .bar-label {
   font-size: 0.82rem;
-  color: #475569;
+  color: var(--c-text-secondary);
   font-weight: 600;
 }
 
 .bar-helper {
   margin-top: 0.18rem;
-  font-size: 0.74rem;
-  color: #94a3b8;
+  font-size: 0.72rem;
+  color: var(--c-text-muted);
 }
 
 .bar-track {
-  height: 10px;
+  height: 8px;
   background: #eef2ff;
   border-radius: 999px;
   overflow: hidden;
@@ -1857,32 +2189,23 @@ const totalAtrasadosTemporal = computed(() =>
 .bar-fill {
   height: 100%;
   border-radius: 999px;
+  transition: width 0.5s ease;
 }
 
-.bar-fill.ok {
-  background: #22c55e;
-}
-
-.bar-fill.warn {
-  background: #f59e0b;
-}
-
-.bar-fill.danger {
-  background: #ef4444;
-}
-
-.bar-fill.info {
-  background: #3b82f6;
-}
+.bar-fill.ok      { background: linear-gradient(90deg, #22c55e, #16a34a); }
+.bar-fill.warn    { background: linear-gradient(90deg, #f59e0b, #d97706); }
+.bar-fill.danger  { background: linear-gradient(90deg, #ef4444, #dc2626); }
+.bar-fill.info    { background: linear-gradient(90deg, #3b82f6, #2563eb); }
 
 .bar-value {
   font-size: 0.78rem;
-  color: #334155;
+  color: var(--c-text-secondary);
   text-align: right;
+  font-weight: 700;
 }
 
 .bars-stack-detailed {
-  gap: 0.95rem;
+  gap: 0.85rem;
 }
 
 .bar-row-detailed {
@@ -1896,25 +2219,25 @@ const totalAtrasadosTemporal = computed(() =>
 
 .actividad-bar-button {
   width: 100%;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  border-radius: 10px;
-  padding: 0.75rem;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.85rem;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
 }
 
 .actividad-bar-button:hover {
   border-color: #93c5fd;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.08);
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
 .actividad-bar-button:focus-visible {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
 }
 
 .actividad-bar-button.active {
@@ -1924,7 +2247,7 @@ const totalAtrasadosTemporal = computed(() =>
 }
 
 .actividad-bar-button.muted {
-  opacity: 0.42;
+  opacity: 0.4;
 }
 
 .actividad-bar-top,
@@ -1940,25 +2263,30 @@ const totalAtrasadosTemporal = computed(() =>
 }
 
 .actividad-presupuesto {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--c-text-primary);
   white-space: nowrap;
+  background: #f8fafc;
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  padding: 0.15rem 0.45rem;
 }
 
 .actividad-avance {
   min-width: 42px;
 }
 
+/* ── List Items ───────────────────────────────────────────────────────────── */
 .listado {
   display: grid;
-  gap: 0.6rem;
+  gap: 0.55rem;
 }
 
 .list-item {
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.9rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1967,75 +2295,79 @@ const totalAtrasadosTemporal = computed(() =>
 
 .list-item-button {
   width: 100%;
-  background: #fff;
+  background: var(--c-surface);
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
 }
 
 .list-item-button:hover {
   border-color: #93c5fd;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.08);
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
 .list-item-button:focus-visible {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
 }
 
 .list-item-button.active {
-  border-color: #3b82f6;
-  background: #eff6ff;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14);
+  border-color: var(--c-accent);
+  background: var(--c-accent-light);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
 .list-item strong {
-  color: #0f172a;
+  color: var(--c-text-primary);
   font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .list-item p {
   margin: 0.18rem 0 0;
-  color: #64748b;
-  font-size: 0.77rem;
+  color: var(--c-text-muted);
+  font-size: 0.76rem;
 }
 
 .list-meta {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: #1e40af;
-  background: #dbeafe;
+  background: var(--c-accent-light);
   border: 1px solid #93c5fd;
   border-radius: 999px;
-  padding: 0.24rem 0.54rem;
+  padding: 0.24rem 0.6rem;
+  white-space: nowrap;
 }
 
 .list-meta.late {
   color: #991b1b;
-  background: #fee2e2;
+  background: var(--c-danger-light);
   border-color: #fca5a5;
 }
 
+/* ── Modal ────────────────────────────────────────────────────────────────── */
 .kpi-detail-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2000;
 }
 
 .kpi-detail-modal {
   width: min(820px, calc(100vw - 2rem));
   max-height: calc(100vh - 2rem);
   overflow: auto;
-  background: #fff;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
+  background: var(--c-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--c-border);
+  box-shadow: var(--shadow-lg);
 }
 
 .kpi-detail-header {
@@ -2043,62 +2375,84 @@ const totalAtrasadosTemporal = computed(() =>
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
-  padding: 1rem 1rem 0.75rem;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 1.2rem 1.3rem 0.9rem;
+  border-bottom: 1px solid var(--c-border);
+  background: linear-gradient(135deg, #f8fafc, #fff);
 }
 
 .kpi-detail-header h3 {
   margin: 0;
-  color: #0f172a;
-  font-size: 1.08rem;
+  color: var(--c-text-primary);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .kpi-detail-header p {
   margin: 0.25rem 0 0;
-  color: #64748b;
+  color: var(--c-text-muted);
   font-size: 0.82rem;
 }
 
 .kpi-detail-body {
-  padding: 1rem;
+  padding: 1.1rem;
 }
 
 .kpi-detail-item {
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.9rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
-  background: #fff;
-  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  background: var(--c-surface);
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .kpi-detail-item-button {
   width: 100%;
   text-align: left;
   cursor: pointer;
-  background: #fff;
 }
 
 .kpi-detail-item:hover {
   border-color: #bfdbfe;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-sm);
 }
 
 .kpi-detail-item strong {
-  color: #0f172a;
-  font-size: 0.9rem;
+  color: var(--c-text-primary);
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
 .kpi-detail-item p {
   margin: 0.18rem 0 0;
-  color: #64748b;
-  font-size: 0.77rem;
+  color: var(--c-text-muted);
+  font-size: 0.75rem;
 }
 
-/* ── Velocímetro ──────────────────────────────────────────────────────────── */
+.btn-close {
+  border: none;
+  background: #f1f5f9;
+  color: var(--c-text-secondary);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-close:hover {
+  background: var(--c-danger-light);
+  color: var(--c-danger);
+}
+
+/* ── Gauge (Velocímetro) ──────────────────────────────────────────────────── */
 .gauge-panel {
   display: flex;
   flex-direction: column;
@@ -2115,8 +2469,9 @@ const totalAtrasadosTemporal = computed(() =>
 
 .gauge-svg {
   width: 100%;
-  max-width: 220px;
+  max-width: 230px;
   overflow: visible;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.08));
 }
 
 .gauge-pct {
@@ -2134,15 +2489,21 @@ const totalAtrasadosTemporal = computed(() =>
 .gauge-legend {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  font-size: 0.82rem;
-  color: #475569;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--c-text-secondary);
+  background: #f8fafc;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.85rem;
+  width: 100%;
+  max-width: 200px;
 }
 
 .gauge-legend-item {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
 }
 
 .gauge-dot {
@@ -2161,22 +2522,23 @@ const totalAtrasadosTemporal = computed(() =>
 }
 
 .gauge-value {
-  font-size: 1.9rem;
-  font-weight: 800;
+  font-size: 2.4rem;
+  font-weight: 900;
   text-align: center;
   line-height: 1;
-  margin-top: 0.15rem;
+  margin-top: 0.1rem;
+  letter-spacing: -0.04em;
   transition: color 0.4s ease;
 }
 
 .gauge-sub {
-  font-size: 0.72rem;
-  color: #64748b;
+  font-size: 0.7rem;
+  color: var(--c-text-muted);
   text-align: center;
-  margin-bottom: 0.1rem;
+  margin-bottom: 0.2rem;
 }
 
-/* ── Gráfica temporal ────────────────────────────────────────────────────── */
+/* ── Temporal Chart ───────────────────────────────────────────────────────── */
 .temporal-section {
   align-items: stretch;
 }
@@ -2189,6 +2551,9 @@ const totalAtrasadosTemporal = computed(() =>
 .temporal-tabs {
   display: flex;
   gap: 0.3rem;
+  background: #f1f5f9;
+  padding: 0.2rem;
+  border-radius: 8px;
 }
 
 .temporal-header-actions {
@@ -2200,36 +2565,35 @@ const totalAtrasadosTemporal = computed(() =>
 .temporal-overdue-total {
   font-size: 0.72rem;
   font-weight: 700;
-  color: #991b1b;
-  background: #fee2e2;
-  border: 1px solid #fca5a5;
+  color: #166534;
+  background: var(--c-success-light);
+  border: 1px solid #86efac;
   border-radius: 999px;
-  padding: 0.22rem 0.5rem;
+  padding: 0.22rem 0.55rem;
   white-space: nowrap;
 }
 
 .temporal-tab {
-  border: 1px solid #cbd5e1;
-  background: #f8fafc;
-  color: #475569;
-  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--c-text-muted);
+  border-radius: 6px;
   font-size: 0.78rem;
   font-weight: 600;
   padding: 0.28rem 0.65rem;
   cursor: pointer;
-  transition: border-color 0.16s, background 0.16s, color 0.16s;
+  transition: background 0.15s, color 0.15s;
 }
 
 .temporal-tab:hover {
-  border-color: #93c5fd;
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: #e2e8f0;
+  color: var(--c-text-secondary);
 }
 
 .temporal-tab.active {
-  border-color: #3b82f6;
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--c-surface);
+  color: var(--c-accent);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .temporal-chart {
@@ -2239,14 +2603,59 @@ const totalAtrasadosTemporal = computed(() =>
   flex: 1;
 }
 
+.temporal-chart-line {
+  gap: 0.85rem;
+}
+
+.temporal-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.temporal-summary-card {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.temporal-summary-card.muted {
+  background: #ffffff;
+}
+
+.temporal-summary-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+}
+
+.temporal-summary-value {
+  font-size: 1.8rem;
+  line-height: 1;
+  font-weight: 800;
+  color: var(--c-text-primary);
+}
+
+.temporal-summary-card small {
+  color: var(--c-text-secondary);
+  font-size: 0.78rem;
+}
+
 .temporal-bars-wrap {
   display: flex;
   align-items: flex-end;
-  gap: 4px;
+  gap: 5px;
   height: 160px;
   overflow-x: auto;
   padding-bottom: 0.2rem;
   flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
 .temporal-col {
@@ -2255,7 +2664,7 @@ const totalAtrasadosTemporal = computed(() =>
   align-items: center;
   gap: 3px;
   flex-shrink: 0;
-  min-width: 62px;
+  min-width: 58px;
 }
 
 .temporal-bar-group {
@@ -2269,71 +2678,64 @@ const totalAtrasadosTemporal = computed(() =>
   width: 14px;
   border-radius: 4px 4px 0 0;
   min-height: 3px;
-  transition: height 0.4s ease;
+  transition: height 0.5s ease, opacity 0.2s;
 }
 
-.temporal-bar.done {
-  background: #22c55e;
+.temporal-bar:hover {
+  opacity: 0.8;
 }
 
-.temporal-bar.pending {
-  background: #f59e0b;
-}
-
-.temporal-bar.late {
-  background: #ef4444;
-}
+.temporal-bar.done    { background: linear-gradient(180deg, #4ade80, #22c55e); }
+.temporal-bar.pending { background: linear-gradient(180deg, #fcd34d, #f59e0b); }
+.temporal-bar.late    { background: linear-gradient(180deg, #f87171, #ef4444); }
 
 .temporal-label {
-  font-size: 0.64rem;
-  color: #64748b;
+  font-size: 0.62rem;
+  color: var(--c-text-muted);
   text-align: center;
   white-space: nowrap;
   font-weight: 600;
 }
 
 .temporal-pct {
-  font-size: 0.62rem;
-  color: #94a3b8;
+  font-size: 0.6rem;
+  color: var(--c-text-secondary);
   font-weight: 700;
 }
 
 .temporal-counts {
   display: flex;
-  gap: 0.24rem;
+  gap: 0.2rem;
   align-items: center;
   flex-wrap: nowrap;
 }
 
 .temporal-counts .count {
-  font-size: 0.6rem;
+  font-size: 0.58rem;
   font-weight: 700;
 }
 
-.temporal-counts .count.pending {
-  color: #b45309;
-}
-
-.temporal-counts .count.done {
-  color: #15803d;
-}
-
-.temporal-counts .count.late {
-  color: #991b1b;
-}
+.temporal-counts .count.pending { color: #b45309; }
+.temporal-counts .count.done    { color: #15803d; }
+.temporal-counts .count.late    { color: #991b1b; }
 
 .temporal-legend {
   display: flex;
-  gap: 1rem;
-  font-size: 0.8rem;
-  color: #475569;
+  gap: 1.1rem;
+  font-size: 0.78rem;
+  color: var(--c-text-secondary);
   align-items: center;
+  padding: 0.5rem 0.6rem;
+  background: #f8fafc;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
 }
 
 .temporal-legend .dot {
   margin-right: 0.25rem;
 }
 
+/* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 1080px) {
   .kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2357,6 +2759,7 @@ const totalAtrasadosTemporal = computed(() =>
   .dashboard-header {
     flex-direction: column;
     align-items: flex-start;
+    padding: 1.1rem 1.2rem;
   }
 
   .kpi-grid {
@@ -2374,6 +2777,16 @@ const totalAtrasadosTemporal = computed(() =>
 
   .area-donut-wrap {
     justify-items: stretch;
+  }
+
+  .temporal-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .temporal-summary-grid {
+    grid-template-columns: 1fr;
   }
 
   .bar-row {

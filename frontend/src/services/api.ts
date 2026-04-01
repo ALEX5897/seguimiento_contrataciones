@@ -356,7 +356,16 @@ export const subtareasService = {
     return response.data as ResumenDiarioSubtareas;
   },
 
-  async getResumenSemanal(params: { area?: string; responsable?: string } = {}) {
+  async getResumenSemanal(params: {
+    area?: string;
+    responsable?: string;
+    busqueda?: string;
+    direccion?: string;
+    tipoPlan?: string;
+    cuatrimestre?: string;
+    tipoContratacion?: string;
+    monto?: string;
+  } = {}) {
     const response = await api.get('/subtareas/resumen/semanal', { params });
     return response.data as DashboardWeeklySummary;
   },

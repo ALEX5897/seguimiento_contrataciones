@@ -638,15 +638,13 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
   if (!fechaISO) return 'Sin fecha';
   try {
     const fecha = new Date(fechaISO);
-    return fecha.toLocaleDateString('es-EC', { 
-      year: 'numeric', 
-      month:'short', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (Number.isNaN(fecha.getTime())) return 'Fecha invalida';
+    const dd = String(fecha.getDate()).padStart(2, '0');
+    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+    const yyyy = String(fecha.getFullYear());
+    return `${dd}/${mm}/${yyyy}`;
   } catch (e) {
-    return 'Fecha inválida';
+    return 'Fecha invalida';
   }
 }
 </script>
