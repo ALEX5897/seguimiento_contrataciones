@@ -97,8 +97,8 @@ const menuItems = computed(() => menuConfig.filter((item) => auth.canAccessMenu(
 
 const $screenIsMobile = computed(() => window.innerWidth <= 900);
 
-function cerrarSesion() {
-  auth.clearSession();
+async function cerrarSesion() {
+  await auth.logout();
   router.replace('/login');
 }
 
@@ -110,9 +110,10 @@ function resetInactivityTimer() {
   if (inactivityTimeout) clearTimeout(inactivityTimeout);
   if (!auth.isAuthenticated) return;
   inactivityTimeout = setTimeout(() => {
-    auth.clearSession();
-    router.replace('/login');
-    alert('Sesión cerrada por inactividad.');
+    auth.logout().finally(() => {
+      router.replace('/login');
+      alert('Sesión cerrada por inactividad.');
+    });
   }, INACTIVITY_LIMIT_MS);
 }
 

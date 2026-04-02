@@ -20,6 +20,7 @@ console.log('-----------------------');
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
 import iconv from 'iconv-lite';
+import { getOfficialUtcDate, toMySqlUtcDateTime } from '../services/horaOficial.js';
 
 const DB_HOST = process.env.DB_HOST;
 const DB_PORT = parseInt(process.env.DB_PORT, 10);
@@ -226,6 +227,8 @@ function toCamelRow(row) {
     fecha_real: 'fechaReal',
     created_at: 'createdAt',
     updated_at: 'updatedAt',
+    proceso_en_riesgo: 'procesoEnRiesgo',
+    riesgo_comentario: 'riesgoComentario',
     responsable_nombre: 'responsableNombre',
     etapa_nombre: 'etapaNombre',
     direccion_nombre: 'direccionNombre',
@@ -369,6 +372,8 @@ async function createSchema() {
       responsable VARCHAR(255) NULL,
       activo BOOLEAN NOT NULL DEFAULT true,
       observaciones TEXT NULL,
+      proceso_en_riesgo BOOLEAN NOT NULL DEFAULT false,
+      riesgo_comentario TEXT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB;
@@ -383,6 +388,7 @@ async function createSchema() {
     'id', 'direccion_encargada', 'nombre', 'codigo_olympo', 'partida_presupuestaria',
     'presupuesto_2026_inicial', 'costo_2026', 'cuatrimestre', 'plazo_contrato',
     'pac_no_pac', 'procedimiento_sugerido', 'responsable_id', 'responsable', 'activo', 'observaciones',
+    'proceso_en_riesgo', 'riesgo_comentario',
     'fecha_inicio', 'fecha_fin',
     'created_at', 'updated_at'
   ]);
@@ -401,6 +407,12 @@ async function createSchema() {
   }
   if (!subtareasColsSet.has('fecha_fin')) {
     await query('ALTER TABLE subtareas ADD COLUMN fecha_fin DATE NULL AFTER fecha_inicio').catch(() => {});
+  }
+  if (!subtareasColsSet.has('proceso_en_riesgo')) {
+    await query('ALTER TABLE subtareas ADD COLUMN proceso_en_riesgo BOOLEAN NOT NULL DEFAULT false AFTER observaciones').catch(() => {});
+  }
+  if (!subtareasColsSet.has('riesgo_comentario')) {
+    await query('ALTER TABLE subtareas ADD COLUMN riesgo_comentario TEXT NULL AFTER proceso_en_riesgo').catch(() => {});
   }
 
   await query(`
@@ -891,6 +903,8 @@ export async function getAllSubtareas() {
     item.costo2026 = Number(row.costo_2026 ?? 0);
     item.fechaInicio = normalizarFechaSalida(row.fecha_inicio) || null;
     item.fechaFin = normalizarFechaSalida(row.fecha_fin) || null;
+    item.procesoEnRiesgo = Boolean(Number(row.proceso_en_riesgo ?? 0));
+    item.riesgoComentario = row.riesgo_comentario ? normalizeTextEncoding(row.riesgo_comentario) : null;
     item.avanceGeneral = 0;
     item.estado = 'pendiente';
     item.etapas = bySubtarea.get(row.id) || [];
@@ -1531,6 +1545,16 @@ function asJsonString(value) {
 }
 
 export async function registrarEventoAuditoria(evento = {}) {
+  let onlineUtc;
+  try {
+    onlineUtc = await getOfficialUtcDate();
+  } catch (error) {
+    console.error('No se pudo sincronizar hora oficial en linea para auditoria, se usa hora UTC local:', error?.message || error);
+    onlineUtc = new Date();
+  }
+
+  const fechaAuditoria = toMySqlUtcDateTime(onlineUtc);
+
   const payload = {
     userId: evento.userId || null,
     username: evento.username ? String(evento.username).slice(0, 80) : null,
@@ -1554,8 +1578,8 @@ export async function registrarEventoAuditoria(evento = {}) {
   await query(
     `INSERT INTO auditoria_eventos (
       user_id, username, role, direccion_nombre, accion, modulo, recurso, metodo, ruta,
-      status_code, exito, ip, user_agent, request_query, request_body, response_body, error_mensaje
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      status_code, exito, ip, user_agent, request_query, request_body, response_body, error_mensaje, fecha
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       payload.userId,
       payload.username,
@@ -1573,7 +1597,8 @@ export async function registrarEventoAuditoria(evento = {}) {
       payload.requestQuery,
       payload.requestBody,
       payload.responseBody,
-      payload.errorMensaje
+      payload.errorMensaje,
+      fechaAuditoria
     ]
   );
 }
@@ -1648,6 +1673,89 @@ export async function getEventosAuditoria(filters = {}) {
     limit,
     total,
     totalPages: Math.max(1, Math.ceil(total / limit))
+  };
+}
+
+export async function getResumenSesionesAuditoria(filters = {}) {
+  let onlineUtc;
+  try {
+    onlineUtc = await getOfficialUtcDate();
+  } catch (error) {
+    console.error('No se pudo sincronizar hora oficial en linea para resumen de auditoria, se usa hora UTC local:', error?.message || error);
+    onlineUtc = new Date();
+  }
+
+  const onlineUtcMySql = toMySqlUtcDateTime(onlineUtc);
+
+  const activeWindowMinutesRaw = Number(filters.activeWindowMinutes || 30);
+  const activeWindowMinutes = Math.min(24 * 60, Math.max(5, activeWindowMinutesRaw));
+  const recentLimitRaw = Number(filters.recentLimit || 20);
+  const recentLimit = Math.min(100, Math.max(5, recentLimitRaw));
+
+  const activosRows = await query(
+    `SELECT
+        ae.user_id,
+        COALESCE(u.username, ae.username) AS username,
+        COALESCE(u.nombre, ae.username) AS nombre,
+        COALESCE(u.role, ae.role) AS role,
+        COALESCE(u.direccion_nombre, ae.direccion_nombre) AS direccion_nombre,
+        ae.fecha AS ultimo_login,
+        ae.ip,
+        ae.user_agent,
+        COALESCE(u.activo, true) AS usuario_activo
+      FROM auditoria_eventos ae
+      INNER JOIN (
+        SELECT user_id, MAX(id) AS ultimo_evento_id
+        FROM auditoria_eventos
+        WHERE accion = 'login'
+          AND exito = true
+          AND user_id IS NOT NULL
+          AND fecha >= DATE_SUB(?, INTERVAL ? MINUTE)
+          AND NOT EXISTS (
+            SELECT 1
+            FROM auditoria_eventos lo
+            WHERE lo.user_id = auditoria_eventos.user_id
+              AND lo.accion = 'logout'
+              AND lo.exito = true
+              AND lo.id > auditoria_eventos.id
+          )
+        GROUP BY user_id
+      ) ult ON ult.ultimo_evento_id = ae.id
+      LEFT JOIN usuarios u ON u.id = ae.user_id
+      ORDER BY ae.fecha DESC, ae.id DESC`,
+    [onlineUtcMySql, activeWindowMinutes]
+  );
+
+  const ultimosIniciosRows = await query(
+    `SELECT
+        ae.id,
+        ae.user_id,
+        COALESCE(u.username, ae.username) AS username,
+        COALESCE(u.nombre, ae.username) AS nombre,
+        COALESCE(u.role, ae.role) AS role,
+        COALESCE(u.direccion_nombre, ae.direccion_nombre) AS direccion_nombre,
+        ae.exito,
+        ae.status_code,
+        ae.ip,
+        ae.user_agent,
+        ae.error_mensaje,
+        ae.fecha
+      FROM auditoria_eventos ae
+      LEFT JOIN usuarios u ON u.id = ae.user_id
+      WHERE ae.accion = 'login'
+      ORDER BY ae.fecha DESC, ae.id DESC
+      LIMIT ${recentLimit}`
+  );
+
+  return {
+    activeWindowMinutes,
+    generatedAt: onlineUtc.toISOString(),
+    activos: activosRows.map((row) => {
+      const item = toCamelRow(row);
+      item.usuarioActivo = Boolean(item.usuarioActivo);
+      return item;
+    }),
+    ultimosInicios: ultimosIniciosRows.map((row) => toCamelRow(row))
   };
 }
 
@@ -1859,14 +1967,15 @@ export async function createSubtarea(data) {
   const direccion = await resolverDireccionEncargada(data);
   const codigoOlympo = String(data.codigoOlympo || data.codigo_olympo || '').trim()
     || `AUTO-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const riesgoComentario = String(data.riesgoComentario || data.riesgo_comentario || '').trim();
 
   const result = await query(
     `INSERT INTO subtareas (
       direccion_encargada, nombre, codigo_olympo, partida_presupuestaria,
       presupuesto_2026_inicial, costo_2026, cuatrimestre, plazo_contrato,
       pac_no_pac, procedimiento_sugerido, responsable_id, responsable, activo, observaciones,
-      fecha_inicio, fecha_fin
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      proceso_en_riesgo, riesgo_comentario, fecha_inicio, fecha_fin
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       direccion,
       data.nombre,
@@ -1882,6 +1991,8 @@ export async function createSubtarea(data) {
       responsable.nombre,
       data.activo ?? true,
       data.observaciones || null,
+      Boolean(data.procesoEnRiesgo ?? data.proceso_en_riesgo),
+      riesgoComentario || null,
       data.fechaInicio || null,
       data.fechaFin || null
     ]
@@ -1908,6 +2019,8 @@ export async function updateSubtarea(idOrCode, data) {
     tipoPlan: 'pac_no_pac',
     procedimientoSugerido: 'procedimiento_sugerido',
     observaciones: 'observaciones',
+    procesoEnRiesgo: 'proceso_en_riesgo',
+    riesgoComentario: 'riesgo_comentario',
     activo: 'activo',
     fechaInicio: 'fecha_inicio',
     fechaFin: 'fecha_fin'
@@ -2516,11 +2629,11 @@ export async function createSeguimientoDiario(data) {
   const result = await query(
     `INSERT INTO seguimientos_diarios
      (subtarea_id, etapa_id, fecha, comentario, tiene_alerta, responsable_id, responsable, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())`,
     [
       data.subtareaId,
       data.etapaId,
-      data.fecha || new Date().toISOString().slice(0, 10),
+      data.fecha || new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date()),
       normalizeTextEncoding(data.comentario || '', { trim: true }),
       Boolean(data.tieneAlerta),
       responsable.id,
@@ -2549,7 +2662,7 @@ export async function updateSeguimientoDiario(id, data) {
     values.push(responsable.nombre);
   }
   if (!updates.length) return;
-  updates.push('updated_at = NOW()');
+  updates.push('updated_at = UTC_TIMESTAMP()');
   values.push(id);
   await query(`UPDATE seguimientos_diarios SET ${updates.join(', ')} WHERE id = ?`, values);
 }

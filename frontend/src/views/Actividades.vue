@@ -7,55 +7,78 @@
       </span>
     </div>
 
-    <div class="actividades-toolbar" v-if="!cargando">
-      <div class="buscador-container">
-        <span class="buscador-icon">🔎</span>
-        <input
-          v-model="busquedaActividades"
-          class="buscador-input"
-          type="text"
-          placeholder="Buscar por nombre, dirección o responsable..."
-        />
+    <section class="context-summary" v-if="!cargando">
+      <div class="filter-chips">
+        <span class="filter-chip primary" v-if="busquedaActividades">Búsqueda: {{ busquedaActividades }}</span>
+        <span class="filter-chip direccion-active" v-if="filtroDireccion">📂 {{ filtroDireccion }}</span>
+        <span class="filter-chip" v-if="filtroPacNoPac">Plan: {{ filtroPacNoPac }}</span>
+        <span class="filter-chip" v-if="filtroTipoContratacionLabel">Contratación: {{ filtroTipoContratacionLabel }}</span>
+        <span class="filter-chip" v-if="filtroCuatrimestre">Cuatrimestre: {{ filtroCuatrimestre }}</span>
+        <span class="filter-chip" v-if="filtroMonto">Monto: {{ filtroMonto }}</span>
+        <span class="filter-chip riesgo-active" v-if="filtroRiesgo === 'riesgo'">⚠️ Solo en riesgo</span>
+        <button v-if="hayFiltrosActivos" class="btn-clear-filter" @click="limpiarFiltrosActividades">
+          Restablecer filtros
+        </button>
       </div>
 
-      <div class="toolbar-filtros">
-        <select v-model="filtroDireccion" class="filtro-select">
-          <option value="">Todas las direcciones</option>
-          <option v-for="direccion in direccionesDisponibles" :key="direccion" :value="direccion">{{ direccion }}</option>
-        </select>
+      <div class="dashboard-toolbar">
+        <div class="buscador-container dashboard-buscador-container">
+          <span class="buscador-icon">🔎</span>
+          <input
+            v-model="busquedaActividades"
+            class="buscador-input combo-filtro"
+            type="text"
+            placeholder="Buscar por nombre, dirección o responsable..."
+          />
+        </div>
 
-        <select v-model="filtroPacNoPac" class="filtro-select">
-          <option value="">PAC y NO PAC</option>
-          <option value="PAC">PAC</option>
-          <option value="NO PAC">NO PAC</option>
-        </select>
+        <div class="dashboard-toolbar-filtros">
+          <select v-model="filtroDireccion" class="combo-filtro">
+            <option value="">Todas las direcciones</option>
+            <option v-for="direccion in direccionesDisponibles" :key="direccion" :value="direccion">{{ direccion }}</option>
+          </select>
 
-        <select v-model="filtroTipoContratacion" class="filtro-select">
-          <option value="">Todos los tipos de contratación</option>
-          <option
-            v-for="tipo in tiposContratacionDisponibles"
-            :key="tipo.value"
-            :value="tipo.value"
-          >{{ tipo.label }}</option>
-        </select>
+          <select v-model="filtroPacNoPac" class="combo-filtro">
+            <option value="">PAC y NO PAC</option>
+            <option value="PAC">PAC</option>
+            <option value="NO PAC">NO PAC</option>
+          </select>
 
-        <select v-model="filtroCuatrimestre" class="filtro-select">
-          <option value="">Todos los cuatrimestres</option>
-          <option value="1">Cuatrimestre 1</option>
-          <option value="2">Cuatrimestre 2</option>
-          <option value="3">Cuatrimestre 3</option>
-          <option value="4">Cuatrimestre 4</option>
-        </select>
+          <select v-model="filtroTipoContratacion" class="combo-filtro">
+            <option value="">Todos los tipos de contratación</option>
+            <option
+              v-for="tipo in tiposContratacionDisponibles"
+              :key="tipo.value"
+              :value="tipo.value"
+            >{{ tipo.label }}</option>
+          </select>
 
-        <select v-model="ordenPresupuesto" class="filtro-select">
-          <option value="todos">Ordenar por...</option>
-          <option value="presupuesto-desc">Presupuesto: mayor a menor</option>
-          <option value="presupuesto-asc">Presupuesto: menor a mayor</option>
-          <option value="fecha-fin-desc">Fecha de contratación: mayor a menor</option>
-          <option value="fecha-fin-asc">Fecha de contratación: menor a mayor</option>
-        </select>
+          <select v-model="filtroCuatrimestre" class="combo-filtro">
+            <option value="">Todos los cuatrimestres</option>
+            <option value="1">Cuatrimestre 1</option>
+            <option value="2">Cuatrimestre 2</option>
+            <option value="3">Cuatrimestre 3</option>
+            <option value="4">Cuatrimestre 4</option>
+          </select>
+
+          <select v-model="filtroMonto" class="combo-filtro">
+            <option value="">Todos los montos</option>
+            <option v-for="monto in montosDisponibles" :key="monto" :value="monto">{{ monto }}</option>
+          </select>
+
+          <select v-model="filtroRiesgo" class="combo-filtro">
+            <option value="">Todos los procesos</option>
+            <option value="riesgo">⚠️ Solo en riesgo</option>
+          </select>
+
+          <select v-model="ordenPresupuesto" class="combo-filtro">
+            <option value="todos">Ordenar por...</option>
+            <option value="presupuesto-desc">Presupuesto: mayor a menor</option>
+            <option value="presupuesto-asc">Presupuesto: menor a mayor</option>
+          </select>
+        </div>
       </div>
-    </div>
+    </section>
 
     <div v-if="!cargando" class="kpis-lectura-rapida">
       <article class="kpi-card kpi-total">
@@ -72,7 +95,7 @@
       </article>
       <article class="kpi-card kpi-completadas">
         <div class="kpi-head">
-          <p class="kpi-label">Etapas Completadas</p>
+          <p class="kpi-label">Etapas Completas</p>
           <span class="kpi-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="9"></circle>
@@ -132,6 +155,7 @@
         <div class="actividad-meta-chips">
           <span class="actividad-meta-chip neutral">{{ obtenerTipoContratacionCabecera(actividad) }}</span>
           <span class="actividad-meta-chip success">{{ obtenerPacNoPacCabecera(actividad) }}</span>
+          <span class="actividad-meta-chip quarter">Cuatrimestre {{ obtenerCuatrimestreTexto(actividad) }}</span>
         </div>
 
         <div class="actividad-info">
@@ -149,7 +173,7 @@
           </div>
           <div class="stat">
             <div class="stat-value">{{ tareasCompletadas(actividad) }}</div>
-            <div class="stat-label">Completadas</div>
+            <div class="stat-label">Completas</div>
           </div>
           <div class="stat retraso">
             <div class="stat-value">{{ tareasConRetraso(actividad) }}</div>
@@ -177,7 +201,7 @@
     </div>
 
     <div v-if="actividadSeleccionada" class="modal-overlay" @click.self="cerrarDetalleActividad">
-      <div class="modal-content" @click.stop>
+      <div class="modal-content modal-detalle-actividad" @click.stop>
         <div class="modal-header">
           <div class="modal-header-content">
             <h2>{{ actividadSeleccionada.nombre }}</h2>
@@ -188,6 +212,9 @@
               <span class="seguimiento-contexto-chip success">
                 {{ obtenerPacNoPacCabecera(actividadSeleccionada) }}
               </span>
+              <span class="seguimiento-contexto-chip quarter">
+                Cuatrimestre {{ obtenerCuatrimestreTexto(actividadSeleccionada) }}
+              </span>
               <span class="seguimiento-contexto-chip amount">
                 {{ formatearMontoCabecera(obtenerPresupuesto(actividadSeleccionada)) }}
               </span>
@@ -196,12 +223,61 @@
           <button type="button" class="btn-close" @click="cerrarDetalleActividad">✕</button>
         </div>
 
-        <div class="modal-body">
-          <div class="resumen-detalle">
-            <span><strong>Total:</strong> {{ totalTareas(actividadSeleccionada) }}</span>
-            <span><strong>Completadas:</strong> {{ tareasCompletadas(actividadSeleccionada) }}</span>
-            <span><strong>Con retraso:</strong> {{ tareasConRetraso(actividadSeleccionada) }}</span>
-            <span :class="claseAvance(actividadSeleccionada)"><strong>Avance:</strong> {{ porcentajeAvance(actividadSeleccionada) }}%</span>
+        <div class="modal-body modal-detalle-body" :class="{ 'timeline-expandida': !timelineContraida }">
+          <div class="detalle-superior">
+          <div class="detalle-resumen-row">
+            <div class="resumen-detalle">
+              <span><strong>Total:</strong> {{ totalTareas(actividadSeleccionada) }}</span>
+              <span><strong>Completas:</strong> {{ tareasCompletadas(actividadSeleccionada) }}</span>
+              <span><strong>Con retraso:</strong> {{ tareasConRetraso(actividadSeleccionada) }}</span>
+              <span :class="claseAvance(actividadSeleccionada)"><strong>Avance:</strong> {{ porcentajeAvance(actividadSeleccionada) }}%</span>
+            </div>
+
+            <label class="riesgo-proceso-simple">
+              <input
+                v-model="procesoEnRiesgo"
+                type="checkbox"
+                :disabled="guardandoRiesgoProceso"
+                @change="onToggleRiesgoProceso"
+              />
+              <span>Proceso en riesgo</span>
+            </label>
+          </div>
+
+          <div v-if="procesoEnRiesgo" class="riesgo-proceso-panel">
+            <div v-if="mensajeRiesgoProceso" :class="['seguimiento-msg', `seguimiento-msg-${mensajeRiesgoProceso.tipo}`]">
+              {{ mensajeRiesgoProceso.texto }}
+            </div>
+            <div v-if="errorRiesgoProceso" class="seguimiento-error">{{ errorRiesgoProceso }}</div>
+
+            <div class="riesgo-proceso-body">
+              <textarea
+                v-model="comentarioRiesgoProceso"
+                rows="3"
+                class="textarea-comentario riesgo-proceso-textarea"
+                placeholder="Escribe el detalle del riesgo"
+                :maxlength="LIMITE_COMENTARIO_RIESGO"
+              ></textarea>
+              <div
+                class="contador-caracteres"
+                :class="{
+                  aviso: caracteresRestantesRiesgo <= 40 && caracteresRestantesRiesgo > 0,
+                  limite: caracteresRestantesRiesgo <= 0
+                }"
+              >
+                {{ longitudComentarioRiesgo }}/{{ LIMITE_COMENTARIO_RIESGO }} caracteres
+              </div>
+              <div class="riesgo-proceso-actions">
+                <button
+                  type="button"
+                  class="btn-guardar"
+                  @click="guardarRiesgoProceso"
+                  :disabled="guardandoRiesgoProceso || !comentarioRiesgoProceso.trim() || longitudComentarioRiesgo > LIMITE_COMENTARIO_RIESGO"
+                >
+                  {{ guardandoRiesgoProceso ? 'Guardando...' : 'Guardar riesgo' }}
+                </button>
+              </div>
+            </div>
           </div>
 
           <div class="timeline" v-if="etapasConFecha.length">
@@ -244,7 +320,10 @@
             </div>
           </div>
 
-          <table class="tabla-etapas" v-if="etapasConFecha.length">
+          </div>
+
+          <div v-if="etapasConFecha.length" class="tabla-etapas-wrap">
+          <table class="tabla-etapas">
             <thead>
               <tr>
                 <th>#</th>
@@ -340,6 +419,7 @@
               </tr>
             </tbody>
           </table>
+          </div>
 
         </div>
       </div>
@@ -359,6 +439,9 @@
               </span>
               <span class="seguimiento-contexto-chip success">
                 {{ obtenerPacNoPacCabecera(actividadSeleccionada) }}
+              </span>
+              <span class="seguimiento-contexto-chip quarter">
+                Cuatrimestre {{ obtenerCuatrimestreTexto(actividadSeleccionada) }}
               </span>
               <span class="seguimiento-contexto-chip amount">
                 {{ formatearMontoCabecera(obtenerPresupuesto(actividadSeleccionada)) }}
@@ -380,12 +463,22 @@
             rows="3"
             class="textarea-comentario"
             placeholder="Agregar observación de seguimiento"
+            :maxlength="LIMITE_COMENTARIO_SEGUIMIENTO"
           ></textarea>
+          <div
+            class="contador-caracteres"
+            :class="{
+              aviso: caracteresRestantesSeguimiento <= 40 && caracteresRestantesSeguimiento > 0,
+              limite: caracteresRestantesSeguimiento <= 0
+            }"
+          >
+            {{ longitudComentarioSeguimiento }}/{{ LIMITE_COMENTARIO_SEGUIMIENTO }} caracteres 
+          </div>
           <label class="alerta-label">
             <input type="checkbox" v-model="nuevoAlerta" />
             Marcar alerta
           </label>
-          <button type="button" class="btn-guardar" @click="guardarSeguimiento" :disabled="guardandoSeguimiento || cargandoSeguimientos || !nuevoComentario.trim()">
+          <button type="button" class="btn-guardar" @click="guardarSeguimiento" :disabled="guardandoSeguimiento || cargandoSeguimientos || !nuevoComentario.trim() || longitudComentarioSeguimiento > LIMITE_COMENTARIO_SEGUIMIENTO">
             {{ guardandoSeguimiento ? 'Guardando...' : 'Guardar seguimiento' }}
           </button>
 
@@ -435,7 +528,9 @@ const filtroDireccion = ref('');
 const filtroPacNoPac = ref('');
 const filtroTipoContratacion = ref('');
 const filtroCuatrimestre = ref('');
-const ordenPresupuesto = ref('fecha-fin-asc');
+const filtroMonto = ref('');
+const filtroRiesgo = ref('');
+const ordenPresupuesto = ref('todos');
 const actividadesVisiblesBase = computed(() =>
   actividades.value.filter((actividad: any) =>
     Boolean(Number(actividad?.activo ?? 1))
@@ -461,6 +556,42 @@ const tiposContratacionDisponibles = computed(() => {
     .map(([value, label]) => ({ value, label }))
     .sort((a, b) => a.label.localeCompare(b.label));
 });
+
+const filtroTipoContratacionLabel = computed(() =>
+  tiposContratacionDisponibles.value.find((tipo) => tipo.value === filtroTipoContratacion.value)?.label || ''
+);
+
+const montosDisponibles = computed(() => {
+  const rangos = [
+    { label: '0-1,000', min: 0, max: 1000 },
+    { label: '1,001-5,000', min: 1001, max: 5000 },
+    { label: '5,001-10,000', min: 5001, max: 10000 },
+    { label: '10,001+', min: 10001, max: Infinity }
+  ];
+  const usados = new Set<string>();
+  for (const actividad of actividadesVisiblesBase.value) {
+    const monto = obtenerPresupuesto(actividad);
+    for (const r of rangos) {
+      if (monto >= r.min && monto <= r.max) {
+        usados.add(r.label);
+        break;
+      }
+    }
+  }
+  return rangos.filter(r => usados.has(r.label)).map(r => r.label);
+});
+
+const hayFiltrosActivos = computed(() =>
+  Boolean(
+    busquedaActividades.value
+    || filtroDireccion.value
+    || filtroPacNoPac.value
+    || filtroTipoContratacion.value
+    || filtroCuatrimestre.value
+    || filtroMonto.value
+    || filtroRiesgo.value
+  )
+);
 const actividadesActivas = computed(() => {
   let items = [...actividadesVisiblesBase.value];
 
@@ -492,6 +623,26 @@ const actividadesActivas = computed(() => {
 
   if (filtroCuatrimestre.value) {
     items = items.filter((a: any) => String(obtenerCuatrimestreOrden(a)) === filtroCuatrimestre.value);
+  }
+
+  if (filtroMonto.value) {
+    const rangos = [
+      { label: '0-1,000', min: 0, max: 1000 },
+      { label: '1,001-5,000', min: 1001, max: 5000 },
+      { label: '5,001-10,000', min: 5001, max: 10000 },
+      { label: '10,001+', min: 10001, max: Infinity }
+    ];
+    const rango = rangos.find(r => r.label === filtroMonto.value);
+    if (rango) {
+      items = items.filter((a: any) => {
+        const monto = obtenerPresupuesto(a);
+        return monto >= rango.min && monto <= rango.max;
+      });
+    }
+  }
+
+  if (filtroRiesgo.value === 'riesgo') {
+    items = items.filter((a: any) => normalizarProcesoEnRiesgo(a));
   }
 
   if (ordenPresupuesto.value === 'presupuesto-desc') {
@@ -544,15 +695,29 @@ const nuevoAlerta = ref(false);
 const guardandoSeguimiento = ref(false);
 const eliminandoSeguimientoId = ref<number | null>(null);
 const guardandoEstadoEtapaId = ref<number | null>(null);
+const guardandoRiesgoProceso = ref(false);
 const cargandoSeguimientos = ref(false);
 const cargandoConteosSeguimientos = ref(false);
 const errorSeguimiento = ref('');
+const errorRiesgoProceso = ref('');
 const mensajeSeguimiento = ref<{ texto: string; tipo: 'success' | 'info' } | null>(null);
+const mensajeRiesgoProceso = ref<{ texto: string; tipo: 'success' | 'info' } | null>(null);
 const conteoSeguimientosPorEtapa = ref<Record<number, number>>({});
 const alertasPorEtapa = ref<Record<number, boolean>>({});
 const etapaResaltadaId = ref<number | null>(null);
 const timelineContraida = ref(true);
+const procesoEnRiesgo = ref(false);
+const comentarioRiesgoProceso = ref('');
+const procesoEnRiesgoGuardado = ref(false);
+const comentarioRiesgoGuardado = ref('');
 const permiteEditarFechaCompletado = UI_FLAGS.ALLOW_MANUAL_COMPLETION_DATE;
+const GUAYAQUIL_TIMEZONE = 'America/Guayaquil';
+const LIMITE_COMENTARIO_SEGUIMIENTO = 500;
+const LIMITE_COMENTARIO_RIESGO = 500;
+const longitudComentarioSeguimiento = computed(() => nuevoComentario.value.length);
+const caracteresRestantesSeguimiento = computed(() => LIMITE_COMENTARIO_SEGUIMIENTO - longitudComentarioSeguimiento.value);
+const longitudComentarioRiesgo = computed(() => comentarioRiesgoProceso.value.length);
+const caracteresRestantesRiesgo = computed(() => LIMITE_COMENTARIO_RIESGO - longitudComentarioRiesgo.value);
 
 const etapasConFecha = computed(() =>
   etapasActividad.value
@@ -630,7 +795,9 @@ function limpiarFiltrosActividades() {
   filtroPacNoPac.value = '';
   filtroTipoContratacion.value = '';
   filtroCuatrimestre.value = '';
-  ordenPresupuesto.value = 'fecha-fin-asc';
+  filtroMonto.value = '';
+  filtroRiesgo.value = '';
+  ordenPresupuesto.value = 'todos';
 }
 
 function obtenerDireccion(actividad: any) {
@@ -843,6 +1010,17 @@ function obtenerCuatrimestreTexto(actividad: any) {
   return 'Sin dato';
 }
 
+function normalizarProcesoEnRiesgo(actividad: any) {
+  const valor = actividad?.procesoEnRiesgo ?? actividad?.proceso_en_riesgo ?? false;
+  if (typeof valor === 'boolean') return valor;
+  if (typeof valor === 'number') return valor === 1;
+  return String(valor).toLowerCase() === 'true';
+}
+
+function obtenerComentarioRiesgo(actividad: any) {
+  return String(actividad?.riesgoComentario ?? actividad?.riesgo_comentario ?? '').trim();
+}
+
 function totalTareas(actividad: any) {
   return getEtapasConFecha(actividad).length;
 }
@@ -942,10 +1120,16 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
   if (!fechaISO) return 'Sin fecha';
   const fecha = new Date(fechaISO);
   if (Number.isNaN(fecha.getTime())) return 'Sin fecha';
-  const dd = String(fecha.getDate()).padStart(2, '0');
-  const mm = String(fecha.getMonth() + 1).padStart(2, '0');
-  const yyyy = String(fecha.getFullYear());
-  return `${dd}/${mm}/${yyyy}`;
+  return new Intl.DateTimeFormat('es-EC', {
+    timeZone: GUAYAQUIL_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).format(fecha);
 }
 
 function limpiarQueryActividad() {
@@ -965,6 +1149,40 @@ function limpiarQueryEtapa() {
 
 function buscarActividadPorId(id: number) {
   return actividades.value.find((actividad: any) => Number(actividad?.id) === id) || null;
+}
+
+function sincronizarActividadEnListado(actividadId: number, etapasActualizadas: any[]) {
+  const index = actividades.value.findIndex((actividad: any) => Number(actividad?.id) === actividadId);
+  if (index < 0) return;
+
+  const actividadActual = actividades.value[index] || {};
+  actividades.value[index] = {
+    ...actividadActual,
+    etapas: [...etapasActualizadas],
+    seguimientoEtapas: [...etapasActualizadas]
+  };
+}
+
+function sincronizarRiesgoActividadEnListado(actividadId: number, riesgo: { procesoEnRiesgo: boolean; riesgoComentario: string | null }) {
+  const index = actividades.value.findIndex((actividad: any) => Number(actividad?.id) === actividadId);
+  if (index < 0) return;
+
+  actividades.value[index] = {
+    ...actividades.value[index],
+    procesoEnRiesgo: riesgo.procesoEnRiesgo,
+    riesgoComentario: riesgo.riesgoComentario
+  };
+}
+
+function cargarEstadoRiesgoProceso(actividad: any) {
+  const activo = normalizarProcesoEnRiesgo(actividad);
+  const comentario = obtenerComentarioRiesgo(actividad);
+  procesoEnRiesgo.value = activo;
+  comentarioRiesgoProceso.value = comentario;
+  procesoEnRiesgoGuardado.value = activo;
+  comentarioRiesgoGuardado.value = comentario;
+  errorRiesgoProceso.value = '';
+  mensajeRiesgoProceso.value = null;
 }
 
 async function procesarActividadDesdeRuta() {
@@ -1010,6 +1228,13 @@ function cerrarDetalleActividad() {
   nuevoComentario.value = '';
   nuevoAlerta.value = false;
   etapaResaltadaId.value = null;
+  procesoEnRiesgo.value = false;
+  comentarioRiesgoProceso.value = '';
+  procesoEnRiesgoGuardado.value = false;
+  comentarioRiesgoGuardado.value = '';
+  guardandoRiesgoProceso.value = false;
+  errorRiesgoProceso.value = '';
+  mensajeRiesgoProceso.value = null;
   limpiarQueryActividad();
 }
 
@@ -1026,6 +1251,7 @@ async function abrirDetalleActividad(actividad: any, actualizarRuta = true) {
   alertasPorEtapa.value = {};
   cargandoSeguimientos.value = false;
   errorSeguimiento.value = '';
+  cargarEstadoRiesgoProceso(actividad);
 
   if (actualizarRuta) {
     try {
@@ -1047,11 +1273,12 @@ async function abrirDetalleActividad(actividad: any, actualizarRuta = true) {
       : (response.data?.value || []);
 
     etapasActividad.value = fusionarEtapasPreservandoFechas(etapasActividad.value, etapasRecargadas);
+    sincronizarActividadEnListado(actividadId, etapasActividad.value);
     if (Number(actividadSeleccionada.value?.id) === actividadId) {
       actividadSeleccionada.value = {
         ...actividadSeleccionada.value,
-        etapas: etapasActividad.value,
-        seguimientoEtapas: etapasActividad.value
+        etapas: [...etapasActividad.value],
+        seguimientoEtapas: [...etapasActividad.value]
       };
     }
   } catch (error) {
@@ -1241,7 +1468,12 @@ async function guardarEstadoEtapa(etapa: any) {
 
     // Normalizar fechas al cargar desde el servidor
     etapasActividad.value = fusionarEtapasPreservandoFechas(etapasActividad.value, etapasRecargadas);
-    actividadSeleccionada.value.etapas = etapasActividad.value;
+    const actividadId = Number(actividadSeleccionada.value?.id || 0);
+    if (actividadId > 0) {
+      sincronizarActividadEnListado(actividadId, etapasActividad.value);
+    }
+    actividadSeleccionada.value.etapas = [...etapasActividad.value];
+    actividadSeleccionada.value.seguimientoEtapas = [...etapasActividad.value];
   } finally {
     guardandoEstadoEtapaId.value = null;
   }
@@ -1293,6 +1525,10 @@ async function cargarSeguimientosEtapa(etapaId: number) {
 async function guardarSeguimiento() {
   if (!actividadSeleccionada.value || !etapaSeguimiento.value) return;
   if (!nuevoComentario.value.trim()) return;
+  if (nuevoComentario.value.length > LIMITE_COMENTARIO_SEGUIMIENTO) {
+    errorSeguimiento.value = `La observación no puede superar ${LIMITE_COMENTARIO_SEGUIMIENTO} caracteres.`;
+    return;
+  }
   const etapaId = obtenerEtapaId(etapaSeguimiento.value);
   if (!etapaId) return;
   guardandoSeguimiento.value = true;
@@ -1340,6 +1576,79 @@ async function eliminarSeguimiento(item: any) {
     eliminandoSeguimientoId.value = null;
   }
 }
+
+async function guardarRiesgoProceso() {
+  if (!actividadSeleccionada.value?.id) return;
+
+  const comentario = comentarioRiesgoProceso.value.trim();
+  if (procesoEnRiesgo.value && !comentario) {
+    errorRiesgoProceso.value = 'Debes registrar un comentario para marcar el proceso en riesgo.';
+    mensajeRiesgoProceso.value = null;
+    return;
+  }
+  if (comentario.length > LIMITE_COMENTARIO_RIESGO) {
+    errorRiesgoProceso.value = `El comentario no puede superar ${LIMITE_COMENTARIO_RIESGO} caracteres.`;
+    mensajeRiesgoProceso.value = null;
+    return;
+  }
+
+  guardandoRiesgoProceso.value = true;
+  errorRiesgoProceso.value = '';
+  mensajeRiesgoProceso.value = null;
+
+  try {
+    const response = await api.put(`/subtareas/${actividadSeleccionada.value.id}`, {
+      procesoEnRiesgo: procesoEnRiesgo.value,
+      riesgoComentario: procesoEnRiesgo.value ? comentario : null
+    });
+
+    const actividadActualizada = response.data || {};
+    const riesgoActualizado = {
+      procesoEnRiesgo: normalizarProcesoEnRiesgo(actividadActualizada) || procesoEnRiesgo.value,
+      riesgoComentario: obtenerComentarioRiesgo(actividadActualizada) || (procesoEnRiesgo.value ? comentario : '')
+    };
+
+    procesoEnRiesgo.value = riesgoActualizado.procesoEnRiesgo;
+    comentarioRiesgoProceso.value = riesgoActualizado.riesgoComentario;
+    procesoEnRiesgoGuardado.value = riesgoActualizado.procesoEnRiesgo;
+    comentarioRiesgoGuardado.value = riesgoActualizado.riesgoComentario;
+
+    sincronizarRiesgoActividadEnListado(Number(actividadSeleccionada.value.id), {
+      procesoEnRiesgo: riesgoActualizado.procesoEnRiesgo,
+      riesgoComentario: riesgoActualizado.riesgoComentario || null
+    });
+
+    actividadSeleccionada.value = {
+      ...actividadSeleccionada.value,
+      procesoEnRiesgo: riesgoActualizado.procesoEnRiesgo,
+      riesgoComentario: riesgoActualizado.riesgoComentario
+    };
+
+    mensajeRiesgoProceso.value = {
+      texto: riesgoActualizado.procesoEnRiesgo
+        ? 'Riesgo general guardado correctamente.'
+        : 'El proceso ya no está marcado como riesgo.',
+      tipo: 'success'
+    };
+  } catch (error) {
+    console.error('Error al guardar riesgo del proceso:', error);
+    procesoEnRiesgo.value = procesoEnRiesgoGuardado.value;
+    comentarioRiesgoProceso.value = comentarioRiesgoGuardado.value;
+    errorRiesgoProceso.value = 'No se pudo guardar el riesgo general del proceso';
+  } finally {
+    guardandoRiesgoProceso.value = false;
+  }
+}
+
+async function onToggleRiesgoProceso() {
+  errorRiesgoProceso.value = '';
+  mensajeRiesgoProceso.value = null;
+
+  if (!procesoEnRiesgo.value) {
+    comentarioRiesgoProceso.value = '';
+    await guardarRiesgoProceso();
+  }
+}
 </script>
 
 <style scoped>
@@ -1359,18 +1668,87 @@ async function eliminarSeguimiento(item: any) {
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
 }
 
-.actividades-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  background: #fff;
+.context-summary {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 40;
+  background: #ffffff;
   border: 1px solid #d9e2ea;
   border-radius: 14px;
-  padding: 0.7rem;
+  padding: 0.6rem 0.8rem;
   margin-bottom: 1rem;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  min-height: 1.5rem;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid #d9e2ea;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.filter-chip.primary {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.filter-chip.direccion-active {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-color: #f59e0b;
+  color: #92400e;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 0.35rem 0.85rem;
+  box-shadow: 0 1px 4px rgba(245, 158, 11, 0.3);
+}
+
+.filter-chip.riesgo-active {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  border-color: #f87171;
+  color: #991b1b;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 0.35rem 0.85rem;
+  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.3);
+}
+
+.btn-clear-filter {
+  margin-left: auto;
+  padding: 0.28rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #fca5a5;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-clear-filter:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+}
+
+.dashboard-toolbar {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .buscador-container {
@@ -1388,33 +1766,66 @@ async function eliminarSeguimiento(item: any) {
   color: #94a3b8;
 }
 
-.buscador-input,
-.filtro-select {
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 0.48rem 0.65rem;
-  font-size: 0.86rem;
-  color: #0f172a;
-  background: #fff;
-}
-
-.buscador-input {
-  width: 100%;
-  padding-left: 2rem;
-}
-
-.buscador-input:focus,
-.filtro-select:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
-}
-
-.toolbar-filtros {
+.dashboard-toolbar-filtros {
   display: flex;
   gap: 0.6rem;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.combo-filtro {
+  border: 1px solid #d9e2ea;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 0.38rem 0.7rem;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+.combo-filtro:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  background: #ffffff;
+}
+
+.dashboard-toolbar-filtros .combo-filtro {
+  border-color: #bfdbfe;
+  color: #1e3a8a;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+.dashboard-toolbar-filtros .combo-filtro:hover {
+  border-color: #93c5fd;
+  background: linear-gradient(180deg, #ffffff, #eff6ff);
+}
+.dashboard-toolbar-filtros select.combo-filtro {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 1.8rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #3b82f6 50%),
+    linear-gradient(135deg, #3b82f6 50%, transparent 50%);
+  background-position: calc(100% - 13px) calc(50% - 2px), calc(100% - 8px) calc(50% - 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  background-color: unset;
+}
+
+.dashboard-buscador-container .buscador-input.combo-filtro {
+  background: linear-gradient(180deg, #ffffff, #eff6ff);
+  border-color: #93c5fd;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.08);
+  padding-left: 2.2rem;
+  padding-right: 0.9rem;
+  width: 100%;
+}
+.dashboard-buscador-container .buscador-input.combo-filtro::placeholder {
+  color: #64748b;
+  font-weight: 600;
 }
 
 .kpis-lectura-rapida {
@@ -1708,6 +2119,8 @@ h1 {
 .numero-badge {
   min-width: 2.5rem;
   text-align: center;
+  background: #ecfdf3;
+  color: #166534;
 }
 
 .actividad-info {
@@ -1741,6 +2154,12 @@ h1 {
 
 .actividad-meta-chip.success {
   background: #ecfdf3;
+  border-color: #86efac;
+  color: #166534;
+}
+
+.actividad-meta-chip.quarter {
+  background: #f0fdf4;
   border-color: #86efac;
   color: #166534;
 }
@@ -1886,6 +2305,12 @@ h1 {
   color: #166534;
 }
 
+.seguimiento-contexto-chip.quarter {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #166534;
+}
+
 .seguimiento-contexto-chip.amount {
   background: #eff6ff;
   border-color: #bfdbfe;
@@ -1903,12 +2328,99 @@ h1 {
   padding: 1rem 1.2rem 1.2rem;
 }
 
+.modal-detalle-actividad {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-detalle-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.modal-detalle-body.timeline-expandida {
+  overflow-y: auto;
+  padding-right: 0.55rem;
+}
+
+.modal-detalle-body.timeline-expandida .tabla-etapas-wrap {
+  flex: 0 0 auto;
+}
+
+.detalle-superior {
+  flex: 0 0 auto;
+}
+
+.tabla-etapas-wrap {
+  flex: 1 1 auto;
+  min-height: 280px;
+  max-height: 46vh;
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
 .resumen-detalle {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
-  margin-bottom: 1rem;
   color: #334155;
+}
+
+.detalle-resumen-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.riesgo-proceso-panel {
+  border: 1px solid #fde68a;
+  background: #fffbeb;
+  border-radius: 12px;
+  padding: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.riesgo-proceso-simple {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 700;
+  color: #9a3412;
+  white-space: nowrap;
+  border: 1px solid #fcd34d;
+  background: #fffbeb;
+  border-radius: 999px;
+  padding: 0.5rem 0.8rem;
+}
+
+.riesgo-proceso-simple input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #d97706;
+}
+
+.riesgo-proceso-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.riesgo-proceso-textarea {
+  margin-bottom: 0;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.riesgo-proceso-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .timeline {
@@ -2048,10 +2560,10 @@ h1 {
 .tabla-etapas {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  overflow: hidden;
+  margin-bottom: 0;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
 }
 
 .tabla-etapas thead {
@@ -2233,18 +2745,18 @@ h1 {
 
 .seguimiento-badge {
   position: absolute;
-  top: -0.25rem;
-  right: -0.35rem;
-  min-width: 1.05rem;
-  height: 1.05rem;
-  padding: 0 0.2rem;
+  top: -0.3rem;
+  right: -0.4rem;
+  min-width: 1.3rem;
+  height: 1.3rem;
+  padding: 0 0.28rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: #334e68;
+  background: #dc2626;
   color: #ffffff;
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   font-weight: 700;
   line-height: 1;
   border: 2px solid #ffffff;
@@ -2269,6 +2781,21 @@ h1 {
   padding: 0.55rem;
   margin-bottom: 0.5rem;
   resize: vertical;
+}
+
+.contador-caracteres {
+  margin: -0.2rem 0 0.5rem;
+  font-size: 0.74rem;
+  color: #64748b;
+}
+
+.contador-caracteres.aviso {
+  color: #b45309;
+}
+
+.contador-caracteres.limite {
+  color: #b91c1c;
+  font-weight: 700;
 }
 
 .alerta-label {
@@ -2330,8 +2857,8 @@ h1 {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: #e2e8f0;
-  color: #0f172a;
+  background: #dcfce7;
+  color: #166534;
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -2486,6 +3013,10 @@ h1 {
 
   .modal-header {
     gap: 0.75rem;
+  }
+
+  .detalle-resumen-row {
+    flex-direction: column;
   }
 
   .seguimiento-contexto-header {

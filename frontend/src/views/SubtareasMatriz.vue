@@ -38,7 +38,7 @@
           <strong>{{ resumenDiario.totalEtapas }}</strong>
         </div>
         <div class="kpi-card">
-          <span class="kpi-label">Completadas</span>
+          <span class="kpi-label">Completas</span>
           <strong>{{ resumenDiario.completadas }}</strong>
         </div>
         <div class="kpi-card warning">

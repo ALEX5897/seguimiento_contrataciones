@@ -15,15 +15,12 @@
     <template v-else>
       <section class="context-summary">
         <div class="filter-chips">
-          <span class="filter-chip primary" v-if="busquedaDashboard">Búsqueda: {{ busquedaDashboard }}</span>
-          <span class="filter-chip primary">Vista: {{ areaSeleccionada || 'General' }}</span>
+          <span class="filter-chip primary" v-if="areaSeleccionada || !filtroDireccion">Vista: {{ areaSeleccionada || 'General' }}</span>
           <span class="filter-chip primary" v-if="responsableSeleccionado">Responsable: {{ responsableSeleccionado }}</span>
-          <span class="filter-chip" v-if="filtroDireccion">Dirección: {{ filtroDireccion }}</span>
+          <span class="filter-chip direccion-active" v-if="filtroDireccion">📂 {{ filtroDireccion }}</span>
           <span class="filter-chip" v-if="filtroPacNoPac">Plan: {{ filtroPacNoPac }}</span>
           <span class="filter-chip" v-if="filtroTipoContratacionLabel">Contratación: {{ filtroTipoContratacionLabel }}</span>
           <span class="filter-chip" v-if="filtroCuatrimestre">Cuatrimestre: {{ filtroCuatrimestre }}</span>
-          <span class="filter-chip" v-if="filtroMonto">Monto: {{ filtroMonto }}</span>
-          <span class="filter-chip">Presupuesto: {{ formatearMonto(presupuestoFiltrado) }}</span>
 
           <button v-if="hayFiltrosDashboardActivos" class="btn-clear-filter" @click="restablecerVista">
             Restablecer vista
@@ -31,16 +28,6 @@
         </div>
 
         <div class="dashboard-toolbar">
-          <div class="buscador-container dashboard-buscador-container">
-            <span class="buscador-icon">🔎</span>
-            <input
-              v-model="busquedaDashboard"
-              class="buscador-input combo-filtro"
-              type="text"
-              placeholder="Buscar por nombre, dirección o responsable..."
-            />
-          </div>
-
           <div class="dashboard-toolbar-filtros">
             <select v-model="filtroDireccion" class="combo-filtro">
               <option value="">Todas las direcciones</option>
@@ -61,17 +48,6 @@
               <option value="2">Cuatrimestre 2</option>
               <option value="3">Cuatrimestre 3</option>
               <option value="4">Cuatrimestre 4</option>
-            </select>
-            <select v-model="filtroMonto" class="combo-filtro">
-              <option value="">Todos los montos</option>
-              <option v-for="monto in montosDisponibles" :key="monto" :value="monto">{{ monto }}</option>
-            </select>
-            <select v-model="ordenProcesosDashboard" class="combo-filtro">
-              <option value="todos">Ordenar por...</option>
-              <option value="presupuesto-desc">Presupuesto: mayor a menor</option>
-              <option value="presupuesto-asc">Presupuesto: menor a mayor</option>
-              <option value="fecha-fin-desc">Fecha de contratación: mayor a menor</option>
-              <option value="fecha-fin-asc">Fecha de contratación: menor a mayor</option>
             </select>
           </div>
         </div>
@@ -134,6 +110,20 @@
             </div>
           </div>
           <small class="kpi-foot">{{ porcentajeProximas }}% de pendientes vence en 2 y 1 día</small>
+        </button>
+        <button
+          type="button"
+          class="kpi-card kpi-card-button warning has-tooltip"
+          :data-tooltip="`Procesos con riesgo general marcado: ${detalleProcesosRiesgo.length}`"
+          @click="abrirDetalleKpi('riesgo')"
+        >
+          <span class="kpi-title">Procesos en riesgo</span>
+          <strong class="kpi-value">{{ detalleProcesosRiesgo.length }}</strong>
+          <small class="kpi-foot">Procesos marcados manualmente con riesgo general</small>
+          <div class="kpi-mini-track">
+            <div class="kpi-mini-fill" :style="{ width: anchoBarraProcesosRiesgo, backgroundColor: colorProcesosRiesgo }"></div>
+          </div>
+          <small class="kpi-mini-label">{{ porcentajeProcesosRiesgo }}% de los procesos visibles</small>
         </button>
       </section>
 
@@ -202,12 +192,12 @@
           </div>
         </article>
 
-        <article class="panel donut-panel">
+        <article class="panel donut-panel area-panel">
           <div class="panel-header">
             <h2>Procesos por área</h2>
             <span>{{ subtareasElegibles.length }} procesos</span>
           </div>
-          <div v-if="procesosPorArea.length" class="donut-wrap area-donut-wrap">
+          <div v-if="procesosPorArea.length" class="donut-wrap area-donut-stack">
             <div class="donut area-donut" :style="estiloDonaAreas">
               <div class="donut-center">
                 <strong>{{ subtareasElegibles.length }}</strong>
@@ -232,55 +222,6 @@
             </div>
           </div>
           <div v-else class="empty">No hay áreas con información disponible.</div>
-        </article>
-
-      </section>
-
-      <section class="charts-grid secondary-grid">
-        <article class="panel barras-panel ranking-panel">
-          <div class="panel-header">
-            <h2>Procesos y avance</h2>
-            <span>Total {{ actividadesAvancePresupuesto.length }} </span>
-          </div>
-          <div v-if="totalPaginasRanking > 1" class="panel-paginator">
-            <button class="panel-pag-btn" :disabled="paginaRanking === 1" @click="paginaRanking--">‹ Anterior</button>
-            <span class="panel-pag-info">Página {{ paginaRanking }} de {{ totalPaginasRanking }}</span>
-            <button class="panel-pag-btn" :disabled="paginaRanking >= totalPaginasRanking" @click="paginaRanking++">Siguiente ›</button>
-          </div>
-          <div v-if="actividadesAvancePresupuestoPaginadas.length" class="bars-stack bars-stack-detailed">
-            <button
-              v-for="item in actividadesAvancePresupuestoPaginadas"
-              :key="item.id"
-              type="button"
-              class="actividad-bar-row actividad-bar-button"
-              :class="{ active: item.destacada && !!responsableSeleccionado, muted: !item.destacada && !!responsableSeleccionado }"
-              @click="abrirActividadDetalle(item.id)"
-            >
-              <div class="actividad-bar-top">
-                <div>
-                  <div class="bar-label">{{ item.nombre }}</div>
-                  <div class="bar-helper">{{ item.area }} · {{ item.responsable }} · selecciona para abrir detalle</div>
-                </div>
-                <div class="actividad-presupuesto">{{ formatearMonto(item.presupuesto) }}</div>
-              </div>
-              <div class="actividad-bar-main">
-                <div class="bar-track actividad-track">
-                  <div
-                    class="bar-fill"
-                    :class="item.avance >= 70 ? 'ok' : item.avance >= 40 ? 'info' : 'warn'"
-                    :style="{ width: item.width }"
-                  ></div>
-                </div>
-                <div class="bar-value actividad-avance">{{ item.avance }}%</div>
-              </div>
-            </button>
-          </div>
-          <div v-if="actividadesAvancePresupuestoPaginadas.length && totalPaginasRanking > 1" class="panel-paginator">
-            <button class="panel-pag-btn" :disabled="paginaRanking === 1" @click="paginaRanking--">‹ Anterior</button>
-            <span class="panel-pag-info">Página {{ paginaRanking }} de {{ totalPaginasRanking }}</span>
-            <button class="panel-pag-btn" :disabled="paginaRanking >= totalPaginasRanking" @click="paginaRanking++">Siguiente ›</button>
-          </div>
-          <div v-if="!actividadesAvancePresupuestoPaginadas.length" class="empty">No hay procesos activos para graficar.</div>
         </article>
 
         <article class="panel temporal-panel">
@@ -328,60 +269,124 @@
             </div>
           </div>
         </article>
+
       </section>
 
-      <section class="trend-kpi-grid">
-        <article class="kpi-card trend-card">
+      <section class="trend-kpi-grid cumplimiento-top-grid">
+        <article class="kpi-card trend-card cumplimiento-card">
           <div class="trend-card-header">
             <div>
-              <span class="kpi-title">Etapas programadas por semana</span>
-              <strong class="kpi-value trend-value">{{ mejorSemanaCumplimientoTexto.valor }}</strong>
+              <span class="kpi-title">Cumplimiento por dirección</span>
+             
             </div>
-            <small class="trend-badge success">Pico: {{ mejorSemanaCumplimientoTexto.label }}</small>
+            <small class="trend-badge success" v-if="direccionTopCumplimiento">
+              Top: {{ direccionTopCumplimiento.direccion }} ({{ direccionTopCumplimiento.cumplidas }}/{{ direccionTopCumplimiento.totalTareas }})
+            </small>
           </div>
-          <small class="kpi-foot">Semana con mayor cantidad de verificables planificados</small>
-          <div v-if="serieSemanal.length" class="trend-chart-wrap">
-            <DashboardChart
-              :labels="serieSemanal.map(item => item.label)"
-              :etapasPlanificadas="serieSemanal.map(item => item.etapasProgramadas || 0)"
-              :etapasCumplidas="serieSemanal.map(item => item.etapasCumplidas !== undefined ? item.etapasCumplidas : 0)"
-              :alertas="serieSemanal.map(() => 0)"
-            />
+         
+          <div class="direccion-group-legend">
+            <span><i class="dot ok"></i>Cumplidas</span>
+            <span><i class="dot danger"></i>Con retraso</span>
+            <span><i class="dot tomato"></i>Pendientes</span>
           </div>
-          <div v-else class="empty-inline">Sin etapas planificadas por semana para el filtro actual.</div>
-        </article>
-
-        <article class="kpi-card trend-card alert neutral-alert-card">
-          <div class="trend-card-header" style="align-items: center; gap: 1.2rem;">
-            <div style="display: flex; align-items: center; gap: 0.7rem;">
-              <span style="font-size: 1.7rem; color: #64748b; background: #f3f4f6; border-radius: 50%; padding: 0.15em 0.35em; display: flex; align-items: center; justify-content: center;">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="12" fill="#f3f4f6"/><path d="M12 7v4m0 4h.01" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="16" r="1" fill="#64748b"/></svg>
-              </span>
-              <div>
-                <span class="kpi-title" style="font-size: 1.05rem; color: #334155;">Alertas por semana</span>
-                <div style="display: flex; align-items: baseline; gap: 0.5rem;">
-                  <strong class="kpi-value trend-value" style="font-size: 1.5rem; color: #334155;">
-                    {{ serieSemanal.reduce((sum, item) => sum + (item.alertas || 0), 0) }}
-                  </strong>
-                  <span style="font-size: 1rem; color: #64748b; font-weight: 500;">total</span>
+          <div v-if="resumenDireccionesCumplimiento.length" class="direccion-bars-wrap">
+            <div class="direccion-global-chart">
+              <div class="direccion-y-axis">
+                <span>{{ maxValorEjeCumplimiento }}</span>
+                <span>{{ Math.round(maxValorEjeCumplimiento / 2) }}</span>
+                <span>0</span>
+              </div>
+              <div class="direccion-chart-canvas">
+                <div class="direccion-chart-guides">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <div class="direccion-groups">
+                  <div v-for="item in resumenDireccionesCumplimiento" :key="item.direccion" class="direccion-group-col">
+                    <div class="direccion-group-bar-shell">
+                      <div
+                        class="direccion-group-bar"
+                        :style="{ height: `${item.totalComparadoBarPct}%` }"
+                        :title="`Dirección: ${item.direccion}\nCumplidas: ${item.cumplidas}\nCon retraso: ${item.pendientesRetraso}\nPendientes: ${item.pendientes}`"
+                      >
+                        <div class="direccion-stack-fill ok" :style="{ height: `${item.cumplidasStackPct}%` }"></div>
+                        <div class="direccion-stack-fill danger" :style="{ height: `${item.retrasoStackPct}%` }"></div>
+                        <div class="direccion-stack-fill tomato" :style="{ height: `${item.pendientesStackPct}%` }"></div>
+                      </div>
+                    </div>
+                    <div class="direccion-group-label">{{ item.direccion }}</div>
+                  </div>
                 </div>
               </div>
             </div>
-            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem;">
-              <small class="trend-badge" style="font-size: 0.95rem; background: #f3f4f6; color: #64748b; padding: 0.2em 0.7em;">Pico: {{ peorSemanaAlertasTexto.label }}</small>
-              <span style="font-size: 0.85rem; color: #64748b;">Promedio: {{ (serieSemanal.length ? (serieSemanal.reduce((sum, item) => sum + (item.alertas || 0), 0) / serieSemanal.length).toFixed(1) : 0) }}</span>
-            </div>
           </div>
-          <small class="kpi-foot" style="font-size: 0.9rem; color: #64748b; font-weight: 500;">Total de alertas en las últimas 16 semanas</small>
-          <div v-if="!serieSemanal.length" class="empty-inline">Sin alertas registradas por semana para el filtro actual.</div>
-          <div v-else class="mini-alertas-chart-wrap" style="padding: 8px 0; min-width: 220px; min-height: 70px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f8fafc; border-radius: 10px; box-shadow: 0 1px 4px #e5e7eb;">
-            <canvas ref="miniAlertasChart" height="60" width="220" style="max-width: 100%; margin-bottom: 4px; background: transparent;"></canvas>
-            <div class="mini-alertas-legend" style="color: #64748b; font-size: 0.9rem; font-weight: 600;">Últimas 16 semanas</div>
-            <div style="margin-top: 2px; font-size: 0.8rem; color: #64748b;">
-              Semana con más alertas: <b>{{ peorSemanaAlertasTexto.label }}</b>
-            </div>
-          </div>
+          <div v-else class="empty-inline">Sin información de direcciones para el filtro actual.</div>
         </article>
+      </section>
+
+      <section class="charts-grid secondary-grid">
+        <article class="panel barras-panel ranking-panel">
+          <div class="panel-header">
+            <h2>Procesos y avance</h2>
+            <span>Total {{ actividadesAvancePresupuesto.length }} </span>
+          </div>
+          <div v-if="actividadesAvancePresupuesto.length" class="bars-stack bars-stack-detailed">
+            <button
+              v-for="item in actividadesAvancePresupuesto"
+              :key="item.id"
+              type="button"
+              class="actividad-bar-row actividad-bar-button"
+              :class="{ active: item.destacada && !!responsableSeleccionado, muted: !item.destacada && !!responsableSeleccionado }"
+              @click="abrirActividadDetalle(item.id)"
+            >
+              <div class="actividad-bar-top">
+                <div>
+                  <div class="bar-label">{{ item.nombre }}</div>
+                  <div class="bar-helper">{{ item.area }} · {{ item.responsable }} · selecciona para abrir detalle</div>
+                </div>
+                <div class="actividad-presupuesto">{{ formatearMonto(item.presupuesto) }}</div>
+              </div>
+              <div class="actividad-bar-main">
+                <div class="bar-track actividad-track">
+                  <div
+                    class="bar-fill"
+                    :class="item.avance >= 70 ? 'ok' : item.avance >= 40 ? 'info' : 'warn'"
+                    :style="{ width: item.width }"
+                  ></div>
+                </div>
+                <div class="bar-value actividad-avance">{{ item.avance }}%</div>
+              </div>
+            </button>
+          </div>
+          <div v-if="!actividadesAvancePresupuesto.length" class="empty">No hay procesos activos para graficar.</div>
+        </article>
+
+        <article class="panel donut-panel montos-panel">
+          <div class="panel-header">
+            <h2>Montos por dirección</h2>
+            <span>{{ formatearMonto(totalMontoDirecciones) }}</span>
+          </div>
+          <div v-if="montosPorDireccion.length" class="donut-wrap area-donut-stack">
+            <div class="donut area-donut" :style="estiloDonaMontos">
+              <div class="donut-center">
+                <strong>{{ montosPorDireccion.length }}</strong>
+                <span>Direcciones</span>
+              </div>
+            </div>
+            <div class="donut-legend area-legend">
+              <div v-for="item in montosPorDireccion" :key="`monto-${item.direccion}`" class="area-legend-item static">
+                <div class="area-legend-main">
+                  <i class="dot" :style="{ background: item.color }"></i>
+                  <span class="area-legend-name">{{ item.direccion }}</span>
+                </div>
+                <span class="area-legend-meta">{{ item.porcentajeMonto }}% · {{ formatearMonto(item.monto) }}</span>
+              </div>
+            </div>
+          </div>
+          <div v-else class="empty">Sin montos disponibles por dirección para el filtro actual.</div>
+        </article>
+
       </section>
 
       <div v-if="detalleKpi.activo" class="modal-overlay kpi-detail-overlay" @click="cerrarDetalleKpi">
@@ -439,6 +444,24 @@
             </button>
           </div>
 
+          <div v-else-if="detalleKpi.tipo === 'riesgo'" class="kpi-detail-body listado">
+            <div v-if="detalleProcesosRiesgo.length === 0" class="empty">No hay procesos marcados en riesgo para el filtro actual.</div>
+            <button
+              v-for="item in detalleProcesosRiesgo"
+              :key="item.id"
+              type="button"
+              class="kpi-detail-item kpi-detail-item-button"
+              @click="abrirActividadDetalle(item.id)"
+            >
+              <div>
+                <strong>{{ item.nombre }}</strong>
+                <p>{{ item.area }} · {{ item.responsable }} · clic para abrir</p>
+                <p class="kpi-risk-comment">{{ item.comentario }}</p>
+              </div>
+              <div class="list-meta warning">Riesgo</div>
+            </button>
+          </div>
+
           <div v-else class="kpi-detail-body listado">
             <div v-if="detalleMontoEjecutado.length === 0" class="empty">No hay procesos terminados para el filtro actual.</div>
             <div v-for="item in detalleMontoEjecutado" :key="item.id" class="kpi-detail-item">
@@ -457,13 +480,10 @@
 
 <script setup lang="ts">
 // Filtros de dashboard
-const busquedaDashboard = ref('');
 const filtroDireccion = ref('');
-const filtroMonto = ref('');
 const filtroPacNoPac = ref('');
 const filtroTipoContratacion = ref('');
 const filtroCuatrimestre = ref('');
-const ordenProcesosDashboard = ref('fecha-fin-asc');
 
 const subtareasActivasBase = computed(() =>
   subtareas.value.filter((subtarea: any) => actividadActiva(subtarea))
@@ -497,37 +517,15 @@ const tiposContratacionDisponibles = computed(() => {
     .sort((a, b) => a.label.localeCompare(b.label));
 });
 
-const montosDisponibles = computed(() => {
-  const rangos = [
-    { label: '0-1,000', min: 0, max: 1000 },
-    { label: '1,001-5,000', min: 1001, max: 5000 },
-    { label: '5,001-10,000', min: 5001, max: 10000 },
-    { label: '10,001+', min: 10001, max: Infinity }
-  ];
-  const usados = new Set<string>();
-  for (const subtarea of subtareasActivasBase.value) {
-    const monto = obtenerPresupuestoDashboard(subtarea);
-    for (const r of rangos) {
-      if (monto >= r.min && monto <= r.max) {
-        usados.add(r.label);
-        break;
-      }
-    }
-  }
-  return rangos.filter(r => usados.has(r.label)).map(r => r.label);
-});
-
 const filtroTipoContratacionLabel = computed(() =>
   tiposContratacionDisponibles.value.find((tipo) => tipo.value === filtroTipoContratacion.value)?.label || ''
 );
 
 const hayFiltrosDashboardActivos = computed(() =>
   Boolean(
-    busquedaDashboard.value
-    || areaSeleccionada.value
+    areaSeleccionada.value
     || responsableSeleccionado.value
     || filtroDireccion.value
-    || filtroMonto.value
     || filtroPacNoPac.value
     || filtroTipoContratacion.value
     || filtroCuatrimestre.value
@@ -536,15 +534,6 @@ const hayFiltrosDashboardActivos = computed(() =>
 
 const subtareasBaseFiltradas = computed(() => {
   let items = [...subtareasActivasBase.value];
-
-  const query = normalizarTextoBusqueda(busquedaDashboard.value);
-  if (query) {
-    items = items.filter((subtarea: any) => {
-      const direccion = obtenerDireccionDashboard(subtarea);
-      const responsable = obtenerResponsableDashboard(subtarea);
-      return normalizarTextoBusqueda(`${subtarea?.nombre || ''} ${direccion} ${responsable}`).includes(query);
-    });
-  }
 
   if (filtroDireccion.value) {
     items = items.filter((subtarea: any) => obtenerDireccionDashboard(subtarea) === filtroDireccion.value);
@@ -563,37 +552,11 @@ const subtareasBaseFiltradas = computed(() => {
   if (filtroCuatrimestre.value) {
     items = items.filter((subtarea: any) => String(obtenerCuatrimestreDashboard(subtarea)) === filtroCuatrimestre.value);
   }
-  if (filtroMonto.value) {
-    const rangos = [
-      { label: '0-1,000', min: 0, max: 1000 },
-      { label: '1,001-5,000', min: 1001, max: 5000 },
-      { label: '5,001-10,000', min: 5001, max: 10000 },
-      { label: '10,001+', min: 10001, max: Infinity }
-    ];
-    const rango = rangos.find(r => r.label === filtroMonto.value);
-    if (rango) {
-      items = items.filter((subtarea: any) => {
-        const monto = obtenerPresupuestoDashboard(subtarea);
-        return monto >= rango.min && monto <= rango.max;
-      });
-    }
-  }
-
-  if (ordenProcesosDashboard.value === 'presupuesto-desc') {
-    items.sort((a: any, b: any) => obtenerPresupuestoDashboard(b) - obtenerPresupuestoDashboard(a));
-  } else if (ordenProcesosDashboard.value === 'presupuesto-asc') {
-    items.sort((a: any, b: any) => obtenerPresupuestoDashboard(a) - obtenerPresupuestoDashboard(b));
-  } else if (ordenProcesosDashboard.value === 'fecha-fin-desc') {
-    items.sort((a: any, b: any) => obtenerFechaFinDashboard(b) - obtenerFechaFinDashboard(a));
-  } else if (ordenProcesosDashboard.value === 'fecha-fin-asc') {
-    items.sort((a: any, b: any) => obtenerFechaFinDashboard(a) - obtenerFechaFinDashboard(b));
-  }
 
   return items;
 });
 import DashboardChart from '../components/DashboardChart.vue';
-import { computed, onMounted, onBeforeUnmount, ref, watch, nextTick } from 'vue';
-import type { Chart as ChartJS } from 'chart.js';
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { normalizarTextoBusqueda } from '../utils/search';
 
 // Declaraciones principales de estado reactivo
@@ -606,9 +569,7 @@ const resumenSemanal = ref<{ series: any[]; mejorSemanaCumplimiento: any | null;
 });
 const areaSeleccionada = ref('');
 const responsableSeleccionado = ref('');
-const paginaRanking = ref(1);
-const itemsPorPaginaRanking = 8;
-const detalleKpi = ref<{ activo: boolean; tipo: 'cumplimiento' | 'retraso' | 'proximas' | 'monto' }>({
+const detalleKpi = ref<{ activo: boolean; tipo: 'cumplimiento' | 'retraso' | 'proximas' | 'monto' | 'riesgo' }>({
   activo: false,
   tipo: 'cumplimiento'
 });
@@ -621,59 +582,9 @@ const fechaActual = new Date().toLocaleDateString('es-EC', {
 
 // --- Computed y variables dependientes de serieSemanal ---
 
-const serieSemanal = computed(() => {
-  const source = Array.isArray(resumenSemanal.value?.series) ? resumenSemanal.value.series : [];
-  return source.slice(-16);
-});
-
-
-
-const mejorSemanaCumplimientoTexto = computed(() => ({
-  valor: Number(resumenSemanal.value?.mejorSemanaCumplimiento?.etapasProgramadas || 0),
-  label: resumenSemanal.value?.mejorSemanaCumplimiento?.label || 'Sin datos'
-}));
-
-
-
-const peorSemanaAlertasTexto = computed(() => ({
-  valor: Number(resumenSemanal.value?.peorSemanaAlertas?.alertas || 0),
-  label: resumenSemanal.value?.peorSemanaAlertas?.label || 'Sin datos'
-}));
-
-const miniAlertasChart = ref<HTMLCanvasElement | null>(null);
-let miniAlertasChartInstance: ChartJS | null = null;
 import { useRouter } from 'vue-router';
 import { subtareasService } from '../services/api';
 const router = useRouter();
-
-function renderMiniAlertasChart() {
-  nextTick(() => {
-    // Limpia cualquier instancia previa
-    if (miniAlertasChartInstance) {
-      miniAlertasChartInstance.destroy();
-      miniAlertasChartInstance = null;
-    }
-    // Solo renderiza si el ref existe y hay datos
-    if (!miniAlertasChart.value || !serieSemanal.value || !serieSemanal.value.length) {
-      return;
-    }
-    // ...código de inicialización Chart.js aquí...
-    // Ejemplo:
-    // miniAlertasChartInstance = new Chart(miniAlertasChart.value, { ... });
-  });
-}
-
-watch(serieSemanal, () => {
-  renderMiniAlertasChart();
-});
-
-onMounted(() => {
-  renderMiniAlertasChart();
-});
-
-onBeforeUnmount(() => {
-  if (miniAlertasChartInstance) miniAlertasChartInstance.destroy();
-});
 
 function normalizarEstado(estado: string | undefined, fechaReal?: string | null) {
   // Si tiene fechaReal, está completado (independiente del estado)
@@ -751,6 +662,17 @@ function actividadAtrasada(subtarea: any) {
   });
 }
 
+function procesoEnRiesgoDashboard(subtarea: any) {
+  const valor = subtarea?.procesoEnRiesgo ?? subtarea?.proceso_en_riesgo ?? false;
+  if (typeof valor === 'boolean') return valor;
+  if (typeof valor === 'number') return valor === 1;
+  return String(valor).toLowerCase() === 'true';
+}
+
+function comentarioRiesgoDashboard(subtarea: any) {
+  return String(subtarea?.riesgoComentario ?? subtarea?.riesgo_comentario ?? '').trim();
+}
+
 function obtenerDireccionDashboard(subtarea: any) {
   return subtarea?.direccionNombre
     || subtarea?.direccion?.nombre
@@ -796,26 +718,17 @@ function obtenerCuatrimestreDashboard(subtarea: any) {
   return Number.isFinite(valor) ? valor : 999;
 }
 
-function obtenerFechaFinDashboard(subtarea: any) {
-  const fechaFin = subtarea?.fechaFin || subtarea?.fecha_fin;
-  const timestamp = fechaFin ? new Date(fechaFin).getTime() : Number.POSITIVE_INFINITY;
-  return Number.isFinite(timestamp) ? timestamp : Number.POSITIVE_INFINITY;
-}
-
 function toggleArea(area: string) {
   areaSeleccionada.value = areaSeleccionada.value === area ? '' : area;
 }
 
 function restablecerVista() {
-  busquedaDashboard.value = '';
   areaSeleccionada.value = '';
   responsableSeleccionado.value = '';
   filtroDireccion.value = '';
-  filtroMonto.value = '';
   filtroPacNoPac.value = '';
   filtroTipoContratacion.value = '';
   filtroCuatrimestre.value = '';
-  ordenProcesosDashboard.value = 'fecha-fin-asc';
 }
 
 function responsableBase(subtarea: any) {
@@ -842,12 +755,10 @@ async function cargarResumenSemanal() {
     const response = await subtareasService.getResumenSemanal({
       area: areaSeleccionada.value || undefined,
       responsable: responsableSeleccionado.value || undefined,
-      busqueda: busquedaDashboard.value.trim() || undefined,
       direccion: filtroDireccion.value || undefined,
       tipoPlan: filtroPacNoPac.value || undefined,
       cuatrimestre: filtroCuatrimestre.value || undefined,
-      tipoContratacion: filtroTipoContratacionLabel.value || undefined,
-      monto: filtroMonto.value || undefined
+      tipoContratacion: filtroTipoContratacionLabel.value || undefined
     });
     resumenSemanal.value = response;
   } catch (error) {
@@ -856,7 +767,7 @@ async function cargarResumenSemanal() {
   }
 }
 
-function abrirDetalleKpi(tipo: 'cumplimiento' | 'retraso' | 'proximas' | 'monto') {
+function abrirDetalleKpi(tipo: 'cumplimiento' | 'retraso' | 'proximas' | 'monto' | 'riesgo') {
   detalleKpi.value = { activo: true, tipo };
 }
 
@@ -947,10 +858,6 @@ const kpis = computed(() => {
   };
 });
 
-const presupuestoFiltrado = computed(() =>
-  subtareasFiltradas.value.reduce((total: number, subtarea: any) => total + Number(subtarea?.presupuesto || 0), 0)
-);
-
 const porcentajeProximas = computed(() => {
   const totalPendientes = Math.max(1, kpis.value.pendientes);
   return Math.min(100, Math.round((verificablesPorVencer.value.length / totalPendientes) * 100));
@@ -970,6 +877,28 @@ const colorCumplimiento = computed(() => colorSemaforoPositivo(kpis.value.porcen
 const colorProcesosVisibles = computed(() => colorSemaforoPositivo(porcentajeProcesosVisibles.value));
 const colorAtraso = computed(() => colorSemaforoRiesgo(porcentajeAtraso.value));
 const colorProximas = computed(() => colorSemaforoRiesgo(porcentajeProximas.value));
+const detalleProcesosRiesgo = computed(() =>
+  subtareasFiltradas.value
+    .filter((subtarea: any) => procesoEnRiesgoDashboard(subtarea))
+    .map((subtarea: any) => ({
+      id: subtarea.id,
+      nombre: subtarea.nombre || 'Proceso sin nombre',
+      area: obtenerDireccionDashboard(subtarea) || 'Sin área',
+      responsable: responsableBase(subtarea),
+      comentario: comentarioRiesgoDashboard(subtarea) || 'Sin comentario registrado'
+    }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre))
+);
+const porcentajeProcesosRiesgo = computed(() => {
+  const total = Math.max(1, kpis.value.totalTareas);
+  return Math.min(100, Math.round((detalleProcesosRiesgo.value.length / total) * 100));
+});
+const colorProcesosRiesgo = computed(() => colorSemaforoRiesgo(porcentajeProcesosRiesgo.value));
+const anchoBarraProcesosRiesgo = computed(() =>
+  detalleProcesosRiesgo.value.length > 0
+    ? `${Math.max(12, porcentajeProcesosRiesgo.value)}%`
+    : '0%'
+);
 
 
 const detalleCumplimiento = computed(() =>
@@ -1051,6 +980,7 @@ const detalleKpiTitulo = computed(() => {
   switch (detalleKpi.value.tipo) {
     case 'proximas': return 'Detalle de verificables próximos a vencer';
     case 'retraso': return 'Detalle de verificables con retraso';
+    case 'riesgo': return 'Detalle de procesos en riesgo';
     case 'monto': return 'Detalle del monto ejecutado';
     default: return 'Detalle de cumplimiento';
   }
@@ -1060,6 +990,7 @@ const detalleKpiSubtitulo = computed(() => {
   switch (detalleKpi.value.tipo) {
     case 'proximas': return 'Verificables pendientes con vencimiento en 2 y 1 día.';
     case 'retraso': return 'Verificables vencidos pendientes, clasificados por proceso y responsable.';
+    case 'riesgo': return 'Procesos marcados manualmente con riesgo general desde el detalle del proceso.';
     case 'monto': return 'Procesos terminados y monto asignado considerado como ejecutado.';
     default: return 'Procesos cumplidos con su responsable asignado.';
   }
@@ -1111,6 +1042,118 @@ const estiloDonaAreas = computed(() => {
   };
 });
 
+const resumenDireccionesCumplimiento = computed(() => {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  const mapa = new Map<string, { direccion: string; cumplidas: number; pendientesRetraso: number; totalTareas: number }>();
+  for (const subtarea of subtareasBaseFiltradas.value) {
+    const direccion = obtenerDireccionDashboard(subtarea) || 'Sin dirección';
+    const actual = mapa.get(direccion) || { direccion, cumplidas: 0, pendientesRetraso: 0, totalTareas: 0 };
+
+    for (const etapa of getEtapasConFechaSubtarea(subtarea)) {
+      actual.totalTareas += 1;
+      const estado = normalizarEstado(etapa.estado, etapa.fechaReal);
+      if (estado === 'completado') {
+        actual.cumplidas += 1;
+        continue;
+      }
+
+      const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
+      if (!fecha) continue;
+      const plan = new Date(fecha);
+      if (Number.isNaN(plan.getTime())) continue;
+      plan.setHours(0, 0, 0, 0);
+      if (plan < hoy) {
+        actual.pendientesRetraso += 1;
+      }
+    }
+
+    mapa.set(direccion, actual);
+  }
+
+  const lista = Array.from(mapa.values())
+    .sort((a, b) => b.cumplidas - a.cumplidas || b.pendientesRetraso - a.pendientesRetraso || a.direccion.localeCompare(b.direccion));
+
+  const maxTotalComparado = Math.max(1, ...lista.map((item) => item.totalTareas));
+
+  return lista.map((item) => {
+    const total = Math.max(1, item.totalTareas);
+    const pendientes = Math.max(0, item.totalTareas - item.cumplidas - item.pendientesRetraso);
+    const cumplidasStackPct = Number(((item.cumplidas / total) * 100).toFixed(2));
+    const retrasoStackPct = Number(((item.pendientesRetraso / total) * 100).toFixed(2));
+    const pendientesStackPct = Math.max(0, Number((100 - cumplidasStackPct - retrasoStackPct).toFixed(2)));
+
+    return {
+      comparacionTotal: item.totalTareas,
+      ...item,
+      pendientes,
+      cumplidasPct: item.totalTareas > 0 ? Math.round((item.cumplidas / item.totalTareas) * 100) : 0,
+      pendientesRetrasoPct: item.totalTareas > 0 ? Math.round((item.pendientesRetraso / item.totalTareas) * 100) : 0,
+      cumplidasStackPct,
+      retrasoStackPct,
+      pendientesStackPct,
+      totalComparadoBarPct: Math.round((item.totalTareas / maxTotalComparado) * 100)
+    };
+  });
+});
+
+const maxValorEjeCumplimiento = computed(() =>
+  Math.max(1, ...resumenDireccionesCumplimiento.value.map((item) => item.comparacionTotal || 0))
+);
+
+const direccionTopCumplimiento = computed(() => resumenDireccionesCumplimiento.value[0] || null);
+
+const montosPorDireccion = computed(() => {
+  const palette = ['#2563eb', '#22c55e', '#f59e0b', '#ef4444', '#a21caf', '#0ea5e9', '#f97316', '#64748b', '#14b8a6'];
+  const mapa = new Map<string, number>();
+
+  for (const subtarea of subtareasBaseFiltradas.value) {
+    const direccion = obtenerDireccionDashboard(subtarea) || 'Sin dirección';
+    mapa.set(direccion, (mapa.get(direccion) || 0) + obtenerPresupuestoDashboard(subtarea));
+  }
+
+  const lista = Array.from(mapa.entries())
+    .map(([direccion, monto]) => ({ direccion, monto }))
+    .sort((a, b) => b.monto - a.monto || a.direccion.localeCompare(b.direccion))
+    .map((item, index) => ({ ...item, color: palette[index % palette.length] }));
+
+  const totalMontos = lista.reduce((total, item) => total + item.monto, 0);
+  return lista.map((item) => ({
+    ...item,
+    porcentajeMonto: totalMontos > 0 ? Number(((item.monto / totalMontos) * 100).toFixed(1)) : 0
+  }));
+});
+
+const totalMontoDirecciones = computed(() =>
+  montosPorDireccion.value.reduce((total, item) => total + item.monto, 0)
+);
+
+const estiloDonaMontos = computed(() => {
+  if (!montosPorDireccion.value.length || totalMontoDirecciones.value <= 0) {
+    return { background: 'conic-gradient(#e2e8f0 0 100%)' };
+  }
+
+  let acumulado = 0;
+  const segmentos: string[] = [];
+
+  for (const item of montosPorDireccion.value) {
+    const inicio = acumulado;
+    const porcentaje = (item.monto / totalMontoDirecciones.value) * 100;
+    acumulado += porcentaje;
+    const fin = Math.min(100, acumulado);
+    segmentos.push(`${item.color} ${inicio}% ${fin}%`);
+  }
+
+  if (acumulado < 100) {
+    segmentos.push(`#e2e8f0 ${acumulado}% 100%`);
+  }
+
+  return {
+    background: `conic-gradient(${segmentos.join(', ')})`
+  };
+});
+
 const actividadesAvancePresupuesto = computed(() => {
   const mayorAvance = 100;
 
@@ -1131,13 +1174,6 @@ const actividadesAvancePresupuesto = computed(() => {
         ? `${Math.max(8, Math.round((item.avance / mayorAvance) * 100))}%`
         : '0%'
     }));
-});
-
-const totalPaginasRanking = computed(() => Math.max(1, Math.ceil(actividadesAvancePresupuesto.value.length / itemsPorPaginaRanking)));
-
-const actividadesAvancePresupuestoPaginadas = computed(() => {
-  const start = (paginaRanking.value - 1) * itemsPorPaginaRanking;
-  return actividadesAvancePresupuesto.value.slice(start, start + itemsPorPaginaRanking);
 });
 
 onMounted(async () => {
@@ -1161,31 +1197,9 @@ onBeforeUnmount(() => {
 });
 
 watch([
-  actividadesAvancePresupuesto,
   areaSeleccionada,
   responsableSeleccionado,
-  busquedaDashboard,
   filtroDireccion,
-  filtroMonto,
-  filtroPacNoPac,
-  filtroTipoContratacion,
-  filtroCuatrimestre,
-  ordenProcesosDashboard
-], () => {
-  if (paginaRanking.value > totalPaginasRanking.value) {
-    paginaRanking.value = totalPaginasRanking.value;
-  }
-  if (paginaRanking.value < 1) {
-    paginaRanking.value = 1;
-  }
-});
-
-watch([
-  areaSeleccionada,
-  responsableSeleccionado,
-  busquedaDashboard,
-  filtroDireccion,
-  filtroMonto,
   filtroPacNoPac,
   filtroTipoContratacionLabel,
   filtroCuatrimestre
@@ -1320,7 +1334,7 @@ const picoCumplimientoTemporal = computed(() => {
 
 <style scoped>
 /* ── Design Tokens ────────────────────────────────────────────────────────── */
-:root {
+:global(:root) {
   --c-bg: #f0f4f8;
   --c-surface: #ffffff;
   --c-border: #e2e8f0;
@@ -1342,30 +1356,34 @@ const picoCumplimientoTemporal = computed(() => {
   --shadow-sm: 0 1px 3px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.04);
   --shadow-md: 0 4px 16px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.04);
   --shadow-lg: 0 10px 32px rgba(15,23,42,.12), 0 4px 12px rgba(15,23,42,.06);
+  --panel-compact-height: 210px;
+  --panel-secondary-height: 260px;
 }
 
 /* ── Layout ───────────────────────────────────────────────────────────────── */
 .dashboard-admin {
   display: grid;
-  gap: 1.1rem;
+  gap: 0.9rem;
   font-family: 'DM Sans', 'Outfit', 'Segoe UI', system-ui, sans-serif;
-  padding: 0.35rem;
+  padding: 0;
 }
 
 /* ── Header ───────────────────────────────────────────────────────────────── */
 .dashboard-header {
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 58%, #334155 100%);
   color: #fff;
-  border-radius: var(--radius-lg);
-  padding: 1.4rem 1.8rem;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  padding: 0.72rem 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.14);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-top: 0;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
   position: relative;
   overflow: hidden;
+  margin: -1rem -1rem 0;
 }
 
 .dashboard-header::before {
@@ -1378,15 +1396,16 @@ const picoCumplimientoTemporal = computed(() => {
 
 .dashboard-header h1 {
   margin: 0;
-  font-size: 1.55rem;
+  font-size: 1.1rem;
   font-weight: 800;
   letter-spacing: -0.02em;
+  line-height: 1.08;
 }
 
 .dashboard-header p {
-  margin: 0.2rem 0 0;
+  margin: 0.08rem 0 0;
   color: #cbd5e1;
-  font-size: 0.85rem;
+  font-size: 0.68rem;
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1396,8 +1415,8 @@ const picoCumplimientoTemporal = computed(() => {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 999px;
-  padding: 0.4rem 0.85rem;
-  font-size: 0.82rem;
+  padding: 0.22rem 0.62rem;
+  font-size: 0.72rem;
   backdrop-filter: blur(6px);
   font-weight: 500;
 }
@@ -1421,6 +1440,9 @@ const picoCumplimientoTemporal = computed(() => {
   border-radius: var(--radius-md);
   padding: 0.75rem 1rem;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  position: sticky;
+  top: 0.5rem;
+  z-index: 40;
 }
 
 .dashboard-toolbar {
@@ -1489,6 +1511,7 @@ const picoCumplimientoTemporal = computed(() => {
 .buscador-input {
   width: 100%;
   padding-left: 2rem;
+  padding-right: 0.9rem;
 }
 
 .filter-chip {
@@ -1515,44 +1538,100 @@ const picoCumplimientoTemporal = computed(() => {
   color: #15803d;
 }
 
+.filter-chip.direccion-active {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-color: #f59e0b;
+  color: #92400e;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 0.35rem 0.85rem;
+  box-shadow: 0 1px 4px rgba(245, 158, 11, 0.3);
+  letter-spacing: 0.01em;
+}
+
 .combo-filtro {
   border: 1px solid var(--c-border);
-  background: #f8fafc;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
   color: var(--c-text-secondary);
-  font-size: 0.78rem;
-  font-weight: 600;
-  border-radius: 8px;
-  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 0.38rem 0.7rem;
   cursor: pointer;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 
 .combo-filtro:focus {
   outline: none;
   border-color: var(--c-accent);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  background: #ffffff;
+}
+
+.dashboard-toolbar-filtros .combo-filtro {
+  border-color: #bfdbfe;
+  color: #1e3a8a;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.dashboard-toolbar-filtros .combo-filtro:hover {
+  border-color: #93c5fd;
+  background: linear-gradient(180deg, #ffffff, #eff6ff);
+}
+
+.dashboard-toolbar-filtros select.combo-filtro {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 1.8rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #3b82f6 50%),
+    linear-gradient(135deg, #3b82f6 50%, transparent 50%);
+  background-position:
+    calc(100% - 13px) calc(50% - 2px),
+    calc(100% - 8px) calc(50% - 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.dashboard-buscador-container .buscador-input.combo-filtro {
+  background: linear-gradient(180deg, #ffffff, #eff6ff);
+  border-color: #93c5fd;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.08);
+  padding-left: 2rem;
+  padding-right: 0.9rem;
+}
+
+.dashboard-buscador-container .buscador-input.combo-filtro::placeholder {
+  color: #64748b;
+  font-weight: 600;
 }
 
 /* ── KPI Grid ─────────────────────────────────────────────────────────────── */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.9rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.72rem;
 }
 
 .trend-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.9rem;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 0.72rem;
+}
+
+.cumplimiento-top-grid {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .kpi-card {
   background: #ffffff;
   border: 1px solid #d9e2ea;
   border-radius: var(--radius-md);
-  padding: 1.1rem 1.15rem;
+  padding: 0.88rem 0.95rem;
   display: grid;
-  gap: 0.4rem;
+  gap: 0.34rem;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
   position: relative;
   overflow: hidden;
@@ -1642,10 +1721,15 @@ const picoCumplimientoTemporal = computed(() => {
   box-shadow: inset 4px 0 0 var(--c-teal), 0 10px 30px rgba(15, 23, 42, 0.05);
 }
 
+.kpi-card.warning {
+  box-shadow: inset 4px 0 0 var(--c-warning), 0 10px 30px rgba(15, 23, 42, 0.05);
+}
+
 /* White executive surfaces with only a slim state accent */
 .kpi-card.success,
 .kpi-card.danger,
-.kpi-card.accent {
+.kpi-card.accent,
+.kpi-card.warning {
   background: #ffffff;
 }
 
@@ -1771,6 +1855,128 @@ const picoCumplimientoTemporal = computed(() => {
   gap: 0.35rem;
 }
 
+.direccion-group-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  color: var(--c-text-secondary);
+  font-size: 0.73rem;
+  font-weight: 700;
+}
+
+.direccion-bars-wrap {
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+}
+
+.direccion-global-chart {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  align-items: end;
+  gap: 0.6rem;
+  min-width: 580px;
+}
+
+.direccion-y-axis {
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--c-text-muted);
+  padding-right: 0.2rem;
+}
+
+.direccion-chart-canvas {
+  position: relative;
+  height: 180px;
+  border-left: 1px solid #cbd5e1;
+  border-bottom: 1px solid #cbd5e1;
+  padding: 0.45rem 0.45rem 0.35rem;
+}
+
+.direccion-chart-guides {
+  position: absolute;
+  inset: 0.45rem 0.45rem 1.85rem 0.45rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.direccion-chart-guides span {
+  border-top: 1px dashed #e2e8f0;
+}
+
+.direccion-groups {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  align-items: end;
+  gap: 0.45rem;
+}
+
+.direccion-group-col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.direccion-group-bar-shell {
+  width: 36px;
+  height: 124px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.direccion-group-bar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 8px 8px 0 0;
+  border: 1px solid #dbeafe;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column-reverse;
+  overflow: hidden;
+}
+
+.direccion-stack-fill {
+  width: 100%;
+  min-height: 2px;
+  transition: height 0.45s ease;
+}
+
+.direccion-stack-fill.ok {
+  background: linear-gradient(90deg, #4ade80, #16a34a);
+}
+
+.direccion-stack-fill.danger {
+  background: linear-gradient(90deg, #f87171, #dc2626);
+}
+
+.direccion-stack-fill.tomato {
+  background: linear-gradient(90deg, #ff9a8b, #ff6347);
+}
+
+.direccion-group-label {
+  width: 100%;
+  font-size: 0.63rem;
+  text-align: center;
+  color: var(--c-text-secondary);
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
+}
+
 .trend-chart {
   width: 100%;
   height: 120px;
@@ -1841,7 +2047,17 @@ const picoCumplimientoTemporal = computed(() => {
 .bottom-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.9rem;
+  gap: 0.72rem;
+}
+
+.priority-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.secondary-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
 }
 
 .extended-grid {
@@ -1849,17 +2065,331 @@ const picoCumplimientoTemporal = computed(() => {
 }
 
 .ranking-panel {
-  grid-row: span 2;
+  grid-row: auto;
+}
+
+.cumplimiento-card {
+  min-width: 0;
 }
 
 .panel {
   background: #ffffff;
   border: 1px solid #d9e2ea;
   border-radius: var(--radius-md);
-  padding: 1.1rem 1.2rem;
+  padding: 0.92rem 1rem;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
   overflow: hidden;
   transition: box-shadow 0.2s;
+}
+
+.priority-grid .panel {
+  padding: 0.78rem 0.82rem;
+  height: 100%;
+  min-height: var(--panel-compact-height);
+  display: flex;
+  flex-direction: column;
+}
+
+.secondary-grid .panel {
+  padding: 0.78rem 0.82rem;
+  height: auto;
+  min-height: var(--panel-secondary-height, 340px);
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.secondary-grid .panel > * {
+  min-height: 0;
+}
+
+.secondary-grid .panel-header {
+  margin-bottom: 0.45rem;
+  padding-bottom: 0.28rem;
+}
+
+.secondary-grid .panel-header h2 {
+  font-size: 1.02rem;
+}
+
+.secondary-grid .panel-header span {
+  font-size: 0.76rem;
+  padding: 0.18rem 0.6rem;
+}
+
+.donut-panel .donut-wrap,
+.temporal-panel .temporal-chart,
+.gauge-panel .gauge-wrap {
+  flex: 1;
+}
+
+.priority-grid .panel-header {
+  margin-bottom: 0.45rem;
+  padding-bottom: 0.3rem;
+}
+
+.priority-grid .gauge-wrap {
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.priority-grid .gauge-svg {
+  max-width: 198px;
+}
+
+.priority-grid .gauge-value {
+  font-size: 2rem;
+}
+
+.priority-grid .gauge-sub {
+  font-size: 0.82rem;
+}
+
+.priority-grid .gauge-legend {
+  max-width: fit-content;
+  font-size: 0.78rem;
+  padding: 0.42rem 0.56rem;
+  gap: 0.24rem;
+  margin: 0 auto;
+}
+
+.priority-grid .gauge-legend-item {
+  justify-content: center;
+}
+
+.priority-grid .donut-wrap {
+  height: 100%;
+  align-items: stretch;
+  gap: 0.9rem;
+}
+
+.priority-grid .area-donut-stack {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  align-content: start;
+}
+
+.priority-grid .donut {
+  width: 108px;
+  height: 108px;
+}
+
+.priority-grid .donut-center {
+  width: 68px;
+  height: 68px;
+}
+
+.priority-grid .donut-center strong {
+  font-size: 1.05rem;
+}
+
+.priority-grid .donut-center span {
+  font-size: 0.6rem;
+}
+
+.priority-grid .area-legend {
+  max-height: calc(8 * 1.55rem);
+  min-height: calc(8 * 1.55rem);
+  overflow-y: auto;
+  gap: 0.22rem;
+  width: 100%;
+  align-content: start;
+  padding-right: 0.18rem;
+}
+
+.priority-grid .area-legend-item {
+  min-height: 1.45rem;
+  padding: 0.24rem 0.3rem;
+  font-size: 0.62rem;
+}
+
+.priority-grid .area-legend-meta {
+  font-size: 0.58rem;
+}
+
+.priority-grid .area-legend-name {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.2;
+}
+
+.priority-grid .temporal-panel .temporal-chart-line {
+  gap: 0.35rem;
+}
+
+.priority-grid .temporal-summary-card {
+  padding: 0.38rem 0.46rem;
+}
+
+.priority-grid .temporal-summary-value {
+  font-size: 1.05rem;
+}
+
+.priority-grid .temporal-legend {
+  padding: 0.24rem 0.32rem;
+  font-size: 0.62rem;
+}
+
+.priority-grid .temporal-tab {
+  font-size: 0.66rem;
+  padding: 0.2rem 0.4rem;
+}
+
+.priority-grid .temporal-overdue-total {
+  font-size: 0.64rem;
+  padding: 0.14rem 0.36rem;
+}
+
+.barras-panel {
+  height: auto;
+  min-height: var(--panel-secondary-height, 340px);
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.montos-panel {
+  height: auto;
+  min-height: var(--panel-secondary-height, 340px);
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.barras-panel .panel-header {
+  flex: 0 0 auto;
+}
+
+.montos-panel .panel-header {
+  flex: 0 0 auto;
+}
+
+.barras-panel .bars-stack-detailed {
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.2rem;
+  gap: 0.45rem;
+}
+
+.montos-panel .donut-wrap {
+  flex: 1 1 0;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  align-items: start;
+}
+
+.montos-panel .area-donut-stack {
+  height: 100%;
+  min-height: 0;
+}
+
+.montos-panel .area-legend {
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  gap: 0.22rem;
+  width: 100%;
+  align-content: start;
+  padding-right: 0.18rem;
+}
+
+.secondary-grid .actividad-bar-button {
+  padding: 0.45rem 0.55rem;
+}
+
+.secondary-grid .bar-label {
+  font-size: 0.72rem;
+}
+
+.secondary-grid .bar-helper {
+  font-size: 0.64rem;
+}
+
+.secondary-grid .area-donut-stack {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  align-content: start;
+  min-height: 0;
+}
+
+.secondary-grid .donut-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  align-items: start;
+}
+
+.secondary-grid .donut {
+  width: 112px;
+  height: 112px;
+}
+
+.secondary-grid .donut-center {
+  width: 72px;
+  height: 72px;
+}
+
+.secondary-grid .donut-center strong {
+  font-size: 1.05rem;
+}
+
+.secondary-grid .donut-center span {
+  font-size: 0.6rem;
+}
+
+.secondary-grid .area-legend {
+  max-height: 100%;
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+  gap: 0.22rem;
+  padding-right: 0.18rem;
+}
+
+.secondary-grid .montos-panel .area-donut-stack {
+  min-height: 0;
+  height: 100%;
+}
+
+.secondary-grid .area-legend-item {
+  min-height: 1.45rem;
+  padding: 0.24rem 0.3rem;
+  font-size: 0.62rem;
+}
+
+.secondary-grid .area-legend-meta {
+  font-size: 0.58rem;
+}
+
+.secondary-grid .area-legend-name {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.2;
+}
+
+.area-panel .panel-header h2,
+.gauge-panel .panel-header h2 {
+  font-size: 1.02rem;
+}
+
+.montos-panel .area-legend-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.montos-panel .area-legend-meta {
+  font-size: 0.76rem;
+  font-weight: 700;
 }
 
 .panel:hover {
@@ -2074,6 +2604,16 @@ const picoCumplimientoTemporal = computed(() => {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
+.area-legend-item.static {
+  cursor: default;
+}
+
+.area-legend-item.static:hover {
+  border-color: var(--c-border);
+  box-shadow: none;
+  background: var(--c-surface);
+}
+
 .area-legend-main {
   display: inline-flex;
   align-items: center;
@@ -2111,6 +2651,7 @@ const picoCumplimientoTemporal = computed(() => {
 .dot.ok     { background: #22c55e; }
 .dot.warn   { background: #f59e0b; }
 .dot.danger { background: #ef4444; }
+.dot.tomato { background: #ff6347; }
 
 /* ── Bar Stacks ───────────────────────────────────────────────────────────── */
 .bars-stack {
@@ -2348,6 +2889,19 @@ const picoCumplimientoTemporal = computed(() => {
   border-color: #fca5a5;
 }
 
+.list-meta.warning {
+  color: #9a3412;
+  background: var(--c-warning-light);
+  border-color: #fcd34d;
+}
+
+.kpi-risk-comment {
+  margin: 0.35rem 0 0;
+  color: var(--c-text-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
 /* ── Modal ────────────────────────────────────────────────────────────────── */
 .kpi-detail-overlay {
   position: fixed;
@@ -2364,7 +2918,7 @@ const picoCumplimientoTemporal = computed(() => {
   width: min(820px, calc(100vw - 2rem));
   max-height: calc(100vh - 2rem);
   overflow: auto;
-  background: var(--c-surface);
+  background: var(--c-surface, #ffffff);
   border-radius: var(--radius-lg);
   border: 1px solid var(--c-border);
   box-shadow: var(--shadow-lg);
@@ -2406,7 +2960,7 @@ const picoCumplimientoTemporal = computed(() => {
   justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
-  background: var(--c-surface);
+  background: var(--c-surface, #ffffff);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
@@ -2490,14 +3044,14 @@ const picoCumplimientoTemporal = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   color: var(--c-text-secondary);
   background: #f8fafc;
   border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
-  padding: 0.6rem 0.85rem;
+  padding: 0.75rem 0.95rem;
   width: 100%;
-  max-width: 200px;
+  max-width: 250px;
 }
 
 .gauge-legend-item {
@@ -2508,21 +3062,21 @@ const picoCumplimientoTemporal = computed(() => {
 
 .gauge-dot {
   display: inline-block;
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
 .gauge-zone-txt {
-  font-size: 9px;
+  font-size: 12px;
   fill: #94a3b8;
   font-weight: 700;
   font-family: inherit;
 }
 
 .gauge-value {
-  font-size: 2.4rem;
+  font-size: 2.9rem;
   font-weight: 900;
   text-align: center;
   line-height: 1;
@@ -2532,7 +3086,8 @@ const picoCumplimientoTemporal = computed(() => {
 }
 
 .gauge-sub {
-  font-size: 0.7rem;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: var(--c-text-muted);
   text-align: center;
   margin-bottom: 0.2rem;
@@ -2750,6 +3305,11 @@ const picoCumplimientoTemporal = computed(() => {
     grid-template-columns: 1fr;
   }
 
+  .priority-grid,
+  .secondary-grid {
+    grid-template-columns: 1fr;
+  }
+
   .ranking-panel {
     grid-row: auto;
   }
@@ -2759,7 +3319,8 @@ const picoCumplimientoTemporal = computed(() => {
   .dashboard-header {
     flex-direction: column;
     align-items: flex-start;
-    padding: 1.1rem 1.2rem;
+    padding: 0.62rem 0.78rem;
+    margin: -1rem -1rem 0;
   }
 
   .kpi-grid {
@@ -2777,6 +3338,24 @@ const picoCumplimientoTemporal = computed(() => {
 
   .area-donut-wrap {
     justify-items: stretch;
+  }
+
+  .direccion-global-chart {
+    min-width: 520px;
+    grid-template-columns: 30px 1fr;
+  }
+
+  .direccion-y-axis {
+    font-size: 0.62rem;
+  }
+
+  .direccion-group-bar-shell {
+    width: 30px;
+    height: 110px;
+  }
+
+  .direccion-group-label {
+    font-size: 0.58rem;
   }
 
   .temporal-header-actions {

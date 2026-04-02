@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import api from '../services/api';
+import api, { authService } from '../services/api';
 import type { PermisosAcciones, PermisosSesion } from '../services/api';
 
 export type RolUsuario = 'admin' | 'direccion' | 'reporteria';
@@ -93,6 +93,18 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
       localStorage.removeItem(PERMISSIONS_KEY);
+    },
+
+    async logout() {
+      try {
+        if (this.token) {
+          await authService.logout();
+        }
+      } catch (error) {
+        console.error('No se pudo registrar logout en servidor:', error);
+      } finally {
+        this.clearSession();
+      }
     },
 
     can(moduleKey: string, action: keyof PermisosAcciones = 'read') {

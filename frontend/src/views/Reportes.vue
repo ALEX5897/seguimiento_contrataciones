@@ -202,7 +202,7 @@
                 <td>{{ item.codigoOlympo || '-' }}</td>
                 <td class="proceso-cell">
                   <strong>{{ item.nombre }}</strong>
-                  <small>{{ item.completadas }}/{{ item.totalEtapas }} completadas</small>
+                  <small>{{ item.completadas }}/{{ item.totalEtapas }} completas</small>
                 </td>
                 <td>{{ item.direccionNombre || '-' }}</td>
                 <td>{{ item.responsableNombre || '-' }}</td>

@@ -3,6 +3,20 @@ import * as mysql from '../data/mysql.js';
 
 const router = express.Router();
 
+router.get('/sesiones/resumen', async (req, res) => {
+  try {
+    const data = await mysql.getResumenSesionesAuditoria({
+      activeWindowMinutes: req.query.activeWindowMinutes,
+      recentLimit: req.query.recentLimit
+    });
+
+    res.json(data);
+  } catch (error) {
+    console.error('Error en GET /api/auditoria/sesiones/resumen:', error);
+    res.status(500).json({ error: error.message || 'Error al consultar sesiones de auditoría' });
+  }
+});
+
 router.get('/', async (req, res) => {
   try {
     const data = await mysql.getEventosAuditoria({

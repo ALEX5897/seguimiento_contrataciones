@@ -60,6 +60,67 @@
 
     <p v-if="mensaje" class="mensaje">{{ mensaje }}</p>
 
+    <section class="card sesiones-resumen">
+      <div class="sesiones-header">
+        <h2>Sesiones del sistema</h2>
+        <small>
+          Activos (últimos {{ sesionesResumen?.activeWindowMinutes || 30 }} min) · Actualizado: {{ formatearFecha(sesionesResumen?.generatedAt || '') }}
+        </small>
+      </div>
+
+      <div class="sesiones-grid">
+        <div>
+          <h3>Usuarios activos</h3>
+          <table class="tabla tabla-mini">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Rol</th>
+                <th>Último login</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in usuariosActivos" :key="`activo-${item.userId}`">
+                <td>{{ item.nombre || item.username || '-' }}</td>
+                <td>{{ item.role || '-' }}</td>
+                <td>{{ formatearFecha(item.ultimoLogin) }}</td>
+              </tr>
+              <tr v-if="!usuariosActivos.length">
+                <td colspan="3" class="sin-datos">Sin usuarios activos en la ventana actual</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <h3>Últimos inicios de sesión</h3>
+          <table class="tabla tabla-mini">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Usuario</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in ultimosInicios" :key="`login-${item.id}`">
+                <td>{{ formatearFecha(item.fecha) }}</td>
+                <td>{{ item.nombre || item.username || '-' }}</td>
+                <td>
+                  <span :class="['estado', item.exito ? 'ok' : 'error']">
+                    {{ item.exito ? 'OK' : `Error ${item.statusCode || 401}` }}
+                  </span>
+                </td>
+              </tr>
+              <tr v-if="!ultimosInicios.length">
+                <td colspan="3" class="sin-datos">Sin inicios de sesión registrados</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <section class="card">
       <table class="tabla">
         <thead>
@@ -117,13 +178,23 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { auditoriaService, type AuditoriaEvento, type AuditoriaListadoResponse } from '../services/api';
+import { computed, onMounted, ref } from 'vue';
+import {
+  auditoriaService,
+  type AuditoriaEvento,
+  type AuditoriaInicioSesion,
+  type AuditoriaListadoResponse,
+  type AuditoriaSesionActiva,
+  type AuditoriaSesionesResumenResponse
+} from '../services/api';
 
 const cargando = ref(false);
 const mensaje = ref('');
 const items = ref<AuditoriaEvento[]>([]);
 const detalle = ref<any | null>(null);
+const sesionesResumen = ref<AuditoriaSesionesResumenResponse | null>(null);
+const usuariosActivos = computed<AuditoriaSesionActiva[]>(() => sesionesResumen.value?.activos || []);
+const ultimosInicios = computed<AuditoriaInicioSesion[]>(() => sesionesResumen.value?.ultimosInicios || []);
 
 const filtros = ref({
   search: '',
@@ -141,6 +212,8 @@ const paginacion = ref({
   total: 0,
   totalPages: 1
 });
+
+const GUAYAQUIL_TIMEZONE = 'America/Guayaquil';
 
 function buildParams(page = paginacion.value.page) {
   return {
@@ -161,6 +234,19 @@ async function cargar(page = paginacion.value.page) {
   mensaje.value = '';
   try {
     const response = await auditoriaService.getAll(buildParams(page));
+
+    try {
+      sesionesResumen.value = await auditoriaService.getSesionesResumen({ activeWindowMinutes: 30, recentLimit: 20 });
+    } catch (error) {
+      sesionesResumen.value = {
+        activeWindowMinutes: 30,
+        generatedAt: new Date().toISOString(),
+        activos: [],
+        ultimosInicios: []
+      };
+      console.error('No se pudo cargar el resumen de sesiones:', error);
+    }
+
     const data = response as AuditoriaListadoResponse;
     items.value = data.items || [];
     paginacion.value = {
@@ -210,7 +296,16 @@ function irPagina(page: number) {
 function formatearFecha(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString('es-EC');
+  return new Intl.DateTimeFormat('es-EC', {
+    timeZone: GUAYAQUIL_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).format(date);
 }
 
 onMounted(() => {
@@ -353,6 +448,44 @@ button.secundario {
   align-items: center;
 }
 
+.sesiones-resumen {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.sesiones-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.sesiones-header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.sesiones-header small {
+  color: #64748b;
+}
+
+.sesiones-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.sesiones-grid h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.88rem;
+  color: #334155;
+}
+
+.tabla-mini th,
+.tabla-mini td {
+  font-size: 0.78rem;
+}
+
 pre {
   margin: 0;
   white-space: pre-wrap;
@@ -372,6 +505,10 @@ pre {
 
 @media (max-width: 700px) {
   .filtros {
+    grid-template-columns: 1fr;
+  }
+
+  .sesiones-grid {
     grid-template-columns: 1fr;
   }
 }

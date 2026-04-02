@@ -282,6 +282,40 @@ export interface AuditoriaListadoResponse {
   totalPages: number;
 }
 
+export interface AuditoriaSesionActiva {
+  userId: number;
+  username: string | null;
+  nombre: string | null;
+  role: string | null;
+  direccionNombre: string | null;
+  ultimoLogin: string;
+  ip: string | null;
+  userAgent: string | null;
+  usuarioActivo: boolean;
+}
+
+export interface AuditoriaInicioSesion {
+  id: number;
+  userId: number | null;
+  username: string | null;
+  nombre: string | null;
+  role: string | null;
+  direccionNombre: string | null;
+  exito: boolean;
+  statusCode: number;
+  ip: string | null;
+  userAgent: string | null;
+  errorMensaje: string | null;
+  fecha: string;
+}
+
+export interface AuditoriaSesionesResumenResponse {
+  activeWindowMinutes: number;
+  generatedAt: string;
+  activos: AuditoriaSesionActiva[];
+  ultimosInicios: AuditoriaInicioSesion[];
+}
+
 export const tareasService = {
   async getAll(filtros = {}) {
     const response = await api.get('/tareas', { params: filtros });
@@ -419,6 +453,11 @@ export const authService = {
   async me() {
     const response = await api.get('/auth/me');
     return response.data;
+  },
+
+  async logout() {
+    const response = await api.post('/auth/logout');
+    return response.data;
   }
 };
 
@@ -448,6 +487,11 @@ export const auditoriaService = {
   async getAll(params: Record<string, string | number | boolean | undefined>) {
     const response = await api.get('/auditoria', { params });
     return response.data as AuditoriaListadoResponse;
+  },
+
+  async getSesionesResumen(params: Record<string, string | number | boolean | undefined> = {}) {
+    const response = await api.get('/auditoria/sesiones/resumen', { params });
+    return response.data as AuditoriaSesionesResumenResponse;
   },
 
   async getById(id: number) {
