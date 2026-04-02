@@ -250,6 +250,7 @@
                 <th>#</th>
                 <th>Etapa</th>
                 <th>Fecha límite</th>
+                <th>Fecha reforma</th>
                 <th>Fecha de completado</th>
                 <th>Estado</th>
                 <th>Retraso</th>
@@ -265,6 +266,15 @@
                 <td><span class="etapa-numero-badge">{{ index + 1 }}</span></td>
                 <td>{{ etapa.etapaNombre || etapa.nombre }}</td>
                 <td>{{ formatearFecha(etapa.fechaPlanificada || etapa.fechaTentativa) }}</td>
+                <td>
+                  <input
+                    v-model="etapa.fechaReforma"
+                    type="date"
+                    class="estado-select-detalle"
+                    :disabled="guardandoEstadoEtapaId === (etapa.id || etapa.etapaId)"
+                    @change="onFechaReformaChange(etapa)"
+                  />
+                </td>
                 <td>
                   <input
                     v-if="estadoNormalizado(etapa.estado) === 'completado' && permiteEditarFechaCompletado"
@@ -601,6 +611,9 @@ watch(
       if (!esFormatoValido(etapa?.fechaTentativa)) {
         etapa.fechaTentativa = normalizarFechaInput(etapa?.fechaTentativa);
       }
+      if (!esFormatoValido(etapa?.fechaReforma)) {
+        etapa.fechaReforma = normalizarFechaInput(etapa?.fechaReforma);
+      }
       if (!esFormatoValido(etapa?.fechaPlanificada)) {
         etapa.fechaPlanificada = normalizarFechaInput(etapa?.fechaPlanificada);
       }
@@ -753,6 +766,7 @@ function getEtapas(actividad: any) {
   return etapas.map((etapa: any) => ({
     ...etapa,
     fechaTentativa: normalizarFechaInput(etapa?.fechaTentativa),
+    fechaReforma: normalizarFechaInput(etapa?.fechaReforma),
     fechaPlanificada: normalizarFechaInput(etapa?.fechaPlanificada),
     fechaReal: normalizarFechaInput(etapa?.fechaReal),
     estado: estadoNormalizado(etapa?.estado) === 'completado' ? 'completado' : 'pendiente'
@@ -776,6 +790,7 @@ function fusionarEtapasPreservandoFechas(actuales: any[], recargadas: any[]) {
     return {
       ...etapa,
       fechaTentativa: etapa.fechaTentativa || etapa.fechaPlanificada || etapaActual.fechaTentativa || etapaActual.fechaPlanificada || null,
+      fechaReforma: etapa.fechaReforma || etapaActual.fechaReforma || null,
       fechaPlanificada: etapa.fechaPlanificada || etapa.fechaTentativa || etapaActual.fechaPlanificada || etapaActual.fechaTentativa || null,
       fechaReal: etapa.fechaReal || etapaActual.fechaReal || null
     };
@@ -1105,6 +1120,7 @@ function construirPayloadEtapas() {
       etapaId: obtenerEtapaId(etapa),
       aplica: Boolean(Number(etapa?.aplica ?? 1)),
       fechaTentativa: fechaTentativa || null,
+      fechaReforma: normalizarFechaInput(etapa?.fechaReforma) || null,
       estado: etapa?.estado || 'pendiente',
       fechaReal: fechaReal || null,
       observaciones: etapa?.observaciones || ''
@@ -1131,6 +1147,11 @@ function onEstadoEtapaChange(etapa: any) {
 function onFechaCompletadoChange(etapa: any) {
   if (!permiteEditarFechaCompletado) return;
   if (estadoNormalizado(etapa?.estado) !== 'completado') return;
+  guardarEstadoEtapa(etapa);
+}
+
+function onFechaReformaChange(etapa: any) {
+  etapa.fechaReforma = normalizarFechaInput(etapa?.fechaReforma);
   guardarEstadoEtapa(etapa);
 }
 

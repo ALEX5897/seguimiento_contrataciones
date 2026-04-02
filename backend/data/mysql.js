@@ -221,6 +221,7 @@ function toCamelRow(row) {
     pac_no_pac: 'pacNoPac',
     procedimiento_sugerido: 'procedimientoSugerido',
     fecha_tentativa: 'fechaTentativa',
+    fecha_reforma: 'fechaReforma',
     fecha_planificada: 'fechaPlanificada',
     fecha_real: 'fechaReal',
     created_at: 'createdAt',
@@ -419,11 +420,22 @@ async function createSchema() {
       etapa_id INT NOT NULL,
       aplica BOOLEAN NOT NULL DEFAULT true,
       fecha_tentativa DATE NULL,
+      fecha_reforma DATE NULL,
       UNIQUE KEY unique_subtarea_etapa (subtarea_id, etapa_id),
       FOREIGN KEY (subtarea_id) REFERENCES subtareas(id) ON DELETE CASCADE,
       FOREIGN KEY (etapa_id) REFERENCES etapas_pac(id) ON DELETE CASCADE
     ) ENGINE=InnoDB;
   `);
+
+  const subtareasEtapasCols = await query(`
+    SELECT COLUMN_NAME AS name
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'subtareas_etapas'
+  `);
+  const subtareasEtapasColsSet = new Set(subtareasEtapasCols.map((row) => row.name));
+  if (!subtareasEtapasColsSet.has('fecha_reforma')) {
+    await query('ALTER TABLE subtareas_etapas ADD COLUMN fecha_reforma DATE NULL AFTER fecha_tentativa').catch(() => {});
+  }
 
   await query(`
     CREATE TABLE IF NOT EXISTS seguimiento_etapas (
@@ -886,7 +898,7 @@ export async function getAllSubtareas() {
       .filter((e) => Number(e.aplica) === 1 || e.aplica === true || String(e.aplica).toLowerCase() === 'true')
       .map((etapa) => ({
         ...etapa,
-        fechaPlanificada: etapa.fechaPlanificada || etapa.fechaTentativa || null,
+        fechaPlanificada: etapa.fechaPlanificada || etapa.fechaReforma || etapa.fechaTentativa || null,
         estado: etapa.estado || 'pendiente',
         responsableNombre: etapa.responsableNombre || item.responsableNombre || null
       }));
@@ -1967,9 +1979,9 @@ function normalizarFechaSalida(fecha) {
 
 export async function getSubtareaEtapas(subtareaId) {
   const rows = await query(
-    `SELECT se.id, se.subtarea_id, se.etapa_id, se.aplica, se.fecha_tentativa,
+    `SELECT se.id, se.subtarea_id, se.etapa_id, se.aplica, se.fecha_tentativa, se.fecha_reforma,
             COALESCE(sg.estado, 'pendiente') AS estado,
-            COALESCE(sg.fecha_planificada, se.fecha_tentativa) AS fecha_planificada,
+            COALESCE(sg.fecha_planificada, se.fecha_reforma, se.fecha_tentativa) AS fecha_planificada,
             sg.fecha_real, sg.responsable_id, sg.observaciones,
             COALESCE(sg.responsable, s.responsable) AS responsable_nombre,
             COALESCE(sg.responsable_id, s.responsable_id) AS responsable_id_ref,
@@ -1994,10 +2006,12 @@ export async function getSubtareaEtapas(subtareaId) {
       return d.toISOString().split('T')[0];
     }
     const fechaTentativa = toISODate(item.fechaTentativa);
+    const fechaReforma = toISODate(item.fechaReforma);
     const fechaPlanificada = toISODate(item.fechaPlanificada);
     const fechaReal = toISODate(item.fechaReal);
     // Si no hay fechaTentativa, usar fechaPlanificada; si tampoco, dejar vacío
     item.fechaTentativa = fechaTentativa || fechaPlanificada || '';
+    item.fechaReforma = fechaReforma || '';
     item.fechaPlanificada = fechaPlanificada;
     item.fechaReal = fechaReal;
     return item;
@@ -2068,6 +2082,7 @@ export async function setSubtareaEtapas(subtareaId, etapas) {
       etapaId,
       aplica: Boolean(etapa.aplica),
       fechaTentativa: normalizarFechaManual(etapa.fechaTentativa) || normalizarFechaManual(etapa.fechaPlanificada) || null,
+      fechaReforma: normalizarFechaManual(etapa.fechaReforma ?? etapa.fechaTentativa ?? etapa.fechaPlanificada) || null,
       estadoFinal,
       fechaRealFinal,
       responsableId: responsable.id,
@@ -2090,10 +2105,10 @@ export async function setSubtareaEtapas(subtareaId, etapas) {
     for (const etapa of etapasEnriquecidas) {
       // Usar la conexión de transacción
       await conn.execute(
-        `INSERT INTO subtareas_etapas (subtarea_id, etapa_id, aplica, fecha_tentativa)
-         VALUES (?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE aplica = VALUES(aplica), fecha_tentativa = VALUES(fecha_tentativa)`,
-        [subtareaId, etapa.etapaId, etapa.aplica, etapa.fechaTentativa]
+        `INSERT INTO subtareas_etapas (subtarea_id, etapa_id, aplica, fecha_tentativa, fecha_reforma)
+         VALUES (?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE aplica = VALUES(aplica), fecha_reforma = VALUES(fecha_reforma)`,
+        [subtareaId, etapa.etapaId, etapa.aplica, etapa.fechaTentativa, etapa.fechaReforma]
       );
 
       await conn.execute(
@@ -2110,7 +2125,7 @@ export async function setSubtareaEtapas(subtareaId, etapas) {
           subtareaId,
           etapa.etapaId,
           etapa.estadoFinal,
-          etapa.fechaTentativa,
+          etapa.fechaReforma || etapa.fechaTentativa,
           etapa.fechaRealFinal,
           etapa.responsableId,
           etapa.observaciones,
@@ -2157,10 +2172,16 @@ export async function actualizarEtapaSubtarea(codigoOlympo, etapaId, data = {}) 
   const responsable = await resolverResponsable(data);
 
   await query(
-    `INSERT INTO subtareas_etapas (subtarea_id, etapa_id, aplica, fecha_tentativa)
-     VALUES (?, ?, ?, ?)
-     ON DUPLICATE KEY UPDATE aplica = VALUES(aplica), fecha_tentativa = VALUES(fecha_tentativa)`,
-    [subtarea.id, etapaId, true, data.fechaPlanificada || null]
+    `INSERT INTO subtareas_etapas (subtarea_id, etapa_id, aplica, fecha_tentativa, fecha_reforma)
+     VALUES (?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE aplica = VALUES(aplica), fecha_reforma = VALUES(fecha_reforma)`,
+    [
+      subtarea.id,
+      etapaId,
+      true,
+      data.fechaPlanificada || data.fechaTentativa || null,
+      data.fechaReforma || data.fechaPlanificada || data.fechaTentativa || null
+    ]
   );
 
   await query(
@@ -2177,7 +2198,7 @@ export async function actualizarEtapaSubtarea(codigoOlympo, etapaId, data = {}) 
       subtarea.id,
       etapaId,
       estadoFinal,
-      data.fechaPlanificada || null,
+      data.fechaReforma || data.fechaPlanificada || data.fechaTentativa || null,
       fechaRealFinal,
       responsable.id,
       data.observaciones ? normalizeTextEncoding(data.observaciones, { trim: true }) : null,

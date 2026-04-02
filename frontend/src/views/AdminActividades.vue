@@ -337,17 +337,23 @@
             <div v-if="etapa.aplica" class="etapa-fecha">
               <label>
                 <span class="fecha-label">📅 Fecha tentativa:</span>
-               
-<input
-  type="date"
-  v-model="etapa.fechaTentativa"
-  class="input-fecha"
-/>
-
-
+                <input
+                  type="date"
+                  :value="etapa.fechaTentativa"
+                  class="input-fecha"
+                  disabled
+                />
 
                 <span v-if="!etapa.fechaTentativa" style="color: red; font-size: 0.9em;">(No hay fecha cargada)</span>
                 <span v-else-if="etapa.fechaTentativa && !/^\d{4}-\d{2}-\d{2}$/.test(etapa.fechaTentativa)" style="color: orange; font-size: 0.9em;">(Formato: {{ etapa.fechaTentativa }})</span>
+              </label>
+              <label>
+                <span class="fecha-label">🗓️ Fecha reforma:</span>
+                <input
+                  type="date"
+                  v-model="etapa.fechaReforma"
+                  class="input-fecha"
+                />
               </label>
               <label>
                 <span class="fecha-label">📌 Estado:</span>
@@ -701,6 +707,7 @@ interface Etapa {
   orden?: number;
   aplica: boolean;
   fechaTentativa?: string;
+  fechaReforma?: string;
   fechaReal?: string;
   estado?: string;
   observaciones?: string;
@@ -1216,6 +1223,7 @@ async function abrirSelectorEtapas(actividad: Actividad) {
 
       // Si hay asignada, usar su fecha; si no, dejar undefined
       let fechaTentativa = "";
+      let fechaReforma = "";
       if (asignada && (asignada.fechaTentativa !== undefined && asignada.fechaTentativa !== null)) {
         console.log(`[ETAPA ${etapaId}] fechaTentativa directa:`, asignada.fechaTentativa);
         fechaTentativa = formatearFechaParaInput(asignada.fechaTentativa);
@@ -1231,6 +1239,11 @@ async function abrirSelectorEtapas(actividad: Actividad) {
       } else {
         console.log(`[ETAPA ${etapaId}] Sin fecha asignada, se usará por defecto`);
       }
+      if (asignada && (asignada.fechaReforma !== undefined && asignada.fechaReforma !== null)) {
+        fechaReforma = formatearFechaParaInput(asignada.fechaReforma);
+      } else if (asignada && asignada.fecha_reforma) {
+        fechaReforma = formatearFechaParaInput(asignada.fecha_reforma);
+      }
       const fechaRealAsignada = asignada?.fechaReal ?? asignada?.fecha_real ?? null;
       const estadoAsignado = asignada?.estado ?? 'pendiente';
       const observacionesAsignadas = asignada?.observaciones ?? '';
@@ -1240,6 +1253,7 @@ async function abrirSelectorEtapas(actividad: Actividad) {
         etapaNombre: etapa.nombre,
         aplica: Boolean(Number(asignada?.aplica)),
         fechaTentativa,
+        fechaReforma,
         fechaReal: formatearFechaParaInput(fechaRealAsignada) || '',
         estado: estadoAsignado,
         observaciones: observacionesAsignadas,
@@ -1289,7 +1303,7 @@ function toggleEtapa(etapa: Etapa, valor: boolean) {
   etapa.aplica = valor;
   // Si se desmarca, limpiar fecha tentativa
   if (!valor) {
-    etapa.fechaTentativa = '';
+    etapa.fechaReforma = '';
     etapa.estado = 'pendiente';
   }
 }
@@ -1311,6 +1325,7 @@ async function agregarNuevaEtapa() {
       aplica: true,
       esPersonalizada: true,
       fechaTentativa: undefined,
+      fechaReforma: undefined,
       estado: 'pendiente',
       observaciones: ''
     });
@@ -1342,14 +1357,16 @@ async function guardarEtapas() {
 
 function construirPayloadEtapas() {
   return etapasDisponibles.value.map(e => {
-    const fechaFormateada = formatearFechaParaAPI(e.fechaTentativa);
+    const fechaTentativaFormateada = formatearFechaParaAPI(e.fechaTentativa);
+    const fechaReformaFormateada = formatearFechaParaAPI(e.fechaReforma);
 
     return {
       etapaId: e.etapaId || e.id,
       aplica: e.aplica,
 
-      // Enviar fechaTentativa explícitamente, aunque esté vacía
-      fechaTentativa: fechaFormateada || '',
+      // La fecha tentativa original se conserva, la edición va a fechaReforma
+      fechaTentativa: fechaTentativaFormateada || '',
+      fechaReforma: fechaReformaFormateada || '',
 
       estado: e.aplica ? normalizarEstadoEtapa(e.estado) : 'pendiente',
 
