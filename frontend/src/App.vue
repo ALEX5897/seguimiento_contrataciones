@@ -45,7 +45,7 @@
 
       <div class="sidebar-footer">
         <div>{{ auth.user?.nombre || 'Usuario' }} · {{ auth.user?.role || '-' }}</div>
-        <div class="app-version">Versión 1.0.3</div>
+        <div class="app-version">Versión 1.0.4</div>
         <button type="button" class="logout-btn" @click="cerrarSesion">Cerrar sesión</button>
       </div>
     </aside>
