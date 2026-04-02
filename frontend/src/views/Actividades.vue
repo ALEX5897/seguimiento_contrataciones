@@ -901,10 +901,7 @@ function porcentajeAvance(actividad: any) {
 }
 
 function claseAvance(actividad: any) {
-  const avance = porcentajeAvance(actividad);
-  if (avance >= 70) return 'avance-alto';
-  if (avance >= 40) return 'avance-medio';
-  return 'avance-bajo';
+  return tareasConRetraso(actividad) > 0 ? 'avance-bajo' : 'avance-alto';
 }
 
 function estadoVisual(etapa: any) {
