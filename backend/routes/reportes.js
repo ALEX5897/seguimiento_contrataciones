@@ -90,6 +90,33 @@ function getFiltros(query = {}) {
   };
 }
 
+function obtenerEstadoProcesoReporte(subtarea) {
+  const valor = subtarea?.activo;
+  if (valor === undefined || valor === null || valor === '') return 1;
+  if (typeof valor === 'number') {
+    if (valor === 2) return 2;
+    return valor === 0 ? 0 : 1;
+  }
+  if (typeof valor === 'boolean') return valor ? 1 : 0;
+
+  const normalizado = String(valor).trim().toLowerCase();
+  if (['2', 'desierto'].includes(normalizado)) return 2;
+  if (['0', 'false', 'inactivo'].includes(normalizado)) return 0;
+  return 1;
+}
+
+function obtenerPresupuestoReporte(subtarea) {
+  const valor = Number(subtarea?.presupuesto || subtarea?.presupuesto2026Inicial || 0);
+  return Number.isFinite(valor) ? valor : 0;
+}
+
+function procesoCuentaEnReporte(subtarea) {
+  const estado = obtenerEstadoProcesoReporte(subtarea);
+  if (estado === 0) return false;
+  if (estado === 1 && obtenerPresupuestoReporte(subtarea) <= 0) return false;
+  return true;
+}
+
 function calcularResumenProceso(subtarea, hoy) {
   const etapas = Array.isArray(subtarea?.seguimientoEtapas) ? [...subtarea.seguimientoEtapas] : [];
   etapas.sort((a, b) => Number(a?.orden || 0) - Number(b?.orden || 0));
@@ -160,9 +187,9 @@ function calcularResumenProceso(subtarea, hoy) {
     direccionNombre: String(subtarea?.direccionNombre || ''),
     responsableNombre: String(subtarea?.responsableNombre || ''),
     tipoPlan: String(subtarea?.tipoPlan || subtarea?.pacNoPac || ''),
-    presupuesto: Number(subtarea?.presupuesto || subtarea?.presupuesto2026Inicial || 0),
+    presupuesto: obtenerPresupuestoReporte(subtarea),
     costoReforma2: Number(subtarea?.costoReforma2 || subtarea?.costo2026 || 0),
-    activo: Boolean(Number(subtarea?.activo ?? 1)),
+    activo: obtenerEstadoProcesoReporte(subtarea) !== 0,
     totalEtapas,
     completadas,
     enProceso,
@@ -218,7 +245,9 @@ function construirReporte(subtareas, filtros) {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
 
-  const procesosBase = subtareas.map((subtarea) => calcularResumenProceso(subtarea, hoy));
+  const procesosBase = subtareas
+    .filter((subtarea) => procesoCuentaEnReporte(subtarea))
+    .map((subtarea) => calcularResumenProceso(subtarea, hoy));
   const procesos = filtrarProcesos(procesosBase, filtros);
   const etapas = procesos.flatMap((proceso) => proceso.etapasDetalle);
 

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import api, { authService } from '../services/api';
 import type { PermisosAcciones, PermisosSesion } from '../services/api';
 
-export type RolUsuario = 'admin' | 'direccion' | 'reporteria';
+export type RolUsuario = string;
 
 export interface UsuarioSesion {
   id: number;
@@ -55,6 +55,10 @@ function normalizeMePayload(payload: any): { user: UsuarioSesion; permisos: Perm
     user,
     permisos: permisos || { role: user.role || '', modulos: {}, menu: {} }
   };
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -134,19 +138,36 @@ export const useAuthStore = defineStore('auth', {
 
     async fetchMe() {
       if (!this.token) return null;
-      try {
-        const response = await api.get('/auth/me');
-        const normalized = normalizeMePayload(response.data);
-        const user = normalized.user;
-        this.user = user;
-        this.permisos = normalized.permisos;
-        localStorage.setItem(USER_KEY, JSON.stringify(user));
-        localStorage.setItem(PERMISSIONS_KEY, JSON.stringify(normalized.permisos));
-        return user;
-      } catch {
-        this.clearSession();
-        return null;
+
+      const retryDelays = [0, 400, 1200];
+      let lastError: unknown = null;
+
+      for (const delay of retryDelays) {
+        if (delay > 0) {
+          await wait(delay);
+        }
+
+        try {
+          const response = await api.get('/auth/me');
+          const normalized = normalizeMePayload(response.data);
+          const user = normalized.user;
+          this.user = user;
+          this.permisos = normalized.permisos;
+          localStorage.setItem(USER_KEY, JSON.stringify(user));
+          localStorage.setItem(PERMISSIONS_KEY, JSON.stringify(normalized.permisos));
+          return user;
+        } catch (error) {
+          lastError = error;
+          const status = (error as any)?.response?.status;
+          if (status === 401) {
+            this.clearSession();
+            return null;
+          }
+        }
       }
+
+      console.warn('No se pudo sincronizar la sesión con el servidor; se conserva la sesión local.', lastError);
+      return this.user;
     }
   }
 });

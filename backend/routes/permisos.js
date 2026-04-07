@@ -29,6 +29,26 @@ router.get('/', async (req, res) => {
   }
 });
 
+router.post('/roles', async (req, res) => {
+  try {
+    const created = await mysql.createRole(req.body || {});
+    res.status(201).json(created);
+  } catch (error) {
+    console.error('Error en POST /api/permisos/roles:', error);
+    res.status(400).json({ error: error.message || 'No se pudo crear el rol' });
+  }
+});
+
+router.delete('/roles/:role', async (req, res) => {
+  try {
+    const result = await mysql.deleteRole(req.params.role);
+    res.json(result);
+  } catch (error) {
+    console.error(`Error en DELETE /api/permisos/roles/${req.params.role}:`, error);
+    res.status(400).json({ error: error.message || 'No se pudo eliminar el rol' });
+  }
+});
+
 router.get('/rol/:role', async (req, res) => {
   try {
     const role = String(req.params.role || '').trim();

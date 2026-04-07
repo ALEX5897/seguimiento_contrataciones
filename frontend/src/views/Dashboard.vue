@@ -56,19 +56,17 @@
 
 
       <section class="kpi-grid professional-kpi-grid">
-        <article
-          class="kpi-card has-tooltip"
-          tabindex="0"
+        <button
+          type="button"
+          class="kpi-card kpi-card-button has-tooltip"
           :data-tooltip="`Semáforo positivo (80/50): actual ${porcentajeProcesosVisibles}%`"
+          @click="abrirDetalleKpi('procesos')"
         >
           <span class="kpi-title">Total de procesos</span>
           <strong class="kpi-value">{{ kpis.totalTareas }}</strong>
-          <small class="kpi-foot">Procesos activos</small>
-          <div class="kpi-mini-track">
-            <div class="kpi-mini-fill" :style="{ width: `${porcentajeProcesosVisibles}%`, backgroundColor: colorProcesosVisibles }"></div>
-          </div>
-          <small class="kpi-mini-label">{{ porcentajeProcesosVisibles }}% del cumplimiento general</small>
-        </article>
+          <small class="kpi-foot">Procesos</small>
+       
+        </button>
         <button
           type="button"
           class="kpi-card kpi-card-button success has-tooltip"
@@ -76,11 +74,13 @@
           @click="abrirDetalleKpi('cumplimiento')"
         >
           <span class="kpi-title">Procesos Completos</span>
-          <strong class="kpi-value">{{ kpis.porcentajeCumplimiento }}%</strong>
-          <small class="kpi-foot">Procesos completos: {{ kpis.actividadesCompletadas }} de {{ kpis.totalTareas }} .</small>
-          <div class="kpi-mini-track">
-            <div class="kpi-mini-fill" :style="{ width: `${kpis.porcentajeCumplimiento}%`, backgroundColor: colorCumplimiento }"></div>
+          <div class="kpi-donut-row">
+            <strong class="kpi-value">{{ kpis.actividadesCompletadas }}</strong>
+            <div class="kpi-mini-donut" :style="{ '--value': `${kpis.porcentajeCumplimiento}%`, '--kpi-color': colorCumplimiento }">
+              <span :style="{ color: colorCumplimiento }">{{ kpis.porcentajeCumplimiento }}%</span>
+            </div>
           </div>
+          <small class="kpi-foot">Procesos completos: {{ kpis.actividadesCompletadas }} de {{ kpis.totalTareas }}</small>
         </button>
         <button
           type="button"
@@ -88,28 +88,14 @@
           :data-tooltip="`Semáforo riesgo (<=20/<=50): actual ${porcentajeAtraso}%`"
           @click="abrirDetalleKpi('retraso')"
         >
-          <span class="kpi-title">Verificables con retraso</span>
-          <strong class="kpi-value">{{ kpis.atrasadas }}</strong>
-          <small class="kpi-foot">Verificables que excedieron la fecha programada</small>
-          <div class="kpi-mini-track">
-            <div class="kpi-mini-fill" :style="{ width: `${porcentajeAtraso}%`, backgroundColor: colorAtraso }"></div>
-          </div>
-          <small class="kpi-mini-label">{{ porcentajeAtraso }}% del total de verificables</small>
-        </button>
-        <button
-          type="button"
-          class="kpi-card kpi-card-button accent has-tooltip"
-          :data-tooltip="`Semáforo riesgo (<=20/<=50): actual ${porcentajeProximas}%`"
-          @click="abrirDetalleKpi('proximas')"
-        >
-          <span class="kpi-title">Próximas a vencer</span>
+          <span class="kpi-title">Procesos con etapas retrasadas</span>
           <div class="kpi-donut-row">
-            <strong class="kpi-value">{{ verificablesPorVencer.length }}</strong>
-            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProximas}%`, '--kpi-color': colorProximas }">
-              <span :style="{ color: colorProximas }">{{ porcentajeProximas }}%</span>
+            <strong class="kpi-value">{{ kpis.atrasadas }}</strong>
+            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeAtraso}%`, '--kpi-color': colorAtraso }">
+              <span :style="{ color: colorAtraso }">{{ porcentajeAtraso }}%</span>
             </div>
           </div>
-          <small class="kpi-foot">{{ porcentajeProximas }}% de pendientes vence en 2 y 1 día</small>
+          <small class="kpi-foot">Procesos que tienen etapas fuera de fecha</small>
         </button>
         <button
           type="button"
@@ -118,12 +104,43 @@
           @click="abrirDetalleKpi('riesgo')"
         >
           <span class="kpi-title">Procesos en riesgo</span>
-          <strong class="kpi-value">{{ detalleProcesosRiesgo.length }}</strong>
-          <small class="kpi-foot">Procesos marcados manualmente con riesgo general</small>
-          <div class="kpi-mini-track">
-            <div class="kpi-mini-fill" :style="{ width: anchoBarraProcesosRiesgo, backgroundColor: colorProcesosRiesgo }"></div>
+          <div class="kpi-donut-row">
+            <strong class="kpi-value">{{ detalleProcesosRiesgo.length }}</strong>
+            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProcesosRiesgo}%`, '--kpi-color': colorProcesosRiesgo }">
+              <span :style="{ color: colorProcesosRiesgo }">{{ porcentajeProcesosRiesgo }}%</span>
+            </div>
           </div>
-          <small class="kpi-mini-label">{{ porcentajeProcesosRiesgo }}% de los procesos visibles</small>
+          <small class="kpi-foot">Procesos marcados con riesgo</small>
+        </button>
+        <button
+          type="button"
+          class="kpi-card kpi-card-button warning has-tooltip"
+          :data-tooltip="`Procesos marcados como desiertos: ${detalleProcesosDesiertos.length}`"
+          @click="abrirDetalleKpi('desiertos')"
+        >
+          <span class="kpi-title">Procesos desiertos</span>
+          <div class="kpi-donut-row">
+            <strong class="kpi-value">{{ detalleProcesosDesiertos.length }}</strong>
+            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProcesosDesiertos}%`, '--kpi-color': colorProcesosDesiertos }">
+              <span :style="{ color: colorProcesosDesiertos }">{{ porcentajeProcesosDesiertos }}%</span>
+            </div>
+          </div>
+          <small class="kpi-foot">Procesos con estado desierto</small>
+        </button>
+        <button
+          type="button"
+          class="kpi-card kpi-card-button warning has-tooltip"
+          :data-tooltip="`Procesos con presupuesto 0 o sin asignación: ${detalleProcesosDesfinanciados.length}`"
+          @click="abrirDetalleKpi('desfinanciados')"
+        >
+          <span class="kpi-title">Procesos desfinanciados</span>
+          <div class="kpi-donut-row">
+            <strong class="kpi-value">{{ detalleProcesosDesfinanciados.length }}</strong>
+            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProcesosDesfinanciados}%`, '--kpi-color': colorProcesosDesfinanciados }">
+              <span :style="{ color: colorProcesosDesfinanciados }">{{ porcentajeProcesosDesfinanciados }}%</span>
+            </div>
+          </div>
+          <small class="kpi-foot">Presupuesto 0 o no asignado</small>
         </button>
       </section>
 
@@ -133,7 +150,7 @@
         <article class="panel gauge-panel">
           <div class="panel-header">
             <h2>Nivel de cumplimiento</h2>
-            <span>{{ completadosVerificablesConFecha }} de {{ totalVerificablesConFecha }} verificables</span>
+            <span>{{ etapasCompletadasConFecha }} de {{ totalEtapasConFecha }} etapas</span>
           </div>
           <div class="gauge-wrap">
             <!--
@@ -173,20 +190,20 @@
               <circle cx="98" cy="98" r="9" fill="#1e293b"/>
               <circle cx="98" cy="98" r="4" fill="white"/>
             </svg>
-            <div class="gauge-value" :style="{ color: gaugeColor }">{{ porcentajeVerificables }}%</div>
-            <div class="gauge-sub">de {{ totalVerificablesConFecha }} verificables con fecha asignada</div>
+            <div class="gauge-value" :style="{ color: gaugeColor }">{{ porcentajeEtapas }}%</div>
+            <div class="gauge-sub">de {{ totalEtapasConFecha }} etapas</div>
             <div class="gauge-legend">
               <div class="gauge-legend-item">
                 <span class="gauge-dot" style="background:#22c55e"></span>
-                <span>Completados: <strong>{{ completadosVerificablesConFecha }}</strong></span>
+                <span>Completadas: <strong>{{ etapasCompletadasConFecha }}</strong> · {{ porcentajeEtapasCompletadas }}%</span>
               </div>
               <div class="gauge-legend-item">
                 <span class="gauge-dot" style="background:#f59e0b"></span>
-                <span>Pendientes: <strong>{{ pendientesVerificablesConFecha }}</strong></span>
+                <span>Pendientes: <strong>{{ etapasPendientesConFecha }}</strong> · {{ porcentajeEtapasPendientes }}%</span>
               </div>
               <div class="gauge-legend-item">
                 <span class="gauge-dot" style="background:#ef4444"></span>
-                <span>Atrasados: <strong>{{ atrasadosVerificablesConFecha }}</strong></span>
+                <span>Atrasadas: <strong>{{ etapasAtrasadasConFecha }}</strong> · {{ porcentajeEtapasAtrasadas }}%</span>
               </div>
             </div>
           </div>
@@ -224,144 +241,6 @@
           <div v-else class="empty">No hay áreas con información disponible.</div>
         </article>
 
-        <article class="panel temporal-panel">
-          <div class="panel-header">
-            <h2>Progreso de cumplimiento</h2>
-            <div class="temporal-header-actions">
-              <span class="temporal-overdue-total">Cumplidas: {{ totalCumplidasTemporal }}</span>
-              <div class="temporal-tabs">
-                <button
-                  class="temporal-tab"
-                  :class="{ active: vistaTemporalActiva === 'semanas' }"
-                  @click="vistaTemporalActiva = 'semanas'"
-                >Por semana</button>
-                <button
-                  class="temporal-tab"
-                  :class="{ active: vistaTemporalActiva === 'meses' }"
-                  @click="vistaTemporalActiva = 'meses'"
-                >Por mes</button>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="datosTemporal.length === 0" class="empty">Sin etapas cumplidas para mostrar en esta vista.</div>
-
-          <div v-else class="temporal-chart temporal-chart-line">
-            <div class="temporal-summary-grid">
-             
-              <div class="temporal-summary-card muted">
-                <span class="temporal-summary-label">Pico</span>
-                <strong class="temporal-summary-value">{{ picoCumplimientoTemporal.valor }}</strong>
-                <small>{{ picoCumplimientoTemporal.label }}</small>
-              </div>
-            </div>
-
-            <DashboardChart
-              :labels="datosTemporal.map(item => item.clave)"
-              :etapasPlanificadas="datosTemporal.map(() => 0)"
-              :etapasCumplidas="datosTemporal.map(item => item.completados)"
-              :alertas="datosTemporal.map(() => 0)"
-            />
-
-            <div class="temporal-legend">
-              <span><i class="dot ok"></i>Etapas cumplidas</span>
-              <span>{{ vistaTemporalActiva === 'semanas' ? 'Vista semanal' : 'Vista mensual' }}</span>
-            </div>
-          </div>
-        </article>
-
-      </section>
-
-      <section class="trend-kpi-grid cumplimiento-top-grid">
-        <article class="kpi-card trend-card cumplimiento-card">
-          <div class="trend-card-header">
-            <div>
-              <span class="kpi-title">Cumplimiento por dirección</span>
-             
-            </div>
-            <small class="trend-badge success" v-if="direccionTopCumplimiento">
-              Top: {{ direccionTopCumplimiento.direccion }} ({{ direccionTopCumplimiento.cumplidas }}/{{ direccionTopCumplimiento.totalTareas }})
-            </small>
-          </div>
-         
-          <div class="direccion-group-legend">
-            <span><i class="dot ok"></i>Cumplidas</span>
-            <span><i class="dot danger"></i>Con retraso</span>
-            <span><i class="dot tomato"></i>Pendientes</span>
-          </div>
-          <div v-if="resumenDireccionesCumplimiento.length" class="direccion-bars-wrap">
-            <div class="direccion-global-chart">
-              <div class="direccion-y-axis">
-                <span>{{ maxValorEjeCumplimiento }}</span>
-                <span>{{ Math.round(maxValorEjeCumplimiento / 2) }}</span>
-                <span>0</span>
-              </div>
-              <div class="direccion-chart-canvas">
-                <div class="direccion-chart-guides">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-                <div class="direccion-groups">
-                  <div v-for="item in resumenDireccionesCumplimiento" :key="item.direccion" class="direccion-group-col">
-                    <div class="direccion-group-bar-shell">
-                      <div
-                        class="direccion-group-bar"
-                        :style="{ height: `${item.totalComparadoBarPct}%` }"
-                        :title="`Dirección: ${item.direccion}\nCumplidas: ${item.cumplidas}\nCon retraso: ${item.pendientesRetraso}\nPendientes: ${item.pendientes}`"
-                      >
-                        <div class="direccion-stack-fill ok" :style="{ height: `${item.cumplidasStackPct}%` }"></div>
-                        <div class="direccion-stack-fill danger" :style="{ height: `${item.retrasoStackPct}%` }"></div>
-                        <div class="direccion-stack-fill tomato" :style="{ height: `${item.pendientesStackPct}%` }"></div>
-                      </div>
-                    </div>
-                    <div class="direccion-group-label">{{ item.direccion }}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div v-else class="empty-inline">Sin información de direcciones para el filtro actual.</div>
-        </article>
-      </section>
-
-      <section class="charts-grid secondary-grid">
-        <article class="panel barras-panel ranking-panel">
-          <div class="panel-header">
-            <h2>Procesos y avance</h2>
-            <span>Total {{ actividadesAvancePresupuesto.length }} </span>
-          </div>
-          <div v-if="actividadesAvancePresupuesto.length" class="bars-stack bars-stack-detailed">
-            <button
-              v-for="item in actividadesAvancePresupuesto"
-              :key="item.id"
-              type="button"
-              class="actividad-bar-row actividad-bar-button"
-              :class="{ active: item.destacada && !!responsableSeleccionado, muted: !item.destacada && !!responsableSeleccionado }"
-              @click="abrirActividadDetalle(item.id)"
-            >
-              <div class="actividad-bar-top">
-                <div>
-                  <div class="bar-label">{{ item.nombre }}</div>
-                  <div class="bar-helper">{{ item.area }} · {{ item.responsable }} · selecciona para abrir detalle</div>
-                </div>
-                <div class="actividad-presupuesto">{{ formatearMonto(item.presupuesto) }}</div>
-              </div>
-              <div class="actividad-bar-main">
-                <div class="bar-track actividad-track">
-                  <div
-                    class="bar-fill"
-                    :class="item.avance >= 70 ? 'ok' : item.avance >= 40 ? 'info' : 'warn'"
-                    :style="{ width: item.width }"
-                  ></div>
-                </div>
-                <div class="bar-value actividad-avance">{{ item.avance }}%</div>
-              </div>
-            </button>
-          </div>
-          <div v-if="!actividadesAvancePresupuesto.length" class="empty">No hay procesos activos para graficar.</div>
-        </article>
-
         <article class="panel donut-panel montos-panel">
           <div class="panel-header">
             <h2>Montos por dirección</h2>
@@ -389,6 +268,68 @@
 
       </section>
 
+      <section class="trend-kpi-grid cumplimiento-top-grid">
+        <article class="kpi-card trend-card cumplimiento-card">
+          <div class="trend-card-header">
+            <div>
+              <span class="kpi-title">Cumplimiento por dirección</span>
+             
+            </div>
+            
+          </div>
+
+          <div class="direccion-group-legend">
+            <span><i class="dot" style="background:#28a745"></i>Procesos con flujo normal</span>
+            <span><i class="dot" style="background:#dc3545"></i>Procesos con retraso</span>
+          </div>
+          <div v-if="resumenDireccionesCumplimiento.length" class="direccion-bars-wrap">
+            <div class="direccion-vertical-chart">
+              <div class="direccion-y-axis">
+                <span>100%</span>
+                <span>75%</span>
+                <span>50%</span>
+                <span>25%</span>
+                <span>0%</span>
+              </div>
+
+              <div class="direccion-chart-canvas">
+                <div class="direccion-chart-guides">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+
+                <div class="direccion-groups vertical">
+                  <div v-for="item in resumenDireccionesCumplimiento" :key="item.direccion" class="direccion-group-col vertical">
+                    <div class="direccion-group-bar-shell vertical">
+                      <button
+                        type="button"
+                        class="direccion-group-bar vertical direccion-group-button"
+                        :title="`Dirección: ${item.direccion}\nTotal de procesos: ${item.totalProcesos}\nFlujo normal: ${item.flujoNormal} (${item.flujoNormalPct}%)\nCon retraso: ${item.conRetraso} (${item.conRetrasoPct}%)\nClic para ver detalle de procesos y avance`"
+                        @click="abrirDetalleProcesosPorDireccion(item.direccion)"
+                      >
+                        <div v-if="item.flujoNormal > 0" class="direccion-stack-fill ok" :style="{ height: `${item.flujoNormalPctWidth}%` }">
+                          <span class="direccion-stack-label">{{ item.flujoNormal }} ({{ item.flujoNormalPct }}%)</span>
+                        </div>
+                        <div v-if="item.conRetraso > 0" class="direccion-stack-fill danger" :style="{ height: `${item.conRetrasoPctWidth}%` }">
+                          <span class="direccion-stack-label">{{ item.conRetraso }} ({{ item.conRetrasoPct }}%)</span>
+                        </div>
+                      </button>
+                    </div>
+                    <div class="direccion-group-label">{{ item.direccion }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="empty-inline">Sin información de direcciones para el filtro actual.</div>
+        </article>
+      </section>
+
+
+
       <div v-if="detalleKpi.activo" class="modal-overlay kpi-detail-overlay" @click="cerrarDetalleKpi">
         <div class="kpi-detail-modal" @click.stop>
           <div class="kpi-detail-header">
@@ -399,38 +340,76 @@
             <button type="button" class="btn-close" @click="cerrarDetalleKpi">✕</button>
           </div>
 
-          <div v-if="detalleKpi.tipo === 'cumplimiento'" class="kpi-detail-body listado">
-            <div v-if="detalleCumplimiento.length === 0" class="empty">No hay procesos completos para el filtro actual.</div>
-            <div v-for="item in detalleCumplimiento" :key="item.id" class="kpi-detail-item">
-              <div>
-                <strong>{{ item.nombre }}</strong>
-                <p>{{ item.area }} · {{ item.responsable }}</p>
-              </div>
-              <div class="list-meta">{{ formatearMonto(item.presupuesto) }}</div>
+          <div v-if="detalleKpi.tipo === 'procesos'" class="kpi-detail-body listado">
+            <div v-if="!actividadesAvancePresupuesto.length" class="empty">No hay procesos para mostrar en el filtro actual.</div>
+            <div v-else class="bars-stack bars-stack-detailed">
+              <button
+                v-for="item in actividadesAvancePresupuesto"
+                :key="`modal-proceso-${item.id}`"
+                type="button"
+                class="actividad-bar-row actividad-bar-button"
+                :class="{ active: item.destacada && !!responsableSeleccionado, muted: !item.destacada && !!responsableSeleccionado }"
+                @click="abrirActividadDetalle(item.id)"
+              >
+                <div class="actividad-bar-top">
+                  <div>
+                    <div class="bar-label">{{ item.nombre }}</div>
+                    <div class="bar-helper">{{ item.area }} · {{ item.responsable }} · clic para abrir detalle</div>
+                  </div>
+                  <div class="actividad-presupuesto">{{ formatearMonto(item.presupuesto) }}</div>
+                </div>
+                <div class="actividad-bar-main">
+                  <div class="bar-track actividad-track">
+                    <div
+                      class="bar-fill"
+                      :class="item.avance >= 70 ? 'ok' : item.avance >= 40 ? 'info' : 'warn'"
+                      :style="{ width: item.width }"
+                    ></div>
+                  </div>
+                  <div class="bar-value actividad-avance">{{ item.avance }}%</div>
+                </div>
+              </button>
             </div>
           </div>
 
-          <div v-else-if="detalleKpi.tipo === 'retraso'" class="kpi-detail-body listado">
-            <div v-if="detalleEtapasAtrasadas.length === 0" class="empty">No hay verificables con retraso para el filtro actual.</div>
+          <div v-else-if="detalleKpi.tipo === 'cumplimiento'" class="kpi-detail-body listado">
+            <div v-if="detalleCumplimiento.length === 0" class="empty">No hay procesos completos para el filtro actual.</div>
             <button
-              v-for="item in detalleEtapasAtrasadas"
+              v-for="item in detalleCumplimiento"
               :key="item.id"
               type="button"
               class="kpi-detail-item kpi-detail-item-button"
-              @click="abrirEtapaAtrasadaDetalle(item.subtareaId, item.etapaId)"
+              @click="abrirActividadDetalle(item.id)"
             >
               <div>
-                <strong>{{ item.etapaNombre }}</strong>
-                <p>{{ item.subtareaNombre }} · {{ item.responsable }} · clic para abrir</p>
+                <strong>{{ item.nombre }}</strong>
+                <p>{{ item.area }} · {{ item.responsable }} · clic para abrir seguimiento</p>
               </div>
-              <div class="list-meta late">{{ item.diasRetraso }}D</div>
+              <div class="list-meta">{{ formatearMonto(item.presupuesto) }}</div>
+            </button>
+          </div>
+
+          <div v-else-if="detalleKpi.tipo === 'retraso'" class="kpi-detail-body listado">
+            <div v-if="detalleProcesosAtrasados.length === 0" class="empty">No hay procesos con etapas retrasadas para el filtro actual.</div>
+            <button
+              v-for="item in detalleProcesosAtrasados"
+              :key="item.id"
+              type="button"
+              class="kpi-detail-item kpi-detail-item-button"
+              @click="abrirActividadDetalle(item.id)"
+            >
+              <div>
+                <strong>{{ item.nombre }}</strong>
+                <p>{{ item.direccion }} · {{ item.etapasRetrasadas }} etapas con retraso · clic para abrir</p>
+              </div>
+              <div class="list-meta late">{{ item.etapasRetrasadas }} etapas con retraso</div>
             </button>
           </div>
 
           <div v-else-if="detalleKpi.tipo === 'proximas'" class="kpi-detail-body listado">
-            <div v-if="verificablesPorVencer.length === 0" class="empty">No hay verificables por vencer en 2 o 1 día para el filtro actual.</div>
+            <div v-if="etapasPorVencer.length === 0" class="empty">No hay etapas por vencer en 2 o 1 día para el filtro actual.</div>
             <button
-              v-for="item in verificablesPorVencer"
+              v-for="item in etapasPorVencer"
               :key="item.id"
               type="button"
               class="kpi-detail-item kpi-detail-item-button"
@@ -459,6 +438,41 @@
                 <p class="kpi-risk-comment">{{ item.comentario }}</p>
               </div>
               <div class="list-meta warning">Riesgo</div>
+            </button>
+          </div>
+
+          <div v-else-if="detalleKpi.tipo === 'desiertos'" class="kpi-detail-body listado">
+            <div v-if="detalleProcesosDesiertos.length === 0" class="empty">No hay procesos en estado desierto para el filtro actual.</div>
+            <button
+              v-for="item in detalleProcesosDesiertos"
+              :key="`desierto-${item.id}`"
+              type="button"
+              class="kpi-detail-item kpi-detail-item-button"
+              @click="abrirActividadDetalle(item.id)"
+            >
+              <div>
+                <strong>{{ item.nombre }}</strong>
+                <p>{{ item.area }} · {{ item.responsable }} · clic para abrir</p>
+              </div>
+              <div class="list-meta warning">Desierto</div>
+            </button>
+          </div>
+
+          <div v-else-if="detalleKpi.tipo === 'desfinanciados'" class="kpi-detail-body listado">
+            <div v-if="detalleProcesosDesfinanciados.length === 0" class="empty">No hay procesos desfinanciados para el filtro actual.</div>
+            <button
+              v-for="item in detalleProcesosDesfinanciados"
+              :key="`desfinanciado-${item.id}`"
+              type="button"
+              class="kpi-detail-item kpi-detail-item-button"
+              @click="abrirActividadDetalle(item.id)"
+            >
+              <div>
+                <strong>{{ item.nombre }}</strong>
+                <p>{{ item.area }} · {{ item.responsable }}</p>
+                <p>Solicitud de certificación presupuestaria: {{ item.fechaSolicitudTexto }}</p>
+              </div>
+              <div class="list-meta warning">Sin presupuesto</div>
             </button>
           </div>
 
@@ -532,30 +546,35 @@ const hayFiltrosDashboardActivos = computed(() =>
   )
 );
 
-const subtareasBaseFiltradas = computed(() => {
-  let items = [...subtareasActivasBase.value];
+function aplicarFiltrosGeneralesDashboard(items: any[]) {
+  let filtrados = [...items];
 
   if (filtroDireccion.value) {
-    items = items.filter((subtarea: any) => obtenerDireccionDashboard(subtarea) === filtroDireccion.value);
+    filtrados = filtrados.filter((subtarea: any) => obtenerDireccionDashboard(subtarea) === filtroDireccion.value);
   }
   if (filtroPacNoPac.value) {
-    items = items.filter((subtarea: any) => {
+    filtrados = filtrados.filter((subtarea: any) => {
       const tipo = String(subtarea?.pacNoPac || subtarea?.pac_no_pac || subtarea?.tipoPlan || '').toUpperCase();
       return tipo === filtroPacNoPac.value;
     });
   }
   if (filtroTipoContratacion.value) {
-    items = items.filter((subtarea: any) =>
+    filtrados = filtrados.filter((subtarea: any) =>
       normalizarTextoBusqueda(obtenerTipoContratacionDashboard(subtarea)) === filtroTipoContratacion.value
     );
   }
   if (filtroCuatrimestre.value) {
-    items = items.filter((subtarea: any) => String(obtenerCuatrimestreDashboard(subtarea)) === filtroCuatrimestre.value);
+    filtrados = filtrados.filter((subtarea: any) => String(obtenerCuatrimestreDashboard(subtarea)) === filtroCuatrimestre.value);
   }
 
-  return items;
-});
-import DashboardChart from '../components/DashboardChart.vue';
+  return filtrados;
+}
+
+const subtareasConEstadoBaseFiltradas = computed(() => aplicarFiltrosGeneralesDashboard(subtareas.value));
+
+const subtareasBaseFiltradas = computed(() =>
+  subtareasConEstadoBaseFiltradas.value.filter((subtarea: any) => actividadActiva(subtarea))
+);
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { normalizarTextoBusqueda } from '../utils/search';
 
@@ -569,7 +588,7 @@ const resumenSemanal = ref<{ series: any[]; mejorSemanaCumplimiento: any | null;
 });
 const areaSeleccionada = ref('');
 const responsableSeleccionado = ref('');
-const detalleKpi = ref<{ activo: boolean; tipo: 'cumplimiento' | 'retraso' | 'proximas' | 'monto' | 'riesgo' }>({
+const detalleKpi = ref<{ activo: boolean; tipo: 'procesos' | 'cumplimiento' | 'retraso' | 'proximas' | 'monto' | 'riesgo' | 'desfinanciados' | 'desiertos' }>({
   activo: false,
   tipo: 'cumplimiento'
 });
@@ -617,6 +636,17 @@ function formatearMonto(valor: number) {
   }).format(Number(valor || 0));
 }
 
+function formatearFechaDashboard(fecha: string | Date | null | undefined) {
+  if (!fecha) return 'Sin fecha registrada';
+  const parsed = new Date(fecha);
+  if (Number.isNaN(parsed.getTime())) return 'Sin fecha registrada';
+  return new Intl.DateTimeFormat('es-EC', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  }).format(parsed);
+}
+
 function calcularAvanceSubtarea(subtarea: any) {
   const avanceGeneral = Number(subtarea.avanceGeneral ?? subtarea.avance ?? 0);
   if (!Number.isNaN(avanceGeneral) && avanceGeneral > 0) {
@@ -639,8 +669,23 @@ function getEtapasConFechaSubtarea(subtarea: any) {
   return etapas.filter((etapa: any) => Boolean(etapa?.fechaPlanificada || etapa?.fechaTentativa));
 }
 
+function obtenerEstadoProcesoDashboard(subtarea: any): 0 | 1 | 2 {
+  const valor = subtarea?.activo;
+  if (valor === undefined || valor === null || valor === '') return 1;
+  if (typeof valor === 'number') {
+    if (valor === 2) return 2;
+    return valor === 0 ? 0 : 1;
+  }
+  if (typeof valor === 'boolean') return valor ? 1 : 0;
+
+  const normalizado = String(valor).trim().toLowerCase();
+  if (['2', 'desierto'].includes(normalizado)) return 2;
+  if (['0', 'false', 'inactivo'].includes(normalizado)) return 0;
+  return 1;
+}
+
 function actividadActiva(subtarea: any) {
-  return Boolean(Number(subtarea?.activo ?? 1));
+  return obtenerEstadoProcesoDashboard(subtarea) === 1;
 }
 
 function actividadCompleta(subtarea: any) {
@@ -649,6 +694,8 @@ function actividadCompleta(subtarea: any) {
 }
 
 function actividadAtrasada(subtarea: any) {
+  if (!procesoCuentaEnIndicadoresYAtrasosDashboard(subtarea)) return false;
+
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
 
@@ -700,6 +747,14 @@ function obtenerPresupuestoDashboard(subtarea: any) {
   return Number.isFinite(valor) ? valor : 0;
 }
 
+function procesoActivoSinPresupuestoDashboard(subtarea: any) {
+  return obtenerEstadoProcesoDashboard(subtarea) === 1 && obtenerPresupuestoDashboard(subtarea) <= 0;
+}
+
+function procesoCuentaEnIndicadoresYAtrasosDashboard(subtarea: any) {
+  return obtenerEstadoProcesoDashboard(subtarea) === 1 && !procesoActivoSinPresupuestoDashboard(subtarea);
+}
+
 function obtenerTipoContratacionDashboard(subtarea: any) {
   const valor = String(
     subtarea?.procedimientoSugerido
@@ -745,10 +800,6 @@ function abrirActividadDetalle(actividadId: number, etapaId?: number | string) {
   });
 }
 
-function abrirEtapaAtrasadaDetalle(actividadId: number, etapaId: number | string) {
-  cerrarDetalleKpi();
-  abrirActividadDetalle(actividadId, etapaId);
-}
 
 async function cargarResumenSemanal() {
   try {
@@ -767,8 +818,13 @@ async function cargarResumenSemanal() {
   }
 }
 
-function abrirDetalleKpi(tipo: 'cumplimiento' | 'retraso' | 'proximas' | 'monto' | 'riesgo') {
+function abrirDetalleKpi(tipo: 'procesos' | 'cumplimiento' | 'retraso' | 'proximas' | 'monto' | 'riesgo' | 'desfinanciados' | 'desiertos') {
   detalleKpi.value = { activo: true, tipo };
+}
+
+function abrirDetalleProcesosPorDireccion(direccion: string) {
+  areaSeleccionada.value = direccion;
+  detalleKpi.value = { activo: true, tipo: 'procesos' };
 }
 
 function cerrarDetalleKpi() {
@@ -783,7 +839,9 @@ function manejarEscapeModales(event: KeyboardEvent) {
 }
 
 const subtareasElegibles = computed(() =>
-  subtareasBaseFiltradas.value.filter((subtarea: any) => getEtapasConFechaSubtarea(subtarea).length > 0)
+  subtareasBaseFiltradas.value.filter((subtarea: any) =>
+    procesoCuentaEnIndicadoresYAtrasosDashboard(subtarea) && getEtapasConFechaSubtarea(subtarea).length > 0
+  )
 );
 
 const subtareasFiltradasPorArea = computed(() =>
@@ -830,16 +888,7 @@ const actividadesPendientes = computed(() => Math.max(0, subtareasFiltradas.valu
 
 const pendientes = computed(() => etapas.value.length - completadas.value);
 
-const atrasadas = computed(() =>
-  etapas.value.filter((e: any) => {
-    if (!e.fechaPlanificada || normalizarEstado(e.estado, e.fechaReal) === 'completado') return false;
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    const plan = new Date(e.fechaPlanificada);
-    plan.setHours(0, 0, 0, 0);
-    return plan < hoy;
-  }).length
-);
+const atrasadas = computed(() => actividadesAtrasadas.value);
 
 const kpis = computed(() => {
   const totalTareas = subtareasFiltradas.value.length;
@@ -858,14 +907,9 @@ const kpis = computed(() => {
   };
 });
 
-const porcentajeProximas = computed(() => {
-  const totalPendientes = Math.max(1, kpis.value.pendientes);
-  return Math.min(100, Math.round((verificablesPorVencer.value.length / totalPendientes) * 100));
-});
-
 const porcentajeAtraso = computed(() => {
-  const totalEtapas = Math.max(1, kpis.value.totalEtapas);
-  return Math.min(100, Math.round((kpis.value.atrasadas / totalEtapas) * 100));
+  const totalProcesos = Math.max(1, kpis.value.totalTareas);
+  return Math.min(100, Math.round((kpis.value.atrasadas / totalProcesos) * 100));
 });
 
 const porcentajeProcesosVisibles = computed(() => {
@@ -874,9 +918,7 @@ const porcentajeProcesosVisibles = computed(() => {
 });
 
 const colorCumplimiento = computed(() => colorSemaforoPositivo(kpis.value.porcentajeCumplimiento));
-const colorProcesosVisibles = computed(() => colorSemaforoPositivo(porcentajeProcesosVisibles.value));
 const colorAtraso = computed(() => colorSemaforoRiesgo(porcentajeAtraso.value));
-const colorProximas = computed(() => colorSemaforoRiesgo(porcentajeProximas.value));
 const detalleProcesosRiesgo = computed(() =>
   subtareasFiltradas.value
     .filter((subtarea: any) => procesoEnRiesgoDashboard(subtarea))
@@ -894,12 +936,85 @@ const porcentajeProcesosRiesgo = computed(() => {
   return Math.min(100, Math.round((detalleProcesosRiesgo.value.length / total) * 100));
 });
 const colorProcesosRiesgo = computed(() => colorSemaforoRiesgo(porcentajeProcesosRiesgo.value));
-const anchoBarraProcesosRiesgo = computed(() =>
-  detalleProcesosRiesgo.value.length > 0
-    ? `${Math.max(12, porcentajeProcesosRiesgo.value)}%`
-    : '0%'
+
+const detalleProcesosDesiertos = computed(() => {
+  let items = subtareasConEstadoBaseFiltradas.value.filter((subtarea: any) => obtenerEstadoProcesoDashboard(subtarea) === 2);
+
+  if (areaSeleccionada.value) {
+    items = items.filter((subtarea: any) => (obtenerDireccionDashboard(subtarea) || 'Sin área') === areaSeleccionada.value);
+  }
+  if (responsableSeleccionado.value) {
+    items = items.filter((subtarea: any) => responsableBase(subtarea) === responsableSeleccionado.value);
+  }
+
+  return items
+    .map((subtarea: any) => ({
+      id: subtarea.id,
+      nombre: subtarea.nombre || 'Proceso sin nombre',
+      area: obtenerDireccionDashboard(subtarea) || 'Sin área',
+      responsable: responsableBase(subtarea)
+    }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre));
+});
+
+const totalProcesosConsideradosDashboard = computed(() =>
+  Math.max(1, subtareasFiltradas.value.length + detalleProcesosDesiertos.value.length)
 );
 
+const porcentajeProcesosDesiertos = computed(() => {
+  return Math.min(100, Math.round((detalleProcesosDesiertos.value.length / totalProcesosConsideradosDashboard.value) * 100));
+});
+const colorProcesosDesiertos = computed(() =>
+  detalleProcesosDesiertos.value.length > 0 ? '#f97316' : '#94a3b8'
+);
+
+function obtenerEtapaSolicitudCertificacionPresupuestaria(subtarea: any) {
+  return getEtapasConFechaSubtarea(subtarea).find((etapa: any) => {
+    const nombre = normalizarTextoBusqueda(String(etapa?.etapaNombre || etapa?.nombre || ''));
+    return nombre.includes('solicitud de certificacion presupuestaria')
+      || nombre.includes('certificacion presupuestaria')
+      || nombre.includes('certificacion presuestaria');
+  }) || null;
+}
+
+const detalleProcesosDesfinanciados = computed(() => {
+  let items = subtareasBaseFiltradas.value.filter((subtarea: any) => procesoActivoSinPresupuestoDashboard(subtarea));
+
+  if (areaSeleccionada.value) {
+    items = items.filter((subtarea: any) => (obtenerDireccionDashboard(subtarea) || 'Sin área') === areaSeleccionada.value);
+  }
+  if (responsableSeleccionado.value) {
+    items = items.filter((subtarea: any) => responsableBase(subtarea) === responsableSeleccionado.value);
+  }
+
+  return items
+    .map((subtarea: any) => {
+      const etapaSolicitud = obtenerEtapaSolicitudCertificacionPresupuestaria(subtarea);
+      const fechaSolicitud = etapaSolicitud?.fechaPlanificada || etapaSolicitud?.fechaTentativa || etapaSolicitud?.fechaReal || null;
+
+      return {
+        id: subtarea.id,
+        etapaId: etapaSolicitud?.etapaId || etapaSolicitud?.id,
+        nombre: subtarea.nombre || 'Proceso sin nombre',
+        area: obtenerDireccionDashboard(subtarea) || 'Sin área',
+        responsable: responsableBase(subtarea),
+        fechaSolicitud,
+        fechaSolicitudTexto: formatearFechaDashboard(fechaSolicitud),
+        presupuesto: obtenerPresupuestoDashboard(subtarea)
+      };
+    })
+    .sort((a, b) => {
+      const fechaA = a.fechaSolicitud ? new Date(a.fechaSolicitud).getTime() : Number.POSITIVE_INFINITY;
+      const fechaB = b.fechaSolicitud ? new Date(b.fechaSolicitud).getTime() : Number.POSITIVE_INFINITY;
+      return fechaA - fechaB || a.nombre.localeCompare(b.nombre);
+    });
+});
+
+const porcentajeProcesosDesfinanciados = computed(() => {
+  const total = Math.max(1, kpis.value.totalTareas);
+  return Math.min(100, Math.round((detalleProcesosDesfinanciados.value.length / total) * 100));
+});
+const colorProcesosDesfinanciados = computed(() => colorSemaforoRiesgo(porcentajeProcesosDesfinanciados.value));
 
 const detalleCumplimiento = computed(() =>
   subtareasFiltradas.value
@@ -916,36 +1031,35 @@ const detalleCumplimiento = computed(() =>
 
 const detalleMontoEjecutado = computed(() => detalleCumplimiento.value);
 
-const detalleEtapasAtrasadas = computed(() => {
+const detalleProcesosAtrasados = computed(() => {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
 
-  return etapas.value
-    .filter((etapa: any) => {
-      const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
-      if (!fecha || normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado') return false;
-      const plan = new Date(fecha);
-      plan.setHours(0, 0, 0, 0);
-      return plan < hoy;
-    })
-    .map((etapa: any) => {
-      const fecha = new Date(etapa?.fechaPlanificada || etapa?.fechaTentativa);
-      fecha.setHours(0, 0, 0, 0);
-      const diasRetraso = Math.max(0, Math.floor((hoy.getTime() - fecha.getTime()) / (1000 * 60 * 60 * 24)));
+  return subtareasFiltradas.value
+    .map((subtarea: any) => {
+      const etapasRetrasadas = getEtapasConFechaSubtarea(subtarea).filter((etapa: any) => {
+        const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
+        if (!fecha || normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado') return false;
+        const plan = new Date(fecha);
+        if (Number.isNaN(plan.getTime())) return false;
+        plan.setHours(0, 0, 0, 0);
+        return plan < hoy;
+      }).length;
+
+      if (!etapasRetrasadas) return null;
+
       return {
-        id: `${etapa.subtareaId}-${etapa.etapaId || etapa.id}`,
-        subtareaId: etapa.subtareaId,
-        etapaId: etapa.etapaId || etapa.id,
-        subtareaNombre: etapa.subtareaNombre || 'Proceso',
-        etapaNombre: etapa.etapaNombre || etapa.nombre || 'Etapa',
-        responsable: etapa.responsableNombre || 'Sin responsable',
-        diasRetraso
+        id: subtarea.id,
+        nombre: subtarea.nombre || 'Proceso sin nombre',
+        direccion: obtenerDireccionDashboard(subtarea) || 'Sin dirección',
+        etapasRetrasadas
       };
     })
-    .sort((a, b) => b.diasRetraso - a.diasRetraso || a.subtareaNombre.localeCompare(b.subtareaNombre));
+    .filter((item): item is { id: number; nombre: string; direccion: string; etapasRetrasadas: number } => Boolean(item))
+    .sort((a, b) => b.etapasRetrasadas - a.etapasRetrasadas || a.nombre.localeCompare(b.nombre));
 });
 
-const verificablesPorVencer = computed(() => {
+const etapasPorVencer = computed(() => {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
 
@@ -978,9 +1092,12 @@ const verificablesPorVencer = computed(() => {
 
 const detalleKpiTitulo = computed(() => {
   switch (detalleKpi.value.tipo) {
-    case 'proximas': return 'Detalle de verificables próximos a vencer';
-    case 'retraso': return 'Detalle de verificables con retraso';
+    case 'procesos': return 'Detalle de procesos y avance';
+    case 'proximas': return 'Detalle de etapas próximas a vencer';
+    case 'retraso': return 'Detalle de procesos con etapas retrasadas';
     case 'riesgo': return 'Detalle de procesos en riesgo';
+    case 'desiertos': return 'Detalle de procesos desiertos';
+    case 'desfinanciados': return 'Detalle de procesos desfinanciados';
     case 'monto': return 'Detalle del monto ejecutado';
     default: return 'Detalle de cumplimiento';
   }
@@ -988,9 +1105,14 @@ const detalleKpiTitulo = computed(() => {
 
 const detalleKpiSubtitulo = computed(() => {
   switch (detalleKpi.value.tipo) {
-    case 'proximas': return 'Verificables pendientes con vencimiento en 2 y 1 día.';
-    case 'retraso': return 'Verificables vencidos pendientes, clasificados por proceso y responsable.';
-    case 'riesgo': return 'Procesos marcados manualmente con riesgo general desde el detalle del proceso.';
+    case 'procesos': return areaSeleccionada.value
+      ? `Listado de procesos y avance para la dirección ${areaSeleccionada.value}.`
+      : 'Listado de procesos visibles con su avance actual y presupuesto asignado.';
+    case 'proximas': return 'Etapas pendientes con vencimiento en 2 y 1 día.';
+    case 'retraso': return 'Procesos que tienen etapas vencidas.';
+    case 'riesgo': return 'Procesos marcados con riesgo general.';
+    case 'desiertos': return 'Procesos marcados con estado desierto y excluidos del seguimiento general.';
+    case 'desfinanciados': return 'Procesos con presupuesto 0 o sin asignación, mostrando la fecha de la etapa de solicitud de certificación presupuestaria.';
     case 'monto': return 'Procesos terminados y monto asignado considerado como ejecutado.';
     default: return 'Procesos cumplidos con su responsable asignado.';
   }
@@ -1046,63 +1168,51 @@ const resumenDireccionesCumplimiento = computed(() => {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
 
-  const mapa = new Map<string, { direccion: string; cumplidas: number; pendientesRetraso: number; totalTareas: number }>();
-  for (const subtarea of subtareasBaseFiltradas.value) {
+  const mapa = new Map<string, { direccion: string; flujoNormal: number; conRetraso: number; totalProcesos: number }>();
+
+  for (const subtarea of subtareasElegibles.value) {
     const direccion = obtenerDireccionDashboard(subtarea) || 'Sin dirección';
-    const actual = mapa.get(direccion) || { direccion, cumplidas: 0, pendientesRetraso: 0, totalTareas: 0 };
+    const actual = mapa.get(direccion) || { direccion, flujoNormal: 0, conRetraso: 0, totalProcesos: 0 };
+    actual.totalProcesos += 1;
 
-    for (const etapa of getEtapasConFechaSubtarea(subtarea)) {
-      actual.totalTareas += 1;
+    const etapasProceso = getEtapasConFechaSubtarea(subtarea);
+    const tieneRetraso = etapasProceso.some((etapa: any) => {
       const estado = normalizarEstado(etapa.estado, etapa.fechaReal);
-      if (estado === 'completado') {
-        actual.cumplidas += 1;
-        continue;
-      }
-
+      if (estado === 'completado') return false;
       const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
-      if (!fecha) continue;
+      if (!fecha) return false;
       const plan = new Date(fecha);
-      if (Number.isNaN(plan.getTime())) continue;
+      if (Number.isNaN(plan.getTime())) return false;
       plan.setHours(0, 0, 0, 0);
-      if (plan < hoy) {
-        actual.pendientesRetraso += 1;
-      }
+      return plan < hoy;
+    });
+
+    if (tieneRetraso) {
+      actual.conRetraso += 1;
+    } else {
+      actual.flujoNormal += 1;
     }
 
     mapa.set(direccion, actual);
   }
 
-  const lista = Array.from(mapa.values())
-    .sort((a, b) => b.cumplidas - a.cumplidas || b.pendientesRetraso - a.pendientesRetraso || a.direccion.localeCompare(b.direccion));
+  return Array.from(mapa.values())
+    .map((item) => {
+      const flujoNormalPctWidth = item.totalProcesos > 0 ? Number(((item.flujoNormal / item.totalProcesos) * 100).toFixed(2)) : 0;
+      const conRetrasoPctWidth = item.totalProcesos > 0 ? Number(((item.conRetraso / item.totalProcesos) * 100).toFixed(2)) : 0;
+      const flujoNormalPct = Math.round(flujoNormalPctWidth);
+      const conRetrasoPct = Math.round(conRetrasoPctWidth);
 
-  const maxTotalComparado = Math.max(1, ...lista.map((item) => item.totalTareas));
-
-  return lista.map((item) => {
-    const total = Math.max(1, item.totalTareas);
-    const pendientes = Math.max(0, item.totalTareas - item.cumplidas - item.pendientesRetraso);
-    const cumplidasStackPct = Number(((item.cumplidas / total) * 100).toFixed(2));
-    const retrasoStackPct = Number(((item.pendientesRetraso / total) * 100).toFixed(2));
-    const pendientesStackPct = Math.max(0, Number((100 - cumplidasStackPct - retrasoStackPct).toFixed(2)));
-
-    return {
-      comparacionTotal: item.totalTareas,
-      ...item,
-      pendientes,
-      cumplidasPct: item.totalTareas > 0 ? Math.round((item.cumplidas / item.totalTareas) * 100) : 0,
-      pendientesRetrasoPct: item.totalTareas > 0 ? Math.round((item.pendientesRetraso / item.totalTareas) * 100) : 0,
-      cumplidasStackPct,
-      retrasoStackPct,
-      pendientesStackPct,
-      totalComparadoBarPct: Math.round((item.totalTareas / maxTotalComparado) * 100)
-    };
-  });
+      return {
+        ...item,
+        flujoNormalPct,
+        conRetrasoPct,
+        flujoNormalPctWidth,
+        conRetrasoPctWidth
+      };
+    })
+    .sort((a, b) => b.flujoNormalPct - a.flujoNormalPct || a.conRetrasoPct - b.conRetrasoPct || a.direccion.localeCompare(b.direccion));
 });
-
-const maxValorEjeCumplimiento = computed(() =>
-  Math.max(1, ...resumenDireccionesCumplimiento.value.map((item) => item.comparacionTotal || 0))
-);
-
-const direccionTopCumplimiento = computed(() => resumenDireccionesCumplimiento.value[0] || null);
 
 const montosPorDireccion = computed(() => {
   const palette = ['#2563eb', '#22c55e', '#f59e0b', '#ef4444', '#a21caf', '#0ea5e9', '#f97316', '#64748b', '#14b8a6'];
@@ -1212,18 +1322,18 @@ watch([
 const GAUGE_R = 80;
 const GAUGE_CIRCUM = Math.PI * GAUGE_R; // longitud del semicírculo
 
-// Velocímetro basado solo en verificables con fecha asignada
-const totalVerificablesConFecha = computed(() => etapasConFechaAsignada.value.length);
+// Velocímetro basado solo en etapas con fecha asignada
+const totalEtapasConFecha = computed(() => etapasConFechaAsignada.value.length);
 
-const completadosVerificablesConFecha = computed(() =>
+const etapasCompletadasConFecha = computed(() =>
   etapasConFechaAsignada.value.filter((etapa: any) => normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado').length
 );
 
-const pendientesVerificablesConFecha = computed(() =>
-  Math.max(0, totalVerificablesConFecha.value - completadosVerificablesConFecha.value)
+const etapasPendientesConFecha = computed(() =>
+  Math.max(0, totalEtapasConFecha.value - etapasCompletadasConFecha.value)
 );
 
-const atrasadosVerificablesConFecha = computed(() => {
+const etapasAtrasadasConFecha = computed(() => {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
 
@@ -1238,98 +1348,36 @@ const atrasadosVerificablesConFecha = computed(() => {
   }).length;
 });
 
-const porcentajeVerificables = computed(() =>
-  totalVerificablesConFecha.value
-    ? Math.round((completadosVerificablesConFecha.value / totalVerificablesConFecha.value) * 100)
+const porcentajeEtapas = computed(() =>
+  totalEtapasConFecha.value
+    ? Math.round((etapasCompletadasConFecha.value / totalEtapasConFecha.value) * 100)
+    : 0
+);
+
+const porcentajeEtapasCompletadas = computed(() => porcentajeEtapas.value);
+const porcentajeEtapasPendientes = computed(() =>
+  totalEtapasConFecha.value
+    ? Math.round((etapasPendientesConFecha.value / totalEtapasConFecha.value) * 100)
+    : 0
+);
+const porcentajeEtapasAtrasadas = computed(() =>
+  totalEtapasConFecha.value
+    ? Math.round((etapasAtrasadasConFecha.value / totalEtapasConFecha.value) * 100)
     : 0
 );
 
 // Rotación de la aguja: -90° (0%) → 0° (50%, apunta arriba) → +90° (100%)
-const gaugeNeedleRotation = computed(() => -90 + (porcentajeVerificables.value / 100) * 180);
+const gaugeNeedleRotation = computed(() => -90 + (porcentajeEtapas.value / 100) * 180);
 
 const gaugeDasharray = computed(() => {
-  const pct = Math.min(100, Math.max(0, porcentajeVerificables.value));
+  const pct = Math.min(100, Math.max(0, porcentajeEtapas.value));
   const filled = (pct / 100) * GAUGE_CIRCUM;
   // gap = circunferencia total − filled → la mitad inferior del círculo queda siempre oculta
   return `${filled.toFixed(2)} ${(GAUGE_CIRCUM * 2 - filled).toFixed(2)}`;
 });
 
-const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeVerificables.value));
+const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value));
 
-// ─── Gráfica temporal (semanas / meses) ──────────────────────────────────────
-const vistaTemporalActiva = ref<'semanas' | 'meses'>('semanas');
-
-/** Formatea una fecha ISO a clave de semana: "S12 Mar" */
-function claveSemanaPorFecha(fechaStr: string): string {
-  const d = new Date(fechaStr);
-  if (isNaN(d.getTime())) return 'Sin fecha';
-  // Número de semana ISO-8601
-  const inicio = new Date(d.getFullYear(), 0, 1);
-  const sem = Math.ceil(((d.getTime() - inicio.getTime()) / 86400000 + inicio.getDay() + 1) / 7);
-  const mes = d.toLocaleString('es-EC', { month: 'short' });
-  return `S${sem} ${(mes[0] ?? '').toUpperCase()}${mes.slice(1)}`;
-}
-
-/** Formatea una fecha ISO a clave de mes: "Ene 26" */
-function claveMesPorFecha(fechaStr: string): string {
-  const d = new Date(fechaStr);
-  if (isNaN(d.getTime())) return 'Sin fecha';
-  const mes = d.toLocaleString('es-EC', { month: 'short' });
-  const anio = String(d.getFullYear()).slice(2);
-  return `${(mes[0] ?? '').toUpperCase()}${mes.slice(1)} '${anio}`;
-}
-
-type BucketTemporal = { clave: string; completados: number; total: number; orden: number };
-
-const datosTemporal = computed((): BucketTemporal[] => {
-  const mapa = new Map<string, BucketTemporal>();
-
-  for (const etapa of etapasConFechaAsignada.value) {
-    const estadoNorm = normalizarEstado(etapa.estado, etapa.fechaReal);
-    if (estadoNorm !== 'completado') continue;
-
-    const fechaBase: string | undefined = etapa?.fechaReal || etapa?.fechaPlanificada || etapa?.fechaTentativa;
-    if (!fechaBase) continue;
-
-    const dBase = new Date(fechaBase);
-    if (isNaN(dBase.getTime())) continue;
-
-    const clave = vistaTemporalActiva.value === 'semanas'
-      ? claveSemanaPorFecha(fechaBase)
-      : claveMesPorFecha(fechaBase);
-
-    const orden = vistaTemporalActiva.value === 'semanas'
-      ? dBase.getFullYear() * 100 + Math.ceil(((dBase.getTime() - new Date(dBase.getFullYear(), 0, 1).getTime()) / 86400000 + new Date(dBase.getFullYear(), 0, 1).getDay() + 1) / 7)
-      : dBase.getFullYear() * 100 + (dBase.getMonth() + 1);
-
-    const bucket = mapa.get(clave) || { clave, completados: 0, total: 0, orden };
-    bucket.completados += 1;
-    bucket.total += 1;
-
-    mapa.set(clave, bucket);
-  }
-
-  return Array.from(mapa.values()).sort((a, b) => a.orden - b.orden);
-});
-
-const totalCumplidasTemporal = computed(() =>
-  datosTemporal.value.reduce((total, b) => total + b.completados, 0)
-);
-
-const picoCumplimientoTemporal = computed(() => {
-  if (!datosTemporal.value.length) {
-    return { valor: 0, label: 'Sin datos' };
-  }
-
-  const maximo = datosTemporal.value.reduce((previo, actual) =>
-    actual.completados > previo.completados ? actual : previo
-  );
-
-  return {
-    valor: maximo.completados,
-    label: maximo.clave
-  };
-});
 </script>
 
 <style scoped>
@@ -1615,6 +1663,11 @@ const picoCumplimientoTemporal = computed(() => {
   gap: 0.72rem;
 }
 
+.professional-kpi-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  align-items: stretch;
+}
+
 .trend-kpi-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
@@ -1857,7 +1910,9 @@ const picoCumplimientoTemporal = computed(() => {
 
 .direccion-group-legend {
   display: flex;
+  justify-content: center;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.9rem;
   color: var(--c-text-secondary);
   font-size: 0.73rem;
@@ -1869,29 +1924,29 @@ const picoCumplimientoTemporal = computed(() => {
   padding-bottom: 0.2rem;
 }
 
-.direccion-global-chart {
+.direccion-vertical-chart {
   display: grid;
-  grid-template-columns: 38px 1fr;
+  grid-template-columns: 42px minmax(0, 1fr);
   align-items: end;
-  gap: 0.6rem;
-  min-width: 580px;
+  gap: 0.75rem;
+  min-width: 720px;
 }
 
 .direccion-y-axis {
-  height: 180px;
+  height: 220px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: flex-end;
+  color: var(--c-text-muted);
   font-size: 0.68rem;
   font-weight: 700;
-  color: var(--c-text-muted);
-  padding-right: 0.2rem;
+  padding-bottom: 1.65rem;
 }
 
 .direccion-chart-canvas {
   position: relative;
-  height: 180px;
+  height: 220px;
   border-left: 1px solid #cbd5e1;
   border-bottom: 1px solid #cbd5e1;
   padding: 0.45rem 0.45rem 0.35rem;
@@ -1910,58 +1965,91 @@ const picoCumplimientoTemporal = computed(() => {
   border-top: 1px dashed #e2e8f0;
 }
 
-.direccion-groups {
+.direccion-groups.vertical {
   position: relative;
   z-index: 1;
   height: 100%;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
   align-items: end;
-  gap: 0.45rem;
+  gap: 0.55rem;
 }
 
-.direccion-group-col {
+.direccion-group-col.vertical {
   min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.2rem;
+  gap: 0.3rem;
 }
 
-.direccion-group-bar-shell {
-  width: 36px;
-  height: 124px;
+.direccion-group-bar-shell.vertical {
+  width: 54px;
+  height: 150px;
   display: flex;
   align-items: flex-end;
 }
 
-.direccion-group-bar {
+.direccion-group-bar.vertical {
   width: 100%;
-  min-height: 2px;
-  border-radius: 8px 8px 0 0;
+  height: 100%;
+  border-radius: 10px 10px 0 0;
   border: 1px solid #dbeafe;
   background: #f8fafc;
   display: flex;
   flex-direction: column-reverse;
   overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.direccion-group-button {
+  cursor: pointer;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.direccion-group-button:hover {
+  transform: translateY(-2px);
+  border-color: #93c5fd;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+}
+
+.direccion-group-button:focus-visible {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
 }
 
 .direccion-stack-fill {
   width: 100%;
-  min-height: 2px;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: height 0.45s ease;
+  overflow: hidden;
 }
 
 .direccion-stack-fill.ok {
-  background: linear-gradient(90deg, #4ade80, #16a34a);
+  background: #28a745;
+  color: #ffffff;
 }
 
 .direccion-stack-fill.danger {
-  background: linear-gradient(90deg, #f87171, #dc2626);
+  background: #dc3545;
+  color: #ffffff;
 }
 
-.direccion-stack-fill.tomato {
-  background: linear-gradient(90deg, #ff9a8b, #ff6347);
+.direccion-stack-label {
+  font-size: 0.56rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+  padding: 0.18rem;
+  word-break: break-word;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
 }
 
 .direccion-group-label {
@@ -2056,7 +2144,7 @@ const picoCumplimientoTemporal = computed(() => {
 }
 
 .secondary-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   align-items: stretch;
 }
 
@@ -2283,7 +2371,7 @@ const picoCumplimientoTemporal = computed(() => {
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  align-items: start;
+  align-items: stretch;
 }
 
 .montos-panel .area-donut-stack {
@@ -2292,8 +2380,8 @@ const picoCumplimientoTemporal = computed(() => {
 }
 
 .montos-panel .area-legend {
-  min-height: 0;
-  max-height: 100%;
+  min-height: calc(8 * 1.55rem);
+  max-height: calc(8 * 1.55rem);
   overflow-y: auto;
   gap: 0.22rem;
   width: 100%;
@@ -2383,12 +2471,16 @@ const picoCumplimientoTemporal = computed(() => {
 }
 
 .montos-panel .area-legend-name {
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: 0.62rem;
+  font-weight: 500;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.2;
 }
 
 .montos-panel .area-legend-meta {
-  font-size: 0.76rem;
+  font-size: 0.58rem;
   font-weight: 700;
 }
 
@@ -3340,18 +3432,27 @@ const picoCumplimientoTemporal = computed(() => {
     justify-items: stretch;
   }
 
-  .direccion-global-chart {
-    min-width: 520px;
-    grid-template-columns: 30px 1fr;
+  .direccion-vertical-chart {
+    min-width: 560px;
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 0.5rem;
   }
 
   .direccion-y-axis {
     font-size: 0.62rem;
   }
 
-  .direccion-group-bar-shell {
-    width: 30px;
-    height: 110px;
+  .direccion-groups.vertical {
+    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  }
+
+  .direccion-group-bar-shell.vertical {
+    width: 42px;
+    height: 124px;
+  }
+
+  .direccion-stack-label {
+    font-size: 0.52rem;
   }
 
   .direccion-group-label {

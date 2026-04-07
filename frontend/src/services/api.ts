@@ -1,6 +1,36 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config/constants';
 
+const MOJIBAKE_REPLACEMENTS = new Map<string, string>([
+  ['Ã¡', 'á'], ['Ã©', 'é'], ['Ã­', 'í'], ['Ã³', 'ó'], ['Ãº', 'ú'], ['Ã±', 'ñ'],
+  ['Ã', 'Á'], ['Ã‰', 'É'], ['Ã', 'Í'], ['Ã“', 'Ó'], ['Ãš', 'Ú'], ['Ã‘', 'Ñ'],
+  ['Â¿', '¿'], ['Â¡', '¡'], ['Âº', 'º'], ['Âª', 'ª'], ['ÔÇô', '–'], ['ÔÇÖ', '’'], ['ÔÇ£', '“'], ['ÔÇ', '”']
+]);
+
+function normalizeApiText(value: string): string {
+  let text = String(value ?? '').normalize('NFC');
+
+  for (const [bad, good] of MOJIBAKE_REPLACEMENTS.entries()) {
+    text = text.split(bad).join(good);
+  }
+
+  return text.replace(/Â/g, '');
+}
+
+function normalizeApiPayload<T>(value: T): T {
+  if (value === null || value === undefined) return value;
+  if (typeof value === 'string') return normalizeApiText(value) as T;
+  if (Array.isArray(value)) return value.map((item) => normalizeApiPayload(item)) as T;
+
+  if (typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, normalizeApiPayload(item)])
+    ) as T;
+  }
+
+  return value;
+}
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -17,9 +47,14 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor para manejo de errores global
+// Interceptor para normalización y manejo de errores global
 api.interceptors.response.use(
-  response => response,
+  response => {
+    if (response?.data !== undefined) {
+      response.data = normalizeApiPayload(response.data);
+    }
+    return response;
+  },
   error => {
     console.error('API Error:', error.response?.data || error.message);
     if (error?.response?.status === 401) {
@@ -465,6 +500,16 @@ export const permisosService = {
   async getAll() {
     const response = await api.get('/permisos');
     return response.data as { roles: string[]; permisos: PermisosRolDetalle[] };
+  },
+
+  async createRole(payload: { role: string; baseRole?: string; copiarPermisos?: boolean }) {
+    const response = await api.post('/permisos/roles', payload);
+    return response.data as PermisosRolDetalle;
+  },
+
+  async deleteRole(role: string) {
+    const response = await api.delete(`/permisos/roles/${encodeURIComponent(role)}`);
+    return response.data as { success: boolean; role: string };
   },
 
   async getByRole(role: string) {

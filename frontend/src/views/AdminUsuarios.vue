@@ -24,15 +24,19 @@
           <input v-model="form.username" placeholder="Usuario" required />
         </label>
         <label>
+          Orden login
+          <input v-model.number="form.ordenLogin" type="number" min="0" placeholder="0" />
+        </label>
+        <label>
           Contraseña
           <input v-model="form.password" type="text" placeholder="Por defecto 12345" />
         </label>
         <label>
           Rol
           <select v-model="form.role" required>
-            <option value="admin">Administrador</option>
-            <option value="direccion">Dirección (solo su área)</option>
-            <option value="reporteria">Gerencia General / Reportes (todas las áreas)</option>
+            <option v-for="rol in rolesDisponibles" :key="`nuevo-${rol}`" :value="rol">
+              {{ etiquetaRol(rol) }}
+            </option>
           </select>
         </label>
         <label>
@@ -60,7 +64,12 @@
     <p v-if="mensaje" class="mensaje">{{ mensaje }}</p>
 
     <section class="card">
-      <h2>Usuarios registrados</h2>
+      <div class="tabla-header">
+        <h2>Usuarios registrados</h2>
+        <button type="button" class="btn-guardar-todo" @click="guardarTodosUsuarios" :disabled="guardando || usuarios.length === 0">
+          {{ guardando ? 'Guardando...' : 'Guardar todo' }}
+        </button>
+      </div>
       <table class="tabla">
       <thead>
         <tr>
@@ -68,6 +77,7 @@
           <th>Usuario</th>
           <th>Rol</th>
           <th>Dirección</th>
+          <th>Orden login</th>
           <th>Activo</th>
           <th>Nueva contraseña</th>
           <th>Acción</th>
@@ -78,12 +88,14 @@
           <td>
             <input v-model="u.nombre" placeholder="Nombre" />
           </td>
-          <td>{{ u.username }}</td>
+          <td>
+            <input v-model="u.username" placeholder="Usuario" />
+          </td>
           <td>
             <select v-model="u.role">
-              <option value="admin">Administrador</option>
-              <option value="direccion">Dirección (solo su área)</option>
-              <option value="reporteria">Gerencia General / Reportes</option>
+              <option v-for="rol in rolesDisponibles" :key="`edit-${u.id}-${rol}`" :value="rol">
+                {{ etiquetaRol(rol) }}
+              </option>
             </select>
           </td>
           <td>
@@ -93,6 +105,9 @@
               :disabled="u.role !== 'direccion'"
               placeholder="Sin dirección"
             />
+          </td>
+          <td>
+            <input v-model.number="u.ordenLogin" type="number" min="0" placeholder="0" />
           </td>
           <td>
             <label class="estado-activo">
@@ -133,12 +148,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useAuthStore } from '../stores/auth';
-import { usuariosService } from '../services/api';
+import { permisosService, usuariosService } from '../services/api';
 import api from '../services/api';
 
 const auth = useAuthStore();
 const usuarios = ref<any[]>([]);
 const direccionesDisponibles = ref<string[]>([]);
+const rolesDisponibles = ref<string[]>(['admin', 'direccion', 'reporteria']);
 const guardando = ref(false);
 const mensaje = ref('');
 
@@ -148,6 +164,7 @@ const usuariosDireccion = computed(() => usuarios.value.filter((u: any) => u.rol
 const form = ref({
   nombre: '',
   username: '',
+  ordenLogin: 0,
   password: '12345',
   role: 'reporteria',
   direccionNombre: '',
@@ -161,6 +178,7 @@ async function cargarUsuarios() {
     nombre: normalizarNombrePersona(u.nombre),
     username: normalizarUsername(u.username),
     direccionNombre: normalizarDireccion(u.direccionNombre || ''),
+    ordenLogin: Number(u.ordenLogin ?? 0),
     activo: Boolean(u.activo),
     nuevaPassword: ''
   }));
@@ -176,6 +194,17 @@ async function cargarDireccionesDisponibles() {
     .sort((a: string, b: string) => a.localeCompare(b, 'es'));
 }
 
+async function cargarRolesDisponibles() {
+  try {
+    const response = await permisosService.getAll();
+    const roles = Array.isArray(response?.roles) ? response.roles.map((item) => String(item || '').trim()).filter(Boolean) : [];
+    rolesDisponibles.value = [...new Set(['admin', 'direccion', 'reporteria', ...roles])]
+      .sort((a, b) => a.localeCompare(b, 'es'));
+  } catch {
+    rolesDisponibles.value = ['admin', 'direccion', 'reporteria'];
+  }
+}
+
 async function crearUsuario() {
   guardando.value = true;
   mensaje.value = '';
@@ -184,12 +213,12 @@ async function crearUsuario() {
 
     if (!payload.nombre) throw new Error('El nombre es obligatorio');
     if (!payload.username) throw new Error('El usuario es obligatorio');
-    if (!/^[a-z0-9._-]+$/.test(payload.username)) {
-      throw new Error('El usuario solo puede contener letras minúsculas, números, punto, guion y guion bajo');
+    if (!/^[A-Za-z0-9._-]+$/.test(payload.username)) {
+      throw new Error('El usuario solo puede contener letras, números, punto, guion y guion bajo');
     }
 
     const existeUsername = usuarios.value.some(
-      (item: any) => normalizarUsername(item?.username) === payload.username
+      (item: any) => normalizarUsername(item?.username).toLowerCase() === payload.username.toLowerCase()
     );
     if (existeUsername) throw new Error('El usuario ya existe');
 
@@ -204,7 +233,7 @@ async function crearUsuario() {
       activo: form.value.activo
     });
     mensaje.value = 'Usuario creado correctamente';
-    form.value = { nombre: '', username: '', password: '12345', role: 'reporteria', direccionNombre: '', activo: true };
+    form.value = { nombre: '', username: '', ordenLogin: 0, password: '12345', role: 'reporteria', direccionNombre: '', activo: true };
     await cargarUsuarios();
   } catch (e: any) {
     mensaje.value = e?.response?.data?.error || 'No se pudo crear el usuario';
@@ -219,13 +248,15 @@ function construirPayloadNuevoUsuario() {
   const role = form.value.role;
   const password = form.value.password?.trim() || '12345';
   const direccionNombre = role === 'direccion' ? normalizarDireccion(form.value.direccionNombre) : null;
+  const ordenLogin = Math.max(0, Number(form.value.ordenLogin ?? 0));
 
   return {
     nombre,
     username,
     role,
     password,
-    direccionNombre
+    direccionNombre,
+    ordenLogin
   };
 }
 
@@ -238,22 +269,67 @@ watch(
   }
 );
 
+function construirPayloadEdicionUsuario(usuario: any) {
+  const usernameNormalizado = normalizarUsername(usuario.username);
+  if (!usernameNormalizado) throw new Error('El nombre de usuario es obligatorio');
+  if (!/^[A-Za-z0-9._-]+$/.test(usernameNormalizado)) {
+    throw new Error('El nombre de usuario solo puede contener letras, números, punto, guion y guion bajo');
+  }
+
+  return {
+    nombre: normalizarNombrePersona(usuario.nombre),
+    username: usernameNormalizado,
+    role: usuario.role,
+    direccionNombre: usuario.role === 'direccion' ? normalizarDireccion(usuario.direccionNombre) : null,
+    ordenLogin: Math.max(0, Number(usuario.ordenLogin ?? 0)),
+    activo: Boolean(usuario.activo),
+    password: usuario.nuevaPassword?.trim() || undefined
+  };
+}
+
 async function guardarUsuario(usuario: any) {
   guardando.value = true;
   mensaje.value = '';
   try {
-    await usuariosService.update(usuario.id, {
-      nombre: normalizarNombrePersona(usuario.nombre),
-      role: usuario.role,
-      direccionNombre: usuario.role === 'direccion' ? normalizarDireccion(usuario.direccionNombre) : null,
-      activo: Boolean(usuario.activo),
-      password: usuario.nuevaPassword?.trim() || undefined
-    });
+    await usuariosService.update(usuario.id, construirPayloadEdicionUsuario(usuario));
     usuario.nuevaPassword = '';
     mensaje.value = 'Usuario actualizado';
     await cargarUsuarios();
+
+    if (Number(usuario.id) === Number(auth.user?.id)) {
+      await auth.fetchMe();
+    }
   } catch (e: any) {
-    mensaje.value = e?.response?.data?.error || 'No se pudo actualizar el usuario';
+    mensaje.value = e?.response?.data?.error || e?.message || 'No se pudo actualizar el usuario';
+  } finally {
+    guardando.value = false;
+  }
+}
+
+async function guardarTodosUsuarios() {
+  if (!usuarios.value.length) return;
+  guardando.value = true;
+  mensaje.value = '';
+
+  try {
+    let actualizaSesion = false;
+
+    for (const usuario of usuarios.value) {
+      await usuariosService.update(usuario.id, construirPayloadEdicionUsuario(usuario));
+      usuario.nuevaPassword = '';
+      if (Number(usuario.id) === Number(auth.user?.id)) {
+        actualizaSesion = true;
+      }
+    }
+
+    if (actualizaSesion) {
+      await auth.fetchMe();
+    }
+
+    await cargarUsuarios();
+    mensaje.value = 'Todos los cambios se guardaron correctamente';
+  } catch (e: any) {
+    mensaje.value = e?.response?.data?.error || e?.message || 'No se pudieron guardar todos los cambios';
   } finally {
     guardando.value = false;
   }
@@ -275,8 +351,18 @@ async function eliminarUsuario(usuario: any) {
 }
 
 onMounted(async () => {
-  await Promise.all([cargarUsuarios(), cargarDireccionesDisponibles()]);
+  await Promise.all([cargarUsuarios(), cargarDireccionesDisponibles(), cargarRolesDisponibles()]);
 });
+
+function etiquetaRol(role: string) {
+  const normalized = String(role || '').trim().toLowerCase();
+  if (normalized === 'admin') return 'Administrador';
+  if (normalized === 'direccion') return 'Dirección (solo su área)';
+  if (normalized === 'reporteria') return 'Gerencia General / Reportes';
+  return String(role || '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
 
 function normalizarTexto(value: string | null | undefined) {
   return repararCaracteres(String(value || '').trim().replace(/\s+/g, ' '));
@@ -322,7 +408,6 @@ function repararCaracteres(value: string) {
 function normalizarUsername(value: string | null | undefined) {
   return String(value || '')
     .trim()
-    .toLowerCase()
     .replace(/\s+/g, '_');
 }
 </script>
@@ -382,6 +467,24 @@ function normalizarUsername(value: string | null | undefined) {
   margin: 0 0 0.8rem;
   font-size: 1rem;
   color: #0f172a;
+}
+
+.tabla-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.8rem;
+}
+
+.btn-guardar-todo {
+  border: none;
+  border-radius: 8px;
+  background: #0f766e;
+  color: #fff;
+  padding: 0.55rem 0.85rem;
+  cursor: pointer;
+  font-weight: 600;
 }
 
 .usuario-form {

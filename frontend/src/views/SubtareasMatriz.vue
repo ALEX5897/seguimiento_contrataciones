@@ -123,13 +123,13 @@
 
         <div class="timeline">
           <div v-for="(etapa, idx) in (subtarea.seguimientoEtapas || [])" :key="`timeline-${etapa.id}`" class="timeline-item">
-            <div class="timeline-node" :class="estadoVisual(etapa)"></div>
+            <div class="timeline-node" :class="estadoVisual(etapa, subtarea)"></div>
             <div v-if="idx < (subtarea.seguimientoEtapas || []).length - 1" class="timeline-line"></div>
             <div class="timeline-content">
               <div class="timeline-title">{{ etapa.etapaNombre }}</div>
               <div class="timeline-date">
                 Fecha tentativa: {{ formatFecha(etapa.fechaPlanificada) }}
-                <span v-if="esAtrasada(etapa)" class="atraso-tag">Atraso {{ calcularDiasRetraso(etapa) }} días</span>
+                <span v-if="esAtrasada(etapa, subtarea)" class="atraso-tag">Atraso {{ calcularDiasRetraso(etapa, subtarea) }} días</span>
               </div>
             </div>
           </div>
@@ -153,7 +153,7 @@
                 <td>
                   <div class="etapa-cell">
                     <span>{{ etapa.etapaNombre }}</span>
-                    <span v-if="esAtrasada(etapa)" class="atraso-tag-inline">🔴 {{ calcularDiasRetraso(etapa) }} días</span>
+                    <span v-if="esAtrasada(etapa, subtarea)" class="atraso-tag-inline">🔴 {{ calcularDiasRetraso(etapa, subtarea) }} días</span>
                     <span class="estado-inline">Estado: {{ formatoEstadoTexto(etapa.estado) }}</span>
                   </div>
                 </td>
@@ -162,7 +162,7 @@
                     <option value="pendiente">Pendiente</option>
                     <option value="completado">Completado</option>
                   </select>
-                  <div v-if="esAtrasada(etapa)" class="estado-hint">Se marca en retraso por fecha tentativa vencida</div>
+                  <div v-if="esAtrasada(etapa, subtarea)" class="estado-hint">Se marca en retraso por fecha tentativa vencida</div>
                 </td>
                 <td>
                   <input
@@ -325,11 +325,11 @@ const subtareasFiltradas = computed(() => {
   }
 
   if (soloAtrasadas.value) {
-    items = items.filter((s) => (s.seguimientoEtapas || []).some((e) => esAtrasada(e)));
+    items = items.filter((s) => procesoCuentaEnAtrasosMatriz(s) && (s.seguimientoEtapas || []).some((e) => esAtrasada(e, s)));
   }
 
   if (soloVencenHoy.value) {
-    items = items.filter((s) => (s.seguimientoEtapas || []).some((e) => esVenceHoy(e)));
+    items = items.filter((s) => procesoCuentaEnAtrasosMatriz(s) && (s.seguimientoEtapas || []).some((e) => esVenceHoy(e)));
   }
 
   if (filtroEstadoEtapa.value) {
@@ -356,8 +356,10 @@ const alertasCriticas = computed<AlertaCritica[]>(() => {
   const alertas: AlertaCritica[] = [];
 
   for (const subtarea of subtareasFiltradas.value) {
+    if (!procesoCuentaEnAtrasosMatriz(subtarea)) continue;
+
     for (const etapa of subtarea.seguimientoEtapas || []) {
-      if (esAtrasada(etapa)) {
+      if (esAtrasada(etapa, subtarea)) {
         alertas.push({
           id: `${subtarea.codigoOlympo}-${etapa.id}-atrasada`,
           tipo: 'atrasada',
@@ -423,7 +425,32 @@ function normalizarEstado(estado: string | null | undefined) {
   return estado === 'completado' ? 'completado' : 'pendiente';
 }
 
-function esAtrasada(etapa: EtapaSeguimiento) {
+function obtenerEstadoProcesoMatriz(subtarea: Subtarea | any): 0 | 1 | 2 {
+  const valor = (subtarea as any)?.activo;
+  if (valor === undefined || valor === null || valor === '') return 1;
+  if (typeof valor === 'number') {
+    if (valor === 2) return 2;
+    return valor === 0 ? 0 : 1;
+  }
+  if (typeof valor === 'boolean') return valor ? 1 : 0;
+
+  const normalizado = String(valor).trim().toLowerCase();
+  if (['2', 'desierto'].includes(normalizado)) return 2;
+  if (['0', 'false', 'inactivo'].includes(normalizado)) return 0;
+  return 1;
+}
+
+function obtenerPresupuestoProcesoMatriz(subtarea: Subtarea | any) {
+  const valor = Number((subtarea as any)?.presupuesto ?? (subtarea as any)?.presupuesto2026Inicial ?? (subtarea as any)?.presupuesto_2026_inicial ?? 0);
+  return Number.isFinite(valor) ? valor : 0;
+}
+
+function procesoCuentaEnAtrasosMatriz(subtarea: Subtarea | any) {
+  return obtenerEstadoProcesoMatriz(subtarea) === 1 && obtenerPresupuestoProcesoMatriz(subtarea) > 0;
+}
+
+function esAtrasada(etapa: EtapaSeguimiento, subtarea?: Subtarea | any) {
+  if (subtarea && !procesoCuentaEnAtrasosMatriz(subtarea)) return false;
   if (!etapa?.fechaPlanificada) return false;
   const estado = normalizarEstado(etapa.estado);
   if (estado === 'completado') return false;
@@ -437,12 +464,13 @@ function esAtrasada(etapa: EtapaSeguimiento) {
   return fechaPlanificada < hoy;
 }
 
-function estadoVisual(etapa: EtapaSeguimiento) {
-  if (esAtrasada(etapa)) return 'en_retraso';
+function estadoVisual(etapa: EtapaSeguimiento, subtarea?: Subtarea | any) {
+  if (esAtrasada(etapa, subtarea)) return 'en_retraso';
   return normalizarEstado(etapa.estado);
 }
 
-function calcularDiasRetraso(etapa: EtapaSeguimiento) {
+function calcularDiasRetraso(etapa: EtapaSeguimiento, subtarea?: Subtarea | any) {
+  if (subtarea && !procesoCuentaEnAtrasosMatriz(subtarea)) return 0;
   if (!etapa?.fechaPlanificada) return 0;
   const fechaPlanificada = new Date(etapa.fechaPlanificada);
   if (Number.isNaN(fechaPlanificada.getTime())) return 0;

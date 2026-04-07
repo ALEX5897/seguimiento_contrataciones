@@ -2,8 +2,8 @@
   <div class="admin-permisos-view">
     <div class="encabezado">
       <div>
-        <h1>Administración de permisos</h1>
-        <p class="subtitulo">Configura qué puede hacer cada rol y qué opciones ve en el menú lateral</p>
+        <h1>Administración de roles y permisos</h1>
+        <p class="subtitulo">Crea nuevos roles y configura qué puede hacer cada uno dentro del sistema</p>
       </div>
 
       <div class="acciones">
@@ -20,6 +20,38 @@
     </div>
 
     <p v-if="mensaje" class="mensaje">{{ mensaje }}</p>
+
+    <section class="card roles-card">
+      <h2>Gestión de roles</h2>
+      <div class="roles-toolbar">
+        <label>
+          Nuevo rol
+          <input
+            v-model="nuevoRol"
+            type="text"
+            placeholder="Ej. coordinador_juridico"
+            :disabled="guardando || cargando"
+          />
+        </label>
+        <label>
+          Clonar permisos desde
+          <select v-model="rolBaseNuevo" :disabled="guardando || cargando">
+            <option v-for="rol in roles" :key="`base-${rol}`" :value="rol">{{ rol }}</option>
+          </select>
+        </label>
+        <div class="roles-toolbar-actions">
+          <button type="button" class="btn-secundario" @click="crearRol" :disabled="guardando || cargando || !nuevoRol.trim()">
+            Crear rol
+          </button>
+          <button type="button" class="btn-peligro" @click="eliminarRol" :disabled="guardando || cargando || !puedeEliminarRol">
+            Eliminar rol seleccionado
+          </button>
+        </div>
+      </div>
+      <p class="nota-roles">
+        Los roles nuevos se crean copiando una plantilla inicial y luego puede ajustar sus accesos en las tablas inferiores.
+      </p>
+    </section>
 
     <section class="card" v-if="detalleRol">
       <h2>Permisos por módulo</h2>
@@ -71,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { permisosService, type PermisosRolDetalle } from '../services/api';
 import { useAuthStore } from '../stores/auth';
 
@@ -83,6 +115,14 @@ const mensaje = ref('');
 const roles = ref<string[]>([]);
 const rolSeleccionado = ref('');
 const detalleRol = ref<PermisosRolDetalle | null>(null);
+const nuevoRol = ref('');
+const rolBaseNuevo = ref('reporteria');
+const ROLES_PROTEGIDOS = ['admin', 'direccion', 'reporteria'];
+
+const puedeEliminarRol = computed(() => {
+  const rol = String(rolSeleccionado.value || '').trim().toLowerCase();
+  return Boolean(rol) && !ROLES_PROTEGIDOS.includes(rol);
+});
 
 const MENU_TO_MODULE: Record<string, string> = {
   dashboard: 'dashboard',
@@ -134,7 +174,7 @@ function clonarDetalle(detalle: PermisosRolDetalle): PermisosRolDetalle {
   };
 }
 
-async function cargarResumen() {
+async function cargarResumen(rolPreferido = '') {
   cargando.value = true;
   mensaje.value = '';
   try {
@@ -147,10 +187,15 @@ async function cargarResumen() {
       return;
     }
 
+    if (!roles.value.includes(rolBaseNuevo.value)) {
+      rolBaseNuevo.value = roles.value.includes('reporteria') ? 'reporteria' : String(roles.value[0] || '');
+    }
+
     const roleActual = String(auth.user?.role || '');
-    rolSeleccionado.value = roles.value.includes(roleActual)
-      ? roleActual
-      : String(roles.value[0] || '');
+    const rolDestino = String(rolPreferido || rolSeleccionado.value || roleActual || '').trim();
+    rolSeleccionado.value = roles.value.includes(rolDestino)
+      ? rolDestino
+      : (roles.value.includes(roleActual) ? roleActual : String(roles.value[0] || ''));
 
     await cargarDetalleRol();
   } catch (error: any) {
@@ -174,6 +219,47 @@ async function cargarDetalleRol() {
     mensaje.value = error?.response?.data?.error || 'No se pudo cargar el detalle del rol';
   } finally {
     cargando.value = false;
+  }
+}
+
+async function crearRol() {
+  const role = String(nuevoRol.value || '').trim();
+  if (!role) return;
+
+  guardando.value = true;
+  mensaje.value = '';
+  try {
+    const creado = await permisosService.createRole({
+      role,
+      baseRole: rolBaseNuevo.value || 'reporteria',
+      copiarPermisos: true
+    });
+
+    nuevoRol.value = '';
+    await cargarResumen(creado.role);
+    mensaje.value = `Rol ${creado.role} creado correctamente`;
+  } catch (error: any) {
+    mensaje.value = error?.response?.data?.error || 'No se pudo crear el rol';
+  } finally {
+    guardando.value = false;
+  }
+}
+
+async function eliminarRol() {
+  if (!puedeEliminarRol.value) return;
+  if (!confirm(`¿Eliminar el rol ${rolSeleccionado.value}? Esta acción no se puede deshacer.`)) return;
+
+  guardando.value = true;
+  mensaje.value = '';
+  try {
+    const rolEliminado = rolSeleccionado.value;
+    await permisosService.deleteRole(rolEliminado);
+    await cargarResumen();
+    mensaje.value = `Rol ${rolEliminado} eliminado correctamente`;
+  } catch (error: any) {
+    mensaje.value = error?.response?.data?.error || 'No se pudo eliminar el rol';
+  } finally {
+    guardando.value = false;
   }
 }
 
@@ -257,6 +343,61 @@ onMounted(async () => {
   margin: 0.2rem 0 0;
   color: #64748b;
   font-size: 0.9rem;
+}
+
+.roles-card {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.roles-toolbar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.8rem;
+  align-items: end;
+}
+
+.roles-toolbar label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: #334155;
+}
+
+.roles-toolbar input,
+.roles-toolbar select {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+}
+
+.roles-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.btn-secundario,
+.btn-peligro {
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 0.85rem;
+  color: #fff;
+  cursor: pointer;
+}
+
+.btn-secundario {
+  background: #1d4ed8;
+}
+
+.btn-peligro {
+  background: #b91c1c;
+}
+
+.nota-roles {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.85rem;
 }
 
 .acciones {

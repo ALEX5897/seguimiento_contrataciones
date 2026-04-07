@@ -15,7 +15,7 @@ import reportesRouter from './routes/reportes.js';
 import permisosRouter from './routes/permisos.js';
 import auditoriaRouter from './routes/auditoria.js';
 import { verificarVencimientos, verificarAtrasos } from './services/alertas.js';
-import { initMySQL } from './data/mysql.js';
+import { initMySQL, normalizePayloadEncoding } from './data/mysql.js';
 import { requireAuth } from './middleware/auth.js';
 import { requireApiPermission } from './middleware/permisos.js';
 import { auditApiChanges } from './middleware/auditoria.js';
@@ -36,6 +36,12 @@ const DB_RETRY_DELAY_MS = parseInt(process.env.DB_RETRY_DELAY_MS || '3000', 10);
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/api', (req, res, next) => {
+  const originalJson = res.json.bind(res);
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.json = (body) => originalJson(normalizePayloadEncoding(body));
+  next();
+});
 
 // Logging middleware
 app.use((req, res, next) => {

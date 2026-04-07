@@ -91,7 +91,13 @@
             </svg>
           </span>
         </div>
-        <p class="kpi-value">{{ kpiResumen.totalEtapas }}</p>
+        <div class="kpi-donut-row">
+          <p class="kpi-value">{{ kpiResumen.totalEtapas }}</p>
+          <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeEtapasVisibles}%`, '--kpi-color': '#64748b' }">
+            <span>{{ porcentajeEtapasVisibles }}%</span>
+          </div>
+        </div>
+        <small class="kpi-foot">Etapas visibles para el filtro actual</small>
       </article>
       <article class="kpi-card kpi-completadas">
         <div class="kpi-head">
@@ -103,7 +109,13 @@
             </svg>
           </span>
         </div>
-        <p class="kpi-value">{{ kpiResumen.completadas }}</p>
+        <div class="kpi-donut-row">
+          <p class="kpi-value">{{ kpiResumen.completadas }}</p>
+          <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeCompletadas}%`, '--kpi-color': '#16a34a' }">
+            <span>{{ porcentajeCompletadas }}%</span>
+          </div>
+        </div>
+        <small class="kpi-foot">{{ porcentajeCompletadas }}% del total de etapas</small>
       </article>
       <article class="kpi-card kpi-retraso">
         <div class="kpi-head">
@@ -116,13 +128,31 @@
             </svg>
           </span>
         </div>
-        <p class="kpi-value">{{ kpiResumen.conRetraso }}</p>
+        <div class="kpi-donut-row">
+          <p class="kpi-value">{{ kpiResumen.conRetraso }}</p>
+          <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeConRetraso}%`, '--kpi-color': '#dc2626' }">
+            <span>{{ porcentajeConRetraso }}%</span>
+          </div>
+        </div>
+        <small class="kpi-foot">{{ porcentajeConRetraso }}% de etapas presentan retraso</small>
       </article>
       <article class="kpi-card kpi-avance">
-        <div class="kpi-head kpi-head-avance">
+        <div class="kpi-head">
           <p class="kpi-label">Avance</p>
-          <p class="kpi-value kpi-value-avance">{{ kpiResumen.avance }}%</p>
+          <span class="kpi-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M5 15.5 10 10.5 13.5 14 19 8.5"></path>
+              <path d="M15.5 8.5H19V12"></path>
+            </svg>
+          </span>
         </div>
+        <div class="kpi-donut-row">
+          <p class="kpi-value kpi-value-avance">{{ kpiResumen.avance }}%</p>
+          <div class="kpi-mini-donut" :style="{ '--value': `${kpiResumen.avance}%`, '--kpi-color': colorAvanceKpi }">
+            <span :style="{ color: colorAvanceKpi }">{{ kpiResumen.avance }}%</span>
+          </div>
+        </div>
+        <small class="kpi-foot">Progreso general de las etapas</small>
         <div class="kpi-progress-track">
           <div
             class="kpi-progress-fill"
@@ -156,6 +186,7 @@
           <span class="actividad-meta-chip neutral">{{ obtenerTipoContratacionCabecera(actividad) }}</span>
           <span class="actividad-meta-chip success">{{ obtenerPacNoPacCabecera(actividad) }}</span>
           <span class="actividad-meta-chip quarter">Cuatrimestre {{ obtenerCuatrimestreTexto(actividad) }}</span>
+          <span v-if="procesoActivoSinPresupuesto(actividad)" class="actividad-meta-chip warning-budget">Sin presupuesto</span>
         </div>
 
         <div class="actividad-info">
@@ -179,8 +210,13 @@
             <div class="stat-value">{{ tareasConRetraso(actividad) }}</div>
             <div class="stat-label">Con retraso</div>
           </div>
-          <div class="stat">
-            <div class="stat-value" :class="claseAvance(actividad)">{{ porcentajeAvance(actividad) }}%</div>
+          <div class="stat stat-avance-visual">
+            <div
+              class="actividad-mini-donut"
+              :style="{ '--value': `${porcentajeAvance(actividad)}%`, '--actividad-color': colorAvanceActividad(actividad) }"
+            >
+              <span>{{ porcentajeAvance(actividad) }}%</span>
+            </div>
             <div class="stat-label">Avance</div>
           </div>
         </div>
@@ -218,6 +254,12 @@
               <span class="seguimiento-contexto-chip amount">
                 {{ formatearMontoCabecera(obtenerPresupuesto(actividadSeleccionada)) }}
               </span>
+              <span
+                v-if="procesoActivoSinPresupuesto(actividadSeleccionada)"
+                class="seguimiento-contexto-chip budget-warning"
+              >
+                Sin presupuesto
+              </span>
             </div>
           </div>
           <button type="button" class="btn-close" @click="cerrarDetalleActividad">✕</button>
@@ -233,18 +275,52 @@
               <span :class="claseAvance(actividadSeleccionada)"><strong>Avance:</strong> {{ porcentajeAvance(actividadSeleccionada) }}%</span>
             </div>
 
-            <label class="riesgo-proceso-simple">
-              <input
-                v-model="procesoEnRiesgo"
-                type="checkbox"
-                :disabled="guardandoRiesgoProceso"
-                @change="onToggleRiesgoProceso"
-              />
-              <span>Proceso en riesgo</span>
-            </label>
+            <div class="riesgo-proceso-tools">
+              <label class="riesgo-proceso-simple">
+                <input
+                  v-model="procesoEnRiesgo"
+                  type="checkbox"
+                  :disabled="guardandoRiesgoProceso"
+                  @change="onToggleRiesgoProceso"
+                />
+                <span>Proceso en riesgo</span>
+              </label>
+
+              <label class="riesgo-proceso-simple desierto">
+                <input
+                  v-model="procesoDesierto"
+                  type="checkbox"
+                  :disabled="guardandoRiesgoProceso"
+                  @change="onToggleProcesoDesierto"
+                />
+                <span>Proceso desierto</span>
+              </label>
+
+              <template v-if="procesoEnRiesgo">
+                <button
+                  type="button"
+                  class="btn-riesgo-icon"
+                  :class="{ active: procesoEnRiesgo }"
+                  :disabled="guardandoRiesgoProceso"
+                  title="Abrir comentario de riesgo"
+                  @click="abrirEditorRiesgo"
+                >
+                  ⚠️
+                </button>
+
+                <button
+                  type="button"
+                  class="btn-riesgo-detalle"
+                  :disabled="!puedeVerDetalleRiesgo"
+                  @click="toggleDetalleRiesgo"
+                >
+                  {{ mostrarPanelRiesgo ? 'Ocultar detalles' : 'Ver detalles' }}
+                </button>
+              </template>
+            </div>
           </div>
 
-          <div v-if="procesoEnRiesgo" class="riesgo-proceso-panel">
+          <div v-if="procesoEnRiesgo && mostrarPanelRiesgo" class="riesgo-proceso-panel">
             <div v-if="mensajeRiesgoProceso" :class="['seguimiento-msg', `seguimiento-msg-${mensajeRiesgoProceso.tipo}`]">
               {{ mensajeRiesgoProceso.texto }}
             </div>
@@ -274,48 +350,8 @@
                   @click="guardarRiesgoProceso"
                   :disabled="guardandoRiesgoProceso || !comentarioRiesgoProceso.trim() || longitudComentarioRiesgo > LIMITE_COMENTARIO_RIESGO"
                 >
-                  {{ guardandoRiesgoProceso ? 'Guardando...' : 'Guardar riesgo' }}
+                  {{ guardandoRiesgoProceso ? 'Guardando...' : 'Guardar comentario' }}
                 </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="timeline" v-if="etapasConFecha.length">
-            <div class="timeline-header">
-              <h4>Línea de tiempo</h4>
-              <button type="button" class="btn-toggle-timeline" @click="timelineContraida = !timelineContraida">
-                {{ timelineContraida ? 'Expandir' : 'Contraer' }}
-              </button>
-            </div>
-
-            <div v-if="timelineContraida" class="timeline-contraida-box">
-              <div class="timeline-contraida-titulo">📌 Línea de tiempo contraída</div>
-              <div class="timeline-contraida-texto">
-                Hay {{ etapasConFecha.length }} etapas en la secuencia. Haz clic en <strong>Expandir</strong> para ver el detalle completo.
-              </div>
-            </div>
-
-            <div v-if="!timelineContraida">
-              <div
-                v-for="(etapa, index) in etapasConFecha"
-                :key="`timeline-${etapa.id || etapa.etapaId || index}`"
-                class="timeline-item"
-                :class="{ destacado: esEtapaResaltada(etapa) }"
-              >
-                <div class="timeline-node" :class="estadoVisual(etapa)"></div>
-                <div v-if="index < etapasConFecha.length - 1" class="timeline-line"></div>
-                <div class="timeline-content">
-                  <div class="timeline-title">{{ etapa.etapaNombre || etapa.nombre }}</div>
-                  <div class="timeline-date">
-                    <span>{{ textoLeyendaTimeline(etapa) }}</span>
-                    <span
-                      v-if="badgeLeyendaTimeline(etapa)"
-                      :class="['timeline-badge', claseBadgeLeyendaTimeline(etapa)]"
-                    >
-                      {{ badgeLeyendaTimeline(etapa) }}
-                    </span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -385,11 +421,11 @@
                 <td>
                   <span
                     v-if="estadoNormalizado(etapa.estado) === 'completado' && etapa.fechaReal && (etapa.fechaPlanificada || etapa.fechaTentativa)"
-                    :class="['cumplimiento-chip', etapaCompletadaATiempo(etapa) ? 'a-tiempo' : 'con-retraso']"
+                    :class="['cumplimiento-chip', etapaCompletadaATiempo(etapa, actividadSeleccionada) ? 'a-tiempo' : 'con-retraso']"
                   >
-                    {{ etapaCompletadaATiempo(etapa) ? '✅ Completado' : `✅ ${diasRetrasoCompletado(etapa)} días tarde` }}
+                    {{ etapaCompletadaATiempo(etapa, actividadSeleccionada) ? '✅ Completado' : `✅ ${diasRetrasoCompletado(etapa, actividadSeleccionada)} días tarde` }}
                   </span>
-                  <span v-else-if="esEtapaAtrasada(etapa)" class="retraso-chip">⚠️ {{ diasRetraso(etapa) }} días tarde</span>
+                  <span v-else-if="esEtapaAtrasada(etapa, actividadSeleccionada)" class="retraso-chip">⚠️ {{ diasRetraso(etapa, actividadSeleccionada) }} días tarde</span>
                   <span v-else>-</span>
                 </td>
                 <td>
@@ -421,6 +457,46 @@
           </table>
           </div>
 
+          <div class="timeline timeline-final" v-if="etapasConFecha.length">
+            <div class="timeline-header">
+              <h4>Línea de tiempo</h4>
+              <button type="button" class="btn-toggle-timeline" @click="timelineContraida = !timelineContraida">
+                {{ timelineContraida ? 'Ver línea de tiempo' : 'Ocultar línea de tiempo' }}
+              </button>
+            </div>
+
+            <div v-if="timelineContraida" class="timeline-contraida-box">
+              <div class="timeline-contraida-titulo">📌 Línea de tiempo contraída</div>
+              <div class="timeline-contraida-texto">
+                Hay {{ etapasConFecha.length }} etapas en la secuencia. Haz clic en <strong>Ver línea de tiempo</strong> para ver el detalle completo.
+              </div>
+            </div>
+
+            <div v-if="!timelineContraida">
+              <div
+                v-for="(etapa, index) in etapasConFecha"
+                :key="`timeline-${etapa.id || etapa.etapaId || index}`"
+                class="timeline-item"
+                :class="{ destacado: esEtapaResaltada(etapa) }"
+              >
+                <div class="timeline-node" :class="estadoVisual(etapa)"></div>
+                <div v-if="index < etapasConFecha.length - 1" class="timeline-line"></div>
+                <div class="timeline-content">
+                  <div class="timeline-title">{{ etapa.etapaNombre || etapa.nombre }}</div>
+                  <div class="timeline-date">
+                    <span>{{ textoLeyendaTimeline(etapa) }}</span>
+                    <span
+                      v-if="badgeLeyendaTimeline(etapa)"
+                      :class="['timeline-badge', claseBadgeLeyendaTimeline(etapa)]"
+                    >
+                      {{ badgeLeyendaTimeline(etapa) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -445,6 +521,12 @@
               </span>
               <span class="seguimiento-contexto-chip amount">
                 {{ formatearMontoCabecera(obtenerPresupuesto(actividadSeleccionada)) }}
+              </span>
+              <span
+                v-if="actividadSeleccionada && procesoActivoSinPresupuesto(actividadSeleccionada)"
+                class="seguimiento-contexto-chip budget-warning"
+              >
+                Sin presupuesto
               </span>
             </div>
           </div>
@@ -489,7 +571,7 @@
               <div class="seguimiento-meta-row">
                 <div class="seguimiento-meta">{{ formatearFechaConHora(item.createdAt || item.created_at || item.fecha) }} · {{ item.responsableNombre || 'Sin responsable' }}</div>
                 <button
-                  v-if="auth.isAdmin"
+                  v-if="puedeEliminarSeguimientos"
                   type="button"
                   class="btn-eliminar-seguimiento"
                   @click="eliminarSeguimiento(item)"
@@ -532,9 +614,10 @@ const filtroMonto = ref('');
 const filtroRiesgo = ref('');
 const ordenPresupuesto = ref('todos');
 const actividadesVisiblesBase = computed(() =>
-  actividades.value.filter((actividad: any) =>
-    Boolean(Number(actividad?.activo ?? 1))
-  )
+  actividades.value.filter((actividad: any) => esProcesoVisible(actividad))
+);
+const actividadesContabilizadasBase = computed(() =>
+  actividadesVisiblesBase.value.filter((actividad: any) => procesoCuentaEnReportesYAtrasos(actividad))
 );
 const direccionesDisponibles = computed(() => {
   const direcciones = [...new Set(actividadesVisiblesBase.value.map((actividad: any) => obtenerDireccion(actividad)))] as string[];
@@ -658,12 +741,16 @@ const actividadesActivas = computed(() => {
   return items;
 });
 
+const actividadesContabilizadas = computed(() =>
+  actividadesActivas.value.filter((actividad: any) => procesoCuentaEnReportesYAtrasos(actividad))
+);
+
 const kpiResumen = computed(() => {
   let totalEtapas = 0;
   let completadas = 0;
   let conRetraso = 0;
 
-  for (const actividad of actividadesActivas.value) {
+  for (const actividad of actividadesContabilizadas.value) {
     totalEtapas += totalTareas(actividad);
     completadas += tareasCompletadas(actividad);
     conRetraso += tareasConRetraso(actividad);
@@ -684,6 +771,34 @@ const kpiResumen = computed(() => {
     avance,
     avanceClass
   };
+});
+
+const totalEtapasBase = computed(() =>
+  actividadesContabilizadasBase.value.reduce((total, actividad) => total + totalTareas(actividad), 0)
+);
+
+const porcentajeEtapasVisibles = computed(() =>
+  totalEtapasBase.value > 0
+    ? Math.min(100, Math.round((kpiResumen.value.totalEtapas / totalEtapasBase.value) * 100))
+    : 0
+);
+
+const porcentajeCompletadas = computed(() =>
+  kpiResumen.value.totalEtapas > 0
+    ? Math.round((kpiResumen.value.completadas / kpiResumen.value.totalEtapas) * 100)
+    : 0
+);
+
+const porcentajeConRetraso = computed(() =>
+  kpiResumen.value.totalEtapas > 0
+    ? Math.round((kpiResumen.value.conRetraso / kpiResumen.value.totalEtapas) * 100)
+    : 0
+);
+
+const colorAvanceKpi = computed(() => {
+  if (kpiResumen.value.avanceClass === 'avance-alto') return '#16a34a';
+  if (kpiResumen.value.avanceClass === 'avance-medio') return '#d97706';
+  return '#dc2626';
 });
 
 const actividadSeleccionada = ref<any | null>(null);
@@ -707,9 +822,12 @@ const alertasPorEtapa = ref<Record<number, boolean>>({});
 const etapaResaltadaId = ref<number | null>(null);
 const timelineContraida = ref(true);
 const procesoEnRiesgo = ref(false);
+const procesoDesierto = ref(false);
+const mostrarPanelRiesgo = ref(false);
 const comentarioRiesgoProceso = ref('');
 const procesoEnRiesgoGuardado = ref(false);
 const comentarioRiesgoGuardado = ref('');
+const estadoProcesoGuardado = ref<0 | 1 | 2>(1);
 const permiteEditarFechaCompletado = UI_FLAGS.ALLOW_MANUAL_COMPLETION_DATE;
 const GUAYAQUIL_TIMEZONE = 'America/Guayaquil';
 const LIMITE_COMENTARIO_SEGUIMIENTO = 500;
@@ -718,6 +836,13 @@ const longitudComentarioSeguimiento = computed(() => nuevoComentario.value.lengt
 const caracteresRestantesSeguimiento = computed(() => LIMITE_COMENTARIO_SEGUIMIENTO - longitudComentarioSeguimiento.value);
 const longitudComentarioRiesgo = computed(() => comentarioRiesgoProceso.value.length);
 const caracteresRestantesRiesgo = computed(() => LIMITE_COMENTARIO_RIESGO - longitudComentarioRiesgo.value);
+const puedeVerDetalleRiesgo = computed(() =>
+  procesoEnRiesgoGuardado.value && Boolean(comentarioRiesgoGuardado.value.trim())
+);
+
+const puedeEliminarSeguimientos = computed(() =>
+  auth.isAdmin || auth.can('actividades', 'delete') || auth.can('admin_actividades', 'delete')
+);
 
 const etapasConFecha = computed(() =>
   etapasActividad.value
@@ -1010,6 +1135,33 @@ function obtenerCuatrimestreTexto(actividad: any) {
   return 'Sin dato';
 }
 
+function obtenerEstadoProcesoValor(actividad: any): 0 | 1 | 2 {
+  const valor = actividad?.activo;
+  if (valor === undefined || valor === null || valor === '') return 1;
+  if (typeof valor === 'number') {
+    if (valor === 2) return 2;
+    return valor === 0 ? 0 : 1;
+  }
+  if (typeof valor === 'boolean') return valor ? 1 : 0;
+
+  const normalizado = String(valor).trim().toLowerCase();
+  if (['2', 'desierto'].includes(normalizado)) return 2;
+  if (['0', 'false', 'inactivo'].includes(normalizado)) return 0;
+  return 1;
+}
+
+function procesoActivoSinPresupuesto(actividad: any) {
+  return obtenerEstadoProcesoValor(actividad) === 1 && obtenerPresupuesto(actividad) <= 0;
+}
+
+function procesoCuentaEnReportesYAtrasos(actividad: any) {
+  return obtenerEstadoProcesoValor(actividad) !== 0 && !procesoActivoSinPresupuesto(actividad);
+}
+
+function esProcesoVisible(actividad: any) {
+  return obtenerEstadoProcesoValor(actividad) !== 0;
+}
+
 function normalizarProcesoEnRiesgo(actividad: any) {
   const valor = actividad?.procesoEnRiesgo ?? actividad?.proceso_en_riesgo ?? false;
   if (typeof valor === 'boolean') return valor;
@@ -1025,7 +1177,9 @@ function totalTareas(actividad: any) {
   return getEtapasConFecha(actividad).length;
 }
 
-function esEtapaAtrasada(etapa: any) {
+function esEtapaAtrasada(etapa: any, actividad?: any) {
+  if (actividad && !procesoCuentaEnReportesYAtrasos(actividad)) return false;
+
   const estado = estadoNormalizado(etapa?.estado);
   if (estado === 'completado') return false;
   const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
@@ -1037,7 +1191,9 @@ function esEtapaAtrasada(etapa: any) {
   return fechaObj < hoy;
 }
 
-function diasRetraso(etapa: any) {
+function diasRetraso(etapa: any, actividad?: any) {
+  if (actividad && !procesoCuentaEnReportesYAtrasos(actividad)) return 0;
+
   const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
   if (!fecha) return 0;
   const hoy = new Date();
@@ -1047,7 +1203,9 @@ function diasRetraso(etapa: any) {
   return Math.max(0, Math.floor((hoy.getTime() - fechaObj.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
-function diasRetrasoCompletado(etapa: any) {
+function diasRetrasoCompletado(etapa: any, actividad?: any) {
+  if (actividad && !procesoCuentaEnReportesYAtrasos(actividad)) return 0;
+
   const fechaTentativa = etapa?.fechaPlanificada || etapa?.fechaTentativa;
   const fechaReal = etapa?.fechaReal;
   if (!fechaTentativa || !fechaReal) return 0;
@@ -1060,8 +1218,8 @@ function diasRetrasoCompletado(etapa: any) {
   return Math.max(0, Math.floor((fechaRealObj.getTime() - fechaTentativaObj.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
-function etapaCompletadaATiempo(etapa: any) {
-  return diasRetrasoCompletado(etapa) === 0;
+function etapaCompletadaATiempo(etapa: any, actividad?: any) {
+  return diasRetrasoCompletado(etapa, actividad) === 0;
 }
 
 function tareasCompletadas(actividad: any) {
@@ -1069,7 +1227,8 @@ function tareasCompletadas(actividad: any) {
 }
 
 function tareasConRetraso(actividad: any) {
-  return getEtapasConFecha(actividad).filter((etapa: any) => esEtapaAtrasada(etapa) || estadoNormalizado(etapa.estado) === 'en_retraso').length;
+  if (!procesoCuentaEnReportesYAtrasos(actividad)) return 0;
+  return getEtapasConFecha(actividad).filter((etapa: any) => esEtapaAtrasada(etapa, actividad) || estadoNormalizado(etapa.estado) === 'en_retraso').length;
 }
 
 function porcentajeAvance(actividad: any) {
@@ -1082,8 +1241,12 @@ function claseAvance(actividad: any) {
   return tareasConRetraso(actividad) > 0 ? 'avance-bajo' : 'avance-alto';
 }
 
+function colorAvanceActividad(actividad: any) {
+  return claseAvance(actividad) === 'avance-alto' ? '#16a34a' : '#dc2626';
+}
+
 function estadoVisual(etapa: any) {
-  if (esEtapaAtrasada(etapa)) return 'en_retraso';
+  if (esEtapaAtrasada(etapa, actividadSeleccionada.value)) return 'en_retraso';
   return estadoNormalizado(etapa.estado);
 }
 
@@ -1102,15 +1265,15 @@ function textoLeyendaTimeline(etapa: any) {
 
 function badgeLeyendaTimeline(etapa: any) {
   if (estadoNormalizado(etapa?.estado) === 'completado') {
-    const diasTarde = diasRetrasoCompletado(etapa);
+    const diasTarde = diasRetrasoCompletado(etapa, actividadSeleccionada.value);
     return diasTarde > 0 ? `${diasTarde}D` : '✓';
   }
-  const diasTarde = diasRetraso(etapa);
+  const diasTarde = diasRetraso(etapa, actividadSeleccionada.value);
   return diasTarde > 0 ? `${diasTarde}D` : '';
 }
 
 function claseBadgeLeyendaTimeline(etapa: any) {
-  if (estadoNormalizado(etapa?.estado) === 'completado' && diasRetrasoCompletado(etapa) === 0) {
+  if (estadoNormalizado(etapa?.estado) === 'completado' && diasRetrasoCompletado(etapa, actividadSeleccionada.value) === 0) {
     return 'ok';
   }
   return 'late';
@@ -1174,10 +1337,24 @@ function sincronizarRiesgoActividadEnListado(actividadId: number, riesgo: { proc
   };
 }
 
+function sincronizarEstadoActividadEnListado(actividadId: number, activo: 0 | 1 | 2) {
+  const index = actividades.value.findIndex((actividad: any) => Number(actividad?.id) === actividadId);
+  if (index < 0) return;
+
+  actividades.value[index] = {
+    ...actividades.value[index],
+    activo
+  };
+}
+
 function cargarEstadoRiesgoProceso(actividad: any) {
   const activo = normalizarProcesoEnRiesgo(actividad);
   const comentario = obtenerComentarioRiesgo(actividad);
+  const estadoProceso = obtenerEstadoProcesoValor(actividad);
   procesoEnRiesgo.value = activo;
+  procesoDesierto.value = estadoProceso === 2;
+  estadoProcesoGuardado.value = estadoProceso;
+  mostrarPanelRiesgo.value = false;
   comentarioRiesgoProceso.value = comentario;
   procesoEnRiesgoGuardado.value = activo;
   comentarioRiesgoGuardado.value = comentario;
@@ -1229,9 +1406,12 @@ function cerrarDetalleActividad() {
   nuevoAlerta.value = false;
   etapaResaltadaId.value = null;
   procesoEnRiesgo.value = false;
+  procesoDesierto.value = false;
+  mostrarPanelRiesgo.value = false;
   comentarioRiesgoProceso.value = '';
   procesoEnRiesgoGuardado.value = false;
   comentarioRiesgoGuardado.value = '';
+  estadoProcesoGuardado.value = 1;
   guardandoRiesgoProceso.value = false;
   errorRiesgoProceso.value = '';
   mensajeRiesgoProceso.value = null;
@@ -1556,7 +1736,7 @@ async function guardarSeguimiento() {
 }
 
 async function eliminarSeguimiento(item: any) {
-  if (!auth.isAdmin || !actividadSeleccionada.value || !etapaSeguimiento.value) return;
+  if (!puedeEliminarSeguimientos.value || !actividadSeleccionada.value || !etapaSeguimiento.value) return;
   const etapaId = obtenerEtapaId(etapaSeguimiento.value);
   const seguimientoId = Number(item?.id);
   if (!etapaId || !Number.isFinite(seguimientoId) || seguimientoId <= 0) return;
@@ -1574,6 +1754,65 @@ async function eliminarSeguimiento(item: any) {
     errorSeguimiento.value = 'No se pudo eliminar el comentario';
   } finally {
     eliminandoSeguimientoId.value = null;
+  }
+}
+
+function abrirEditorRiesgo() {
+  errorRiesgoProceso.value = '';
+  mensajeRiesgoProceso.value = null;
+  if (!procesoEnRiesgo.value) {
+    procesoEnRiesgo.value = true;
+  }
+  if (!comentarioRiesgoProceso.value && comentarioRiesgoGuardado.value) {
+    comentarioRiesgoProceso.value = comentarioRiesgoGuardado.value;
+  }
+  mostrarPanelRiesgo.value = true;
+}
+
+function toggleDetalleRiesgo() {
+  if (!puedeVerDetalleRiesgo.value) return;
+  if (mostrarPanelRiesgo.value) {
+    mostrarPanelRiesgo.value = false;
+    return;
+  }
+  comentarioRiesgoProceso.value = comentarioRiesgoGuardado.value;
+  mostrarPanelRiesgo.value = true;
+}
+
+async function guardarEstadoProceso(activo: 0 | 1 | 2) {
+  if (!actividadSeleccionada.value?.id) return;
+
+  guardandoRiesgoProceso.value = true;
+  errorRiesgoProceso.value = '';
+  mensajeRiesgoProceso.value = null;
+
+  try {
+    const response = await api.put(`/subtareas/${actividadSeleccionada.value.id}`, { activo });
+    const actividadActualizada = response.data || {};
+    const estadoActualizado = obtenerEstadoProcesoValor({ activo: actividadActualizada?.activo ?? activo });
+
+    procesoDesierto.value = estadoActualizado === 2;
+    estadoProcesoGuardado.value = estadoActualizado;
+    sincronizarEstadoActividadEnListado(Number(actividadSeleccionada.value.id), estadoActualizado);
+    actividadSeleccionada.value = {
+      ...actividadSeleccionada.value,
+      activo: estadoActualizado
+    };
+
+    mensajeRiesgoProceso.value = {
+      texto: estadoActualizado === 2
+        ? 'Proceso marcado como desierto correctamente.'
+        : estadoActualizado === 0
+          ? 'Proceso marcado como inactivo.'
+          : 'Proceso marcado como activo.',
+      tipo: 'success'
+    };
+  } catch (error) {
+    console.error('Error al actualizar estado del proceso:', error);
+    procesoDesierto.value = estadoProcesoGuardado.value === 2;
+    errorRiesgoProceso.value = 'No se pudo actualizar el estado del proceso';
+  } finally {
+    guardandoRiesgoProceso.value = false;
   }
 }
 
@@ -1630,6 +1869,7 @@ async function guardarRiesgoProceso() {
         : 'El proceso ya no está marcado como riesgo.',
       tipo: 'success'
     };
+    mostrarPanelRiesgo.value = false;
   } catch (error) {
     console.error('Error al guardar riesgo del proceso:', error);
     procesoEnRiesgo.value = procesoEnRiesgoGuardado.value;
@@ -1645,9 +1885,20 @@ async function onToggleRiesgoProceso() {
   mensajeRiesgoProceso.value = null;
 
   if (!procesoEnRiesgo.value) {
+    mostrarPanelRiesgo.value = false;
     comentarioRiesgoProceso.value = '';
     await guardarRiesgoProceso();
+    return;
   }
+
+  if (!comentarioRiesgoProceso.value && comentarioRiesgoGuardado.value) {
+    comentarioRiesgoProceso.value = comentarioRiesgoGuardado.value;
+  }
+  mostrarPanelRiesgo.value = true;
+}
+
+async function onToggleProcesoDesierto() {
+  await guardarEstadoProceso(procesoDesierto.value ? 2 : 1);
 }
 </script>
 
@@ -1840,7 +2091,9 @@ async function onToggleRiesgoProceso() {
   border: 1px solid #d9e2ea;
   border-radius: 14px;
   padding: 0.8rem 0.9rem;
-  min-height: 98px;
+  min-height: 128px;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
 }
 
@@ -1849,6 +2102,79 @@ async function onToggleRiesgoProceso() {
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.6rem;
+}
+
+.kpi-donut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.45rem;
+}
+
+.kpi-donut-row .kpi-value {
+  margin: 0;
+}
+
+.kpi-foot {
+  margin-top: 0.3rem;
+  color: #64748b;
+  font-size: 0.73rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.kpi-mini-donut,
+.actividad-mini-donut {
+  --value: 0%;
+  --kpi-color: #64748b;
+  --actividad-color: var(--kpi-color);
+  position: relative;
+  width: 58px;
+  height: 58px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: conic-gradient(var(--kpi-color, var(--actividad-color)) 0 var(--value), #e5e7eb var(--value) 100%);
+}
+
+.kpi-mini-donut::before,
+.actividad-mini-donut::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.2);
+}
+
+.kpi-mini-donut span,
+.actividad-mini-donut span {
+  position: relative;
+  z-index: 1;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.actividad-mini-donut {
+  --kpi-color: var(--actividad-color);
+  width: 52px;
+  height: 52px;
+  margin: 0 auto;
+}
+
+.actividad-mini-donut::before {
+  inset: 7px;
+}
+
+.stat-avance-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
 }
 
 .kpi-label {
@@ -2164,6 +2490,12 @@ h1 {
   color: #166534;
 }
 
+.actividad-meta-chip.warning-budget {
+  background: #fff7ed;
+  border-color: #fdba74;
+  color: #c2410c;
+}
+
 .actividad-info p {
   margin: 0.5rem 0;
   font-size: 0.875rem;
@@ -2245,8 +2577,8 @@ h1 {
 }
 
 .modal-content {
-  width: min(1100px, 96vw);
-  max-height: 92vh;
+  width: min(1160px, 97vw);
+  max-height: 95vh;
   overflow: auto;
   background: #fff;
   border-radius: 14px;
@@ -2317,6 +2649,12 @@ h1 {
   color: #1d4ed8;
 }
 
+.seguimiento-contexto-chip.budget-warning {
+  background: #fff7ed;
+  border-color: #fdba74;
+  color: #c2410c;
+}
+
 .btn-close {
   border: none;
   background: transparent;
@@ -2332,6 +2670,14 @@ h1 {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  max-height: 95vh;
+}
+
+.modal-detalle-actividad .modal-header h2,
+.modal-seguimiento .modal-header h2 {
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.3;
 }
 
 .modal-detalle-body {
@@ -2357,8 +2703,8 @@ h1 {
 
 .tabla-etapas-wrap {
   flex: 1 1 auto;
-  min-height: 280px;
-  max-height: 46vh;
+  min-height: 300px;
+  max-height: 52vh;
   overflow: auto;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
@@ -2388,6 +2734,14 @@ h1 {
   margin-bottom: 1rem;
 }
 
+.riesgo-proceso-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
 .riesgo-proceso-simple {
   display: inline-flex;
   align-items: center;
@@ -2401,10 +2755,60 @@ h1 {
   padding: 0.5rem 0.8rem;
 }
 
+.riesgo-proceso-simple.desierto {
+  border-color: #fdba74;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
 .riesgo-proceso-simple input {
   width: 1rem;
   height: 1rem;
   accent-color: #d97706;
+}
+
+.btn-riesgo-icon,
+.btn-riesgo-detalle {
+  border-radius: 999px;
+  border: 1px solid #fcd34d;
+  background: #fff7ed;
+  color: #9a3412;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.btn-riesgo-icon {
+  width: 2.2rem;
+  height: 2.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.btn-riesgo-icon.active {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.btn-riesgo-detalle {
+  padding: 0.5rem 0.8rem;
+}
+
+.btn-riesgo-icon:hover,
+.btn-riesgo-detalle:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(217, 119, 6, 0.14);
+}
+
+.btn-riesgo-detalle:disabled,
+.btn-riesgo-icon:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 .riesgo-proceso-body {
@@ -2421,13 +2825,19 @@ h1 {
 .riesgo-proceso-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .timeline {
-  border: 1px solid #e5e7eb;
+  border: 1px solid #94a3b8;
   border-radius: 10px;
   padding: 0.8rem;
   margin-bottom: 1rem;
+  box-shadow: inset 0 0 0 1px rgba(71, 85, 105, 0.08);
+}
+
+.timeline-final {
+  margin-bottom: 0;
 }
 
 .timeline-contraida-box {

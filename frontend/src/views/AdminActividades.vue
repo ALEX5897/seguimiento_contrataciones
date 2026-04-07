@@ -63,28 +63,26 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="act in actividadesPaginadas" :key="act.id" :class="{ inactiva: !act.activo }">
+          <tr v-for="act in actividadesPaginadas" :key="act.id" :class="{ inactiva: estadoProcesoNumero(act.activo) === 0, desierta: estadoProcesoNumero(act.activo) === 2 }">
             <td>{{ act.id }}</td>
             <td>{{ act.nombre }}</td>
             <td>{{ act.direccionNombre || 'N/A' }}</td>
             <td>{{ act.tipoPlan }}</td>
             <td>${{ (act.presupuesto || 0).toLocaleString() }}</td>
             <td>
-              <span :class="['badge', act.activo ? 'badge-activa' : 'badge-inactiva']">
-                {{ act.activo ? 'Activa' : 'Inactiva' }}
+              <span :class="['badge', estadoProcesoBadgeClase(act.activo)]">
+                {{ estadoProcesoLabel(act.activo) }}
               </span>
             </td>
             <td class="acciones">
               <button class="btn-small btn-ver" @click="verActividad(act)">👁️ Ver</button>
               <button class="btn-small btn-editar" @click="abrirFormularioEdicion(act)">✏️ Editar</button>
               <button class="btn-small btn-etapas" @click="abrirSelectorEtapas(act)">⚙️ Etapas</button>
-              <button
-                class="btn-small"
-                :class="act.activo ? 'btn-desactivar' : 'btn-activar'"
-                @click="toggleActividad(act)"
-              >
-                {{ act.activo ? '❌ Desactivar' : '✅ Activar' }}
-              </button>
+              <select class="select-estado-rapido" :value="estadoProcesoNumero(act.activo)" @change="onEstadoProcesoRapidoChange(act, $event)">
+                <option :value="1">Activo</option>
+                <option :value="0">Inactivo</option>
+                <option :value="2">Desierto</option>
+              </select>
               <button class="btn-small btn-eliminar" @click="eliminarActividad(act)">🗑️ Eliminar</button>
             </td>
           </tr>
@@ -246,11 +244,13 @@
             </div>
           </div>
 
-          <div class="form-grupo form-checkbox">
-            <label>
-              <input v-model="formulario.activo" type="checkbox" />
-              Proceso activo
-            </label>
+          <div class="form-grupo">
+            <label for="estadoProceso">Estado del proceso</label>
+            <select id="estadoProceso" v-model.number="formulario.activo">
+              <option :value="1">Activo</option>
+              <option :value="0">Inactivo</option>
+              <option :value="2">Desierto</option>
+            </select>
           </div>
 
           <div class="form-grupo">
@@ -537,8 +537,8 @@
               </div>
               <div class="info-item">
                 <span class="info-label">Estado:</span>
-                <span :class="['badge', actividadVista.activo ? 'badge-activa' : 'badge-inactiva']">
-                  {{ actividadVista.activo ? 'Activa' : 'Inactiva' }}
+                <span :class="['badge', estadoProcesoBadgeClase(actividadVista.activo)]">
+                  {{ estadoProcesoLabel(actividadVista.activo) }}
                 </span>
               </div>
             </div>
@@ -694,7 +694,7 @@ interface Actividad {
   fechaFin?: string;
   estado?: string;
   avanceGeneral?: number;
-  activo: boolean;
+  activo: boolean | number;
   observaciones?: string;
   etapas?: any[];
 }
@@ -760,6 +760,35 @@ const guardandoEtapasPorId = ref<Record<number, boolean>>({});
 const guardandoEtapas = ref(false);
 const permiteEditarFechaCompletado = UI_FLAGS.ALLOW_MANUAL_COMPLETION_DATE;
 
+function estadoProcesoNumero(value: unknown): 0 | 1 | 2 {
+  if (value === undefined || value === null || value === '') return 1;
+  if (typeof value === 'number') {
+    if (value === 2) return 2;
+    return value === 0 ? 0 : 1;
+  }
+  if (typeof value === 'boolean') return value ? 1 : 0;
+  const normalizado = String(value).trim().toLowerCase();
+  if (['2', 'desierto'].includes(normalizado)) return 2;
+  if (['0', 'false', 'inactivo'].includes(normalizado)) return 0;
+  return 1;
+}
+
+function estadoProcesoLabel(value: unknown): string {
+  switch (estadoProcesoNumero(value)) {
+    case 2: return 'Desierto';
+    case 0: return 'Inactivo';
+    default: return 'Activo';
+  }
+}
+
+function estadoProcesoBadgeClase(value: unknown): string {
+  switch (estadoProcesoNumero(value)) {
+    case 2: return 'badge-desierta';
+    case 0: return 'badge-inactiva';
+    default: return 'badge-activa';
+  }
+}
+
 function getFormularioVacio(): Partial<Actividad> {
   return {
     nombre: '',
@@ -775,7 +804,7 @@ function getFormularioVacio(): Partial<Actividad> {
     fechaFin: '',
     estado: 'pendiente',
     avanceGeneral: 0,
-    activo: true,
+    activo: 1,
     observaciones: ''
   };
 }
@@ -796,7 +825,7 @@ function pedirConfirmacion(titulo: string, mensaje: string): Promise<boolean> {
 const actividadesFiltradas = computed(() => {
   let resultado = actividades.value;
   if (mostrarSoloActivas.value) {
-    resultado = resultado.filter(a => a.activo);
+    resultado = resultado.filter(a => estadoProcesoNumero(a.activo) === 1);
   }
   if (busqueda.value.trim()) {
     const q = normalizarTextoBusqueda(busqueda.value);
@@ -977,8 +1006,7 @@ function abrirFormularioEdicion(actividad: Actividad) {
   if (actividadCopia.fechaFin) {
     actividadCopia.fechaFin = actividadCopia.fechaFin.split('T')[0];
   }
-  // Convertir activo de 1/0 a boolean
-  actividadCopia.activo = Boolean(actividadCopia.activo);
+  actividadCopia.activo = estadoProcesoNumero(actividadCopia.activo);
   formulario.value = actividadCopia;
   mostrarFormulario.value = true;
 }
@@ -1004,6 +1032,7 @@ async function guardarActividad() {
 
     const payload = {
       ...formularioBase,
+      activo: estadoProcesoNumero(formulario.value.activo),
       direccionId: direccionIdNormalizado,
       responsableId: formulario.value.responsableId ? Number(formulario.value.responsableId) : null,
       responsableNombre: responsables.value.find(r => r.id === Number(formulario.value.responsableId))?.nombre || null,
@@ -1026,17 +1055,23 @@ async function guardarActividad() {
   }
 }
 
-async function toggleActividad(actividad: Actividad) {
+async function onEstadoProcesoRapidoChange(actividad: Actividad, event: Event) {
+  const target = event.target as HTMLSelectElement | null;
+  const nuevoEstado = estadoProcesoNumero(target?.value);
+  const estadoAnterior = estadoProcesoNumero(actividad.activo);
+  if (nuevoEstado === estadoAnterior) return;
+
   try {
     await api.put(`/subtareas/${actividad.id}`, {
-      activo: !actividad.activo
+      activo: nuevoEstado
     });
-    actividad.activo = !actividad.activo;
-    mostrarNotificacion(
-      `Proceso ${actividad.activo ? 'activado' : 'desactivado'}`,
-      'success'
-    );
+    actividad.activo = nuevoEstado;
+    if (actividadVista.value?.id === actividad.id) {
+      actividadVista.value = { ...actividadVista.value, activo: nuevoEstado };
+    }
+    mostrarNotificacion(`Proceso actualizado a estado ${estadoProcesoLabel(nuevoEstado)}`, 'success');
   } catch (error: any) {
+    if (target) target.value = String(estadoAnterior);
     mostrarNotificacion('Error al cambiar el estado: ' + (error?.message || 'Desconocido'), 'error');
   }
 }
@@ -1707,6 +1742,10 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
         opacity: 0.72;
         background-color: #f8fafc;
       }
+
+      &.desierta {
+        background-color: #fff7ed;
+      }
     }
 
     .badge {
@@ -1724,6 +1763,11 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
         background-color: #f8d7da;
         color: #721c24;
       }
+
+      &.badge-desierta {
+        background-color: #ffedd5;
+        color: #9a3412;
+      }
     }
 
     .acciones {
@@ -1731,10 +1775,17 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
       gap: 0.5rem;
       flex-wrap: wrap;
 
-      .btn-small {
+      .btn-small,
+      .select-estado-rapido {
         padding: 0.4rem 0.7rem;
         font-size: 0.8rem;
         white-space: nowrap;
+      }
+
+      .select-estado-rapido {
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        background: #fff;
       }
     }
   }

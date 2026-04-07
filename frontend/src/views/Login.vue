@@ -8,14 +8,14 @@
       
 
       <label class="combo-label">
-        Usuario o Dirección
+        Usuario
         <div class="combo-box">
           <input
             v-model="username"
             type="text"
             required
             autocomplete="username"
-            placeholder="Escribe usuario, nombre o dirección"
+            placeholder="Escribe tu usuario"
             spellcheck="false"
             @focus="abrirOpciones"
             @input="abrirOpciones"
@@ -64,11 +64,11 @@ const route = useRoute();
 const username = ref('');
 const password = ref('');
 const error = ref('');
-const direcciones = ref<string[]>([]);
+const usuariosLogin = ref<string[]>([]);
 const mostrarOpciones = ref(false);
 
 const opcionesLogin = computed(() => {
-  const values = ['admin', ...direcciones.value.map((d) => repararTextoConTildes(d))]
+  const values = usuariosLogin.value
     .map((item) => String(item || '').trim())
     .filter(Boolean);
   return [...new Set(values)];
@@ -98,18 +98,11 @@ function seleccionarOpcion(opcion: string) {
 onMounted(async () => {
   try {
     const data = await authService.getOpcionesLogin();
-    direcciones.value = Array.isArray(data)
+    usuariosLogin.value = Array.isArray(data)
       ? data.map((item) => repararTextoConTildes(String(item || '')))
       : [];
   } catch {
-    try {
-      const data = await authService.getDirecciones();
-      direcciones.value = Array.isArray(data)
-        ? data.map((item) => repararTextoConTildes(String(item || '')))
-        : [];
-    } catch {
-      direcciones.value = [];
-    }
+    usuariosLogin.value = [];
   }
 });
 

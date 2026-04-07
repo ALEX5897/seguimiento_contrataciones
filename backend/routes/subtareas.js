@@ -20,6 +20,33 @@ async function resolveSubtareaIdFromRef(subtareaRef, scope = {}) {
   return subtarea?.id || null;
 }
 
+function obtenerEstadoProcesoResumen(subtarea) {
+  const valor = subtarea?.activo;
+  if (valor === undefined || valor === null || valor === '') return 1;
+  if (typeof valor === 'number') {
+    if (valor === 2) return 2;
+    return valor === 0 ? 0 : 1;
+  }
+  if (typeof valor === 'boolean') return valor ? 1 : 0;
+
+  const normalizado = String(valor).trim().toLowerCase();
+  if (['2', 'desierto'].includes(normalizado)) return 2;
+  if (['0', 'false', 'inactivo'].includes(normalizado)) return 0;
+  return 1;
+}
+
+function obtenerPresupuestoProcesoResumen(subtarea) {
+  const valor = Number(subtarea?.presupuesto ?? subtarea?.presupuesto2026Inicial ?? subtarea?.presupuesto_2026_inicial ?? 0);
+  return Number.isFinite(valor) ? valor : 0;
+}
+
+function procesoCuentaEnResumenYAtrasos(subtarea) {
+  const estado = obtenerEstadoProcesoResumen(subtarea);
+  if (estado === 0) return false;
+  if (estado === 1 && obtenerPresupuestoProcesoResumen(subtarea) <= 0) return false;
+  return true;
+}
+
 // GET /api/subtareas/admin/etapas-disponibles - Compatibilidad con /api/actividades
 router.get('/admin/etapas-disponibles', async (req, res) => {
   try {
@@ -111,8 +138,10 @@ router.get('/resumen/diario', async (req, res) => {
   try {
     const subtareas = await mysql.getAllSubtareasByScope(getScopeFromReq(req));
     
+    const subtareasContabilizadas = subtareas.filter((subtarea) => procesoCuentaEnResumenYAtrasos(subtarea));
+
     // Calcular totales
-    const totalSubtareas = subtareas.length;
+    const totalSubtareas = subtareasContabilizadas.length;
     let totalEtapas = 0;
     let completadas = 0;
     let conPendientes = 0;
@@ -122,7 +151,7 @@ router.get('/resumen/diario', async (req, res) => {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
-    for (const subtarea of subtareas) {
+    for (const subtarea of subtareasContabilizadas) {
       const etapas = subtarea.etapas || [];
       totalEtapas += etapas.length;
       

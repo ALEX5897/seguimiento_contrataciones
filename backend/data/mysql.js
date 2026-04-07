@@ -35,6 +35,7 @@ const ALLOW_MANUAL_COMPLETION_DATE = String(process.env.ALLOW_MANUAL_COMPLETION_
 const SIN_DIRECCION_NOMBRE = process.env.UNASSIGNED_DIRECCION_NAME || 'Sin dirección';
 const DEFAULT_UNASSIGNED_USERNAME = normalizeUsername(process.env.DEFAULT_UNASSIGNED_USER || 'sin_direccion');
 const DEFAULT_UNASSIGNED_PASSWORD = process.env.DEFAULT_UNASSIGNED_PASSWORD || '12345';
+const CORE_ROLES = ['admin', 'direccion', 'reporteria'];
 
 let pool;
 let subtareasColumnsCache = null;
@@ -183,7 +184,7 @@ function decodeMojibake(value = '') {
   }
 }
 
-function normalizeTextEncoding(value, { trim = false, collapseWhitespace = false } = {}) {
+export function normalizeTextEncoding(value, { trim = false, collapseWhitespace = false } = {}) {
   if (value === null || value === undefined) return value;
 
   let text = String(value);
@@ -205,6 +206,21 @@ function normalizeTextEncoding(value, { trim = false, collapseWhitespace = false
   if (trim) text = text.trim();
   if (collapseWhitespace) text = text.replace(/\s+/g, ' ');
   return text;
+}
+
+export function normalizePayloadEncoding(value) {
+  if (value === null || value === undefined) return value;
+  if (typeof value === 'string') return normalizeTextEncoding(value);
+  if (Array.isArray(value)) return value.map((item) => normalizePayloadEncoding(item));
+  if (value instanceof Date || Buffer.isBuffer(value)) return value;
+
+  if (typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, normalizePayloadEncoding(item)])
+    );
+  }
+
+  return value;
 }
 
 function toCamelRow(row) {
@@ -238,6 +254,7 @@ function toCamelRow(row) {
     tarea_id: 'tareaId',
     es_version_actual: 'esVersionActual',
     version_id: 'versionId',
+    orden_login: 'ordenLogin',
     total_actividades: 'totalActividades',
     presupuesto_total: 'presupuestoTotal',
     actividades_activas: 'actividadesActivas',
@@ -527,13 +544,17 @@ async function createSchema() {
       username VARCHAR(80) NOT NULL UNIQUE,
       nombre VARCHAR(255) NOT NULL,
       password_hash VARCHAR(255) NOT NULL,
-      role ENUM('admin','direccion','reporteria') NOT NULL,
+      role VARCHAR(80) NOT NULL,
       direccion_nombre VARCHAR(255) NULL,
+      orden_login INT NOT NULL DEFAULT 0,
       activo BOOLEAN NOT NULL DEFAULT true,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB;
   `);
+
+  await query(`ALTER TABLE usuarios MODIFY COLUMN role VARCHAR(80) NOT NULL`).catch(() => {});
+  await query(`ALTER TABLE usuarios ADD COLUMN orden_login INT NOT NULL DEFAULT 0 AFTER direccion_nombre`).catch(() => {});
 
   await query(`
     CREATE TABLE IF NOT EXISTS permisos_modulos_catalogo (
@@ -564,7 +585,7 @@ async function createSchema() {
   await query(`
     CREATE TABLE IF NOT EXISTS permisos_roles_modulos (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      role VARCHAR(50) NOT NULL,
+      role VARCHAR(80) NOT NULL,
       modulo_clave VARCHAR(80) NOT NULL,
       puede_leer BOOLEAN NOT NULL DEFAULT false,
       puede_crear BOOLEAN NOT NULL DEFAULT false,
@@ -582,7 +603,7 @@ async function createSchema() {
   await query(`
     CREATE TABLE IF NOT EXISTS permisos_roles_menu (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      role VARCHAR(50) NOT NULL,
+      role VARCHAR(80) NOT NULL,
       menu_clave VARCHAR(80) NOT NULL,
       puede_ingresar BOOLEAN NOT NULL DEFAULT false,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -599,7 +620,7 @@ async function createSchema() {
       id BIGINT AUTO_INCREMENT PRIMARY KEY,
       user_id INT NULL,
       username VARCHAR(80) NULL,
-      role VARCHAR(50) NULL,
+      role VARCHAR(80) NULL,
       direccion_nombre VARCHAR(255) NULL,
       accion VARCHAR(20) NOT NULL,
       modulo VARCHAR(80) NULL,
@@ -621,6 +642,10 @@ async function createSchema() {
       INDEX idx_auditoria_accion (accion)
     ) ENGINE=InnoDB;
   `);
+
+  await query(`ALTER TABLE permisos_roles_modulos MODIFY COLUMN role VARCHAR(80) NOT NULL`).catch(() => {});
+  await query(`ALTER TABLE permisos_roles_menu MODIFY COLUMN role VARCHAR(80) NOT NULL`).catch(() => {});
+  await query(`ALTER TABLE auditoria_eventos MODIFY COLUMN role VARCHAR(80) NULL`).catch(() => {});
 
   await query(`
     CREATE TABLE IF NOT EXISTS direcciones_catalogo (
@@ -825,9 +850,11 @@ export async function initMySQL() {
     port: DB_PORT,
     user: DB_USER,
     password: DB_PASSWORD,
-    multipleStatements: true
+    multipleStatements: true,
+    charset: 'utf8mb4'
   });
   await bootstrap.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+  await bootstrap.query('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
   await bootstrap.end();
 
   pool = await mysql.createPool({
@@ -838,8 +865,11 @@ export async function initMySQL() {
     database: DB_NAME,
     waitForConnections: true,
     connectionLimit: 10,
-    namedPlaceholders: true
+    namedPlaceholders: true,
+    charset: 'utf8mb4'
   });
+
+  await pool.query('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
 
   await createSchema();
   await seedInitialData();
@@ -962,9 +992,9 @@ export async function getSubtareaByCodigoOlympoByScope(codigoOlympo, scope = {})
 export async function getUsuarioByUsername(username) {
   const login = String(username || '').trim().toLowerCase();
   const rows = await query(
-    `SELECT id, username, nombre, password_hash, role, direccion_nombre, activo
+    `SELECT id, username, nombre, password_hash, role, direccion_nombre, orden_login, activo
      FROM usuarios
-     WHERE username = ?
+     WHERE LOWER(username) = ?
      LIMIT 1`,
     [login]
   );
@@ -985,7 +1015,7 @@ export async function getUsuarioByLoginIdentifier(identifier) {
   const login = String(identifier || '').trim();
   const loginLower = login.toLowerCase();
   const rows = await query(
-    `SELECT id, username, nombre, password_hash, role, direccion_nombre, activo
+    `SELECT id, username, nombre, password_hash, role, direccion_nombre, orden_login, activo
      FROM usuarios
     WHERE LOWER(username) = ?
       OR (role = 'direccion' AND LOWER(TRIM(direccion_nombre)) = ?)
@@ -1014,7 +1044,7 @@ export async function getUsuarioByLoginIdentifier(identifier) {
 
 export async function getUsuarioById(id) {
   const rows = await query(
-    `SELECT id, username, nombre, role, direccion_nombre, activo, created_at, updated_at
+    `SELECT id, username, nombre, role, direccion_nombre, orden_login, activo, created_at, updated_at
      FROM usuarios
      WHERE id = ?
      LIMIT 1`,
@@ -1030,9 +1060,9 @@ export async function getUsuarioById(id) {
 
 export async function getUsuarios() {
   const rows = await query(
-    `SELECT id, username, nombre, role, direccion_nombre, activo, created_at, updated_at
+    `SELECT id, username, nombre, role, direccion_nombre, orden_login, activo, created_at, updated_at
      FROM usuarios
-     ORDER BY nombre`
+     ORDER BY orden_login ASC, nombre ASC`
   );
   return rows.map((row) => {
     const item = toCamelRow(row);
@@ -1046,8 +1076,21 @@ export async function getUsuarios() {
 function normalizeUsername(value = '') {
   return String(value || '')
     .trim()
-    .toLowerCase()
     .replace(/\s+/g, '_');
+}
+
+function normalizeUsernameKey(value = '') {
+  return normalizeUsername(value).toLowerCase();
+}
+
+function normalizeRoleKey(value = '') {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
 }
 
 function repairMojibake(value = '') {
@@ -1105,20 +1148,29 @@ export async function createUsuario(data = {}) {
   const username = normalizeUsername(data.username);
   const nombre = normalizeText(data.nombre);
   const password = String(data.password || '12345');
-  const role = String(data.role || '').trim();
+  const role = normalizeRoleKey(data.role || '');
   const direccionNombre = data.direccionNombre ? normalizeText(data.direccionNombre) : null;
+  const ordenLogin = Math.max(0, Number.parseInt(String(data.ordenLogin ?? 0), 10) || 0);
   const activo = normalizeActivo(data.activo, true);
 
   if (!username || !nombre || !password) throw new Error('username, nombre y password son requeridos');
-  if (!['admin', 'direccion', 'reporteria'].includes(role)) throw new Error('Rol inválido');
+
+  const existeUsername = await query(
+    `SELECT id FROM usuarios WHERE LOWER(username) = ? LIMIT 1`,
+    [normalizeUsernameKey(username)]
+  );
+  if (existeUsername.length > 0) throw new Error('El usuario ya existe');
+
+  const rolesDisponibles = await getRolesUsuariosDisponibles();
+  if (!rolesDisponibles.includes(role)) throw new Error('Rol inválido o no configurado');
   if (role === 'direccion' && !direccionNombre) throw new Error('direccionNombre es requerido para rol dirección');
 
   const passwordHash = await bcrypt.hash(password, 10);
 
   const result = await query(
-    `INSERT INTO usuarios (username, nombre, password_hash, role, direccion_nombre, activo)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [username, nombre, passwordHash, role, role === 'direccion' ? direccionNombre : null, activo]
+    `INSERT INTO usuarios (username, nombre, password_hash, role, direccion_nombre, orden_login, activo)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [username, nombre, passwordHash, role, role === 'direccion' ? direccionNombre : null, ordenLogin, activo]
   );
 
   return getUsuarioById(result.insertId);
@@ -1128,19 +1180,37 @@ export async function updateUsuario(id, data = {}) {
   const sets = [];
   const values = [];
 
+  if (data.username !== undefined) {
+    const username = normalizeUsername(data.username);
+    if (!username) throw new Error('username es requerido');
+
+    const existente = await query(
+      'SELECT id FROM usuarios WHERE LOWER(username) = ? AND id <> ? LIMIT 1',
+      [normalizeUsernameKey(username), id]
+    );
+    if (existente.length > 0) throw new Error('El usuario ya existe');
+
+    sets.push('username = ?');
+    values.push(username);
+  }
   if (data.nombre !== undefined) {
     sets.push('nombre = ?');
     values.push(normalizeText(data.nombre));
   }
   if (data.role !== undefined) {
-    const role = String(data.role || '').trim();
-    if (!['admin', 'direccion', 'reporteria'].includes(role)) throw new Error('Rol inválido');
+    const role = normalizeRoleKey(data.role || '');
+    const rolesDisponibles = await getRolesUsuariosDisponibles();
+    if (!rolesDisponibles.includes(role)) throw new Error('Rol inválido o no configurado');
     sets.push('role = ?');
     values.push(role);
   }
   if (data.direccionNombre !== undefined) {
     sets.push('direccion_nombre = ?');
     values.push(data.direccionNombre ? normalizeText(data.direccionNombre) : null);
+  }
+  if (data.ordenLogin !== undefined) {
+    sets.push('orden_login = ?');
+    values.push(Math.max(0, Number.parseInt(String(data.ordenLogin ?? 0), 10) || 0));
   }
   if (data.activo !== undefined) {
     sets.push('activo = ?');
@@ -1249,36 +1319,38 @@ export async function getDireccionesLoginDisponibles() {
 
 export async function getOpcionesLogin() {
   const rows = await query(
-    `SELECT username, nombre, role, direccion_nombre
+    `SELECT DISTINCT username, orden_login
      FROM usuarios
      WHERE activo = true
-     ORDER BY role, nombre`
+       AND username IS NOT NULL
+       AND TRIM(username) <> ''
+     ORDER BY COALESCE(orden_login, 0) ASC, username ASC`
   );
 
-  const opciones = new Set(['admin']);
+  const hiddenUsernames = new Set([
+    normalizeUsernameKey(process.env.DEFAULT_ADMIN_USER || 'admin')
+  ]);
 
-  for (const row of rows) {
-    const role = String(row.role || '').trim();
-    const username = normalizeUsername(row.username);
-    const direccion = normalizeText(row.direccion_nombre || '');
-
-    if (['admin', 'reporteria'].includes(role) && username) {
-      opciones.add(username);
-    }
-
-    if (role === 'direccion' && direccion) {
-      opciones.add(direccion);
-    }
-  }
-
-  return Array.from(opciones).sort((a, b) => a.localeCompare(b, 'es'));
+  return rows
+    .map((row) => String(row.username || '').trim())
+    .filter((username) => Boolean(username) && !hiddenUsernames.has(normalizeUsernameKey(username)));
 }
 
 export async function getRolesUsuariosDisponibles() {
-  const rows = await query('SELECT DISTINCT role FROM usuarios ORDER BY role');
-  return rows
-    .map((row) => String(row.role || '').trim())
-    .filter(Boolean);
+  const [usuariosRows, modulosRows, menuRows] = await Promise.all([
+    query('SELECT DISTINCT role FROM usuarios WHERE role IS NOT NULL AND TRIM(role) <> ""'),
+    query('SELECT DISTINCT role FROM permisos_roles_modulos WHERE role IS NOT NULL AND TRIM(role) <> ""'),
+    query('SELECT DISTINCT role FROM permisos_roles_menu WHERE role IS NOT NULL AND TRIM(role) <> ""')
+  ]);
+
+  const roles = new Set(CORE_ROLES);
+
+  for (const row of [...usuariosRows, ...modulosRows, ...menuRows]) {
+    const role = normalizeRoleKey(row.role || '');
+    if (role) roles.add(role);
+  }
+
+  return Array.from(roles).sort((a, b) => a.localeCompare(b, 'es'));
 }
 
 export async function getPermisosModulosCatalogo() {
@@ -1316,7 +1388,7 @@ export async function getPermisosMenuCatalogo() {
 }
 
 export async function getPermisosRol(role) {
-  const roleName = String(role || '').trim();
+  const roleName = normalizeRoleKey(role || '');
   if (!roleName) throw new Error('role es requerido');
 
   const [modulosCatalogo, menuCatalogo] = await Promise.all([
@@ -1380,8 +1452,72 @@ export async function getPermisosRolesResumen() {
   return { roles, permisos };
 }
 
+export async function createRole(data = {}) {
+  const roleName = normalizeRoleKey(data.role || data.nombre || '');
+  const baseRole = normalizeRoleKey(data.baseRole || 'reporteria') || 'reporteria';
+  const copiarPermisos = data.copiarPermisos !== false;
+
+  if (!roleName) throw new Error('El nombre del rol es requerido');
+
+  const rolesActuales = await getRolesUsuariosDisponibles();
+  if (rolesActuales.includes(roleName)) {
+    throw new Error('El rol ya existe');
+  }
+
+  const roleBaseSeguro = rolesActuales.includes(baseRole) ? baseRole : 'reporteria';
+  const plantilla = await getPermisosRol(roleBaseSeguro);
+
+  const payload = {
+    modulos: plantilla.modulos.map((item) => ({
+      clave: item.clave,
+      permisos: copiarPermisos
+        ? {
+            read: Boolean(item.permisos.read),
+            create: Boolean(item.permisos.create),
+            update: Boolean(item.permisos.update),
+            delete: Boolean(item.permisos.delete)
+          }
+        : { read: false, create: false, update: false, delete: false }
+    })),
+    menu: plantilla.menu.map((item) => ({
+      clave: item.clave,
+      puedeIngresar: copiarPermisos ? Boolean(item.puedeIngresar) : false
+    }))
+  };
+
+  return updatePermisosRol(roleName, payload);
+}
+
+export async function deleteRole(role) {
+  const roleName = normalizeRoleKey(role || '');
+  if (!roleName) throw new Error('role es requerido');
+  if (CORE_ROLES.includes(roleName)) {
+    throw new Error('No se puede eliminar un rol base del sistema');
+  }
+
+  const rows = await query('SELECT COUNT(*) AS total FROM usuarios WHERE role = ?', [roleName]);
+  if (Number(rows[0]?.total || 0) > 0) {
+    throw new Error('No se puede eliminar un rol que tiene usuarios asignados');
+  }
+
+  const conn = await getPool().getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.execute('DELETE FROM permisos_roles_menu WHERE role = ?', [roleName]);
+    await conn.execute('DELETE FROM permisos_roles_modulos WHERE role = ?', [roleName]);
+    await conn.commit();
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  } finally {
+    conn.release();
+  }
+
+  return { success: true, role: roleName };
+}
+
 export async function updatePermisosRol(role, data = {}) {
-  const roleName = String(role || '').trim();
+  const roleName = normalizeRoleKey(role || '');
   if (!roleName) throw new Error('role es requerido');
 
   const modulos = Array.isArray(data.modulos) ? data.modulos : [];
@@ -1453,7 +1589,7 @@ export async function updatePermisosRol(role, data = {}) {
 }
 
 export async function hasPermisoModulo(role, moduloClave, accion = 'read') {
-  const roleName = String(role || '').trim();
+  const roleName = normalizeRoleKey(role || '');
   const modulo = String(moduloClave || '').trim();
   const action = String(accion || 'read').trim().toLowerCase();
 
@@ -1479,7 +1615,7 @@ export async function hasPermisoModulo(role, moduloClave, accion = 'read') {
 }
 
 export async function hasAccesoMenu(role, menuClave) {
-  const roleName = String(role || '').trim();
+  const roleName = normalizeRoleKey(role || '');
   const menu = String(menuClave || '').trim();
   if (!roleName || !menu) return false;
 
@@ -2492,6 +2628,33 @@ function matchesMontoRange(value, selectedRange) {
   return monto >= range.min && monto <= range.max;
 }
 
+function obtenerEstadoProcesoDashboardResumen(subtarea) {
+  const valor = subtarea?.activo;
+  if (valor === undefined || valor === null || valor === '') return 1;
+  if (typeof valor === 'number') {
+    if (valor === 2) return 2;
+    return valor === 0 ? 0 : 1;
+  }
+  if (typeof valor === 'boolean') return valor ? 1 : 0;
+
+  const normalizado = String(valor).trim().toLowerCase();
+  if (['2', 'desierto'].includes(normalizado)) return 2;
+  if (['0', 'false', 'inactivo'].includes(normalizado)) return 0;
+  return 1;
+}
+
+function obtenerPresupuestoDashboardResumen(subtarea) {
+  const valor = Number(subtarea?.presupuesto ?? subtarea?.presupuesto2026Inicial ?? subtarea?.presupuesto_2026_inicial ?? 0);
+  return Number.isFinite(valor) ? valor : 0;
+}
+
+function dashboardSubtareaCuentaEnIndicadores(subtarea) {
+  const estado = obtenerEstadoProcesoDashboardResumen(subtarea);
+  if (estado === 0) return false;
+  if (estado === 1 && obtenerPresupuestoDashboardResumen(subtarea) <= 0) return false;
+  return true;
+}
+
 function mergeWeeklySeries(seriesA = [], seriesB = []) {
   const merged = new Map();
 
@@ -2538,7 +2701,15 @@ export async function getDashboardWeeklySummary(scope = {}, filters = {}) {
     const tipoContratacionOk = matchesDashboardFilter(subtarea?.procedimientoSugerido || subtarea?.procedimiento_sugerido || '', tipoContratacion);
     const busquedaOk = matchesDashboardSearch(subtarea, busqueda);
     const montoOk = matchesMontoRange(subtarea?.presupuesto, monto);
-    return areaOk && responsableOk && direccionOk && tipoPlanOk && cuatrimestreOk && tipoContratacionOk && busquedaOk && montoOk;
+    return dashboardSubtareaCuentaEnIndicadores(subtarea)
+      && areaOk
+      && responsableOk
+      && direccionOk
+      && tipoPlanOk
+      && cuatrimestreOk
+      && tipoContratacionOk
+      && busquedaOk
+      && montoOk;
   });
 
 
