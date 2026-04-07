@@ -985,6 +985,25 @@ function formatearMontoCabecera(valor: number) {
   }).format(Number(valor || 0));
 }
 
+function obtenerFechaHoyGuayaquil() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: GUAYAQUIL_TIMEZONE }).format(new Date());
+}
+
+function parseFechaComparable(value: any) {
+  if (!value) return null;
+
+  const normalizada = normalizarFechaInput(value) || String(value).trim();
+  const match = String(normalizada).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 0, 0, 0, 0);
+  }
+
+  const parsed = new Date(normalizada);
+  if (Number.isNaN(parsed.getTime())) return null;
+  parsed.setHours(0, 0, 0, 0);
+  return parsed;
+}
+
 function manejarEscapeModales(event: KeyboardEvent) {
   if (event.key !== 'Escape') return;
   if (etapaSeguimiento.value) {
@@ -1013,10 +1032,9 @@ function formatearFecha(fecha: string | Date | undefined | null) {
 function normalizarFechaInput(fecha?: string | null | Date) {
   if (!fecha) return null;
   
-  // Si es un objeto Date, convertir a yyyy-MM-dd
+  // Si es un objeto Date, convertir a yyyy-MM-dd usando la fecha local de Guayaquil
   if (fecha instanceof Date) {
-    // Usar toISOString() para evitar problemas de zona horaria local
-    return fecha.toISOString().split('T')[0];
+    return new Intl.DateTimeFormat('en-CA', { timeZone: GUAYAQUIL_TIMEZONE }).format(fecha);
   }
   
   const fechaStr = String(fecha).trim();
@@ -1040,7 +1058,7 @@ function normalizarFechaInput(fecha?: string | null | Date) {
   try {
     const parsed = new Date(fechaStr);
     if (!Number.isNaN(parsed.getTime())) {
-      return parsed.toISOString().split('T')[0];
+      return new Intl.DateTimeFormat('en-CA', { timeZone: GUAYAQUIL_TIMEZONE }).format(parsed);
     }
   } catch {
     return null;
@@ -1182,38 +1200,30 @@ function esEtapaAtrasada(etapa: any, actividad?: any) {
 
   const estado = estadoNormalizado(etapa?.estado);
   if (estado === 'completado') return false;
-  const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
-  if (!fecha) return false;
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
-  const fechaObj = new Date(fecha);
-  fechaObj.setHours(0, 0, 0, 0);
+
+  const fechaObj = parseFechaComparable(etapa?.fechaPlanificada || etapa?.fechaTentativa);
+  const hoy = parseFechaComparable(obtenerFechaHoyGuayaquil());
+  if (!fechaObj || !hoy) return false;
+
   return fechaObj < hoy;
 }
 
 function diasRetraso(etapa: any, actividad?: any) {
   if (actividad && !procesoCuentaEnReportesYAtrasos(actividad)) return 0;
 
-  const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
-  if (!fecha) return 0;
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
-  const fechaObj = new Date(fecha);
-  fechaObj.setHours(0, 0, 0, 0);
+  const fechaObj = parseFechaComparable(etapa?.fechaPlanificada || etapa?.fechaTentativa);
+  const hoy = parseFechaComparable(obtenerFechaHoyGuayaquil());
+  if (!fechaObj || !hoy) return 0;
+
   return Math.max(0, Math.floor((hoy.getTime() - fechaObj.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
 function diasRetrasoCompletado(etapa: any, actividad?: any) {
   if (actividad && !procesoCuentaEnReportesYAtrasos(actividad)) return 0;
 
-  const fechaTentativa = etapa?.fechaPlanificada || etapa?.fechaTentativa;
-  const fechaReal = etapa?.fechaReal;
-  if (!fechaTentativa || !fechaReal) return 0;
-
-  const fechaTentativaObj = new Date(fechaTentativa);
-  const fechaRealObj = new Date(fechaReal);
-  fechaTentativaObj.setHours(0, 0, 0, 0);
-  fechaRealObj.setHours(0, 0, 0, 0);
+  const fechaTentativaObj = parseFechaComparable(etapa?.fechaPlanificada || etapa?.fechaTentativa);
+  const fechaRealObj = parseFechaComparable(etapa?.fechaReal);
+  if (!fechaTentativaObj || !fechaRealObj) return 0;
 
   return Math.max(0, Math.floor((fechaRealObj.getTime() - fechaTentativaObj.getTime()) / (1000 * 60 * 60 * 24)));
 }
@@ -1539,7 +1549,7 @@ function onEstadoEtapaChange(etapa: any) {
   etapa.estado = estadoNormalizado(etapa?.estado) === 'completado' ? 'completado' : 'pendiente';
   if (etapa.estado === 'completado' && !etapa?.fechaReal) {
     // Asignar fecha de hoy en formato yyyy-MM-dd
-    etapa.fechaReal = new Date().toISOString().split('T')[0];
+    etapa.fechaReal = obtenerFechaHoyGuayaquil();
   }
   // Si el estado vuelve a pendiente, borrar la fecha real
   if (etapa.estado === 'pendiente') {
@@ -1720,7 +1730,7 @@ async function guardarSeguimiento() {
       {
         comentario: nuevoComentario.value.trim(),
         tieneAlerta: nuevoAlerta.value,
-        fecha: new Date().toISOString().split('T')[0]
+        fecha: obtenerFechaHoyGuayaquil()
       }
     );
     nuevoComentario.value = '';

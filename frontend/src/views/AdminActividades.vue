@@ -1123,14 +1123,34 @@ function cerrarVisualizacion() {
   actividadVista.value = null;
 }
 
-function formatearFechaParaVista(fecha: string | undefined | null): string {
-  if (!fecha) return 'No definida';
-  try {
-    const fechaObj = new Date(fecha);
-    return fechaObj.toLocaleDateString('es-EC', { year: 'numeric', month: 'long', day: 'numeric' });
-  } catch (e) {
-    return 'Fecha inválida';
+function parseFechaAdmin(fecha: string | Date | undefined | null): Date | null {
+  if (!fecha) return null;
+  if (fecha instanceof Date) {
+    const copia = new Date(fecha.getTime());
+    copia.setHours(0, 0, 0, 0);
+    return copia;
   }
+
+  const texto = String(fecha).trim();
+  const match = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 0, 0, 0, 0);
+  }
+
+  const parsed = new Date(texto);
+  if (Number.isNaN(parsed.getTime())) return null;
+  parsed.setHours(0, 0, 0, 0);
+  return parsed;
+}
+
+function obtenerFechaHoyAdmin() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date());
+}
+
+function formatearFechaParaVista(fecha: string | undefined | null): string {
+  const fechaObj = parseFechaAdmin(fecha);
+  if (!fechaObj) return 'No definida';
+  return fechaObj.toLocaleDateString('es-EC', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 function formatearEstado(estado: string | undefined): string {
@@ -1173,14 +1193,9 @@ function etapaEstaGuardando(etapa: Etapa): boolean {
 }
 
 function diasRetrasoCompletado(etapa: Etapa): number {
-  const fechaTentativa = etapa?.fechaTentativa;
-  const fechaReal = etapa?.fechaReal;
-  if (!fechaTentativa || !fechaReal) return 0;
-
-  const fechaTentativaObj = new Date(fechaTentativa);
-  const fechaRealObj = new Date(fechaReal);
-  fechaTentativaObj.setHours(0, 0, 0, 0);
-  fechaRealObj.setHours(0, 0, 0, 0);
+  const fechaTentativaObj = parseFechaAdmin(etapa?.fechaTentativa);
+  const fechaRealObj = parseFechaAdmin(etapa?.fechaReal);
+  if (!fechaTentativaObj || !fechaRealObj) return 0;
 
   return Math.max(0, Math.floor((fechaRealObj.getTime() - fechaTentativaObj.getTime()) / (1000 * 60 * 60 * 24)));
 }
@@ -1429,7 +1444,7 @@ async function actualizarEstadoEtapa(etapa: Etapa) {
   etapa.estado = normalizarEstadoEtapa(etapa.estado);
 
   if (etapa.estado === 'completado' && !etapa.fechaReal) {
-    etapa.fechaReal = new Date().toISOString().split('T')[0];
+    etapa.fechaReal = obtenerFechaHoyAdmin();
   } else if (etapa.estado === 'pendiente') {
     etapa.fechaReal = '';
   }
@@ -1521,7 +1536,7 @@ async function guardarNuevoSeguimiento() {
         comentario: nuevoComentario.value.trim(),
         tieneAlerta: nuevoAlerta.value,
         responsableId: actividadSeleccionada.value.responsableId,
-        fecha: new Date().toISOString().split('T')[0]
+        fecha: obtenerFechaHoyAdmin()
       }
     );
 

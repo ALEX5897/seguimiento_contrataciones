@@ -416,9 +416,34 @@ function obtenerEtapaId(etapa: any): number | null {
   return Number.isFinite(valor) && valor > 0 ? valor : null;
 }
 
+function parseFechaMatriz(fecha: string | Date | null | undefined) {
+  if (!fecha) return null;
+  if (fecha instanceof Date) {
+    const copia = new Date(fecha.getTime());
+    copia.setHours(0, 0, 0, 0);
+    return copia;
+  }
+
+  const texto = String(fecha).trim();
+  const match = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 0, 0, 0, 0);
+  }
+
+  const parsed = new Date(texto);
+  if (Number.isNaN(parsed.getTime())) return null;
+  parsed.setHours(0, 0, 0, 0);
+  return parsed;
+}
+
+function obtenerHoyMatriz() {
+  return parseFechaMatriz(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date()));
+}
+
 function formatFecha(fecha: string | null | undefined) {
-  if (!fecha) return 'No aplica';
-  return new Date(fecha).toLocaleDateString('es-EC');
+  const parsed = parseFechaMatriz(fecha);
+  if (!parsed) return 'No aplica';
+  return parsed.toLocaleDateString('es-EC');
 }
 
 function normalizarEstado(estado: string | null | undefined) {
@@ -455,12 +480,10 @@ function esAtrasada(etapa: EtapaSeguimiento, subtarea?: Subtarea | any) {
   const estado = normalizarEstado(etapa.estado);
   if (estado === 'completado') return false;
 
-  const fechaPlanificada = new Date(etapa.fechaPlanificada);
-  if (Number.isNaN(fechaPlanificada.getTime())) return false;
+  const fechaPlanificada = parseFechaMatriz(etapa.fechaPlanificada);
+  const hoy = obtenerHoyMatriz();
+  if (!fechaPlanificada || !hoy) return false;
 
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
-  fechaPlanificada.setHours(0, 0, 0, 0);
   return fechaPlanificada < hoy;
 }
 
@@ -472,12 +495,9 @@ function estadoVisual(etapa: EtapaSeguimiento, subtarea?: Subtarea | any) {
 function calcularDiasRetraso(etapa: EtapaSeguimiento, subtarea?: Subtarea | any) {
   if (subtarea && !procesoCuentaEnAtrasosMatriz(subtarea)) return 0;
   if (!etapa?.fechaPlanificada) return 0;
-  const fechaPlanificada = new Date(etapa.fechaPlanificada);
-  if (Number.isNaN(fechaPlanificada.getTime())) return 0;
-
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
-  fechaPlanificada.setHours(0, 0, 0, 0);
+  const fechaPlanificada = parseFechaMatriz(etapa.fechaPlanificada);
+  const hoy = obtenerHoyMatriz();
+  if (!fechaPlanificada || !hoy) return 0;
 
   const diffMs = hoy.getTime() - fechaPlanificada.getTime();
   if (diffMs <= 0) return 0;
@@ -498,10 +518,10 @@ function formatoEstadoTexto(estado: string | null | undefined) {
 
 function esVenceHoy(etapa: EtapaSeguimiento) {
   if (!etapa?.fechaPlanificada) return false;
-  const fecha = new Date(etapa.fechaPlanificada);
-  if (Number.isNaN(fecha.getTime())) return false;
-  const hoy = new Date();
-  return fecha.getFullYear() === hoy.getFullYear() && fecha.getMonth() === hoy.getMonth() && fecha.getDate() === hoy.getDate();
+  const fecha = parseFechaMatriz(etapa.fechaPlanificada);
+  const hoy = obtenerHoyMatriz();
+  if (!fecha || !hoy) return false;
+  return fecha.getTime() === hoy.getTime();
 }
 
 function activarSoloAtrasadas() {

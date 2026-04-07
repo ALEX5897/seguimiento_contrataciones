@@ -20,6 +20,26 @@ async function resolveSubtareaIdFromRef(subtareaRef, scope = {}) {
   return subtarea?.id || null;
 }
 
+function parseDateOnlyLocal(value) {
+  if (!value) return null;
+  if (value instanceof Date) {
+    const date = new Date(value.getTime());
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
+  const text = String(value).trim();
+  const match = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 0, 0, 0, 0);
+  }
+
+  const date = new Date(text);
+  if (Number.isNaN(date.getTime())) return null;
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
 function obtenerEstadoProcesoResumen(subtarea) {
   const valor = subtarea?.activo;
   if (valor === undefined || valor === null || valor === '') return 1;

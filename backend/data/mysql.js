@@ -1795,7 +1795,8 @@ export async function getEventosAuditoria(filters = {}) {
 
   const rows = await query(
     `SELECT id, user_id, username, role, direccion_nombre, accion, modulo, recurso, metodo, ruta,
-            status_code, exito, ip, user_agent, error_mensaje, fecha
+            status_code, exito, ip, user_agent, error_mensaje,
+            CONCAT(DATE_FORMAT(DATE_SUB(fecha, INTERVAL 5 HOUR), '%Y-%m-%dT%H:%i:%s'), '-05:00') AS fecha
      FROM auditoria_eventos
      ${whereClause}
      ORDER BY fecha DESC, id DESC
@@ -1835,7 +1836,7 @@ export async function getResumenSesionesAuditoria(filters = {}) {
         COALESCE(u.nombre, ae.username) AS nombre,
         COALESCE(u.role, ae.role) AS role,
         COALESCE(u.direccion_nombre, ae.direccion_nombre) AS direccion_nombre,
-        ae.fecha AS ultimo_login,
+        CONCAT(DATE_FORMAT(DATE_SUB(ae.fecha, INTERVAL 5 HOUR), '%Y-%m-%dT%H:%i:%s'), '-05:00') AS ultimo_login,
         ae.ip,
         ae.user_agent,
         COALESCE(u.activo, true) AS usuario_activo
@@ -1875,7 +1876,7 @@ export async function getResumenSesionesAuditoria(filters = {}) {
         ae.ip,
         ae.user_agent,
         ae.error_mensaje,
-        ae.fecha
+        CONCAT(DATE_FORMAT(DATE_SUB(ae.fecha, INTERVAL 5 HOUR), '%Y-%m-%dT%H:%i:%s'), '-05:00') AS fecha
       FROM auditoria_eventos ae
       LEFT JOIN usuarios u ON u.id = ae.user_id
       WHERE ae.accion = 'login'
@@ -1898,7 +1899,8 @@ export async function getResumenSesionesAuditoria(filters = {}) {
 export async function getEventoAuditoriaById(id) {
   const rows = await query(
     `SELECT id, user_id, username, role, direccion_nombre, accion, modulo, recurso, metodo, ruta,
-            status_code, exito, ip, user_agent, request_query, request_body, response_body, error_mensaje, fecha
+            status_code, exito, ip, user_agent, request_query, request_body, response_body, error_mensaje,
+            CONCAT(DATE_FORMAT(DATE_SUB(fecha, INTERVAL 5 HOUR), '%Y-%m-%dT%H:%i:%s'), '-05:00') AS fecha
      FROM auditoria_eventos
      WHERE id = ?
      LIMIT 1`,

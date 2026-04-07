@@ -592,6 +592,7 @@ const detalleKpi = ref<{ activo: boolean; tipo: 'procesos' | 'cumplimiento' | 'r
   activo: false,
   tipo: 'cumplimiento'
 });
+const GUAYAQUIL_TIMEZONE = 'America/Guayaquil';
 const fechaActual = new Date().toLocaleDateString('es-EC', {
   weekday: 'long',
   year: 'numeric',
@@ -636,11 +637,36 @@ function formatearMonto(valor: number) {
   }).format(Number(valor || 0));
 }
 
+function obtenerFechaHoyDashboard() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: GUAYAQUIL_TIMEZONE }).format(new Date());
+}
+
+function parseFechaDashboard(fecha: string | Date | null | undefined) {
+  if (!fecha) return null;
+  if (fecha instanceof Date) {
+    const copia = new Date(fecha.getTime());
+    copia.setHours(0, 0, 0, 0);
+    return copia;
+  }
+
+  const texto = String(fecha).trim();
+  const match = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 0, 0, 0, 0);
+  }
+
+  const parsed = new Date(texto);
+  if (Number.isNaN(parsed.getTime())) return null;
+  parsed.setHours(0, 0, 0, 0);
+  return parsed;
+}
+
 function formatearFechaDashboard(fecha: string | Date | null | undefined) {
   if (!fecha) return 'Sin fecha registrada';
-  const parsed = new Date(fecha);
+  const parsed = parseFechaDashboard(fecha) || new Date(fecha);
   if (Number.isNaN(parsed.getTime())) return 'Sin fecha registrada';
   return new Intl.DateTimeFormat('es-EC', {
+    timeZone: GUAYAQUIL_TIMEZONE,
     day: '2-digit',
     month: '2-digit',
     year: 'numeric'
@@ -696,16 +722,13 @@ function actividadCompleta(subtarea: any) {
 function actividadAtrasada(subtarea: any) {
   if (!procesoCuentaEnIndicadoresYAtrasosDashboard(subtarea)) return false;
 
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
+  const hoy = parseFechaDashboard(obtenerFechaHoyDashboard());
+  if (!hoy) return false;
 
   return getEtapasConFechaSubtarea(subtarea).some((etapa: any) => {
     if (normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado') return false;
-    const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
-    if (!fecha) return false;
-    const plan = new Date(fecha);
-    plan.setHours(0, 0, 0, 0);
-    return plan < hoy;
+    const plan = parseFechaDashboard(etapa?.fechaPlanificada || etapa?.fechaTentativa);
+    return Boolean(plan && plan < hoy);
   });
 }
 
@@ -1032,18 +1055,15 @@ const detalleCumplimiento = computed(() =>
 const detalleMontoEjecutado = computed(() => detalleCumplimiento.value);
 
 const detalleProcesosAtrasados = computed(() => {
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
+  const hoy = parseFechaDashboard(obtenerFechaHoyDashboard());
+  if (!hoy) return [];
 
   return subtareasFiltradas.value
     .map((subtarea: any) => {
       const etapasRetrasadas = getEtapasConFechaSubtarea(subtarea).filter((etapa: any) => {
-        const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
-        if (!fecha || normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado') return false;
-        const plan = new Date(fecha);
-        if (Number.isNaN(plan.getTime())) return false;
-        plan.setHours(0, 0, 0, 0);
-        return plan < hoy;
+        if (normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado') return false;
+        const plan = parseFechaDashboard(etapa?.fechaPlanificada || etapa?.fechaTentativa);
+        return Boolean(plan && plan < hoy);
       }).length;
 
       if (!etapasRetrasadas) return null;
@@ -1060,22 +1080,22 @@ const detalleProcesosAtrasados = computed(() => {
 });
 
 const etapasPorVencer = computed(() => {
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
+  const hoy = parseFechaDashboard(obtenerFechaHoyDashboard());
+  if (!hoy) return [];
 
   return etapas.value
     .filter((etapa: any) => {
-      const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
-      if (!fecha || normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado') return false;
-      const plan = new Date(fecha);
-      plan.setHours(0, 0, 0, 0);
+      if (normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado') return false;
+      const plan = parseFechaDashboard(etapa?.fechaPlanificada || etapa?.fechaTentativa);
+      if (!plan) return false;
       const diasRestantes = Math.floor((plan.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
       return diasRestantes === 2 || diasRestantes === 1;
     })
     .map((etapa: any) => {
-      const fecha = new Date(etapa?.fechaPlanificada || etapa?.fechaTentativa);
-      fecha.setHours(0, 0, 0, 0);
-      const diasRestantes = Math.floor((fecha.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+      const fecha = parseFechaDashboard(etapa?.fechaPlanificada || etapa?.fechaTentativa);
+      const diasRestantes = fecha
+        ? Math.floor((fecha.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
       return {
         id: `${etapa.subtareaId}-${etapa.etapaId || etapa.id}`,
         subtareaId: etapa.subtareaId,
@@ -1179,12 +1199,8 @@ const resumenDireccionesCumplimiento = computed(() => {
     const tieneRetraso = etapasProceso.some((etapa: any) => {
       const estado = normalizarEstado(etapa.estado, etapa.fechaReal);
       if (estado === 'completado') return false;
-      const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
-      if (!fecha) return false;
-      const plan = new Date(fecha);
-      if (Number.isNaN(plan.getTime())) return false;
-      plan.setHours(0, 0, 0, 0);
-      return plan < hoy;
+      const plan = parseFechaDashboard(etapa?.fechaPlanificada || etapa?.fechaTentativa);
+      return Boolean(plan && plan < hoy);
     });
 
     if (tieneRetraso) {
@@ -1334,17 +1350,13 @@ const etapasPendientesConFecha = computed(() =>
 );
 
 const etapasAtrasadasConFecha = computed(() => {
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
+  const hoy = parseFechaDashboard(obtenerFechaHoyDashboard());
+  if (!hoy) return 0;
 
   return etapasConFechaAsignada.value.filter((etapa: any) => {
     if (normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado') return false;
-    const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
-    if (!fecha) return false;
-    const plan = new Date(fecha);
-    if (isNaN(plan.getTime())) return false;
-    plan.setHours(0, 0, 0, 0);
-    return plan < hoy;
+    const plan = parseFechaDashboard(etapa?.fechaPlanificada || etapa?.fechaTentativa);
+    return Boolean(plan && plan < hoy);
   }).length;
 });
 
