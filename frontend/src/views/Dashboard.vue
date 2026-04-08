@@ -354,15 +354,20 @@
                 <div class="actividad-bar-top">
                   <div>
                     <div class="bar-label">{{ item.nombre }}</div>
-                    <div class="bar-helper">{{ item.area }} · {{ item.responsable }} · clic para abrir detalle</div>
+                    <div class="bar-helper">{{ item.area }} · {{ item.responsable }} · {{ item.tieneRetraso ? 'con retraso' : 'flujo normal' }} · clic para abrir detalle</div>
                   </div>
-                  <div class="actividad-presupuesto">{{ formatearMonto(item.presupuesto) }}</div>
+                  <div class="actividad-top-meta">
+                    <div class="actividad-presupuesto">{{ formatearMonto(item.presupuesto) }}</div>
+                    <div :class="['actividad-delay-badge', item.etapasRetrasadas > 0 ? 'late' : 'on-time']">
+                      {{ item.etapasRetrasadas }} {{ item.etapasRetrasadas === 1 ? 'etapa tarde' : 'etapas tarde' }}
+                    </div>
+                  </div>
                 </div>
                 <div class="actividad-bar-main">
                   <div class="bar-track actividad-track">
                     <div
                       class="bar-fill"
-                      :class="item.avance >= 70 ? 'ok' : item.avance >= 40 ? 'info' : 'warn'"
+                      :class="item.tieneRetraso ? 'warn' : 'ok'"
                       :style="{ width: item.width }"
                     ></div>
                   </div>
@@ -719,17 +724,21 @@ function actividadCompleta(subtarea: any) {
   return etapas.length > 0 && etapas.every((etapa: any) => normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado');
 }
 
-function actividadAtrasada(subtarea: any) {
-  if (!procesoCuentaEnIndicadoresYAtrasosDashboard(subtarea)) return false;
+function contarEtapasAtrasadasSubtarea(subtarea: any) {
+  if (!procesoCuentaEnIndicadoresYAtrasosDashboard(subtarea)) return 0;
 
   const hoy = parseFechaDashboard(obtenerFechaHoyDashboard());
-  if (!hoy) return false;
+  if (!hoy) return 0;
 
-  return getEtapasConFechaSubtarea(subtarea).some((etapa: any) => {
+  return getEtapasConFechaSubtarea(subtarea).filter((etapa: any) => {
     if (normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado') return false;
     const plan = parseFechaDashboard(etapa?.fechaPlanificada || etapa?.fechaTentativa);
     return Boolean(plan && plan < hoy);
-  });
+  }).length;
+}
+
+function actividadAtrasada(subtarea: any) {
+  return contarEtapasAtrasadasSubtarea(subtarea) > 0;
 }
 
 function procesoEnRiesgoDashboard(subtarea: any) {
@@ -1290,7 +1299,9 @@ const actividadesAvancePresupuesto = computed(() => {
       area: obtenerDireccionDashboard(subtarea) || 'Sin área',
       responsable: responsableBase(subtarea),
       avance: calcularAvanceSubtarea(subtarea),
-      presupuesto: obtenerPresupuestoDashboard(subtarea)
+      presupuesto: obtenerPresupuestoDashboard(subtarea),
+      etapasRetrasadas: contarEtapasAtrasadasSubtarea(subtarea),
+      tieneRetraso: actividadAtrasada(subtarea)
     }))
     .sort((a, b) => b.presupuesto - a.presupuesto || b.avance - a.avance)
     .map((item) => ({
@@ -2755,7 +2766,7 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 .dot.ok     { background: #22c55e; }
 .dot.warn   { background: #f59e0b; }
 .dot.danger { background: #ef4444; }
-.dot.tomato { background: #ff6347; }
+.dot.tomato { background: #dc2626; }
 
 /* ── Bar Stacks ───────────────────────────────────────────────────────────── */
 .bars-stack {
@@ -2838,7 +2849,7 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 }
 
 .bar-fill.ok      { background: linear-gradient(90deg, #22c55e, #16a34a); }
-.bar-fill.warn    { background: linear-gradient(90deg, #f59e0b, #d97706); }
+.bar-fill.warn    { background: linear-gradient(90deg, #ef4444, #dc2626); }
 .bar-fill.danger  { background: linear-gradient(90deg, #ef4444, #dc2626); }
 .bar-fill.info    { background: linear-gradient(90deg, #3b82f6, #2563eb); }
 
@@ -2907,6 +2918,13 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
   min-width: 0;
 }
 
+.actividad-top-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
 .actividad-presupuesto {
   font-size: 0.78rem;
   font-weight: 700;
@@ -2916,6 +2934,27 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
   border: 1px solid var(--c-border);
   border-radius: 6px;
   padding: 0.15rem 0.45rem;
+}
+
+.actividad-delay-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 0.18rem 0.55rem;
+  border: 1px solid transparent;
+}
+
+.actividad-delay-badge.on-time {
+  color: #166534;
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.actividad-delay-badge.late {
+  color: #991b1b;
+  background: #fee2e2;
+  border-color: #fca5a5;
 }
 
 .actividad-avance {

@@ -68,7 +68,7 @@
             <td>{{ act.nombre }}</td>
             <td>{{ act.direccionNombre || 'N/A' }}</td>
             <td>{{ act.tipoPlan }}</td>
-            <td>${{ (act.presupuesto || 0).toLocaleString() }}</td>
+            <td>${{ formatearMontoMoneda(act.presupuesto || 0) }}</td>
             <td>
               <span :class="['badge', estadoProcesoBadgeClase(act.activo)]">
                 {{ estadoProcesoLabel(act.activo) }}
@@ -193,35 +193,16 @@
             <label for="presupuesto">Presupuesto</label>
             <input
               id="presupuesto"
-              v-model.number="formulario.presupuesto"
-              type="number"
-              min="0"
-              step="0.01"
+              v-model="presupuestoTexto"
+              type="text"
+              inputmode="decimal"
+              class="input-money"
+              placeholder="Ej: 1.200,00"
+              @input="onPresupuestoInput"
+              @focus="onPresupuestoFocus"
+              @blur="onPresupuestoBlur"
             />
-          </div>
-
-          <div class="form-fila">
-            <div class="form-grupo">
-              <label for="costoReforma2">Costo Reforma 2</label>
-              <input
-                id="costoReforma2"
-                v-model.number="formulario.costoReforma2"
-                type="number"
-                min="0"
-                step="0.01"
-              />
-            </div>
-            <div class="form-grupo">
-              <label for="avanceGeneral">Avance General (%)</label>
-              <input
-                id="avanceGeneral"
-                v-model.number="formulario.avanceGeneral"
-                type="number"
-                min="0"
-                max="100"
-                step="1"
-              />
-            </div>
+            <small class="field-help">Ingresa montos con o sin centavos. Ejemplo: 1200 → 1.200,00</small>
           </div>
 
           <div class="form-grupo">
@@ -231,17 +212,6 @@
               <option value="en_proceso">En proceso</option>
               <option value="completado">Completado</option>
             </select>
-          </div>
-
-          <div class="form-fila">
-            <div class="form-grupo">
-              <label for="fechaInicio">Fecha Inicio</label>
-              <input id="fechaInicio" v-model="formulario.fechaInicio" type="date" />
-            </div>
-            <div class="form-grupo">
-              <label for="fechaFin">Fecha Fin</label>
-              <input id="fechaFin" v-model="formulario.fechaFin" type="date" />
-            </div>
           </div>
 
           <div class="form-grupo">
@@ -258,9 +228,11 @@
             <textarea
               id="observaciones"
               v-model="formulario.observaciones"
-              rows="3"
-              placeholder="Notas u observaciones"
+              rows="5"
+              class="textarea-observaciones-proceso"
+              placeholder="Escribe aquí notas, alcance, observaciones o contexto relevante del proceso"
             />
+            <small class="field-help">Este espacio admite texto libre para describir mejor el proceso.</small>
           </div>
 
           <div class="botones-modal">
@@ -339,9 +311,9 @@
                 <span class="fecha-label">📅 Fecha tentativa:</span>
                 <input
                   type="date"
-                  :value="etapa.fechaTentativa"
+                  v-model="etapa.fechaTentativa"
                   class="input-fecha"
-                  disabled
+                  :disabled="etapaEstaGuardando(etapa)"
                 />
 
                 <span v-if="!etapa.fechaTentativa" style="color: red; font-size: 0.9em;">(No hay fecha cargada)</span>
@@ -506,7 +478,10 @@
     <div v-if="mostrarVisualizacion" class="modal-overlay" @click.self="cerrarVisualizacion">
       <div class="modal-content modal-ver" @click.stop>
         <div class="ver-header">
-          <h2>👁️ Detalle de Proceso</h2>
+          <div class="ver-header-copy">
+            <h2>👁️ Detalle de Proceso</h2>
+            <p v-if="actividadVista">{{ actividadVista.nombre }}</p>
+          </div>
           <button class="btn-close" @click="cerrarVisualizacion">✕</button>
         </div>
 
@@ -516,7 +491,7 @@
 
         <div v-else-if="actividadVista" class="ver-content">
           <!-- Información Principal -->
-          <div class="ver-seccion">
+          <div class="ver-seccion ver-seccion-full">
             <h3 class="seccion-titulo">📌 Información General</h3>
             <div class="info-grid">
               <div class="info-item">
@@ -566,11 +541,11 @@
               </div>
               <div class="info-item">
                 <span class="info-label">Presupuesto:</span>
-                <span class="info-valor destacado">${{ (actividadVista.presupuesto || 0).toLocaleString() }}</span>
+                <span class="info-valor destacado">${{ formatearMontoMoneda(actividadVista.presupuesto || 0) }}</span>
               </div>
               <div class="info-item">
                 <span class="info-label">Costo Reforma 2:</span>
-                <span class="info-valor">${{ (actividadVista.costoReforma2 || 0).toLocaleString() }}</span>
+                <span class="info-valor">${{ formatearMontoMoneda(actividadVista.costoReforma2 || 0) }}</span>
               </div>
             </div>
           </div>
@@ -608,7 +583,7 @@
           </div>
 
           <!-- Observaciones -->
-          <div v-if="actividadVista.observaciones" class="ver-seccion">
+          <div v-if="actividadVista.observaciones" class="ver-seccion ver-seccion-full">
             <h3 class="seccion-titulo">📝 Observaciones</h3>
             <div class="observaciones-texto">
               {{ actividadVista.observaciones }}
@@ -616,7 +591,7 @@
           </div>
 
           <!-- Etapas Asignadas -->
-          <div v-if="actividadVista.etapas && actividadVista.etapas.length > 0" class="ver-seccion">
+          <div v-if="actividadVista.etapas && actividadVista.etapas.length > 0" class="ver-seccion ver-seccion-full">
             <h3 class="seccion-titulo">⚙️ Etapas Asignadas ({{ actividadVista.etapas.filter(e => e.aplica).length }})</h3>
             <div class="etapas-lista">
               <div v-for="etapa in actividadVista.etapas.filter(e => e.aplica)" :key="etapa.id" class="etapa-card">
@@ -810,6 +785,7 @@ function getFormularioVacio(): Partial<Actividad> {
 }
 
 const formulario = ref<Partial<Actividad>>(getFormularioVacio());
+const presupuestoTexto = ref('0,00');
 
 const notificacion = ref<{ mensaje: string; tipo: 'success' | 'error' }>({ mensaje: '', tipo: 'success' });
 
@@ -910,6 +886,64 @@ function formatearFechaParaAPI(fecha: string | undefined | null): string | null 
   }
 }
 
+function normalizarMontoMoneda(valor: string | number | undefined | null): number {
+  if (typeof valor === 'number') {
+    return Number.isFinite(valor) ? valor : 0;
+  }
+
+  const limpio = String(valor ?? '')
+    .replace(/\$/g, '')
+    .replace(/\s+/g, '')
+    .replace(/[^\d,.-]/g, '');
+
+  if (!limpio) return 0;
+
+  const ultimaComa = limpio.lastIndexOf(',');
+  const ultimoPunto = limpio.lastIndexOf('.');
+  let normalizado = limpio;
+
+  if (ultimaComa > -1 && ultimoPunto > -1) {
+    const separadorDecimal = ultimaComa > ultimoPunto ? ',' : '.';
+    const separadorMiles = separadorDecimal === ',' ? /\./g : /,/g;
+    normalizado = limpio.replace(separadorMiles, '').replace(separadorDecimal, '.');
+  } else if (ultimaComa > -1) {
+    const decimales = limpio.length - ultimaComa - 1;
+    normalizado = decimales === 3 ? limpio.replace(/,/g, '') : limpio.replace(',', '.');
+  } else if (ultimoPunto > -1) {
+    const decimales = limpio.length - ultimoPunto - 1;
+    normalizado = decimales === 3 ? limpio.replace(/\./g, '') : limpio;
+  }
+
+  const monto = Number(normalizado);
+  return Number.isFinite(monto) ? Math.max(0, monto) : 0;
+}
+
+function formatearMontoMoneda(valor: string | number | undefined | null): string {
+  const monto = normalizarMontoMoneda(valor);
+  return new Intl.NumberFormat('es-EC', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(monto);
+}
+
+function sincronizarPresupuestoTexto(valor: string | number | undefined | null) {
+  const monto = normalizarMontoMoneda(valor);
+  formulario.value.presupuesto = monto;
+  presupuestoTexto.value = formatearMontoMoneda(monto);
+}
+
+function onPresupuestoInput() {
+  formulario.value.presupuesto = normalizarMontoMoneda(presupuestoTexto.value);
+}
+
+function onPresupuestoBlur() {
+  sincronizarPresupuestoTexto(presupuestoTexto.value);
+}
+
+function onPresupuestoFocus(event: Event) {
+  (event.target as HTMLInputElement | null)?.select();
+}
+
 onMounted(async () => {
   window.addEventListener('keydown', manejarEscapeModales);
   console.log('AdminActividades: montada');
@@ -993,6 +1027,7 @@ async function cargarDireccionesCatalogo() {
 function abrirFormularioNueva() {
   modoEdicion.value = false;
   formulario.value = getFormularioVacio();
+  sincronizarPresupuestoTexto(formulario.value.presupuesto);
   mostrarFormulario.value = true;
 }
 
@@ -1008,12 +1043,14 @@ function abrirFormularioEdicion(actividad: Actividad) {
   }
   actividadCopia.activo = estadoProcesoNumero(actividadCopia.activo);
   formulario.value = actividadCopia;
+  sincronizarPresupuestoTexto(actividadCopia.presupuesto);
   mostrarFormulario.value = true;
 }
 
 function cerrarFormulario() {
   mostrarFormulario.value = false;
   formulario.value = getFormularioVacio();
+  sincronizarPresupuestoTexto(0);
 }
 
 async function guardarActividad() {
@@ -1024,20 +1061,27 @@ async function guardarActividad() {
     }
 
     const direccionIdNormalizado = Number(formulario.value.direccionId) || null;
+    const presupuestoNormalizado = normalizarMontoMoneda(presupuestoTexto.value);
+    formulario.value.presupuesto = presupuestoNormalizado;
+    presupuestoTexto.value = formatearMontoMoneda(presupuestoNormalizado);
+
     const {
       direccionNombre: _direccionNombre,
       direccionEncargada: _direccionEncargada,
+      costoReforma2: _costoReforma2,
+      avanceGeneral: _avanceGeneral,
+      fechaInicio: _fechaInicio,
+      fechaFin: _fechaFin,
       ...formularioBase
     } = formulario.value as any;
 
     const payload = {
       ...formularioBase,
+      presupuesto: presupuestoNormalizado,
       activo: estadoProcesoNumero(formulario.value.activo),
       direccionId: direccionIdNormalizado,
       responsableId: formulario.value.responsableId ? Number(formulario.value.responsableId) : null,
-      responsableNombre: responsables.value.find(r => r.id === Number(formulario.value.responsableId))?.nombre || null,
-      fechaInicio: formatearFechaParaAPI(formulario.value.fechaInicio),
-      fechaFin: formatearFechaParaAPI(formulario.value.fechaFin)
+      responsableNombre: responsables.value.find(r => r.id === Number(formulario.value.responsableId))?.nombre || null
     };
     
     if (modoEdicion.value && formulario.value.id) {
@@ -1414,7 +1458,6 @@ function construirPayloadEtapas() {
       etapaId: e.etapaId || e.id,
       aplica: e.aplica,
 
-      // La fecha tentativa original se conserva, la edición va a fechaReforma
       fechaTentativa: fechaTentativaFormateada || '',
       fechaReforma: fechaReformaFormateada || '',
 
@@ -2129,7 +2172,8 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
       input[type="text"],
       input[type="number"],
       input[type="date"],
-      select {
+      select,
+      textarea {
         width: 100%;
         padding: 0.75rem;
         border: 1px solid #ddd;
@@ -2143,6 +2187,27 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
           border-color: #667eea;
           box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
+      }
+
+      .input-money {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.02em;
+      }
+
+      .textarea-observaciones-proceso {
+        min-height: 120px;
+        resize: vertical;
+        background: #f8fafc;
+        line-height: 1.55;
+      }
+
+      .field-help {
+        display: block;
+        margin-top: 0.4rem;
+        color: #64748b;
+        font-size: 0.82rem;
+        line-height: 1.35;
       }
 
       &.form-checkbox label {
@@ -2400,17 +2465,21 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
 }
 
 // Modal de Visualización
-.modal-ver {
-  max-width: 900px;
-  max-height: 90vh;
-  overflow-y: auto;
+.admin-actividades .modal-content.modal-ver {
+  width: min(99vw, 1500px) !important;
+  max-width: 1500px !important;
+  max-height: 94vh;
+  overflow: hidden;
   padding: 0;
+  display: flex;
+  flex-direction: column;
 
   .ver-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem 2rem;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.15rem 1.35rem;
     border-bottom: 1px solid #d9e2ea;
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 58%, #334155 100%);
     color: white;
@@ -2419,22 +2488,39 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
     z-index: 10;
     border-radius: 12px 12px 0 0;
 
-    h2 {
-      margin: 0;
-      font-size: 1.6rem;
+    .ver-header-copy {
+      min-width: 0;
+
+      h2 {
+        margin: 0;
+        font-size: 1.6rem;
+      }
+
+      p {
+        margin: 0.35rem 0 0;
+        color: #cbd5e1;
+        font-size: 0.95rem;
+        line-height: 1.4;
+        word-break: break-word;
+      }
     }
   }
 
   .ver-content {
-    padding: 2rem;
+    padding: 1.15rem;
     background: #f8fafc;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    align-items: start;
   }
 
   .ver-seccion {
     background: white;
     border-radius: 14px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
+    padding: 1.25rem;
+    margin-bottom: 0;
     border: 1px solid #d9e2ea;
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
     transition: all 0.3s;
@@ -2457,10 +2543,14 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
     }
   }
 
+  .ver-seccion-full {
+    grid-column: 1 / -1;
+  }
+
   .info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.9rem;
   }
 
   .info-item {
@@ -2555,19 +2645,19 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
   }
 
   .observaciones-texto {
-    padding: 1rem;
+    padding: 1rem 1.1rem;
     background: #f8fafc;
-    border-radius: 8px;
+    border-radius: 10px;
     border-left: 4px solid #64748b;
-    font-size: 0.95rem;
-    line-height: 1.6;
+    font-size: 1rem;
+    line-height: 1.7;
     color: #2c3e50;
     white-space: pre-wrap;
   }
 
   .etapas-lista {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1rem;
 
     .etapa-card {
@@ -2613,12 +2703,25 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
   }
 
   .botones-modal {
-    padding: 1.5rem 2rem;
+    padding: 1rem 1.35rem;
     background: white;
     border-top: 2px solid #f0f0f0;
     position: sticky;
     bottom: 0;
     border-radius: 0 0 12px 12px;
+  }
+}
+
+@media (max-width: 980px) {
+  .admin-actividades .modal-content.modal-ver {
+    width: 98vw !important;
+    max-width: 98vw !important;
+    max-height: 96vh;
+
+    .ver-content {
+      grid-template-columns: 1fr;
+      padding: 1rem;
+    }
   }
 
   // Estilos para modal de seguimientos diarios

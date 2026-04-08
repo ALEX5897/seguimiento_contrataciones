@@ -14,7 +14,7 @@ import catalogosRouter from './routes/catalogos.js';
 import reportesRouter from './routes/reportes.js';
 import permisosRouter from './routes/permisos.js';
 import auditoriaRouter from './routes/auditoria.js';
-import { verificarVencimientos, verificarAtrasos } from './services/alertas.js';
+import { ejecutarNotificacionesProgramadas } from './services/notificaciones.js';
 import { initMySQL, normalizePayloadEncoding } from './data/mysql.js';
 import { requireAuth } from './middleware/auth.js';
 import { requireApiPermission } from './middleware/permisos.js';
@@ -79,24 +79,17 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Programar verificaciones automáticas
-// Cada día a las 8:00 AM - verificar vencimientos próximos
-cron.schedule('0 8 * * *', async () => {
-  console.log('Ejecutando verificación de vencimientos...');
-  await verificarVencimientos();
-});
-
-// Cada día a las 9:00 AM - verificar tareas atrasadas
-cron.schedule('0 9 * * *', async () => {
-  console.log('Ejecutando verificación de atrasos...');
-  await verificarAtrasos();
-});
-
-// Cada lunes a las 8:00 AM - resumen semanal
-cron.schedule('0 8 * * 1', async () => {
-  console.log('Generando resumen semanal...');
-  const { generarResumenSemanal } = await import('./services/resumen.js');
-  await generarResumenSemanal();
+// Programar verificación automática de correo cada 5 minutos.
+// La hora efectiva de envío se controla desde el módulo de notificaciones.
+cron.schedule('*/5 * * * *', async () => {
+  try {
+    const resultado = await ejecutarNotificacionesProgramadas();
+    if (!resultado?.skipped) {
+      console.log('📨 Proceso automático de correo ejecutado:', JSON.stringify(resultado));
+    }
+  } catch (error) {
+    console.error('❌ Error en el planificador de correos:', error?.message || error);
+  }
 });
 
 // Manejo de errores global

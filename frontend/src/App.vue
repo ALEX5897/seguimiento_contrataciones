@@ -45,7 +45,7 @@
 
       <div class="sidebar-footer">
         <div>{{ auth.user?.nombre || 'Usuario' }} · {{ auth.user?.role || '-' }}</div>
-        <div class="app-version">Versión 1.0.5</div>
+        <div class="app-version">Versión 1.0.6</div>
         <button type="button" class="logout-btn" @click="cerrarSesion">Cerrar sesión</button>
       </div>
     </aside>
@@ -85,6 +85,7 @@ const menuConfig: MenuItem[] = [
   { key: 'dashboard', to: '/', label: 'Dashboard' },
   { key: 'actividades', to: '/actividades', label: 'Procesos' },
   { key: 'reportes', to: '/reportes', label: 'Reportes' },
+  { key: 'notificaciones', to: '/notificaciones', label: 'Notificaciones' },
   { key: 'admin_actividades', to: '/admin/actividades', label: 'Admin Procesos' },
   { key: 'admin_versiones', to: '/admin/versiones', label: 'Admin Versiones' },
   { key: 'admin_usuarios', to: '/admin/usuarios', label: 'Admin Usuarios' },

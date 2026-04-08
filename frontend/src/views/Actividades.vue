@@ -80,88 +80,68 @@
       </div>
     </section>
 
-    <div v-if="!cargando" class="kpis-lectura-rapida">
-      <article class="kpi-card kpi-total">
-        <div class="kpi-head">
-          <p class="kpi-label">Total Etapas</p>
-          <span class="kpi-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <rect x="4" y="5" width="16" height="14" rx="2"></rect>
-              <path d="M8 9h8M8 12h8M8 15h6"></path>
-            </svg>
-          </span>
-        </div>
+    <section v-if="!cargando" class="kpi-grid professional-kpi-grid actividades-kpi-grid">
+      <article class="kpi-card">
+        <span class="kpi-title">Total de procesos</span>
+        <strong class="kpi-value">{{ kpisProcesos.totalProcesos }}</strong>
+        <small class="kpi-foot">Procesos activos con etapas registradas</small>
+      </article>
+
+      <article class="kpi-card success">
+        <span class="kpi-title">Procesos completos</span>
         <div class="kpi-donut-row">
-          <p class="kpi-value">{{ kpiResumen.totalEtapas }}</p>
-          <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeEtapasVisibles}%`, '--kpi-color': '#64748b' }">
-            <span>{{ porcentajeEtapasVisibles }}%</span>
+          <strong class="kpi-value">{{ kpisProcesos.actividadesCompletadas }}</strong>
+          <div class="kpi-mini-donut" :style="{ '--value': `${kpisProcesos.porcentajeCumplimiento}%`, '--kpi-color': colorCumplimiento }">
+            <span :style="{ color: colorCumplimiento }">{{ kpisProcesos.porcentajeCumplimiento }}%</span>
           </div>
         </div>
-        <small class="kpi-foot">Etapas visibles para el filtro actual</small>
+        <small class="kpi-foot">Procesos completos: {{ kpisProcesos.actividadesCompletadas }} de {{ kpisProcesos.totalProcesos }}</small>
       </article>
-      <article class="kpi-card kpi-completadas">
-        <div class="kpi-head">
-          <p class="kpi-label">Etapas Completas</p>
-          <span class="kpi-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="9"></circle>
-              <path d="m8.5 12 2.4 2.4 4.6-4.8"></path>
-            </svg>
-          </span>
-        </div>
+
+      <article class="kpi-card danger">
+        <span class="kpi-title">Procesos con etapas retrasadas</span>
         <div class="kpi-donut-row">
-          <p class="kpi-value">{{ kpiResumen.completadas }}</p>
-          <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeCompletadas}%`, '--kpi-color': '#16a34a' }">
-            <span>{{ porcentajeCompletadas }}%</span>
+          <strong class="kpi-value">{{ kpisProcesos.atrasadas }}</strong>
+          <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeAtrasoProcesos}%`, '--kpi-color': colorAtraso }">
+            <span :style="{ color: colorAtraso }">{{ porcentajeAtrasoProcesos }}%</span>
           </div>
         </div>
-        <small class="kpi-foot">{{ porcentajeCompletadas }}% del total de etapas</small>
+        <small class="kpi-foot">Procesos que tienen etapas fuera de fecha</small>
       </article>
-      <article class="kpi-card kpi-retraso">
-        <div class="kpi-head">
-          <p class="kpi-label">Con Retraso</p>
-          <span class="kpi-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M12 4 3.8 18.2a1 1 0 0 0 .9 1.5h14.6a1 1 0 0 0 .9-1.5L12 4Z"></path>
-              <path d="M12 9.2v4.6"></path>
-              <circle cx="12" cy="16.8" r=".8" fill="currentColor" stroke="none"></circle>
-            </svg>
-          </span>
-        </div>
+
+      <article class="kpi-card warning">
+        <span class="kpi-title">Procesos en riesgo</span>
         <div class="kpi-donut-row">
-          <p class="kpi-value">{{ kpiResumen.conRetraso }}</p>
-          <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeConRetraso}%`, '--kpi-color': '#dc2626' }">
-            <span>{{ porcentajeConRetraso }}%</span>
+          <strong class="kpi-value">{{ procesosRiesgoKpi.length }}</strong>
+          <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProcesosRiesgo}%`, '--kpi-color': colorProcesosRiesgo }">
+            <span :style="{ color: colorProcesosRiesgo }">{{ porcentajeProcesosRiesgo }}%</span>
           </div>
         </div>
-        <small class="kpi-foot">{{ porcentajeConRetraso }}% de etapas presentan retraso</small>
+        <small class="kpi-foot">Procesos marcados con riesgo</small>
       </article>
-      <article class="kpi-card kpi-avance">
-        <div class="kpi-head">
-          <p class="kpi-label">Avance</p>
-          <span class="kpi-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M5 15.5 10 10.5 13.5 14 19 8.5"></path>
-              <path d="M15.5 8.5H19V12"></path>
-            </svg>
-          </span>
-        </div>
+
+      <article class="kpi-card warning">
+        <span class="kpi-title">Procesos desiertos</span>
         <div class="kpi-donut-row">
-          <p class="kpi-value kpi-value-avance">{{ kpiResumen.avance }}%</p>
-          <div class="kpi-mini-donut" :style="{ '--value': `${kpiResumen.avance}%`, '--kpi-color': colorAvanceKpi }">
-            <span :style="{ color: colorAvanceKpi }">{{ kpiResumen.avance }}%</span>
+          <strong class="kpi-value">{{ procesosDesiertosKpi.length }}</strong>
+          <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProcesosDesiertos}%`, '--kpi-color': colorProcesosDesiertos }">
+            <span :style="{ color: colorProcesosDesiertos }">{{ porcentajeProcesosDesiertos }}%</span>
           </div>
         </div>
-        <small class="kpi-foot">Progreso general de las etapas</small>
-        <div class="kpi-progress-track">
-          <div
-            class="kpi-progress-fill"
-            :class="kpiResumen.avanceClass"
-            :style="{ width: `${kpiResumen.avance}%` }"
-          ></div>
-        </div>
+        <small class="kpi-foot">Procesos con estado desierto</small>
       </article>
-    </div>
+
+      <article class="kpi-card warning">
+        <span class="kpi-title">Procesos desfinanciados</span>
+        <div class="kpi-donut-row">
+          <strong class="kpi-value">{{ procesosDesfinanciadosKpi.length }}</strong>
+          <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProcesosDesfinanciados}%`, '--kpi-color': colorProcesosDesfinanciados }">
+            <span :style="{ color: colorProcesosDesfinanciados }">{{ porcentajeProcesosDesfinanciados }}%</span>
+          </div>
+        </div>
+        <small class="kpi-foot">Presupuesto 0 o no asignado</small>
+      </article>
+    </section>
 
     <div v-if="errorCargaActividades" class="error-actividades">
       <p>{{ errorCargaActividades }}</p>
@@ -616,9 +596,6 @@ const ordenPresupuesto = ref('todos');
 const actividadesVisiblesBase = computed(() =>
   actividades.value.filter((actividad: any) => esProcesoVisible(actividad))
 );
-const actividadesContabilizadasBase = computed(() =>
-  actividadesVisiblesBase.value.filter((actividad: any) => procesoCuentaEnReportesYAtrasos(actividad))
-);
 const direccionesDisponibles = computed(() => {
   const direcciones = [...new Set(actividadesVisiblesBase.value.map((actividad: any) => obtenerDireccion(actividad)))] as string[];
   return direcciones.filter((direccion) => direccion !== 'N/A').sort((a, b) => a.localeCompare(b));
@@ -741,65 +718,75 @@ const actividadesActivas = computed(() => {
   return items;
 });
 
-const actividadesContabilizadas = computed(() =>
-  actividadesActivas.value.filter((actividad: any) => procesoCuentaEnReportesYAtrasos(actividad))
+const actividadesKpiPrincipales = computed(() =>
+  actividadesActivas.value.filter((actividad: any) =>
+    procesoCuentaEnIndicadoresPrincipales(actividad) && totalTareas(actividad) > 0
+  )
 );
 
-const kpiResumen = computed(() => {
-  let totalEtapas = 0;
-  let completadas = 0;
-  let conRetraso = 0;
-
-  for (const actividad of actividadesContabilizadas.value) {
-    totalEtapas += totalTareas(actividad);
-    completadas += tareasCompletadas(actividad);
-    conRetraso += tareasConRetraso(actividad);
-  }
-
-  const avance = totalEtapas > 0
-    ? Math.round((completadas / totalEtapas) * 100)
+const kpisProcesos = computed(() => {
+  const totalProcesos = actividadesKpiPrincipales.value.length;
+  const actividadesCompletadas = actividadesKpiPrincipales.value.filter(
+    (actividad: any) => tareasCompletadas(actividad) === totalTareas(actividad)
+  ).length;
+  const atrasadas = actividadesKpiPrincipales.value.filter((actividad: any) => tareasConRetraso(actividad) > 0).length;
+  const porcentajeCumplimiento = totalProcesos
+    ? Math.round((actividadesCompletadas / totalProcesos) * 100)
     : 0;
 
-  let avanceClass = 'avance-bajo';
-  if (avance >= 70) avanceClass = 'avance-alto';
-  else if (avance >= 40) avanceClass = 'avance-medio';
-
   return {
-    totalEtapas,
-    completadas,
-    conRetraso,
-    avance,
-    avanceClass
+    totalProcesos,
+    actividadesCompletadas,
+    atrasadas,
+    porcentajeCumplimiento
   };
 });
 
-const totalEtapasBase = computed(() =>
-  actividadesContabilizadasBase.value.reduce((total, actividad) => total + totalTareas(actividad), 0)
-);
-
-const porcentajeEtapasVisibles = computed(() =>
-  totalEtapasBase.value > 0
-    ? Math.min(100, Math.round((kpiResumen.value.totalEtapas / totalEtapasBase.value) * 100))
-    : 0
-);
-
-const porcentajeCompletadas = computed(() =>
-  kpiResumen.value.totalEtapas > 0
-    ? Math.round((kpiResumen.value.completadas / kpiResumen.value.totalEtapas) * 100)
-    : 0
-);
-
-const porcentajeConRetraso = computed(() =>
-  kpiResumen.value.totalEtapas > 0
-    ? Math.round((kpiResumen.value.conRetraso / kpiResumen.value.totalEtapas) * 100)
-    : 0
-);
-
-const colorAvanceKpi = computed(() => {
-  if (kpiResumen.value.avanceClass === 'avance-alto') return '#16a34a';
-  if (kpiResumen.value.avanceClass === 'avance-medio') return '#d97706';
-  return '#dc2626';
+const porcentajeAtrasoProcesos = computed(() => {
+  const total = Math.max(1, kpisProcesos.value.totalProcesos);
+  return Math.min(100, Math.round((kpisProcesos.value.atrasadas / total) * 100));
 });
+
+const colorCumplimiento = computed(() => colorSemaforoPositivo(kpisProcesos.value.porcentajeCumplimiento));
+const colorAtraso = computed(() => colorSemaforoRiesgo(porcentajeAtrasoProcesos.value));
+
+const procesosRiesgoKpi = computed(() =>
+  actividadesKpiPrincipales.value.filter((actividad: any) => normalizarProcesoEnRiesgo(actividad))
+);
+
+const porcentajeProcesosRiesgo = computed(() => {
+  const total = Math.max(1, kpisProcesos.value.totalProcesos);
+  return Math.min(100, Math.round((procesosRiesgoKpi.value.length / total) * 100));
+});
+
+const colorProcesosRiesgo = computed(() => colorSemaforoRiesgo(porcentajeProcesosRiesgo.value));
+
+const procesosDesiertosKpi = computed(() =>
+  actividadesActivas.value.filter((actividad: any) => obtenerEstadoProcesoValor(actividad) === 2)
+);
+
+const totalProcesosConsideradosKpi = computed(() =>
+  Math.max(1, kpisProcesos.value.totalProcesos + procesosDesiertosKpi.value.length)
+);
+
+const porcentajeProcesosDesiertos = computed(() =>
+  Math.min(100, Math.round((procesosDesiertosKpi.value.length / totalProcesosConsideradosKpi.value) * 100))
+);
+
+const colorProcesosDesiertos = computed(() =>
+  procesosDesiertosKpi.value.length > 0 ? '#f97316' : '#94a3b8'
+);
+
+const procesosDesfinanciadosKpi = computed(() =>
+  actividadesActivas.value.filter((actividad: any) => procesoActivoSinPresupuesto(actividad))
+);
+
+const porcentajeProcesosDesfinanciados = computed(() => {
+  const total = Math.max(1, kpisProcesos.value.totalProcesos);
+  return Math.min(100, Math.round((procesosDesfinanciadosKpi.value.length / total) * 100));
+});
+
+const colorProcesosDesfinanciados = computed(() => colorSemaforoRiesgo(porcentajeProcesosDesfinanciados.value));
 
 const actividadSeleccionada = ref<any | null>(null);
 const etapasActividad = ref<any[]>([]);
@@ -1071,6 +1058,18 @@ function estadoNormalizado(estado?: string | null) {
   return (estado || 'pendiente').toLowerCase();
 }
 
+function colorSemaforoPositivo(valor: number) {
+  if (valor >= 80) return '#22c55e';
+  if (valor >= 50) return '#f59e0b';
+  return '#ef4444';
+}
+
+function colorSemaforoRiesgo(valor: number) {
+  if (valor <= 20) return '#22c55e';
+  if (valor <= 50) return '#f59e0b';
+  return '#ef4444';
+}
+
 function getEtapas(actividad: any) {
   const etapas = actividad?.etapas || actividad?.seguimientoEtapas || [];
   return etapas.map((etapa: any) => ({
@@ -1174,6 +1173,10 @@ function procesoActivoSinPresupuesto(actividad: any) {
 
 function procesoCuentaEnReportesYAtrasos(actividad: any) {
   return obtenerEstadoProcesoValor(actividad) !== 0 && !procesoActivoSinPresupuesto(actividad);
+}
+
+function procesoCuentaEnIndicadoresPrincipales(actividad: any) {
+  return obtenerEstadoProcesoValor(actividad) === 1 && !procesoActivoSinPresupuesto(actividad);
 }
 
 function esProcesoVisible(actividad: any) {
@@ -2089,10 +2092,17 @@ async function onToggleProcesoDesierto() {
   font-weight: 600;
 }
 
-.kpis-lectura-rapida {
+.kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(170px, 1fr));
   gap: 0.75rem;
+}
+
+.professional-kpi-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.actividades-kpi-grid {
   margin-bottom: 1rem;
 }
 
@@ -2105,6 +2115,67 @@ async function onToggleProcesoDesierto() {
   display: flex;
   flex-direction: column;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+  position: relative;
+  overflow: visible;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.kpi-card:hover {
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+  transform: translateY(-2px);
+}
+
+.kpi-card.has-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%) translateY(6px);
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.28);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 25;
+}
+
+.kpi-card.has-tooltip::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%) translateY(6px);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #0f172a;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 25;
+}
+
+.kpi-card.has-tooltip:hover::after,
+.kpi-card.has-tooltip:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.kpi-card.success {
+  box-shadow: inset 4px 0 0 #16a34a, 0 10px 28px rgba(15, 23, 42, 0.05);
+}
+
+.kpi-card.danger {
+  box-shadow: inset 4px 0 0 #dc2626, 0 10px 28px rgba(15, 23, 42, 0.05);
+}
+
+.kpi-card.warning {
+  box-shadow: inset 4px 0 0 #f59e0b, 0 10px 28px rgba(15, 23, 42, 0.05);
 }
 
 .kpi-head {
@@ -2187,10 +2258,11 @@ async function onToggleProcesoDesierto() {
   gap: 0.35rem;
 }
 
+.kpi-title,
 .kpi-label {
   margin: 0;
-  color: #0f172a;
-  font-size: 0.72rem;
+  color: #64748b;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -3401,8 +3473,14 @@ h1 {
   }
 }
 
+@media (max-width: 1100px) {
+  .professional-kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 720px) {
-  .kpis-lectura-rapida {
+  .professional-kpi-grid {
     grid-template-columns: repeat(2, minmax(150px, 1fr));
   }
 
@@ -3427,7 +3505,7 @@ h1 {
 }
 
 @media (max-width: 520px) {
-  .kpis-lectura-rapida {
+  .professional-kpi-grid {
     grid-template-columns: 1fr;
   }
 

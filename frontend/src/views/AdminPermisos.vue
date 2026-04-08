@@ -128,6 +128,7 @@ const MENU_TO_MODULE: Record<string, string> = {
   dashboard: 'dashboard',
   actividades: 'actividades',
   reportes: 'reportes',
+  notificaciones: 'notificaciones',
   admin_actividades: 'admin_actividades',
   admin_versiones: 'admin_versiones',
   admin_usuarios: 'admin_usuarios',

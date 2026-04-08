@@ -6,11 +6,14 @@
         <p>Consulta indicadores consolidados y descarga reportes en formato Excel.</p>
       </div>
       <div class="header-actions">
-        <button class="btn-secondary" @click="cargarReporte" :disabled="cargando || exportando">
+        <button class="btn-secondary" @click="cargarReporte" :disabled="cargando || exportando || exportandoContrato">
           {{ cargando ? 'Actualizando...' : 'Actualizar' }}
         </button>
-        <button class="btn-primary" @click="descargarXlsx" :disabled="cargando || exportando">
+        <button class="btn-primary" @click="descargarXlsx" :disabled="cargando || exportando || exportandoContrato">
           {{ exportando ? 'Generando XLSX...' : 'Descargar XLSX' }}
+        </button>
+        <button class="btn-primary btn-accent" @click="descargarXlsxContratoAdjudicacion" :disabled="cargando || exportando || exportandoContrato">
+          {{ exportandoContrato ? 'Generando reporte específico...' : 'Contrato y adjudicación' }}
         </button>
       </div>
     </header>
@@ -51,7 +54,7 @@
         <option value="vence_hoy">Vencen hoy</option>
       </select>
 
-      <button class="btn-clear" @click="limpiarFiltros" :disabled="cargando || exportando">Limpiar</button>
+      <button class="btn-clear" @click="limpiarFiltros" :disabled="cargando || exportando || exportandoContrato">Limpiar</button>
     </section>
 
     <div v-if="error" class="alert-error">{{ error }}</div>
@@ -237,6 +240,7 @@ import { useAuthStore } from '../stores/auth';
 const auth = useAuthStore();
 const cargando = ref(false);
 const exportando = ref(false);
+const exportandoContrato = ref(false);
 const error = ref('');
 const mensaje = ref('');
 const reporte = ref<ReporteResumenResponse | null>(null);
@@ -291,25 +295,44 @@ async function cargarReporte() {
   }
 }
 
+function descargarBlob(blob: Blob, filename: string) {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 async function descargarXlsx() {
   exportando.value = true;
   error.value = '';
   mensaje.value = '';
   try {
     const { blob, filename } = await reportesService.descargarXlsx(obtenerFiltrosActuales());
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
+    descargarBlob(blob, filename);
     mensaje.value = 'Reporte XLSX descargado correctamente.';
   } catch (err: any) {
     error.value = err?.response?.data?.error || 'No se pudo descargar el reporte XLSX.';
   } finally {
     exportando.value = false;
+  }
+}
+
+async function descargarXlsxContratoAdjudicacion() {
+  exportandoContrato.value = true;
+  error.value = '';
+  mensaje.value = '';
+  try {
+    const { blob, filename } = await reportesService.descargarXlsxContratoAdjudicacion(obtenerFiltrosActuales());
+    descargarBlob(blob, filename);
+    mensaje.value = 'Reporte de contrato y adjudicación descargado correctamente.';
+  } catch (err: any) {
+    error.value = err?.response?.data?.error || 'No se pudo descargar el reporte específico de contrato y adjudicación.';
+  } finally {
+    exportandoContrato.value = false;
   }
 }
 
@@ -467,6 +490,10 @@ onBeforeUnmount(() => {
 .btn-primary {
   background: #2563eb;
   color: #fff;
+}
+
+.btn-accent {
+  background: #0f766e;
 }
 
 .btn-secondary {

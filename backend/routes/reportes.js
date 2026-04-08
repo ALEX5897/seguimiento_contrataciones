@@ -178,6 +178,7 @@ function calcularResumenProceso(subtarea, hoy) {
       estado,
       estadoLabel: estadoLabel(estado),
       fechaPlanificada: formatDate(etapa?.fechaPlanificada),
+      fechaReforma: formatDate(etapa?.fechaReforma),
       fechaReal: formatDate(etapa?.fechaReal),
       observaciones: String(etapa?.observaciones || ''),
       diasAtraso,
@@ -341,6 +342,63 @@ function agregarAutofiltro(ws, startRow, endRow, endCol) {
   };
 }
 
+function buscarEtapaClave(etapas = [], palabrasClave = []) {
+  const match = etapas
+    .filter((etapa) => {
+      const nombre = normalizarTexto(etapa?.etapaNombre || '');
+      return palabrasClave.some((palabra) => nombre.includes(palabra));
+    })
+    .sort((a, b) => Number(a?.orden || 0) - Number(b?.orden || 0))[0];
+
+  if (!match) {
+    return {
+      etapaNombre: '',
+      estadoLabel: '',
+      fechaPlanificada: '',
+      fechaReforma: ''
+    };
+  }
+
+  return {
+    etapaNombre: match.etapaNombre || '',
+    estadoLabel: match.estadoLabel || '',
+    fechaPlanificada: match.fechaPlanificada || '',
+    fechaReforma: match.fechaReforma || ''
+  };
+}
+
+function construirFilasContratoAdjudicacion(reporte) {
+  const etapasPorProceso = reporte.etapas.reduce((acc, etapa) => {
+    const key = `${etapa.codigoOlympo}::${etapa.proceso}`;
+    if (!acc.has(key)) acc.set(key, []);
+    acc.get(key).push(etapa);
+    return acc;
+  }, new Map());
+
+  return reporte.procesos.map((proceso) => {
+    const key = `${proceso.codigoOlympo}::${proceso.nombre}`;
+    const etapas = etapasPorProceso.get(key) || [];
+    const adjudicacion = buscarEtapaClave(etapas, ['adjudicacion', 'adjudica']);
+    const contrato = buscarEtapaClave(etapas, ['contratacion', 'contrato']);
+
+    return {
+      'Dirección': proceso.direccionNombre,
+      'Nombre del proceso': proceso.nombre,
+      'Código Olympo': proceso.codigoOlympo,
+      'Monto': proceso.presupuesto,
+      '% avance proceso': proceso.porcentajeAvance,
+      'Etapa adjudicación': adjudicacion.etapaNombre,
+      'Fecha límite adjudicación': adjudicacion.fechaPlanificada,
+      'Fecha reforma adjudicación': adjudicacion.fechaReforma,
+      'Estado adjudicación': adjudicacion.estadoLabel,
+      'Etapa contrato': contrato.etapaNombre,
+      'Fecha límite contrato': contrato.fechaPlanificada,
+      'Fecha reforma contrato': contrato.fechaReforma,
+      'Estado contrato': contrato.estadoLabel
+    };
+  });
+}
+
 function crearWorkbookReporte(reporte) {
   const wb = XLSX.utils.book_new();
   const generado = formatDateTime(reporte.generadoEn);
@@ -449,6 +507,7 @@ function crearWorkbookReporte(reporte) {
     'Orden': item.orden,
     'Estado': item.estadoLabel,
     'Fecha planificada': item.fechaPlanificada,
+    'Fecha reforma': item.fechaReforma,
     'Fecha real': item.fechaReal,
     'Días atraso': item.diasAtraso,
     'Atrasada': item.esAtrasada ? 'Sí' : 'No',
@@ -465,14 +524,76 @@ function crearWorkbookReporte(reporte) {
     { wch: 10 },
     { wch: 14 },
     { wch: 16 },
+    { wch: 16 },
     { wch: 14 },
     { wch: 12 },
     { wch: 10 },
     { wch: 10 },
     { wch: 50 }
   ];
-  agregarAutofiltro(wsEtapas, 0, reporte.etapas.length, 13);
+  agregarAutofiltro(wsEtapas, 0, reporte.etapas.length, 14);
   XLSX.utils.book_append_sheet(wb, wsEtapas, 'Verificables');
+
+  const filasContratoAdjudicacion = construirFilasContratoAdjudicacion(reporte);
+  const wsContratoAdjudicacion = XLSX.utils.json_to_sheet(filasContratoAdjudicacion);
+  wsContratoAdjudicacion['!cols'] = [
+    { wch: 28 },
+    { wch: 44 },
+    { wch: 18 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 28 },
+    { wch: 18 },
+    { wch: 20 },
+    { wch: 18 },
+    { wch: 28 },
+    { wch: 18 },
+    { wch: 20 },
+    { wch: 18 }
+  ];
+  agregarAutofiltro(wsContratoAdjudicacion, 0, filasContratoAdjudicacion.length, 12);
+  XLSX.utils.book_append_sheet(wb, wsContratoAdjudicacion, 'Contrato y adjudicación');
+
+  return wb;
+}
+
+function crearWorkbookContratoAdjudicacion(reporte) {
+  const wb = XLSX.utils.book_new();
+  const filas = construirFilasContratoAdjudicacion(reporte);
+
+  const resumenRows = [
+    ['Reporte de procesos activos - Contrato y adjudicación'],
+    ['Generado el', formatDateTime(reporte.generadoEn)],
+    ['Dirección', reporte.filtros.direccion || 'Todas'],
+    ['Tipo plan', reporte.filtros.tipoPlan || 'Todos'],
+    ['Total procesos activos', filas.length],
+    ['Con etapa de adjudicación', filas.filter((item) => item['Etapa adjudicación']).length],
+    ['Con etapa de contrato', filas.filter((item) => item['Etapa contrato']).length]
+  ];
+
+  const wsResumen = XLSX.utils.aoa_to_sheet(resumenRows);
+  wsResumen['!cols'] = [{ wch: 34 }, { wch: 36 }];
+  wsResumen['!merges'] = [XLSX.utils.decode_range('A1:B1')];
+  XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+
+  const wsDetalle = XLSX.utils.json_to_sheet(filas);
+  wsDetalle['!cols'] = [
+    { wch: 28 },
+    { wch: 44 },
+    { wch: 18 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 28 },
+    { wch: 18 },
+    { wch: 20 },
+    { wch: 18 },
+    { wch: 28 },
+    { wch: 18 },
+    { wch: 20 },
+    { wch: 18 }
+  ];
+  agregarAutofiltro(wsDetalle, 0, filas.length, 12);
+  XLSX.utils.book_append_sheet(wb, wsDetalle, 'Contrato y adjudicación');
 
   return wb;
 }
@@ -505,6 +626,25 @@ router.get('/export/xlsx', async (req, res) => {
   } catch (error) {
     console.error('Error en GET /api/reportes/export/xlsx:', error);
     res.status(500).json({ error: error.message || 'Error al exportar reporte en XLSX' });
+  }
+});
+
+router.get('/export/xlsx/contrato-adjudicacion', async (req, res) => {
+  try {
+    const subtareas = await mysql.getAllSubtareasByScope(getScopeFromReq(req));
+    const filtros = getFiltros(req.query);
+    const reporte = construirReporte(subtareas, filtros);
+    const wb = crearWorkbookContratoAdjudicacion(reporte);
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const suffix = sanitizeFileName(`${filtros.direccion || 'general'}_${new Date().toISOString().slice(0, 10)}`);
+    const filename = `reporte_contrato_adjudicacion_${suffix || 'general'}.xlsx`;
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
+  } catch (error) {
+    console.error('Error en GET /api/reportes/export/xlsx/contrato-adjudicacion:', error);
+    res.status(500).json({ error: error.message || 'Error al exportar reporte de contrato y adjudicación en XLSX' });
   }
 });
 

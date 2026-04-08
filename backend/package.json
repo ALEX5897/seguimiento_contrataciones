@@ -12,7 +12,8 @@
     "repair:encoding": "node scripts/repair-encoding.js",
     "seed:test": "node scripts/reset-and-seed-test-data.js",
     "import:base1": "node scripts/import-base-1.js",
-    "demo:reset": "node scripts/prepare-demo-reset-estados-seguimientos.js"
+    "demo:reset": "node scripts/prepare-demo-reset-estados-seguimientos.js",
+    "report:procesos-activos": "node scripts/export-procesos-activos-contrato-adjudicacion.js"
   },
   "keywords": [
     "poa",

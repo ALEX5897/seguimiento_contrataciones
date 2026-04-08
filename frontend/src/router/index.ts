@@ -37,6 +37,12 @@ const router = createRouter({
       meta: { requiresAuth: true, permissionModule: 'reportes', permissionAction: 'read', menuKey: 'reportes' }
     },
     {
+      path: '/notificaciones',
+      name: 'notificaciones',
+      component: () => import('../views/AdminNotificaciones.vue'),
+      meta: { requiresAuth: true, permissionModule: 'notificaciones', permissionAction: 'read', menuKey: 'notificaciones' }
+    },
+    {
       path: '/admin/actividades',
       name: 'admin-actividades',
       component: () => import('../views/AdminActividades.vue'),

@@ -351,6 +351,69 @@ export interface AuditoriaSesionesResumenResponse {
   ultimosInicios: AuditoriaInicioSesion[];
 }
 
+export interface NotificacionHistorialItem {
+  id: number;
+  tipo: string;
+  destinatario: string;
+  asunto: string;
+  mensaje: string;
+  fecha: string;
+  leida: boolean;
+  enviada: boolean;
+}
+
+export interface NotificacionEmailConfig {
+  enabled: boolean;
+  fromName: string;
+  fromEmail: string;
+  serverType: string;
+  smtpHost: string;
+  smtpPort: number;
+  smtpSecure: boolean;
+  requireAuth: boolean;
+  smtpUser: string;
+  smtpPassword: string;
+  smtpPasswordConfigured?: boolean;
+  supervisorEmails: string;
+  sendTime: string;
+  timezone: string;
+  notifyDelayedStages: boolean;
+  delayedStageDays: number;
+  subjectTemplate: string;
+  htmlTemplate: string;
+  footerText: string;
+  lastExecutionAt?: string | null;
+  lastExecutionDate?: string | null;
+}
+
+export interface NotificacionExecutionStatus {
+  jobId: string;
+  status: 'running' | 'completed' | 'failed';
+  percent: number;
+  message: string;
+  phase?: string;
+  startedAt?: string;
+  updatedAt?: string;
+  executedAt?: string;
+  force?: boolean;
+  skipped?: boolean;
+  alreadyRunning?: boolean;
+  processedRecipients?: number;
+  totalRecipients?: number;
+  sent?: number;
+  totalStages?: number;
+  error?: string | null;
+  delayedStages?: {
+    success?: boolean;
+    skipped?: boolean;
+    message?: string;
+    sent: number;
+    totalRecipients: number;
+    totalStages: number;
+    thresholdDays: number;
+  } | null;
+}
+
 export const tareasService = {
   async getAll(filtros = {}) {
     const response = await api.get('/tareas', { params: filtros });
@@ -460,7 +523,32 @@ export const estadosService = {
 export const notificacionesService = {
   async getAll(filtros = {}) {
     const response = await api.get('/notificaciones', { params: filtros });
-    return response.data;
+    return response.data as NotificacionHistorialItem[];
+  },
+
+  async getConfiguracion() {
+    const response = await api.get('/notificaciones/configuracion');
+    return response.data as NotificacionEmailConfig;
+  },
+
+  async guardarConfiguracion(payload: NotificacionEmailConfig) {
+    const response = await api.put('/notificaciones/configuracion', payload);
+    return response.data as NotificacionEmailConfig;
+  },
+
+  async enviarPrueba(destinatario: string) {
+    const response = await api.post('/notificaciones/probar', { destinatario });
+    return response.data as { success: boolean; sent: boolean; message?: string; messageId?: string };
+  },
+
+  async ejecutarAhora() {
+    const response = await api.post('/notificaciones/ejecutar', {}, { timeout: 15000 });
+    return response.data as NotificacionExecutionStatus;
+  },
+
+  async getEstadoEjecucion(jobId: string) {
+    const response = await api.get(`/notificaciones/ejecuciones/${encodeURIComponent(jobId)}`, { timeout: 15000 });
+    return response.data as NotificacionExecutionStatus;
   },
 
   async marcarLeida(id: number) {
@@ -585,6 +673,21 @@ export const reportesService = {
     return {
       blob: response.data as Blob,
       filename: match?.[1] || 'reporte_seguimiento.xlsx'
+    };
+  },
+
+  async descargarXlsxContratoAdjudicacion(filtros: ReportesFiltros = {}) {
+    const response = await api.get('/reportes/export/xlsx/contrato-adjudicacion', {
+      params: filtros,
+      responseType: 'blob'
+    });
+
+    const disposition = String(response.headers['content-disposition'] || '');
+    const match = disposition.match(/filename="?([^";]+)"?/i);
+
+    return {
+      blob: response.data as Blob,
+      filename: match?.[1] || 'reporte_contrato_adjudicacion.xlsx'
     };
   }
 };

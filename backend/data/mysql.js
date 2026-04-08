@@ -20,7 +20,6 @@ console.log('-----------------------');
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
 import iconv from 'iconv-lite';
-import { getOfficialUtcDate, toMySqlUtcDateTime } from '../services/horaOficial.js';
 
 const DB_HOST = process.env.DB_HOST;
 const DB_PORT = parseInt(process.env.DB_PORT, 10);
@@ -67,6 +66,7 @@ const DEFAULT_PERMISSION_MENU = [
   { clave: 'dashboard', nombre: 'Dashboard', ruta: '/', orden: 10 },
   { clave: 'actividades', nombre: 'Procesos', ruta: '/actividades', orden: 20 },
   { clave: 'reportes', nombre: 'Reportes', ruta: '/reportes', orden: 30 },
+  { clave: 'notificaciones', nombre: 'Notificaciones', ruta: '/notificaciones', orden: 35 },
   { clave: 'admin_actividades', nombre: 'Admin Procesos', ruta: '/admin/actividades', orden: 40 },
   { clave: 'admin_versiones', nombre: 'Admin Versiones', ruta: '/admin/versiones', orden: 50 },
   { clave: 'admin_usuarios', nombre: 'Admin Usuarios', ruta: '/admin/usuarios', orden: 60 },
@@ -79,6 +79,7 @@ const MENU_TO_MODULE_PERMISSION = {
   dashboard: 'dashboard',
   actividades: 'actividades',
   reportes: 'reportes',
+  notificaciones: 'notificaciones',
   admin_actividades: 'admin_actividades',
   admin_versiones: 'admin_versiones',
   admin_usuarios: 'admin_usuarios',
@@ -117,6 +118,7 @@ const ROLE_PERMISSION_DEFAULTS = {
       dashboard: true,
       actividades: true,
       reportes: true,
+      notificaciones: true,
       admin_actividades: false,
       admin_versiones: false,
       admin_usuarios: false,
@@ -144,6 +146,7 @@ const ROLE_PERMISSION_DEFAULTS = {
       dashboard: true,
       actividades: true,
       reportes: true,
+      notificaciones: true,
       admin_actividades: false,
       admin_versiones: false,
       admin_usuarios: false,
@@ -539,6 +542,34 @@ async function createSchema() {
   `);
 
   await query(`
+    CREATE TABLE IF NOT EXISTS configuracion_notificaciones (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      enabled BOOLEAN NOT NULL DEFAULT false,
+      remitente_nombre VARCHAR(255) NULL,
+      remitente_email VARCHAR(255) NULL,
+      tipo_servidor VARCHAR(50) NOT NULL DEFAULT 'smtp',
+      smtp_host VARCHAR(255) NULL,
+      smtp_port INT NOT NULL DEFAULT 587,
+      smtp_secure BOOLEAN NOT NULL DEFAULT false,
+      requiere_auth BOOLEAN NOT NULL DEFAULT true,
+      smtp_user VARCHAR(255) NULL,
+      smtp_password VARCHAR(255) NULL,
+      supervisor_emails TEXT NULL,
+      hora_envio VARCHAR(5) NOT NULL DEFAULT '08:00',
+      zona_horaria VARCHAR(80) NOT NULL DEFAULT 'America/Guayaquil',
+      notificar_etapas_atrasadas BOOLEAN NOT NULL DEFAULT true,
+      dias_atraso_minimo INT NOT NULL DEFAULT 2,
+      asunto_plantilla VARCHAR(255) NULL,
+      plantilla_html LONGTEXT NULL,
+      pie_mensaje VARCHAR(255) NULL,
+      ultima_ejecucion_at DATETIME NULL,
+      ultima_ejecucion_fecha VARCHAR(10) NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB;
+  `);
+
+  await query(`
     CREATE TABLE IF NOT EXISTS usuarios (
       id INT AUTO_INCREMENT PRIMARY KEY,
       username VARCHAR(80) NOT NULL UNIQUE,
@@ -788,6 +819,37 @@ async function seedInitialData() {
      SET responsable_id = NULL, responsable = NULL
      WHERE responsable_id IS NULL
        AND (responsable IS NULL OR TRIM(responsable) = '')`
+  );
+
+  await query(
+    `INSERT INTO configuracion_notificaciones (
+      enabled, remitente_nombre, remitente_email, tipo_servidor,
+      smtp_host, smtp_port, smtp_secure, requiere_auth, smtp_user, smtp_password,
+      supervisor_emails, hora_envio, zona_horaria,
+      notificar_etapas_atrasadas, dias_atraso_minimo,
+      asunto_plantilla, pie_mensaje
+    )
+    SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    WHERE NOT EXISTS (SELECT 1 FROM configuracion_notificaciones LIMIT 1)`,
+    [
+      String(process.env.NOTIFICATIONS_ENABLED || 'false').toLowerCase() === 'true',
+      'Sistema de Seguimiento',
+      process.env.EMAIL_FROM?.match(/<([^>]+)>/)?.[1] || 'noreply@quitoturismo.gob.ec',
+      'smtp',
+      process.env.SMTP_HOST || '',
+      parseInt(process.env.SMTP_PORT || '587', 10),
+      String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true',
+      true,
+      process.env.SMTP_USER || '',
+      process.env.SMTP_PASS || '',
+      process.env.SUPERVISOR_EMAILS || '',
+      '08:00',
+      'America/Guayaquil',
+      true,
+      2,
+      'Seguimiento de contrataciones - {{motivo}}',
+      'Este es un mensaje automático del Sistema de Seguimiento de Contrataciones - QuitoTurismo'
+    ]
   );
 
   await seedPermisosBase();
@@ -1681,16 +1743,6 @@ function asJsonString(value) {
 }
 
 export async function registrarEventoAuditoria(evento = {}) {
-  let onlineUtc;
-  try {
-    onlineUtc = await getOfficialUtcDate();
-  } catch (error) {
-    console.error('No se pudo sincronizar hora oficial en linea para auditoria, se usa hora UTC local:', error?.message || error);
-    onlineUtc = new Date();
-  }
-
-  const fechaAuditoria = toMySqlUtcDateTime(onlineUtc);
-
   const payload = {
     userId: evento.userId || null,
     username: evento.username ? String(evento.username).slice(0, 80) : null,
@@ -1715,7 +1767,7 @@ export async function registrarEventoAuditoria(evento = {}) {
     `INSERT INTO auditoria_eventos (
       user_id, username, role, direccion_nombre, accion, modulo, recurso, metodo, ruta,
       status_code, exito, ip, user_agent, request_query, request_body, response_body, error_mensaje, fecha
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP())`,
     [
       payload.userId,
       payload.username,
@@ -1733,8 +1785,7 @@ export async function registrarEventoAuditoria(evento = {}) {
       payload.requestQuery,
       payload.requestBody,
       payload.responseBody,
-      payload.errorMensaje,
-      fechaAuditoria
+      payload.errorMensaje
     ]
   );
 }
@@ -1814,20 +1865,15 @@ export async function getEventosAuditoria(filters = {}) {
 }
 
 export async function getResumenSesionesAuditoria(filters = {}) {
-  let onlineUtc;
-  try {
-    onlineUtc = await getOfficialUtcDate();
-  } catch (error) {
-    console.error('No se pudo sincronizar hora oficial en linea para resumen de auditoria, se usa hora UTC local:', error?.message || error);
-    onlineUtc = new Date();
-  }
-
-  const onlineUtcMySql = toMySqlUtcDateTime(onlineUtc);
-
   const activeWindowMinutesRaw = Number(filters.activeWindowMinutes || 30);
   const activeWindowMinutes = Math.min(24 * 60, Math.max(5, activeWindowMinutesRaw));
   const recentLimitRaw = Number(filters.recentLimit || 20);
   const recentLimit = Math.min(100, Math.max(5, recentLimitRaw));
+
+  const generatedAtRows = await query(
+    `SELECT CONCAT(DATE_FORMAT(DATE_SUB(UTC_TIMESTAMP(), INTERVAL 5 HOUR), '%Y-%m-%dT%H:%i:%s'), '-05:00') AS generated_at`
+  );
+  const generatedAt = generatedAtRows[0]?.generated_at || new Date().toISOString();
 
   const activosRows = await query(
     `SELECT
@@ -1847,7 +1893,7 @@ export async function getResumenSesionesAuditoria(filters = {}) {
         WHERE accion = 'login'
           AND exito = true
           AND user_id IS NOT NULL
-          AND fecha >= DATE_SUB(?, INTERVAL ? MINUTE)
+          AND fecha >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? MINUTE)
           AND NOT EXISTS (
             SELECT 1
             FROM auditoria_eventos lo
@@ -1860,7 +1906,7 @@ export async function getResumenSesionesAuditoria(filters = {}) {
       ) ult ON ult.ultimo_evento_id = ae.id
       LEFT JOIN usuarios u ON u.id = ae.user_id
       ORDER BY ae.fecha DESC, ae.id DESC`,
-    [onlineUtcMySql, activeWindowMinutes]
+    [activeWindowMinutes]
   );
 
   const ultimosIniciosRows = await query(
@@ -1886,7 +1932,7 @@ export async function getResumenSesionesAuditoria(filters = {}) {
 
   return {
     activeWindowMinutes,
-    generatedAt: onlineUtc.toISOString(),
+    generatedAt,
     activos: activosRows.map((row) => {
       const item = toCamelRow(row);
       item.usuarioActivo = Boolean(item.usuarioActivo);
@@ -2358,7 +2404,10 @@ export async function setSubtareaEtapas(subtareaId, etapas) {
       await conn.execute(
         `INSERT INTO subtareas_etapas (subtarea_id, etapa_id, aplica, fecha_tentativa, fecha_reforma)
          VALUES (?, ?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE aplica = VALUES(aplica), fecha_reforma = VALUES(fecha_reforma)`,
+         ON DUPLICATE KEY UPDATE
+           aplica = VALUES(aplica),
+           fecha_tentativa = VALUES(fecha_tentativa),
+           fecha_reforma = VALUES(fecha_reforma)`,
         [subtareaId, etapa.etapaId, etapa.aplica, etapa.fechaTentativa, etapa.fechaReforma]
       );
 
@@ -2478,17 +2527,19 @@ export async function obtenerTodasEtapas() {
 }
 
 export async function getDatabaseSnapshot() {
-  const [subtareas, etapas, subtareasEtapas, seguimiento, notificaciones] = await Promise.all([
+  const [subtareas, etapas, subtareasEtapas, seguimiento, notificaciones, responsables, direcciones] = await Promise.all([
     query('SELECT * FROM subtareas ORDER BY id'),
     query('SELECT * FROM etapas_pac ORDER BY orden'),
     query('SELECT * FROM subtareas_etapas ORDER BY subtarea_id, etapa_id'),
     query('SELECT * FROM seguimiento_etapas ORDER BY subtarea_id, etapa_id'),
-    query('SELECT * FROM notificaciones ORDER BY fecha DESC LIMIT 100')
+    query('SELECT * FROM notificaciones ORDER BY fecha DESC LIMIT 100'),
+    getAllResponsables(),
+    getDireccionesCatalogo()
   ]);
 
   return {
-    direcciones: [],
-    responsables: [],
+    direcciones,
+    responsables,
     actividades: subtareas.map(toCamelRow),
     tareas: [],
     hitosContratacion: [],
