@@ -73,7 +73,28 @@ curl http://127.0.0.1:3000/api/health
 - Login funciona
 - Módulo de actividades y modal de seguimiento cargan correctamente
 
-## 6) Recomendación de seguridad
+## 6) Página de mantenimiento (172.16.1.72)
+
+El archivo ya está incluido en:
+- `infra/nginx/maintenance.html`
+
+El modo mantenimiento se activa con un archivo bandera:
+
+```bash
+# Activar mantenimiento
+sudo touch /opt/seguimiento_contrataciones/.maintenance
+sudo nginx -t
+sudo systemctl reload nginx
+
+# Desactivar mantenimiento
+sudo rm -f /opt/seguimiento_contrataciones/.maintenance
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+Cuando está activo, el servidor `172.16.1.72` responde con la página de "Sistema en mantenimiento".
+
+## 7) Recomendación de seguridad
 - No exponer puerto 3000 a internet
 - Abrir solo 80/443
 - Habilitar HTTPS (Certbot/Nginx)

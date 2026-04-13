@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sistema en mantenimiento</title>
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #64748b;
+      --accent: #1d9e75;
+      --border: #dbe4ee;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      background: radial-gradient(circle at 20% 20%, #ffffff 0%, var(--bg) 55%);
+      color: var(--text);
+    }
+
+    .card {
+      width: min(680px, 92vw);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+      padding: 2rem 1.4rem;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.32rem 0.72rem;
+      border-radius: 999px;
+      border: 1px solid #bde8da;
+      background: #ecfdf5;
+      color: #166534;
+      font-weight: 700;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      margin: 0 0 0.5rem;
+      font-size: clamp(1.45rem, 2.5vw, 2rem);
+      line-height: 1.2;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.55;
+    }
+
+    .dot {
+      width: 0.72rem;
+      height: 0.72rem;
+      margin: 1.2rem auto 0;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 0 rgba(29, 158, 117, 0.5);
+      animation: pulse 1.6s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(29, 158, 117, 0.55); }
+      70% { box-shadow: 0 0 0 14px rgba(29, 158, 117, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(29, 158, 117, 0); }
+    }
+  </style>
+</head>
+<body>
+  <main class="card" role="main" aria-labelledby="titulo">
+    <div class="badge">QuitoTurismo</div>
+    <h1 id="titulo">Sistema en mantenimiento</h1>
+    <p>
+      Estamos realizando tareas de mantenimiento para mejorar el servicio.<br />
+      Por favor intenta nuevamente en unos minutos.
+    </p>
+    <div class="dot" aria-hidden="true"></div>
+  </main>
+</body>
+</html>
