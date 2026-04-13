@@ -210,7 +210,7 @@
             <select id="estado" v-model="formulario.estado">
               <option value="pendiente">Pendiente</option>
               <option value="en_proceso">En proceso</option>
-              <option value="completado">Completado</option>
+              <option value="completado">Completo</option>
             </select>
           </div>
 
@@ -335,11 +335,11 @@
                   @change="actualizarEstadoEtapa(etapa)"
                 >
                   <option value="pendiente">Pendiente</option>
-                  <option value="completado">Completado</option>
+                  <option value="completado">Completo</option>
                 </select>
               </label>
               <label v-if="normalizarEstadoEtapa(etapa.estado) === 'completado'">
-                <span class="fecha-label">✅ Fecha completado:</span>
+                <span class="fecha-label">✅ Fecha completo:</span>
                 <input
                   v-if="permiteEditarFechaCompletado"
                   type="date"
@@ -603,7 +603,7 @@
                   📅 {{ formatearFechaParaVista(etapa.fechaTentativa) }}
                 </div>
                 <div v-if="etapa.fechaReal" class="etapa-fecha-vista etapa-fecha-real-vista">
-                  ✅ Completado: {{ formatearFechaParaVista(etapa.fechaReal) }}
+                  ✅ Completo: {{ formatearFechaParaVista(etapa.fechaReal) }}
                 </div>
                 <div
                   v-if="etapa.estado === 'completado' && etapa.fechaTentativa && etapa.fechaReal"
@@ -1204,7 +1204,7 @@ function formatearEstado(estado: string | undefined): string {
     'en_proceso': 'En Proceso',
     'con_pendientes': 'Con pendientes',
     'en_retraso': 'En retraso',
-    'completado': 'Completado'
+    'completado': 'Completo'
   };
   return estados[estado] || estado;
 }

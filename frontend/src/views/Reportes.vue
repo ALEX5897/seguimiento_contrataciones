@@ -47,7 +47,7 @@
 
       <select v-model="filtros.estado" class="filtro-select">
         <option value="">Todos los estados</option>
-        <option value="completado">Completado</option>
+        <option value="completado">Completo</option>
         <option value="en_proceso">En proceso</option>
         <option value="pendiente">Pendiente</option>
         <option value="atrasada">Con atraso</option>
@@ -77,7 +77,7 @@
         <article class="kpi-card success">
           <span class="kpi-label">Cumplimiento</span>
           <strong>{{ reporte.kpis.cumplimientoGeneral }}%</strong>
-          <small>{{ reporte.kpis.completados }} completados</small>
+          <small>{{ reporte.kpis.completados }} completos</small>
         </article>
         <article class="kpi-card info">
           <span class="kpi-label">En proceso</span>
@@ -122,7 +122,7 @@
                   <th>Dirección</th>
                   <th>Procesos</th>
                   <th>Verificables</th>
-                  <th>Completados</th>
+                  <th>Completos</th>
                   <th>Pendientes</th>
                   <th>Atrasadas</th>
                   <th>Cumplimiento</th>

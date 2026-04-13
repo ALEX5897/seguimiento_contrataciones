@@ -84,7 +84,7 @@
           <option value="pendiente">Pendiente</option>
           <option value="con_pendientes">Con pendientes</option>
           <option value="en_retraso">En retraso</option>
-          <option value="completado">Completado</option>
+          <option value="completado">Completo</option>
         </select>
         <input
           v-model="busqueda"
@@ -160,7 +160,7 @@
                 <td>
                   <select v-model="etapa.estado" class="estado-select" :disabled="normalizarEstado(etapa.estado) === 'completado'" @change="onEstadoEtapaChange(etapa)">
                     <option value="pendiente">Pendiente</option>
-                    <option value="completado">Completado</option>
+                    <option value="completado">Completo</option>
                   </select>
                   <div v-if="esAtrasada(etapa, subtarea)" class="estado-hint">Se marca en retraso por fecha tentativa vencida</div>
                 </td>
@@ -511,7 +511,7 @@ function formatoEstadoTexto(estado: string | null | undefined) {
     pendiente: 'Pendiente',
     con_pendientes: 'Con pendientes',
     en_retraso: 'En retraso',
-    completado: 'Completado'
+    completado: 'Completo'
   };
   return labels[normalizado] || normalizado;
 }

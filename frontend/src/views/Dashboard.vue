@@ -1,14 +1,6 @@
 <template>
   <div class="dashboard-admin">
-    <header class="dashboard-header">
-      <div>
-        <h1>Contrataciones 2026</h1>
-        <p>QUITO TURISMO 2026</p>
-      </div>
-      <div class="header-meta">
-        <span class="meta-pill">📅 {{ fechaActual }}</span>
-      </div>
-    </header>
+
 
     <div v-if="cargando" class="loading">Cargando indicadores...</div>
 
@@ -23,6 +15,7 @@
           <span class="filter-chip" v-if="filtroCuatrimestre">Cuatrimestre: {{ filtroCuatrimestre }}</span>
 
           <button v-if="hayFiltrosDashboardActivos" class="btn-clear-filter" @click="restablecerVista">
+            <i class="ri-refresh-line" aria-hidden="true"></i>
             Restablecer vista
           </button>
         </div>
@@ -153,57 +146,89 @@
             <span>{{ etapasCompletadasConFecha }} de {{ totalEtapasConFecha }} etapas</span>
           </div>
           <div class="gauge-wrap">
-            <!--
-              viewBox 0 0 196 108: centro en (98,98); la mitad inferior
-              del círculo queda fuera del viewport (clipping natural).
-              Los arcos de zona son <path>, sin efecto wrap-around.
-            -->
-            <svg class="gauge-svg" viewBox="0 0 196 108" aria-hidden="true">
-              <!-- Zonas coloreadas de referencia -->
-              <path d="M 18 98 A 80 80 0 0 1 98 18"          fill="none" stroke="#fecaca" stroke-width="16" stroke-linecap="butt"/>
-              <path d="M 98 18 A 80 80 0 0 1 162.72 50.98"   fill="none" stroke="#fef08a" stroke-width="16" stroke-linecap="butt"/>
-              <path d="M 162.72 50.98 A 80 80 0 0 1 178 98"  fill="none" stroke="#bbf7d0" stroke-width="16" stroke-linecap="butt"/>
-              <!-- Divisores blancos entre zonas (50% y 80%) -->
-              <line x1="98"  y1="10" x2="98"  y2="26" stroke="white" stroke-width="2"/>
-              <line x1="156" y1="56" x2="169" y2="46" stroke="white" stroke-width="2"/>
-              <!-- Etiquetas de escala -->
-              <text x="6"   y="89" class="gauge-zone-txt">0%</text>
-              <text x="98"  y="12" text-anchor="middle" class="gauge-zone-txt">50%</text>
-            <text x="190" y="89" text-anchor="end"    class="gauge-zone-txt">100%</text>
-              <!-- Arco de progreso delgado (sobre las zonas) -->
-              <circle
-                cx="98" cy="98" :r="GAUGE_R"
+            <svg class="gauge-svg" viewBox="0 0 220 130" aria-hidden="true">
+              <path
+                class="gauge-track"
+                d="M 22 108 A 88 88 0 0 1 198 108"
+                fill="none"
+                stroke="#dce5f2"
+                stroke-width="16"
+                stroke-linecap="round"
+              />
+              <path
+                class="gauge-progress"
+                d="M 22 108 A 88 88 0 0 1 198 108"
                 fill="none"
                 :stroke="gaugeColor"
-                stroke-width="4"
+                stroke-width="16"
                 stroke-linecap="round"
-                :stroke-dasharray="gaugeDasharray"
-                stroke-dashoffset="0"
-                transform="rotate(-180 98 98)"
+                pathLength="100"
+                :stroke-dasharray="`${gaugeProgress} 100`"
                 style="transition: stroke-dasharray 0.6s ease, stroke 0.4s ease;"
               />
-              <!-- Aguja / pluma (rota CSS alrededor de 98,98) -->
-              <g :style="{ transform: `rotate(${gaugeNeedleRotation}deg)`, transformOrigin: '98px 98px', transition: 'transform 0.6s ease' }">
-                <polygon points="98,28 101,92 95,92" :fill="gaugeColor" style="transition: fill 0.4s ease;"/>
+              <g
+                class="gauge-needle"
+                :style="{ transform: `rotate(${gaugeNeedleRotation}deg)`, transformOrigin: '110px 108px', transition: 'transform 0.55s ease' }"
+              >
+                <line
+                  x1="110"
+                  y1="108"
+                  x2="110"
+                  y2="38"
+                  :stroke="gaugeColor"
+                  stroke-width="4"
+                  stroke-linecap="round"
+                />
               </g>
-              <!-- Hub de la aguja -->
-              <circle cx="98" cy="98" r="9" fill="#1e293b"/>
-              <circle cx="98" cy="98" r="4" fill="white"/>
+              <circle cx="110" cy="108" r="7" fill="#1e293b" />
+              <circle cx="110" cy="108" r="3.2" fill="#ffffff" />
+              <line class="gauge-mark" x1="22" y1="108" x2="30" y2="108" />
+              <line class="gauge-mark" x1="110" y1="20" x2="110" y2="28" />
+              <line class="gauge-mark" x1="198" y1="108" x2="190" y2="108" />
+              <text x="22" y="124" class="gauge-zone-txt">0%</text>
+              <text x="110" y="14" text-anchor="middle" class="gauge-zone-txt">50%</text>
+              <text x="198" y="124" text-anchor="end" class="gauge-zone-txt">100%</text>
             </svg>
             <div class="gauge-value" :style="{ color: gaugeColor }">{{ porcentajeEtapas }}%</div>
             <div class="gauge-sub">de {{ totalEtapasConFecha }} etapas</div>
-            <div class="gauge-legend">
-              <div class="gauge-legend-item">
-                <span class="gauge-dot" style="background:#22c55e"></span>
-                <span>Completadas: <strong>{{ etapasCompletadasConFecha }}</strong> · {{ porcentajeEtapasCompletadas }}%</span>
+            <div class="gauge-progress-list">
+              <div class="gauge-progress-item">
+                <div class="gauge-progress-head">
+                  <span class="gauge-progress-label">Completas</span>
+                  <span class="gauge-progress-meta">{{ etapasCompletadasConFecha }} · {{ porcentajeEtapasCompletadas }}%</span>
+                </div>
+                <div class="gauge-progress-track">
+                  <div
+                    class="gauge-progress-fill success"
+                    :style="{ width: `${porcentajeEtapasCompletadas}%` }"
+                  ></div>
+                </div>
               </div>
-              <div class="gauge-legend-item">
-                <span class="gauge-dot" style="background:#f59e0b"></span>
-                <span>Pendientes: <strong>{{ etapasPendientesConFecha }}</strong> · {{ porcentajeEtapasPendientes }}%</span>
+
+              <div class="gauge-progress-item">
+                <div class="gauge-progress-head">
+                  <span class="gauge-progress-label">Pendientes</span>
+                  <span class="gauge-progress-meta">{{ etapasPendientesConFecha }} · {{ porcentajeEtapasPendientes }}%</span>
+                </div>
+                <div class="gauge-progress-track">
+                  <div
+                    class="gauge-progress-fill warning"
+                    :style="{ width: `${porcentajeEtapasPendientes}%` }"
+                  ></div>
+                </div>
               </div>
-              <div class="gauge-legend-item">
-                <span class="gauge-dot" style="background:#ef4444"></span>
-                <span>Atrasadas: <strong>{{ etapasAtrasadasConFecha }}</strong> · {{ porcentajeEtapasAtrasadas }}%</span>
+
+              <div class="gauge-progress-item">
+                <div class="gauge-progress-head">
+                  <span class="gauge-progress-label">Atrasadas</span>
+                  <span class="gauge-progress-meta">{{ etapasAtrasadasConFecha }} · {{ porcentajeEtapasAtrasadas }}%</span>
+                </div>
+                <div class="gauge-progress-track">
+                  <div
+                    class="gauge-progress-fill danger"
+                    :style="{ width: `${porcentajeEtapasAtrasadas}%` }"
+                  ></div>
+                </div>
               </div>
             </div>
           </div>
@@ -343,37 +368,48 @@
           <div v-if="detalleKpi.tipo === 'procesos'" class="kpi-detail-body listado">
             <div v-if="!actividadesAvancePresupuesto.length" class="empty">No hay procesos para mostrar en el filtro actual.</div>
             <div v-else class="bars-stack bars-stack-detailed">
-              <button
-                v-for="item in actividadesAvancePresupuesto"
-                :key="`modal-proceso-${item.id}`"
-                type="button"
-                class="actividad-bar-row actividad-bar-button"
-                :class="{ active: item.destacada && !!responsableSeleccionado, muted: !item.destacada && !!responsableSeleccionado }"
-                @click="abrirActividadDetalle(item.id)"
+              <section
+                v-for="grupo in actividadesPorCuatrimestre"
+                :key="`cuatrimestre-${grupo.key}`"
+                class="cuatrimestre-group"
               >
-                <div class="actividad-bar-top">
-                  <div>
-                    <div class="bar-label">{{ item.nombre }}</div>
-                    <div class="bar-helper">{{ item.area }} · {{ item.responsable }} · {{ item.tieneRetraso ? 'con retraso' : 'flujo normal' }} · clic para abrir detalle</div>
-                  </div>
-                  <div class="actividad-top-meta">
-                    <div class="actividad-presupuesto">{{ formatearMonto(item.presupuesto) }}</div>
-                    <div :class="['actividad-delay-badge', item.etapasRetrasadas > 0 ? 'late' : 'on-time']">
-                      {{ item.etapasRetrasadas }} {{ item.etapasRetrasadas === 1 ? 'etapa tarde' : 'etapas tarde' }}
+                <header class="cuatrimestre-group-header">
+                  <h4>{{ grupo.label }}</h4>
+                  <span>{{ grupo.items.length }} procesos</span>
+                </header>
+
+                <button
+                  v-for="item in grupo.items"
+                  :key="`modal-proceso-${grupo.key}-${item.id}`"
+                  type="button"
+                  class="actividad-bar-row actividad-bar-button"
+                  :class="{ active: item.destacada && !!responsableSeleccionado, muted: !item.destacada && !!responsableSeleccionado }"
+                  @click="abrirActividadDetalle(item.id)"
+                >
+                  <div class="actividad-bar-top">
+                    <div>
+                      <div class="bar-label">{{ item.nombre }}</div>
+                      <div class="bar-helper">{{ item.area }} · {{ item.responsable }} · {{ item.tieneRetraso ? 'con retraso' : 'flujo normal' }} · clic para abrir detalle</div>
+                    </div>
+                    <div class="actividad-top-meta">
+                      <div class="actividad-presupuesto">{{ formatearMonto(item.presupuesto) }}</div>
+                      <div :class="['actividad-delay-badge', item.etapasRetrasadas > 0 ? 'late' : 'on-time']">
+                        {{ item.etapasRetrasadas }} {{ item.etapasRetrasadas === 1 ? 'etapa tarde' : 'etapas tarde' }}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="actividad-bar-main">
-                  <div class="bar-track actividad-track">
-                    <div
-                      class="bar-fill"
-                      :class="item.tieneRetraso ? 'warn' : 'ok'"
-                      :style="{ width: item.width }"
-                    ></div>
+                  <div class="actividad-bar-main">
+                    <div class="bar-track actividad-track">
+                      <div
+                        class="bar-fill"
+                        :class="item.tieneRetraso ? 'warn' : 'ok'"
+                        :style="{ width: item.width }"
+                      ></div>
+                    </div>
+                    <div class="bar-value actividad-avance">{{ item.avance }}%</div>
                   </div>
-                  <div class="bar-value actividad-avance">{{ item.avance }}%</div>
-                </div>
-              </button>
+                </button>
+              </section>
             </div>
           </div>
 
@@ -598,12 +634,6 @@ const detalleKpi = ref<{ activo: boolean; tipo: 'procesos' | 'cumplimiento' | 'r
   tipo: 'cumplimiento'
 });
 const GUAYAQUIL_TIMEZONE = 'America/Guayaquil';
-const fechaActual = new Date().toLocaleDateString('es-EC', {
-  weekday: 'long',
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric'
-});
 
 // --- Computed y variables dependientes de serieSemanal ---
 
@@ -861,6 +891,7 @@ function abrirDetalleProcesosPorDireccion(direccion: string) {
 
 function cerrarDetalleKpi() {
   detalleKpi.value.activo = false;
+  restablecerVista();
 }
 
 function manejarEscapeModales(event: KeyboardEvent) {
@@ -1300,6 +1331,7 @@ const actividadesAvancePresupuesto = computed(() => {
       responsable: responsableBase(subtarea),
       avance: calcularAvanceSubtarea(subtarea),
       presupuesto: obtenerPresupuestoDashboard(subtarea),
+      cuatrimestre: obtenerCuatrimestreDashboard(subtarea),
       etapasRetrasadas: contarEtapasAtrasadasSubtarea(subtarea),
       tieneRetraso: actividadAtrasada(subtarea)
     }))
@@ -1310,6 +1342,27 @@ const actividadesAvancePresupuesto = computed(() => {
       width: item.avance > 0
         ? `${Math.max(8, Math.round((item.avance / mayorAvance) * 100))}%`
         : '0%'
+    }));
+});
+
+const actividadesPorCuatrimestre = computed(() => {
+  const grupos = new Map<number, typeof actividadesAvancePresupuesto.value>();
+
+  for (const item of actividadesAvancePresupuesto.value) {
+    const key = Number.isFinite(item.cuatrimestre) ? item.cuatrimestre : 999;
+    if (!grupos.has(key)) grupos.set(key, []);
+    grupos.get(key)!.push(item);
+  }
+
+  return Array.from(grupos.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([key, items]) => ({
+      key,
+      label: key >= 1 && key <= 4 ? `Cuatrimestre ${key}` : 'Sin cuatrimestre',
+      items: [...items].sort((a, b) => {
+        if (a.tieneRetraso !== b.tieneRetraso) return a.tieneRetraso ? -1 : 1;
+        return b.etapasRetrasadas - a.etapasRetrasadas || b.presupuesto - a.presupuesto || b.avance - a.avance;
+      })
     }));
 });
 
@@ -1343,11 +1396,6 @@ watch([
 ], () => {
   cargarResumenSemanal();
 });
-
-// ─── Velocímetro ─────────────────────────────────────────────────────────────
-// Parámetros SVG del gauge (semicírculo, radio = 80, strokeWidth = 18)
-const GAUGE_R = 80;
-const GAUGE_CIRCUM = Math.PI * GAUGE_R; // longitud del semicírculo
 
 // Velocímetro basado solo en etapas con fecha asignada
 const totalEtapasConFecha = computed(() => etapasConFechaAsignada.value.length);
@@ -1389,16 +1437,8 @@ const porcentajeEtapasAtrasadas = computed(() =>
     : 0
 );
 
-// Rotación de la aguja: -90° (0%) → 0° (50%, apunta arriba) → +90° (100%)
-const gaugeNeedleRotation = computed(() => -90 + (porcentajeEtapas.value / 100) * 180);
-
-const gaugeDasharray = computed(() => {
-  const pct = Math.min(100, Math.max(0, porcentajeEtapas.value));
-  const filled = (pct / 100) * GAUGE_CIRCUM;
-  // gap = circunferencia total − filled → la mitad inferior del círculo queda siempre oculta
-  return `${filled.toFixed(2)} ${(GAUGE_CIRCUM * 2 - filled).toFixed(2)}`;
-});
-
+const gaugeProgress = computed(() => Math.min(100, Math.max(0, porcentajeEtapas.value)));
+const gaugeNeedleRotation = computed(() => -90 + (gaugeProgress.value / 100) * 180);
 const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value));
 
 </script>
@@ -1406,21 +1446,21 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 <style scoped>
 /* ── Design Tokens ────────────────────────────────────────────────────────── */
 :global(:root) {
-  --c-bg: #f0f4f8;
+  --c-bg: #eef3fa;
   --c-surface: #ffffff;
-  --c-border: #e2e8f0;
+  --c-border: #d7e3f1;
   --c-text-primary: #0f172a;
-  --c-text-secondary: #475569;
-  --c-text-muted: #94a3b8;
-  --c-accent: #2563eb;
-  --c-accent-light: #dbeafe;
+  --c-text-secondary: #2f4560;
+  --c-text-muted: #6b8198;
+  --c-accent: #3b82f6;
+  --c-accent-light: #e3efff;
   --c-success: #16a34a;
   --c-success-light: #dcfce7;
   --c-warning: #d97706;
   --c-warning-light: #fef3c7;
   --c-danger: #dc2626;
   --c-danger-light: #fee2e2;
-  --c-teal: #0d9488;
+  --c-teal: #0ea5e9;
   --radius-sm: 10px;
   --radius-md: 14px;
   --radius-lg: 20px;
@@ -1437,6 +1477,7 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
   gap: 0.9rem;
   font-family: 'DM Sans', 'Outfit', 'Segoe UI', system-ui, sans-serif;
   padding: 0;
+  margin-top: -0.5rem;
 }
 
 /* ── Header ───────────────────────────────────────────────────────────────── */
@@ -1506,11 +1547,11 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 
 /* ── Context Summary & Filters ────────────────────────────────────────────── */
 .context-summary {
-  background: #ffffff;
-  border: 1px solid #d9e2ea;
-  border-radius: var(--radius-md);
-  padding: 0.75rem 1rem;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  background: linear-gradient(120deg, #f8fbff 0%, #eef5ff 100%);
+  border: 1px solid #c9d9ee;
+  border-radius: 12px;
+  padding: 0.55rem 0.75rem;
+  box-shadow: 0 6px 14px rgba(17, 46, 78, 0.08);
   position: sticky;
   top: 0.5rem;
   z-index: 40;
@@ -1520,26 +1561,33 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.55rem;
   flex-wrap: wrap;
-  margin-top: 0.8rem;
+  margin-top: 0.5rem;
 }
 
 .btn-clear-filter {
-  padding: 0.45rem 0.85rem;
-  border-radius: 8px;
-  border: 1px dashed #fca5a5;
-  background: #fff5f5;
-  color: #dc2626;
-  font-size: 0.8rem;
-  font-weight: 600;
+  height: 30px;
+  padding: 0 0.68rem;
+  border-radius: 7px;
+  border: 1px solid #2f7bd7;
+  background: linear-gradient(135deg, #2f7bd7, #4e9cf0);
+  color: #ffffff;
+  font-size: 0.73rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  box-shadow: 0 3px 8px rgba(47, 123, 215, 0.28);
+  transition: background 0.15s, border-color 0.15s, transform 0.15s, box-shadow 0.15s;
 }
 
 .btn-clear-filter:hover {
-  background: #fee2e2;
-  border-color: #f87171;
+  background: linear-gradient(135deg, #2b73ca, #3c8be2);
+  border-color: #1f5fab;
+  box-shadow: 0 5px 11px rgba(47, 123, 215, 0.34);
+  transform: translateY(-1px);
 }
 
 .btn-clear-filter:disabled {
@@ -1550,13 +1598,13 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 .filter-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.35rem;
   align-items: center;
 }
 
 .dashboard-toolbar-filtros {
   display: flex;
-  gap: 0.55rem;
+  gap: 0.4rem;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
@@ -1588,19 +1636,21 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 .filter-chip {
   display: inline-flex;
   align-items: center;
-  padding: 0.3rem 0.7rem;
+  height: 26px;
+  padding: 0 0.56rem;
   border-radius: 999px;
   border: 1px solid var(--c-border);
-  background: #f8fafc;
-  color: var(--c-text-secondary);
-  font-size: 0.76rem;
+  background: #f4f8ff;
+  color: #28496d;
+  font-size: 0.7rem;
   font-weight: 600;
+  line-height: 1;
 }
 
 .filter-chip.primary {
-  background: var(--c-accent-light);
-  border-color: #93c5fd;
-  color: #1d4ed8;
+  background: linear-gradient(135deg, #e4efff, #d7e9ff);
+  border-color: #9ec4ef;
+  color: #17467c;
 }
 
 .filter-chip.success {
@@ -1610,24 +1660,26 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 }
 
 .filter-chip.direccion-active {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  border-color: #f59e0b;
-  color: #92400e;
-  font-size: 0.82rem;
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+  border-color: #38bdf8;
+  color: #0c4a6e;
+  font-size: 0.72rem;
   font-weight: 800;
-  padding: 0.35rem 0.85rem;
-  box-shadow: 0 1px 4px rgba(245, 158, 11, 0.3);
+  height: 28px;
+  padding: 0 0.62rem;
+  box-shadow: 0 1px 4px rgba(14, 165, 233, 0.24);
   letter-spacing: 0.01em;
 }
 
 .combo-filtro {
   border: 1px solid var(--c-border);
-  background: linear-gradient(180deg, #ffffff, #f8fbff);
-  color: var(--c-text-secondary);
-  font-size: 0.8rem;
+  background: linear-gradient(180deg, #ffffff, #f4f8ff);
+  color: #244668;
+  font-size: 0.74rem;
   font-weight: 700;
-  border-radius: 10px;
-  padding: 0.38rem 0.7rem;
+  border-radius: 8px;
+  height: 30px;
+  padding: 0 0.62rem;
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
@@ -1635,43 +1687,43 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 .combo-filtro:focus {
   outline: none;
   border-color: var(--c-accent);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
   background: #ffffff;
 }
 
 .dashboard-toolbar-filtros .combo-filtro {
-  border-color: #bfdbfe;
-  color: #1e3a8a;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  border-color: #b6cee9;
+  color: #1f4a78;
+  box-shadow: 0 1px 3px rgba(17, 46, 78, 0.08);
 }
 
 .dashboard-toolbar-filtros .combo-filtro:hover {
-  border-color: #93c5fd;
-  background: linear-gradient(180deg, #ffffff, #eff6ff);
+  border-color: #90b7e1;
+  background: linear-gradient(180deg, #ffffff, #ecf4ff);
 }
 
 .dashboard-toolbar-filtros select.combo-filtro {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  padding-right: 1.8rem;
+  padding-right: 1.6rem;
   background-image:
-    linear-gradient(45deg, transparent 50%, #3b82f6 50%),
-    linear-gradient(135deg, #3b82f6 50%, transparent 50%);
+    linear-gradient(45deg, transparent 50%, #2563eb 50%),
+    linear-gradient(135deg, #2563eb 50%, transparent 50%);
   background-position:
-    calc(100% - 13px) calc(50% - 2px),
-    calc(100% - 8px) calc(50% - 2px);
-  background-size: 5px 5px, 5px 5px;
+    calc(100% - 11px) calc(50% - 2px),
+    calc(100% - 7px) calc(50% - 2px);
+  background-size: 4px 4px, 4px 4px;
   background-repeat: no-repeat;
 }
 
 .dashboard-buscador-container .buscador-input.combo-filtro {
-  background: linear-gradient(180deg, #ffffff, #eff6ff);
-  border-color: #93c5fd;
+  background: linear-gradient(180deg, #ffffff, #edf5ff);
+  border-color: #98bde7;
   color: #0f172a;
-  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.08);
-  padding-left: 2rem;
-  padding-right: 0.9rem;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.12);
+  padding-left: 1.8rem;
+  padding-right: 0.72rem;
 }
 
 .dashboard-buscador-container .buscador-input.combo-filtro::placeholder {
@@ -1703,19 +1755,19 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 
 .kpi-card {
   background: #ffffff;
-  border: 1px solid #d9e2ea;
+  border: 1px solid #d3e0ef;
   border-radius: var(--radius-md);
   padding: 0.88rem 0.95rem;
   display: grid;
   gap: 0.34rem;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 10px 26px rgba(17, 46, 78, 0.09);
   position: relative;
   overflow: hidden;
   transition: box-shadow 0.2s, transform 0.2s;
 }
 
 .kpi-card:hover {
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 14px 30px rgba(17, 46, 78, 0.13);
 }
 
 .kpi-card.has-tooltip {
@@ -2267,6 +2319,11 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 
 .priority-grid .gauge-legend-item {
   justify-content: center;
+}
+
+.priority-grid .gauge-progress-list {
+  width: 100%;
+  max-width: 310px;
 }
 
 .priority-grid .donut-wrap {
@@ -2864,6 +2921,46 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
   gap: 0.85rem;
 }
 
+.cuatrimestre-group {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.cuatrimestre-group + .cuatrimestre-group {
+  margin-top: 0.5rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed var(--c-border);
+}
+
+.cuatrimestre-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.cuatrimestre-group-header h4 {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #0f3f73;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-weight: 800;
+  background: linear-gradient(135deg, #e5f0ff, #d8e8ff);
+  border: 1px solid #b8d1f0;
+  border-radius: 999px;
+  padding: 0.22rem 0.62rem;
+}
+
+.cuatrimestre-group-header span {
+  font-size: 0.7rem;
+  color: #5f7895;
+  background: #eef5ff;
+  border: 1px solid #c9d9ee;
+  border-radius: 999px;
+  padding: 0.16rem 0.52rem;
+}
+
 .bar-row-detailed {
   grid-template-columns: minmax(140px, 180px) 1fr 48px;
 }
@@ -3166,9 +3263,27 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 
 .gauge-svg {
   width: 100%;
-  max-width: 230px;
+  max-width: 236px;
   overflow: visible;
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.08));
+  filter: drop-shadow(0 6px 14px rgba(17,46,78,0.12));
+}
+
+.gauge-track {
+  opacity: 0.95;
+}
+
+.gauge-progress {
+  filter: drop-shadow(0 2px 6px rgba(37, 99, 235, 0.24));
+}
+
+.gauge-needle {
+  filter: drop-shadow(0 2px 5px rgba(15, 23, 42, 0.26));
+}
+
+.gauge-mark {
+  stroke: #a8b8cc;
+  stroke-width: 2;
+  stroke-linecap: round;
 }
 
 .gauge-pct {
@@ -3212,8 +3327,8 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 }
 
 .gauge-zone-txt {
-  font-size: 12px;
-  fill: #94a3b8;
+  font-size: 11px;
+  fill: #7f93ab;
   font-weight: 700;
   font-family: inherit;
 }
@@ -3234,6 +3349,67 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
   color: var(--c-text-muted);
   text-align: center;
   margin-bottom: 0.2rem;
+}
+
+.gauge-progress-list {
+  width: 100%;
+  max-width: 320px;
+  background: #f8fafc;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.62rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.gauge-progress-item {
+  display: grid;
+  gap: 0.24rem;
+}
+
+.gauge-progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.gauge-progress-label {
+  font-size: 0.72rem;
+  color: var(--c-text-secondary);
+  font-weight: 700;
+}
+
+.gauge-progress-meta {
+  font-size: 0.7rem;
+  color: var(--c-text-muted);
+  font-weight: 700;
+}
+
+.gauge-progress-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: #e6edf6;
+  overflow: hidden;
+}
+
+.gauge-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.45s ease;
+}
+
+.gauge-progress-fill.success {
+  background: linear-gradient(90deg, #16a34a, #22c55e);
+}
+
+.gauge-progress-fill.warning {
+  background: linear-gradient(90deg, #d97706, #f59e0b);
+}
+
+.gauge-progress-fill.danger {
+  background: linear-gradient(90deg, #dc2626, #ef4444);
 }
 
 /* ── Temporal Chart ───────────────────────────────────────────────────────── */
@@ -3459,6 +3635,19 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 }
 
 @media (max-width: 680px) {
+  .context-summary {
+    padding: 0.5rem 0.55rem;
+  }
+
+  .dashboard-toolbar-filtros {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .dashboard-toolbar-filtros .combo-filtro {
+    flex: 1 1 170px;
+  }
+
   .dashboard-header {
     flex-direction: column;
     align-items: flex-start;

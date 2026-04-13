@@ -326,7 +326,7 @@ const porcentajeEjecucion = computed(() => {
 const estadoEjecucionTexto = computed(() => {
   const status = progresoEjecucion.value?.status;
   if (status === 'failed') return 'Error';
-  if (status === 'completed') return progresoEjecucion.value?.skipped ? 'Omitido' : 'Completado';
+  if (status === 'completed') return progresoEjecucion.value?.skipped ? 'Omitido' : 'Completo';
   return 'Enviando';
 });
 const estadoEjecucionClase = computed(() => {

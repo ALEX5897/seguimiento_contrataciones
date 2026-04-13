@@ -1,11 +1,6 @@
 <template>
   <div class="actividades-view">
-    <div class="actividades-header">
-      <h1>Procesos</h1>
-      <span v-if="!cargando" class="total-actividades">
-        Total de procesos: <strong>{{ actividadesActivas.length }}</strong>
-      </span>
-    </div>
+   
 
     <section class="context-summary" v-if="!cargando">
       <div class="filter-chips">
@@ -22,14 +17,16 @@
       </div>
 
       <div class="dashboard-toolbar">
-        <div class="buscador-container dashboard-buscador-container">
-          <span class="buscador-icon">🔎</span>
-          <input
-            v-model="busquedaActividades"
-            class="buscador-input combo-filtro"
-            type="text"
-            placeholder="Buscar por nombre, dirección o responsable..."
-          />
+        <div class="toolbar-search-actions">
+          <div class="buscador-container dashboard-buscador-container">
+            <span class="buscador-icon">🔎</span>
+            <input
+              v-model="busquedaActividades"
+              class="buscador-input combo-filtro"
+              type="text"
+              placeholder="Buscar por nombre, dirección o responsable..."
+            />
+          </div>
         </div>
 
         <div class="dashboard-toolbar-filtros">
@@ -83,8 +80,13 @@
     <section v-if="!cargando" class="kpi-grid professional-kpi-grid actividades-kpi-grid">
       <article class="kpi-card">
         <span class="kpi-title">Total de procesos</span>
-        <strong class="kpi-value">{{ kpisProcesos.totalProcesos }}</strong>
-        <small class="kpi-foot">Procesos activos con etapas registradas</small>
+        <div class="kpi-donut-row">
+          <strong class="kpi-value">{{ kpisProcesos.totalProcesos }}</strong>
+          <div class="kpi-mini-donut" :style="{ '--value': `${kpisProcesos.porcentajeCumplimiento}%`, '--kpi-color': colorCumplimiento }">
+            <span :style="{ color: colorCumplimiento }">{{ kpisProcesos.porcentajeCumplimiento }}%</span>
+          </div>
+        </div>
+        <small class="kpi-foot">Total de procesos y cumplimiento general</small>
       </article>
 
       <article class="kpi-card success">
@@ -147,13 +149,35 @@
       <p>{{ errorCargaActividades }}</p>
     </div>
     <div v-else-if="cargando" class="loading">Cargando procesos...</div>
-    <div v-else class="actividades-grid">
-      <div
-        v-for="(actividad, index) in actividadesActivas"
-        :key="actividad.id"
-        class="actividad-card"
-        @click.stop="abrirDetalleActividad(actividad)"
+    <div v-else class="actividades-grupos">
+      <section
+        v-for="grupo in actividadesAgrupadasPorCuatrimestre"
+        :key="grupo.key"
+        class="cuatrimestre-grupo"
       >
+        <div class="cuatrimestre-separador">{{ grupo.titulo }}</div>
+
+        <div class="actividades-grid">
+          <div
+            v-for="(actividad, index) in grupo.items"
+            :key="actividad.id"
+            :class="[
+              'actividad-card',
+              {
+                'actividad-card-riesgo': normalizarProcesoEnRiesgo(actividad),
+                'actividad-card-desierto': obtenerEstadoProcesoValor(actividad) === 2
+              }
+            ]"
+            @click.stop="abrirDetalleActividad(actividad)"
+          >
+        <span
+          v-if="obtenerMarcaAguaProceso(actividad)"
+          :class="['actividad-watermark', obtenerClaseMarcaAguaProceso(actividad)]"
+          aria-hidden="true"
+        >
+          {{ obtenerMarcaAguaProceso(actividad) }}
+        </span>
+
         <div class="actividad-header">
           <h2>{{ actividad.nombre }}</h2>
           <div class="actividad-tags">
@@ -174,7 +198,7 @@
           <p><strong>Responsable:</strong> {{ obtenerResponsable(actividad) }}</p>
           <p><strong>Cuatrimestre:</strong> {{ obtenerCuatrimestreTexto(actividad) }}</p>
           <p><strong>Presupuesto:</strong> ${{ obtenerPresupuesto(actividad).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
-          <p><strong>Período:</strong> {{ formatearFecha(periodoActividad(actividad).desde) }} - {{ formatearFecha(periodoActividad(actividad).hasta) }}</p>
+          <p><strong>Período:</strong> {{ formatearFecha(periodoPrimeraUltimaActividad(actividad).desde) }} - {{ formatearFecha(periodoPrimeraUltimaActividad(actividad).hasta) }}</p>
         </div>
 
         <div class="actividad-stats">
@@ -208,7 +232,9 @@
             :style="{ width: porcentajeAvance(actividad) + '%' }"
           ></div>
         </div>
-      </div>
+          </div>
+        </div>
+      </section>
     </div>
 
     <div v-if="!cargando && actividadesActivas.length === 0" class="empty-state">
@@ -239,6 +265,9 @@
                 class="seguimiento-contexto-chip budget-warning"
               >
                 Sin presupuesto
+              </span>
+              <span v-if="resumenCabeceraActividad" class="seguimiento-contexto-chip last-activity">
+                {{ resumenCabeceraActividad.ultimaNombre }} · {{ resumenCabeceraActividad.ultimaFecha }}
               </span>
             </div>
           </div>
@@ -277,16 +306,7 @@
               </label>
 
               <template v-if="procesoEnRiesgo">
-                <button
-                  type="button"
-                  class="btn-riesgo-icon"
-                  :class="{ active: procesoEnRiesgo }"
-                  :disabled="guardandoRiesgoProceso"
-                  title="Abrir comentario de riesgo"
-                  @click="abrirEditorRiesgo"
-                >
-                  ⚠️
-                </button>
+              
 
                 <button
                   type="button"
@@ -346,7 +366,7 @@
                 <th>Etapa</th>
                 <th>Fecha límite</th>
                 <th>Fecha reforma</th>
-                <th>Fecha de completado</th>
+                <th>Fecha de completo</th>
                 <th>Estado</th>
                 <th>Retraso</th>
                 <th>Seguimiento</th>
@@ -393,7 +413,7 @@
                       @change="onEstadoEtapaChange(etapa)"
                     >
                       <option value="pendiente">Pendiente</option>
-                      <option value="completado">Completado</option>
+                      <option value="completado">Completo</option>
                     </select>
                     <span v-if="guardandoEstadoEtapaId === (etapa.id || etapa.etapaId)" class="estado-saving">Guardando...</span>
                   </div>
@@ -403,76 +423,74 @@
                     v-if="estadoNormalizado(etapa.estado) === 'completado' && etapa.fechaReal && (etapa.fechaPlanificada || etapa.fechaTentativa)"
                     :class="['cumplimiento-chip', etapaCompletadaATiempo(etapa, actividadSeleccionada) ? 'a-tiempo' : 'con-retraso']"
                   >
-                    {{ etapaCompletadaATiempo(etapa, actividadSeleccionada) ? '✅ Completado' : `✅ ${diasRetrasoCompletado(etapa, actividadSeleccionada)} días tarde` }}
+                    {{ etapaCompletadaATiempo(etapa, actividadSeleccionada) ? '✅ A tiempo' : `✅ ${diasRetrasoCompletado(etapa, actividadSeleccionada)} días tarde` }}
                   </span>
                   <span v-else-if="esEtapaAtrasada(etapa, actividadSeleccionada)" class="retraso-chip">⚠️ {{ diasRetraso(etapa, actividadSeleccionada) }} días tarde</span>
                   <span v-else>-</span>
                 </td>
                 <td>
-                  <button
-                    type="button"
-                    class="btn-seguimiento btn-seguimiento-icono"
-                    @click="seleccionarEtapaSeguimiento(etapa)"
-                    :title="`Observaciones de ${etapa.etapaNombre || etapa.nombre}`"
-                  >
-                    <svg class="icono-mensaje" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M21 12a8.5 8.5 0 0 1-8.5 8.5c-1.3 0-2.6-.3-3.8-.9L4 21l1.4-4.2A8.5 8.5 0 1 1 21 12Z" />
-                      <path d="M8.5 11.5h7" />
-                      <path d="M8.5 14.5h4.5" />
-                    </svg>
-                    <span
-                      v-if="mostrarCargaSeguimiento(etapa)"
-                      class="seguimiento-loading-dot"
-                      title="Cargando observaciones"
-                    ></span>
-                    <span
-                      v-if="obtenerIndicadorSeguimiento(etapa) > 0"
-                      class="seguimiento-badge"
-                      title="Esta etapa tiene observaciones o alertas"
-                    >{{ obtenerIndicadorSeguimiento(etapa) > 99 ? '99+' : obtenerIndicadorSeguimiento(etapa) }}</span>
-                  </button>
+                  <div class="seguimiento-cell">
+                    <button
+                      type="button"
+                      class="btn-seguimiento btn-seguimiento-icono"
+                      @click="seleccionarEtapaSeguimiento(etapa)"
+                      :title="`Observaciones de ${etapa.etapaNombre || etapa.nombre}`"
+                    >
+                      <svg class="icono-mensaje" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M21 12a8.5 8.5 0 0 1-8.5 8.5c-1.3 0-2.6-.3-3.8-.9L4 21l1.4-4.2A8.5 8.5 0 1 1 21 12Z" />
+                        <path d="M8.5 11.5h7" />
+                        <path d="M8.5 14.5h4.5" />
+                      </svg>
+                      <span
+                        v-if="mostrarCargaSeguimiento(etapa)"
+                        class="seguimiento-loading-dot"
+                        title="Cargando observaciones"
+                      ></span>
+                      <span
+                        v-if="obtenerIndicadorSeguimiento(etapa) > 0"
+                        :class="['seguimiento-badge', etapaTieneAlertas(etapa) ? 'is-alert' : 'is-amber']"
+                        title="Esta etapa tiene observaciones o alertas"
+                      >{{ obtenerIndicadorSeguimiento(etapa) > 99 ? '99+' : obtenerIndicadorSeguimiento(etapa) }}</span>
+                    </button>
+                    <small class="seguimiento-last-update">{{ obtenerUltimaActualizacionTexto(etapa) }}</small>
+                  </div>
                 </td>
               </tr>
             </tbody>
           </table>
           </div>
 
-          <div class="timeline timeline-final" v-if="etapasConFecha.length">
+          <div class="timeline timeline-final timeline-horizontal" v-if="etapasConFecha.length">
             <div class="timeline-header">
               <h4>Línea de tiempo</h4>
               <button type="button" class="btn-toggle-timeline" @click="timelineContraida = !timelineContraida">
-                {{ timelineContraida ? 'Ver línea de tiempo' : 'Ocultar línea de tiempo' }}
+                {{ timelineContraida ? 'Mostrar línea de tiempo' : 'Ocultar línea de tiempo' }}
               </button>
             </div>
 
             <div v-if="timelineContraida" class="timeline-contraida-box">
-              <div class="timeline-contraida-titulo">📌 Línea de tiempo contraída</div>
+              <div class="timeline-contraida-titulo">Línea de tiempo oculta</div>
               <div class="timeline-contraida-texto">
-                Hay {{ etapasConFecha.length }} etapas en la secuencia. Haz clic en <strong>Ver línea de tiempo</strong> para ver el detalle completo.
+                Haz clic en <strong>Mostrar línea de tiempo</strong> para ver la secuencia de etapas.
               </div>
             </div>
 
-            <div v-if="!timelineContraida">
+            <div v-else class="timeline-horizontal-track">
               <div
                 v-for="(etapa, index) in etapasConFecha"
                 :key="`timeline-${etapa.id || etapa.etapaId || index}`"
-                class="timeline-item"
-                :class="{ destacado: esEtapaResaltada(etapa) }"
+                class="timeline-step-horizontal"
               >
-                <div class="timeline-node" :class="estadoVisual(etapa)"></div>
-                <div v-if="index < etapasConFecha.length - 1" class="timeline-line"></div>
-                <div class="timeline-content">
-                  <div class="timeline-title">{{ etapa.etapaNombre || etapa.nombre }}</div>
-                  <div class="timeline-date">
-                    <span>{{ textoLeyendaTimeline(etapa) }}</span>
-                    <span
-                      v-if="badgeLeyendaTimeline(etapa)"
-                      :class="['timeline-badge', claseBadgeLeyendaTimeline(etapa)]"
-                    >
-                      {{ badgeLeyendaTimeline(etapa) }}
-                    </span>
-                  </div>
+                <div v-if="index < etapasConFecha.length - 1" class="timeline-step-line"></div>
+                <div
+                  :class="['timeline-numero-actividad', claseTimelineNumero(etapa)]"
+                  :title="`${etapa.etapaNombre || etapa.nombre} · ${textoLeyendaTimeline(etapa)}`"
+                >
+                  {{ index + 1 }}
                 </div>
+                <small v-if="esEtapaAtrasada(etapa, actividadSeleccionada)" class="timeline-step-delay">
+                  {{ diasRetraso(etapa, actividadSeleccionada) }}d
+                </small>
               </div>
             </div>
           </div>
@@ -507,6 +525,9 @@
                 class="seguimiento-contexto-chip budget-warning"
               >
                 Sin presupuesto
+              </span>
+              <span v-if="resumenCabeceraActividad" class="seguimiento-contexto-chip last-activity">
+                {{ resumenCabeceraActividad.ultimaNombre }} · {{ resumenCabeceraActividad.ultimaFecha }}
               </span>
             </div>
           </div>
@@ -592,7 +613,7 @@ const filtroTipoContratacion = ref('');
 const filtroCuatrimestre = ref('');
 const filtroMonto = ref('');
 const filtroRiesgo = ref('');
-const ordenPresupuesto = ref('todos');
+const ordenPresupuesto = ref('presupuesto-desc');
 const actividadesVisiblesBase = computed(() =>
   actividades.value.filter((actividad: any) => esProcesoVisible(actividad))
 );
@@ -718,6 +739,19 @@ const actividadesActivas = computed(() => {
   return items;
 });
 
+const actividadesAgrupadasPorCuatrimestre = computed(() => {
+  const base = actividadesActivas.value;
+  const orden = [1, 2, 3];
+
+  return orden
+    .map((cuatrimestre) => ({
+      key: `c${cuatrimestre}`,
+      titulo: `Cuatrimestre ${cuatrimestre}`,
+      items: base.filter((actividad: any) => obtenerCuatrimestreOrden(actividad) === cuatrimestre)
+    }))
+    .filter((grupo) => grupo.items.length > 0);
+});
+
 const actividadesKpiPrincipales = computed(() =>
   actividadesActivas.value.filter((actividad: any) =>
     procesoCuentaEnIndicadoresPrincipales(actividad) && totalTareas(actividad) > 0
@@ -806,6 +840,7 @@ const mensajeSeguimiento = ref<{ texto: string; tipo: 'success' | 'info' } | nul
 const mensajeRiesgoProceso = ref<{ texto: string; tipo: 'success' | 'info' } | null>(null);
 const conteoSeguimientosPorEtapa = ref<Record<number, number>>({});
 const alertasPorEtapa = ref<Record<number, boolean>>({});
+const ultimaActualizacionPorEtapa = ref<Record<number, string | null>>({});
 const etapaResaltadaId = ref<number | null>(null);
 const timelineContraida = ref(true);
 const procesoEnRiesgo = ref(false);
@@ -840,6 +875,18 @@ const etapasConFecha = computed(() =>
       return fechaA.getTime() - fechaB.getTime();
     })
 );
+
+const resumenCabeceraActividad = computed(() => {
+  const etapas = etapasConFecha.value;
+  if (!etapas.length) return null;
+
+  const ultima = etapas[etapas.length - 1];
+
+  return {
+    ultimaFecha: formatearFecha(ultima?.fechaPlanificada || ultima?.fechaTentativa),
+    ultimaNombre: String(ultima?.etapaNombre || ultima?.nombre || 'Ultima actividad')
+  };
+});
 
 onMounted(async () => {
   window.addEventListener('keydown', manejarEscapeModales);
@@ -1133,6 +1180,31 @@ function periodoActividad(actividad: any) {
   };
 }
 
+function periodoPrimeraUltimaActividad(actividad: any) {
+  const etapasOrdenadas = getEtapasConFecha(actividad)
+    .map((etapa: any) => ({
+      fecha: etapa?.fechaPlanificada || etapa?.fechaTentativa
+    }))
+    .filter((item: any) => Boolean(item.fecha))
+    .map((item: any) => ({
+      fecha: new Date(item.fecha)
+    }))
+    .filter((item: any) => !Number.isNaN(item.fecha.getTime()))
+    .sort((a: any, b: any) => a.fecha.getTime() - b.fecha.getTime());
+
+  if (!etapasOrdenadas.length) {
+    return {
+      desde: actividad?.fechaInicio || null,
+      hasta: actividad?.fechaFin || null
+    };
+  }
+
+  return {
+    desde: etapasOrdenadas[0].fecha.toISOString(),
+    hasta: etapasOrdenadas[etapasOrdenadas.length - 1].fecha.toISOString()
+  };
+}
+
 function obtenerFechaFinOrden(actividad: any) {
   const fechaHasta = periodoActividad(actividad).hasta;
   const timestamp = fechaHasta ? new Date(fechaHasta).getTime() : Number.POSITIVE_INFINITY;
@@ -1188,6 +1260,20 @@ function normalizarProcesoEnRiesgo(actividad: any) {
   if (typeof valor === 'boolean') return valor;
   if (typeof valor === 'number') return valor === 1;
   return String(valor).toLowerCase() === 'true';
+}
+
+function obtenerMarcaAguaProceso(actividad: any) {
+  if (obtenerEstadoProcesoValor(actividad) === 2) return 'DESIERTO';
+  if (normalizarProcesoEnRiesgo(actividad)) return 'EN RIESGO';
+  if (procesoActivoSinPresupuesto(actividad)) return 'SIN PRESUPUESTO';
+  return '';
+}
+
+function obtenerClaseMarcaAguaProceso(actividad: any) {
+  if (obtenerEstadoProcesoValor(actividad) === 2) return 'watermark-desierto';
+  if (normalizarProcesoEnRiesgo(actividad)) return 'watermark-riesgo';
+  if (procesoActivoSinPresupuesto(actividad)) return 'watermark-sin-presupuesto';
+  return '';
 }
 
 function obtenerComentarioRiesgo(actividad: any) {
@@ -1258,9 +1344,10 @@ function colorAvanceActividad(actividad: any) {
   return claseAvance(actividad) === 'avance-alto' ? '#16a34a' : '#dc2626';
 }
 
-function estadoVisual(etapa: any) {
-  if (esEtapaAtrasada(etapa, actividadSeleccionada.value)) return 'en_retraso';
-  return estadoNormalizado(etapa.estado);
+function claseTimelineNumero(etapa: any) {
+  if (esEtapaAtrasada(etapa, actividadSeleccionada.value)) return 'timeline-numero-atrasado';
+  if (estadoNormalizado(etapa?.estado) === 'completado') return 'timeline-numero-completo';
+  return 'timeline-numero-pendiente';
 }
 
 function claseEstadoSemaforo(etapa: any) {
@@ -1271,25 +1358,9 @@ function claseEstadoSemaforo(etapa: any) {
 
 function textoLeyendaTimeline(etapa: any) {
   if (estadoNormalizado(etapa?.estado) === 'completado') {
-    return 'Completado';
+    return 'Completo';
   }
   return `Pendiente hasta ${formatearFecha(etapa?.fechaPlanificada || etapa?.fechaTentativa)}`;
-}
-
-function badgeLeyendaTimeline(etapa: any) {
-  if (estadoNormalizado(etapa?.estado) === 'completado') {
-    const diasTarde = diasRetrasoCompletado(etapa, actividadSeleccionada.value);
-    return diasTarde > 0 ? `${diasTarde}D` : '✓';
-  }
-  const diasTarde = diasRetraso(etapa, actividadSeleccionada.value);
-  return diasTarde > 0 ? `${diasTarde}D` : '';
-}
-
-function claseBadgeLeyendaTimeline(etapa: any) {
-  if (estadoNormalizado(etapa?.estado) === 'completado' && diasRetrasoCompletado(etapa, actividadSeleccionada.value) === 0) {
-    return 'ok';
-  }
-  return 'late';
 }
 
 function formatearFechaConHora(fechaISO: string | undefined | null): string {
@@ -1413,6 +1484,7 @@ function cerrarDetalleActividad() {
   seguimientosEtapa.value = [];
   conteoSeguimientosPorEtapa.value = {};
   alertasPorEtapa.value = {};
+  ultimaActualizacionPorEtapa.value = {};
   cargandoSeguimientos.value = false;
   errorSeguimiento.value = '';
   nuevoComentario.value = '';
@@ -1442,6 +1514,7 @@ async function abrirDetalleActividad(actividad: any, actualizarRuta = true) {
   seguimientosEtapa.value = [];
   conteoSeguimientosPorEtapa.value = {};
   alertasPorEtapa.value = {};
+  ultimaActualizacionPorEtapa.value = {};
   cargandoSeguimientos.value = false;
   errorSeguimiento.value = '';
   cargarEstadoRiesgoProceso(actividad);
@@ -1520,7 +1593,54 @@ function aplicarSeguimientosEtapa(etapaId: number, payload: any) {
     ...alertasPorEtapa.value,
     [etapaId]: items.some((item: any) => Boolean(item?.tieneAlerta))
   };
+  ultimaActualizacionPorEtapa.value = {
+    ...ultimaActualizacionPorEtapa.value,
+    [etapaId]: obtenerUltimaFechaSeguimientos(items)
+  };
   return items;
+}
+
+function obtenerFechaSeguimiento(item: any): string | null {
+  const fecha = item?.createdAt
+    || item?.created_at
+    || item?.fechaComentario
+    || item?.fecha_comentario
+    || item?.fecha
+    || null;
+  return fecha ? String(fecha) : null;
+}
+
+function obtenerFechaUltimoComentarioResumen(item: any): string | null {
+  const fecha = item?.ultimoComentarioFecha
+    ?? item?.ultimo_comentario_fecha
+    ?? item?.ultimaFechaComentario
+    ?? item?.ultima_fecha_comentario
+    ?? null;
+  return fecha ? String(fecha) : null;
+}
+
+function obtenerUltimaFechaSeguimientos(items: any[]): string | null {
+  let ultima: Date | null = null;
+
+  for (const item of items || []) {
+    const candidata = obtenerFechaSeguimiento(item);
+    if (!candidata) continue;
+    const fecha = new Date(candidata);
+    if (Number.isNaN(fecha.getTime())) continue;
+    if (!ultima || fecha.getTime() > ultima.getTime()) {
+      ultima = fecha;
+    }
+  }
+
+  return ultima ? ultima.toISOString() : null;
+}
+
+function obtenerUltimaActualizacionTexto(etapa: any) {
+  const etapaId = obtenerEtapaId(etapa);
+  if (!etapaId) return 'Ultima actualizacion: nunca';
+  const fecha = ultimaActualizacionPorEtapa.value[etapaId];
+  if (!fecha) return 'Ultima actualizacion: nunca';
+  return `Ultima actualizacion: ${formatearFecha(fecha)}`;
 }
 
 function construirPayloadEtapas() {
@@ -1606,6 +1726,7 @@ function onFechaReformaChange(etapa: any) {
 
     const conteos: Record<number, number> = Object.fromEntries(etapaIds.map((id) => [id, 0]));
     const alertas: Record<number, boolean> = Object.fromEntries(etapaIds.map((id) => [id, false]));
+    const ultimas: Record<number, string | null> = Object.fromEntries(etapaIds.map((id) => [id, null]));
 
     try {
       try {
@@ -1613,11 +1734,33 @@ function onFechaReformaChange(etapa: any) {
           params: { dias: 3650 }
         });
         const resumen = Array.isArray(response.data) ? response.data : [];
+        const etapasConComentariosSinFecha: number[] = [];
         for (const item of resumen) {
           const etapaId = Number(item?.etapaId ?? item?.etapa_id);
           if (!Number.isFinite(etapaId) || !etapaIds.includes(etapaId)) continue;
           conteos[etapaId] = Number(item?.total || 0);
           alertas[etapaId] = Boolean(item?.tieneAlerta ?? item?.tiene_alerta);
+          ultimas[etapaId] = obtenerFechaUltimoComentarioResumen(item);
+          if (conteos[etapaId] > 0 && !ultimas[etapaId]) {
+            etapasConComentariosSinFecha.push(etapaId);
+          }
+        }
+
+        if (etapasConComentariosSinFecha.length) {
+          await Promise.all(
+            etapasConComentariosSinFecha.map(async (etapaId: number) => {
+              try {
+                const detalle = await api.get(
+                  `/subtareas/${actividadSeleccionada.value.id}/etapas/${etapaId}/seguimientos`,
+                  { params: { dias: 3650 } }
+                );
+                const items = normalizarSeguimientos(detalle.data);
+                ultimas[etapaId] = obtenerUltimaFechaSeguimientos(items);
+              } catch {
+                ultimas[etapaId] = null;
+              }
+            })
+          );
         }
       } catch {
         await Promise.all(
@@ -1630,9 +1773,11 @@ function onFechaReformaChange(etapa: any) {
               const items = normalizarSeguimientos(response.data);
               conteos[etapaId] = items.length;
               alertas[etapaId] = items.some((item: any) => Boolean(item?.tieneAlerta));
+              ultimas[etapaId] = obtenerUltimaFechaSeguimientos(items);
             } catch {
               conteos[etapaId] = 0;
               alertas[etapaId] = false;
+              ultimas[etapaId] = null;
             }
           })
         );
@@ -1640,6 +1785,7 @@ function onFechaReformaChange(etapa: any) {
 
       conteoSeguimientosPorEtapa.value = conteos;
       alertasPorEtapa.value = alertas;
+      ultimaActualizacionPorEtapa.value = ultimas;
     } finally {
       cargandoConteosSeguimientos.value = false;
     }
@@ -1677,8 +1823,14 @@ async function seleccionarEtapaSeguimiento(etapa: any, actualizarRuta = true) {
   mensajeSeguimiento.value = null;
   nuevoComentario.value = '';
   nuevoAlerta.value = false;
+  etapaSeguimiento.value = etapa;
   const etapaId = obtenerEtapaId(etapa);
-  if (!actividadSeleccionada.value?.id || !etapaId) return;
+  if (!actividadSeleccionada.value?.id) return;
+  if (!etapaId) {
+    seguimientosEtapa.value = [];
+    mensajeSeguimiento.value = { texto: 'No se pudo identificar la etapa para cargar comentarios.', tipo: 'info' };
+    return;
+  }
   etapaResaltadaId.value = etapaId;
   if (actualizarRuta) {
     router.replace({
@@ -1689,7 +1841,6 @@ async function seleccionarEtapaSeguimiento(etapa: any, actualizarRuta = true) {
       }
     });
   }
-  etapaSeguimiento.value = etapa;
   await cargarSeguimientosEtapa(etapaId);
 }
 
@@ -1768,18 +1919,6 @@ async function eliminarSeguimiento(item: any) {
   } finally {
     eliminandoSeguimientoId.value = null;
   }
-}
-
-function abrirEditorRiesgo() {
-  errorRiesgoProceso.value = '';
-  mensajeRiesgoProceso.value = null;
-  if (!procesoEnRiesgo.value) {
-    procesoEnRiesgo.value = true;
-  }
-  if (!comentarioRiesgoProceso.value && comentarioRiesgoGuardado.value) {
-    comentarioRiesgoProceso.value = comentarioRiesgoGuardado.value;
-  }
-  mostrarPanelRiesgo.value = true;
 }
 
 function toggleDetalleRiesgo() {
@@ -1917,7 +2056,8 @@ async function onToggleProcesoDesierto() {
 
 <style scoped>
 .actividades-view {
-  padding: 0.35rem;
+  padding: 0 0.35rem 0.35rem;
+  margin-top: -0.5rem;
 }
 
 .actividades-header {
@@ -1934,34 +2074,34 @@ async function onToggleProcesoDesierto() {
 
 .context-summary {
   position: sticky;
-  top: 0.5rem;
+  top: 0;
   z-index: 40;
   background: #ffffff;
   border: 1px solid #d9e2ea;
-  border-radius: 14px;
-  padding: 0.6rem 0.8rem;
-  margin-bottom: 1rem;
+  border-radius: 11px;
+  padding: 0.3rem 0.45rem;
+  margin-bottom: 0.48rem;
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
 }
 
 .filter-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.24rem;
   align-items: center;
-  margin-bottom: 0.5rem;
-  min-height: 1.5rem;
+  margin-bottom: 0.2rem;
+  min-height: 1.15rem;
 }
 
 .filter-chip {
   display: inline-flex;
   align-items: center;
-  padding: 0.3rem 0.7rem;
+  padding: 0.22rem 0.55rem;
   border-radius: 999px;
   border: 1px solid #d9e2ea;
   background: #f8fafc;
   color: #475569;
-  font-size: 0.76rem;
+  font-size: 0.71rem;
   font-weight: 600;
 }
 
@@ -1975,9 +2115,9 @@ async function onToggleProcesoDesierto() {
   background: linear-gradient(135deg, #fef3c7, #fde68a);
   border-color: #f59e0b;
   color: #92400e;
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  padding: 0.35rem 0.85rem;
+  padding: 0.24rem 0.62rem;
   box-shadow: 0 1px 4px rgba(245, 158, 11, 0.3);
 }
 
@@ -1985,20 +2125,20 @@ async function onToggleProcesoDesierto() {
   background: linear-gradient(135deg, #fee2e2, #fecaca);
   border-color: #f87171;
   color: #991b1b;
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  padding: 0.35rem 0.85rem;
+  padding: 0.24rem 0.62rem;
   box-shadow: 0 1px 4px rgba(239, 68, 68, 0.3);
 }
 
 .btn-clear-filter {
   margin-left: auto;
-  padding: 0.28rem 0.75rem;
+  padding: 0.2rem 0.58rem;
   border-radius: 999px;
   border: 1px solid #fca5a5;
   background: #fef2f2;
   color: #dc2626;
-  font-size: 0.75rem;
+  font-size: 0.69rem;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
@@ -2010,15 +2150,25 @@ async function onToggleProcesoDesierto() {
 
 .dashboard-toolbar {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.3rem;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
+}
+
+.toolbar-search-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.32rem;
+  flex: 0 0 auto;
+  justify-content: center;
 }
 
 .buscador-container {
   position: relative;
-  min-width: 260px;
-  flex: 1;
+  min-width: 170px;
+  width: clamp(170px, 20vw, 230px);
+  flex: 0 1 auto;
 }
 
 .buscador-icon {
@@ -2026,25 +2176,31 @@ async function onToggleProcesoDesierto() {
   left: 0.65rem;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   color: #94a3b8;
 }
 
 .dashboard-toolbar-filtros {
   display: flex;
-  gap: 0.6rem;
+  gap: 0.26rem;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: center;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .combo-filtro {
   border: 1px solid #d9e2ea;
   background: linear-gradient(180deg, #ffffff, #f8fbff);
   color: #475569;
-  font-size: 0.8rem;
+  font-size: 0.71rem;
   font-weight: 700;
-  border-radius: 10px;
-  padding: 0.38rem 0.7rem;
+  border-radius: 8px;
+  padding: 0.2rem 0.48rem;
+  height: 1.72rem;
+  line-height: 1.15;
+  text-align: center;
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
@@ -2059,6 +2215,8 @@ async function onToggleProcesoDesierto() {
   border-color: #bfdbfe;
   color: #1e3a8a;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  width: clamp(120px, 11vw, 148px);
+  max-width: 100%;
 }
 .dashboard-toolbar-filtros .combo-filtro:hover {
   border-color: #93c5fd;
@@ -2068,7 +2226,9 @@ async function onToggleProcesoDesierto() {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  padding-right: 1.8rem;
+  text-align: left;
+  padding-right: 1.28rem;
+  text-align-last: left;
   background-image:
     linear-gradient(45deg, transparent 50%, #3b82f6 50%),
     linear-gradient(135deg, #3b82f6 50%, transparent 50%);
@@ -2078,13 +2238,17 @@ async function onToggleProcesoDesierto() {
   background-color: unset;
 }
 
+.dashboard-toolbar-filtros select.combo-filtro option {
+  text-align: left;
+}
+
 .dashboard-buscador-container .buscador-input.combo-filtro {
   background: linear-gradient(180deg, #ffffff, #eff6ff);
   border-color: #93c5fd;
   color: #0f172a;
   box-shadow: 0 1px 2px rgba(37, 99, 235, 0.08);
-  padding-left: 2.2rem;
-  padding-right: 0.9rem;
+  padding-left: 1.85rem;
+  padding-right: 0.62rem;
   width: 100%;
 }
 .dashboard-buscador-container .buscador-input.combo-filtro::placeholder {
@@ -2475,7 +2639,39 @@ h1 {
   gap: 1rem;
 }
 
+.actividades-grupos {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.cuatrimestre-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.cuatrimestre-separador {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  color: #475569;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.cuatrimestre-separador::before,
+.cuatrimestre-separador::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #cddcf5;
+}
+
 .actividad-card {
+  position: relative;
   background: white;
   border-radius: 14px;
   border: 1px solid #d9e2ea;
@@ -2483,6 +2679,40 @@ h1 {
   box-shadow: 0 10px 26px rgba(15, 23, 42, 0.04);
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
   cursor: pointer;
+  overflow: hidden;
+}
+
+.actividad-card-riesgo {
+  border-color: #fca5a5;
+}
+
+.actividad-card-desierto {
+  border-color: #fdba74;
+}
+
+.actividad-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-18deg);
+  font-size: clamp(1.9rem, 3.1vw, 2.9rem);
+  font-weight: 900;
+  letter-spacing: 0.16rem;
+  color: rgba(185, 28, 28, 0.2);
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+  z-index: 60;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.actividad-watermark.watermark-desierto {
+  color: rgba(154, 52, 18, 0.2);
+}
+
+.actividad-watermark.watermark-sin-presupuesto {
+  color: rgba(194, 65, 12, 0.22);
 }
 
 .actividad-card:hover {
@@ -2546,12 +2776,11 @@ h1 {
   display: inline-flex;
   align-items: center;
   padding: 0.24rem 0.62rem;
-  border-radius: 999px;
   border: 1px solid #d9e2ea;
-  background: #f8fafc;
-  color: #334155;
+  border-radius: 999px;
   font-size: 0.71rem;
-  font-weight: 700;
+  font-weight: 600;
+  color: #334155;
   line-height: 1.1;
 }
 
@@ -2576,12 +2805,6 @@ h1 {
   background: #fff7ed;
   border-color: #fdba74;
   color: #c2410c;
-}
-
-.actividad-info p {
-  margin: 0.5rem 0;
-  font-size: 0.875rem;
-  color: #6b7280;
 }
 
 .actividad-stats {
@@ -2631,12 +2854,12 @@ h1 {
 
 .progress-bar-fill {
   height: 100%;
-  background: #334155;
+  background: #1D9E75;
   transition: width 0.3s;
 }
 
 .progress-bar-fill.avance-alto {
-  background: linear-gradient(90deg, #16a34a, #22c55e);
+  background: #1D9E75;
 }
 
 .progress-bar-fill.avance-medio {
@@ -2677,7 +2900,7 @@ h1 {
   position: sticky;
   top: 0;
   z-index: 5;
-  background: #fff;
+  background: #ffffff;
 }
 
 .modal-header-content {
@@ -2692,49 +2915,139 @@ h1 {
 .seguimiento-contexto-header {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  gap: 0.55rem;
 }
 
 .seguimiento-contexto-chip {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  padding: 0.26rem 0.68rem;
-  border-radius: 999px;
-  border: 1px solid #d9e2ea;
+  min-height: 2.6rem;
+  padding: 0.42rem 0.78rem 0.42rem 2.85rem;
+  border-radius: 12px;
+  border: 1px solid #d7dee8;
   background: #f8fafc;
   color: #334155;
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   font-weight: 700;
   line-height: 1.1;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+}
+
+.seguimiento-contexto-chip::before {
+  content: '';
+  position: absolute;
+  left: 0.62rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 8px;
+  border: 1px solid #d7dee8;
+  background: #eef2f7;
+}
+
+.seguimiento-contexto-chip::after {
+  position: absolute;
+  left: 1.07rem;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: #64748b;
 }
 
 .seguimiento-contexto-chip.neutral {
-  background: #f8fafc;
+  border-color: #d7dee8;
   color: #334155;
 }
 
+.seguimiento-contexto-chip.neutral::before {
+  background: #BA7517;
+  border-color: #BA7517;
+}
+
+.seguimiento-contexto-chip.neutral::after {
+  content: '•';
+  color: #ffffff;
+  left: 1.15rem;
+  font-size: 1.05rem;
+}
+
 .seguimiento-contexto-chip.success {
-  background: #ecfdf3;
-  border-color: #86efac;
-  color: #166534;
+  border-color: #d7dee8;
+  color: #334155;
+}
+
+.seguimiento-contexto-chip.success::before {
+  background: #eef2f7;
+  border-color: #d7dee8;
+}
+
+.seguimiento-contexto-chip.success::after {
+  content: '📅';
+  color: #64748b;
 }
 
 .seguimiento-contexto-chip.quarter {
-  background: #f0fdf4;
-  border-color: #86efac;
-  color: #166534;
+  border-color: #d7dee8;
+  color: #334155;
+}
+
+.seguimiento-contexto-chip.quarter::before {
+  background: #eef2f7;
+  border-color: #d7dee8;
+}
+
+.seguimiento-contexto-chip.quarter::after {
+  content: '🗓';
+  color: #64748b;
 }
 
 .seguimiento-contexto-chip.amount {
-  background: #eff6ff;
-  border-color: #bfdbfe;
-  color: #1d4ed8;
+  background: #f8fafc;
+  border-color: #d7dee8;
+  color: #334155;
+}
+
+.seguimiento-contexto-chip.amount::before {
+  background: #eef2f7;
+  border-color: #d7dee8;
+}
+
+.seguimiento-contexto-chip.amount::after {
+  content: '$';
+  font-weight: 900;
+  color: #64748b;
+}
+
+.seguimiento-contexto-chip.last-activity {
+  background: #f8fafc;
+  border-color: #d7dee8;
+  color: #334155;
+}
+
+.seguimiento-contexto-chip.last-activity::before {
+  background: #eef2f7;
+  border-color: #d7dee8;
+}
+
+.seguimiento-contexto-chip.last-activity::after {
+  content: '✅';
+  color: #64748b;
 }
 
 .seguimiento-contexto-chip.budget-warning {
-  background: #fff7ed;
-  border-color: #fdba74;
-  color: #c2410c;
+  background: #fffaf2;
+  border-color: #f3dcc2;
+  color: #7c5a2a;
+}
+
+.seguimiento-contexto-chip.budget-warning::before {
+  background: #fdf1df;
+  border-color: #f3dcc2;
+}
+
+.seguimiento-contexto-chip.budget-warning::after {
+  content: '!';
+  font-weight: 900;
+  color: #9a6a2f;
 }
 
 .btn-close {
@@ -2760,6 +3073,12 @@ h1 {
   margin: 0;
   font-size: 1.08rem;
   line-height: 1.3;
+}
+
+.modal-detalle-actividad .modal-header,
+.modal-seguimiento .modal-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .modal-detalle-body {
@@ -2849,8 +3168,7 @@ h1 {
   accent-color: #d97706;
 }
 
-.btn-riesgo-icon,
-.btn-riesgo-detalle {
+.btn-riesgo-icon {
   border-radius: 999px;
   border: 1px solid #fcd34d;
   background: #fff7ed;
@@ -2876,13 +3194,20 @@ h1 {
 }
 
 .btn-riesgo-detalle {
+  border-radius: 999px;
+  border: 1px solid #86efac;
+  background: #ecfdf3;
+  color: #166534;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
   padding: 0.5rem 0.8rem;
 }
 
 .btn-riesgo-icon:hover,
 .btn-riesgo-detalle:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(217, 119, 6, 0.14);
+  box-shadow: 0 8px 18px rgba(22, 101, 52, 0.14);
 }
 
 .btn-riesgo-detalle:disabled,
@@ -2920,6 +3245,79 @@ h1 {
 
 .timeline-final {
   margin-bottom: 0;
+}
+
+.timeline-horizontal {
+  padding-bottom: 1rem;
+}
+
+.timeline-horizontal-track {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  overflow-x: auto;
+  padding: 0.35rem 0.2rem 0.1rem;
+}
+
+.timeline-step-horizontal {
+  position: relative;
+  min-width: 2.8rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.timeline-step-horizontal:not(:last-child) {
+  flex: 1;
+}
+
+.timeline-step-line {
+  position: absolute;
+  top: 1rem;
+  left: calc(50% + 0.85rem);
+  right: calc(-50% + 0.85rem);
+  height: 2px;
+  background: #d6dee8;
+}
+
+.timeline-numero-actividad {
+  position: relative;
+  z-index: 1;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.timeline-numero-completo {
+  background: #1D9E75;
+  border-color: #1D9E75;
+  color: #ffffff;
+}
+
+.timeline-numero-pendiente {
+  background: #ffefe8;
+  border-color: #fdbaaa;
+  color: #9a3412;
+}
+
+.timeline-numero-atrasado {
+  background: #E24B4A;
+  border-color: #E24B4A;
+  color: #ffffff;
+}
+
+.timeline-step-delay {
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: #991b1b;
+  line-height: 1;
 }
 
 .timeline-contraida-box {
@@ -2991,7 +3389,7 @@ h1 {
 }
 
 .timeline-node.completado {
-  background: #16a34a;
+  background: #1D9E75;
 }
 
 .timeline-node.con_pendientes {
@@ -2999,7 +3397,7 @@ h1 {
 }
 
 .timeline-node.en_retraso {
-  background: #dc2626;
+  background: #E24B4A;
 }
 
 .timeline-line {
@@ -3059,22 +3457,28 @@ h1 {
 }
 
 .tabla-etapas thead {
-  background: #f8fafc;
+  background: #e2eefe;
 }
 
 .tabla-etapas thead th {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: #f8fafc;
+  background: #e2eefe;
 }
 
 .tabla-etapas th,
 .tabla-etapas td {
   padding: 0.6rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #94a3b8;
+  border-right: 1px solid #cbd5e1;
   text-align: left;
   vertical-align: top;
+}
+
+.tabla-etapas th:last-child,
+.tabla-etapas td:last-child {
+  border-right: none;
 }
 
 .fila-etapa-destacada {
@@ -3099,9 +3503,9 @@ h1 {
 }
 
 .estado-select-detalle.estado-semaforo-verde {
-  background: #dcfce7;
-  border-color: #86efac;
-  color: #166534;
+  background: #1D9E75;
+  border-color: #1D9E75;
+  color: #ffffff;
   font-weight: 700;
 }
 
@@ -3163,7 +3567,7 @@ h1 {
 }
 
 .cumplimiento-chip.a-tiempo {
-  color: #166534;
+  color: #1D9E75;
 }
 
 .cumplimiento-chip.con-retraso {
@@ -3197,6 +3601,10 @@ h1 {
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55);
   animation: seguimientoPulse 1s ease-in-out infinite;
+  position: absolute;
+  left: 50%;
+  bottom: -0.26rem;
+  transform: translateX(-50%);
 }
 
 .btn-seguimiento {
@@ -3205,13 +3613,28 @@ h1 {
   gap: 0.4rem;
 }
 
+.seguimiento-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.seguimiento-last-update {
+  font-size: 0.68rem;
+  color: #475569;
+  font-weight: 600;
+}
+
 .btn-seguimiento-icono {
+  display: grid;
+  place-items: center;
   width: 2.05rem;
   height: 2.05rem;
   border-radius: 999px;
-  justify-content: center;
   position: relative;
   padding: 0;
+  gap: 0;
   background: #ffffff;
   border-color: #cbd5e1;
   color: #64748b;
@@ -3246,12 +3669,20 @@ h1 {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: #dc2626;
+  background: #BA7517;
   color: #ffffff;
   font-size: 0.72rem;
   font-weight: 700;
   line-height: 1;
   border: 2px solid #ffffff;
+}
+
+.seguimiento-badge.is-amber {
+  background: #BA7517;
+}
+
+.seguimiento-badge.is-alert {
+  background: #E24B4A;
 }
 
 .btn-guardar:disabled {
@@ -3303,7 +3734,7 @@ h1 {
 }
 
 .modal-seguimiento-overlay {
-  z-index: 60;
+  z-index: 2100;
 }
 
 .modal-seguimiento {
@@ -3349,8 +3780,9 @@ h1 {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: #dcfce7;
-  color: #166534;
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  color: #475569;
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -3477,6 +3909,14 @@ h1 {
   .professional-kpi-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .dashboard-toolbar-filtros {
+    justify-content: center;
+  }
+
+  .dashboard-toolbar-filtros .combo-filtro {
+    width: clamp(114px, 20vw, 156px);
+  }
 }
 
 @media (max-width: 720px) {
@@ -3502,6 +3942,32 @@ h1 {
     height: 50px;
     font-size: 0.85rem;
   }
+
+  .context-summary {
+    padding: 0.28rem 0.38rem;
+  }
+
+  .dashboard-toolbar {
+    align-items: stretch;
+  }
+
+  .toolbar-search-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .buscador-container {
+    width: min(100%, 280px);
+  }
+
+  .dashboard-toolbar-filtros {
+    width: 100%;
+    gap: 0.24rem;
+  }
+
+  .dashboard-toolbar-filtros .combo-filtro {
+    width: calc(50% - 0.12rem);
+  }
 }
 
 @media (max-width: 520px) {
@@ -3523,6 +3989,10 @@ h1 {
 
   .seguimiento-contexto-chip {
     font-size: 0.7rem;
+  }
+
+  .dashboard-toolbar-filtros .combo-filtro {
+    width: 100%;
   }
 }
 </style>
