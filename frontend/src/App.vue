@@ -159,6 +159,7 @@ const menuConfig: MenuItem[] = [
   { key: 'dashboard', to: '/', label: 'Dashboard', icon: 'ri-dashboard-line' },
   { key: 'actividades', to: '/actividades', label: 'Procesos', icon: 'ri-refresh-line' },
   { key: 'reportes', to: '/reportes', label: 'Reportes', icon: 'ri-bar-chart-line' },
+  { key: 'informes', to: '/informes', label: 'Informes Gerenciales', icon: 'ri-file-pdf-line' },
   { key: 'notificaciones', to: '/notificaciones', label: 'Notificaciones', icon: 'ri-notification-3-line' },
   { key: 'chat_ia', to: '/chat-ia', label: 'Chat IA', icon: 'ri-robot-2-line' },
   { key: 'admin_actividades', to: '/admin/actividades', label: 'Admin Procesos', icon: 'ri-settings-3-line', isAdmin: true },
