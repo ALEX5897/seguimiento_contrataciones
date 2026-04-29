@@ -1,5 +1,6 @@
 import { registrarEventoAuditoria } from '../data/mysql.js';
 import { getPermissionContext } from './permisos.js';
+import { normalizeIp } from '../utils/helpers.js';
 
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -10,11 +11,6 @@ function cloneIfObject(value) {
   } catch {
     return value;
   }
-}
-
-function normalizeIp(req) {
-  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
-  return forwarded || req.ip || null;
 }
 
 export function auditApiChanges(req, res, next) {

@@ -2,10 +2,10 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'cambiar-este-secreto-en-produccion';
 
-function obtenerToken(req) {
-  const authHeader = req.headers.authorization || '';
+export function obtenerToken(req) {
+  const authHeader = String(req.headers.authorization || '');
   if (!authHeader.startsWith('Bearer ')) return null;
-  return authHeader.slice('Bearer '.length).trim();
+  return authHeader.slice('Bearer '.length).trim() || null;
 }
 
 export function generarToken(usuario) {

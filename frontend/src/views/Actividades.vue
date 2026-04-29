@@ -854,6 +854,7 @@ const permiteEditarFechaCompletado = UI_FLAGS.ALLOW_MANUAL_COMPLETION_DATE;
 const GUAYAQUIL_TIMEZONE = 'America/Guayaquil';
 const LIMITE_COMENTARIO_SEGUIMIENTO = 500;
 const LIMITE_COMENTARIO_RIESGO = 500;
+let timerActualizacionTiempoReal: number | undefined;
 const longitudComentarioSeguimiento = computed(() => nuevoComentario.value.length);
 const caracteresRestantesSeguimiento = computed(() => LIMITE_COMENTARIO_SEGUIMIENTO - longitudComentarioSeguimiento.value);
 const longitudComentarioRiesgo = computed(() => comentarioRiesgoProceso.value.length);
@@ -890,6 +891,7 @@ const resumenCabeceraActividad = computed(() => {
 
 onMounted(async () => {
   window.addEventListener('keydown', manejarEscapeModales);
+  window.addEventListener('app:data-change', manejarCambioTiempoReal as EventListener);
   try {
     actividades.value = await actividadesService.getAll();
     await procesarActividadDesdeRuta();
@@ -908,7 +910,48 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', manejarEscapeModales);
+  window.removeEventListener('app:data-change', manejarCambioTiempoReal as EventListener);
+  if (timerActualizacionTiempoReal !== undefined) {
+    window.clearTimeout(timerActualizacionTiempoReal);
+    timerActualizacionTiempoReal = undefined;
+  }
 });
+
+function manejarCambioTiempoReal() {
+  if (timerActualizacionTiempoReal !== undefined) {
+    window.clearTimeout(timerActualizacionTiempoReal);
+  }
+
+  timerActualizacionTiempoReal = window.setTimeout(() => {
+    timerActualizacionTiempoReal = undefined;
+    void refrescarDatosTiempoReal();
+  }, 700);
+}
+
+async function refrescarDatosTiempoReal() {
+  try {
+    const actividadAbiertaId = Number(actividadSeleccionada.value?.id || 0);
+    const etapaAbiertaId = obtenerEtapaId(etapaSeguimiento.value);
+
+    actividades.value = await actividadesService.getAll();
+
+    if (actividadAbiertaId > 0) {
+      const actividadActualizada = buscarActividadPorId(actividadAbiertaId);
+      if (actividadActualizada) {
+        await abrirDetalleActividad(actividadActualizada, false);
+
+        if (etapaAbiertaId) {
+          const etapaActualizada = etapasActividad.value.find((etapa: any) => obtenerEtapaId(etapa) === etapaAbiertaId);
+          if (etapaActualizada) {
+            await seleccionarEtapaSeguimiento(etapaActualizada, false);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error al refrescar datos en tiempo real:', error);
+  }
+}
 
 watch(
   () => [route.query.actividadId, route.query.etapaId],

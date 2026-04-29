@@ -1,14 +1,8 @@
 import express from 'express';
 import * as mysql from '../data/mysql.js';
+import { getScopeFromReq, parseDateOnly, obtenerEstadoProceso, obtenerPresupuestoProceso, procesoCuentaEnReporte } from '../utils/helpers.js';
 
 const router = express.Router();
-
-function getScopeFromReq(req) {
-  return {
-    role: req.user?.role,
-    direccionNombre: req.user?.direccionNombre || null
-  };
-}
 
 async function resolveSubtareaIdFromRef(subtareaRef, scope = {}) {
   const ref = String(subtareaRef || '').trim();
@@ -20,52 +14,10 @@ async function resolveSubtareaIdFromRef(subtareaRef, scope = {}) {
   return subtarea?.id || null;
 }
 
-function parseDateOnlyLocal(value) {
-  if (!value) return null;
-  if (value instanceof Date) {
-    const date = new Date(value.getTime());
-    date.setHours(0, 0, 0, 0);
-    return date;
-  }
-
-  const text = String(value).trim();
-  const match = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (match) {
-    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 0, 0, 0, 0);
-  }
-
-  const date = new Date(text);
-  if (Number.isNaN(date.getTime())) return null;
-  date.setHours(0, 0, 0, 0);
-  return date;
-}
-
-function obtenerEstadoProcesoResumen(subtarea) {
-  const valor = subtarea?.activo;
-  if (valor === undefined || valor === null || valor === '') return 1;
-  if (typeof valor === 'number') {
-    if (valor === 2) return 2;
-    return valor === 0 ? 0 : 1;
-  }
-  if (typeof valor === 'boolean') return valor ? 1 : 0;
-
-  const normalizado = String(valor).trim().toLowerCase();
-  if (['2', 'desierto'].includes(normalizado)) return 2;
-  if (['0', 'false', 'inactivo'].includes(normalizado)) return 0;
-  return 1;
-}
-
-function obtenerPresupuestoProcesoResumen(subtarea) {
-  const valor = Number(subtarea?.presupuesto ?? subtarea?.presupuesto2026Inicial ?? subtarea?.presupuesto_2026_inicial ?? 0);
-  return Number.isFinite(valor) ? valor : 0;
-}
-
-function procesoCuentaEnResumenYAtrasos(subtarea) {
-  const estado = obtenerEstadoProcesoResumen(subtarea);
-  if (estado === 0) return false;
-  if (estado === 1 && obtenerPresupuestoProcesoResumen(subtarea) <= 0) return false;
-  return true;
-}
+const parseDateOnlyLocal = parseDateOnly;
+const obtenerEstadoProcesoResumen = obtenerEstadoProceso;
+const obtenerPresupuestoProcesoResumen = obtenerPresupuestoProceso;
+const procesoCuentaEnResumenYAtrasos = procesoCuentaEnReporte;
 
 // GET /api/subtareas/admin/etapas-disponibles - Compatibilidad con /api/actividades
 router.get('/admin/etapas-disponibles', async (req, res) => {
@@ -279,9 +231,7 @@ router.put('/:subtareaRef/etapas', async (req, res) => {
     const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, getScopeFromReq(req));
     if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
     const { etapas } = req.body;
-    console.log(`[PUT /api/subtareas/${subtareaId}/etapas] Guardando ${etapas?.length || 0} etapas: ${etapas?.map(e => `(id:${e.etapaId},estado:${e.estado})`).join(', ')}`);
     const resultado = await mysql.setSubtareaEtapas(subtareaId, etapas || []);
-    console.log(`[PUT /api/subtareas/${subtareaId}/etapas] Resultado: ${resultado?.length || 0} etapas retornadas`);
     res.json(resultado);
   } catch (error) {
     console.error(`Error en PUT /api/subtareas/${req.params.subtareaRef}/etapas:`, error);

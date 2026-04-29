@@ -108,8 +108,16 @@ onMounted(async () => {
 
 async function onSubmit() {
   error.value = '';
+  const user = String(username.value || '').trim();
+  const pass = String(password.value || '').trim();
+
+  if (!user || !pass) {
+    error.value = 'Usuario y contraseña son requeridos';
+    return;
+  }
+
   try {
-    await auth.login(username.value, password.value);
+    await auth.login(user, pass);
     const redirectTo = String(route.query.redirect || '/');
     router.replace(redirectTo);
   } catch (e: any) {

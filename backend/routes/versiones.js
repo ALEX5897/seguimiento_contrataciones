@@ -1,14 +1,8 @@
 import express from 'express';
 import * as mysql from '../data/mysql.js';
+import { getScopeFromReq } from '../utils/helpers.js';
 
 const router = express.Router();
-
-function scopeFromReq(req) {
-  return {
-    role: req.user?.role,
-    direccionNombre: req.user?.direccionNombre || null
-  };
-}
 
 /**
  * GET / - Listar todas las versiones del POA
@@ -36,7 +30,7 @@ router.get('/:id', async (req, res) => {
     }
 
     // Obtener actividades de esta versión
-    const actividades = await mysql.getAllSubtareasByScope(scopeFromReq(req));
+    const actividades = await mysql.getAllSubtareasByScope(getScopeFromReq(req));
     version.actividades = actividades;
     
     res.json(version);
@@ -57,7 +51,7 @@ router.get('/actual/info', async (req, res) => {
       return res.status(404).json({ error: 'No hay versión actual definida' });
     }
 
-    const actividades = await mysql.getAllSubtareasByScope(scopeFromReq(req));
+    const actividades = await mysql.getAllSubtareasByScope(getScopeFromReq(req));
     versionActual.actividades = actividades;
     
     res.json(versionActual);
@@ -135,7 +129,7 @@ router.get('/comparar/:id1/:id2', async (req, res) => {
       return res.status(404).json({ error: 'Una o ambas versiones no encontradas' });
     }
 
-    const scope = scopeFromReq(req);
+    const scope = getScopeFromReq(req);
     const [actividades1, actividades2] = await Promise.all([
       mysql.getAllSubtareasByScope(scope),
       mysql.getAllSubtareasByScope(scope)

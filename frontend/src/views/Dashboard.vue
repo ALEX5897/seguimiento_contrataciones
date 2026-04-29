@@ -129,9 +129,6 @@
           <span class="kpi-title">Procesos desfinanciados</span>
           <div class="kpi-donut-row">
             <strong class="kpi-value">{{ detalleProcesosDesfinanciados.length }}</strong>
-            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProcesosDesfinanciados}%`, '--kpi-color': colorProcesosDesfinanciados }">
-              <span :style="{ color: colorProcesosDesfinanciados }">{{ porcentajeProcesosDesfinanciados }}%</span>
-            </div>
           </div>
           <small class="kpi-foot">Presupuesto 0 o no asignado</small>
         </button>
@@ -1405,7 +1402,7 @@ const etapasCompletadasConFecha = computed(() =>
 );
 
 const etapasPendientesConFecha = computed(() =>
-  Math.max(0, totalEtapasConFecha.value - etapasCompletadasConFecha.value)
+  Math.max(0, totalEtapasConFecha.value - etapasCompletadasConFecha.value - etapasAtrasadasConFecha.value)
 );
 
 const etapasAtrasadasConFecha = computed(() => {
@@ -1428,7 +1425,7 @@ const porcentajeEtapas = computed(() =>
 const porcentajeEtapasCompletadas = computed(() => porcentajeEtapas.value);
 const porcentajeEtapasPendientes = computed(() =>
   totalEtapasConFecha.value
-    ? Math.round((etapasPendientesConFecha.value / totalEtapasConFecha.value) * 100)
+    ? Math.max(0, 100 - porcentajeEtapasCompletadas.value - porcentajeEtapasAtrasadas.value)
     : 0
 );
 const porcentajeEtapasAtrasadas = computed(() =>

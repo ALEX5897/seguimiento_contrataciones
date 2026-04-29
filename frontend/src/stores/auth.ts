@@ -61,6 +61,32 @@ function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+async function clearBrowserCacheOnLogout() {
+  try {
+    sessionStorage.clear();
+  } catch {
+    // Ignorar si el navegador bloquea sessionStorage
+  }
+
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+    }
+  } catch {
+    // Ignorar si Cache Storage no está disponible
+  }
+
+  try {
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+    }
+  } catch {
+    // Ignorar si Service Worker no está habilitado
+  }
+}
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: localStorage.getItem(TOKEN_KEY) || '',
@@ -108,6 +134,7 @@ export const useAuthStore = defineStore('auth', {
         console.error('No se pudo registrar logout en servidor:', error);
       } finally {
         this.clearSession();
+        await clearBrowserCacheOnLogout();
       }
     },
 
@@ -127,7 +154,9 @@ export const useAuthStore = defineStore('auth', {
     async login(username: string, password: string) {
       this.loading = true;
       try {
-        const response = await api.post('/auth/login', { username, password });
+        const user = String(username || '').trim();
+        const pass = String(password || '').trim();
+        const response = await api.post('/auth/login', { username: user, password: pass });
         const permisos = (response.data?.permisos || { role: response.data?.user?.role || '', modulos: {}, menu: {} }) as PermisosSesion;
         this.setSession(response.data.token, response.data.user, permisos);
         return response.data.user as UsuarioSesion;

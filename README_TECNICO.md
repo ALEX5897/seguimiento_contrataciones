@@ -108,6 +108,24 @@ SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER=usuario_smtp
 SMTP_PASS=clave_smtp
+
+# Chat IA (si IA_CHAT_ENABLED=true)
+IA_CHAT_ENABLED=false
+IA_CHAT_PROVIDER=openai
+IA_CHAT_MODEL=gpt-4o-mini
+IA_CHAT_API_KEY=clave_openai
+IA_CHAT_BASE_URL=https://api.openai.com/v1
+IA_CHAT_MAX_INPUT_CHARS=2000
+IA_CHAT_MAX_HISTORY=10
+IA_CHAT_TEMPERATURE=0.2
+IA_CHAT_REQUEST_TIMEOUT_MS=30000
+
+# Alternativa gratis local (Ollama)
+# IA_CHAT_ENABLED=true
+# IA_CHAT_PROVIDER=ollama
+# IA_CHAT_MODEL=llama3.2:3b
+# IA_CHAT_BASE_URL=http://127.0.0.1:11434
+# IA_CHAT_API_KEY=
 ```
 
 ## 3.4 Configurar frontend para producción

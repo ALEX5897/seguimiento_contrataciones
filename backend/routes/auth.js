@@ -1,19 +1,9 @@
 import express from 'express';
 import * as mysql from '../data/mysql.js';
-import { generarToken, requireAuth } from '../middleware/auth.js';
+import { generarToken, requireAuth, obtenerToken } from '../middleware/auth.js';
+import { normalizeIp } from '../utils/helpers.js';
 
 const router = express.Router();
-
-function normalizeIp(req) {
-  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
-  return forwarded || req.ip || null;
-}
-
-function extractToken(req) {
-  const authHeader = String(req.headers.authorization || '');
-  if (!authHeader.startsWith('Bearer ')) return null;
-  return authHeader.slice('Bearer '.length).trim() || null;
-}
 
 router.get('/direcciones', async (req, res) => {
   try {
@@ -101,7 +91,7 @@ router.post('/login', async (req, res) => {
 
 router.post('/logout', requireAuth, async (req, res) => {
   try {
-    const token = extractToken(req);
+    const token = obtenerToken(req);
 
     await mysql.registrarEventoAuditoria({
       userId: req.user?.id || null,

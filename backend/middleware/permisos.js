@@ -24,6 +24,7 @@ function resolveModuleFromPath(path = '', method = 'GET') {
   if (pathNoApi.startsWith('/catalogos')) return 'admin_catalogos';
   if (pathNoApi.startsWith('/reportes')) return 'reportes';
   if (pathNoApi.startsWith('/notificaciones')) return 'notificaciones';
+  if (pathNoApi.startsWith('/chat-ia')) return 'chat_ia';
   if (pathNoApi.startsWith('/estados')) return 'estados';
 
   if (pathNoApi.startsWith('/subtareas/admin') || pathNoApi.startsWith('/actividades/admin')) {

@@ -21,6 +21,7 @@ function normalizeApiPayload<T>(value: T): T {
   if (value === null || value === undefined) return value;
   if (typeof value === 'string') return normalizeApiText(value) as T;
   if (Array.isArray(value)) return value.map((item) => normalizeApiPayload(item)) as T;
+  if (value instanceof Blob || value instanceof ArrayBuffer || ArrayBuffer.isView(value as object)) return value;
 
   if (typeof value === 'object') {
     return Object.fromEntries(
@@ -56,7 +57,6 @@ api.interceptors.response.use(
     return response;
   },
   error => {
-    console.error('API Error:', error.response?.data || error.message);
     if (error?.response?.status === 401) {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user');
@@ -414,6 +414,46 @@ export interface NotificacionExecutionStatus {
   } | null;
 }
 
+export interface DireccionCatalogItem {
+  id: number;
+  nombre: string;
+}
+
+export interface ChatIaConfig {
+  enabled: boolean;
+  provider: string;
+  model: string;
+  maxInputChars: number;
+  maxHistory: number;
+  grounded?: boolean;
+  configured: boolean;
+  fallbackActive?: boolean;
+}
+
+export interface ChatIaMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+export interface ChatIaResponse {
+  response: string;
+  provider: string;
+  model: string;
+  intent?: string | null;
+  intentFlags?: {
+    wantsList?: boolean;
+    wantsCount?: boolean;
+    asksDelayed?: boolean;
+    asksBudget?: boolean;
+  } | null;
+  registros_usados?: number | null;
+  warning?: string;
+  needsClarification?: boolean;
+  grounded?: boolean;
+  sqlEjecutado?: string;
+  sqlParams?: unknown[];
+}
+
 export const tareasService = {
   async getAll(filtros = {}) {
     const response = await api.get('/tareas', { params: filtros });
@@ -557,6 +597,23 @@ export const notificacionesService = {
   }
 };
 
+export const chatIaService = {
+  async getConfig() {
+    const response = await api.get('/chat-ia/config');
+    return response.data as ChatIaConfig;
+  },
+
+  async getDirecciones() {
+    const response = await api.get('/chat-ia/direcciones');
+    return response.data as DireccionCatalogItem[];
+  },
+
+  async sendMessage(message: string, history: ChatIaMessage[], direccionFiltro: string | null = null) {
+    const response = await api.post('/chat-ia/message', { message, history, direccionFiltro }, { timeout: 150000 });
+    return response.data as ChatIaResponse;
+  }
+};
+
 export const authService = {
   async login(username: string, password: string) {
     const response = await api.post('/auth/login', { username, password });
@@ -655,10 +712,68 @@ export const usuariosService = {
   }
 };
 
+export interface CampoReporte {
+  key: string;
+  label: string;
+  tipo: 'text' | 'fecha' | 'numero' | 'moneda' | 'boolean';
+  grupo: string;
+}
+
+const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+function ensureBlob(data: unknown): Blob {
+  if (data instanceof Blob) return data;
+  return new Blob([data as ArrayBuffer], { type: XLSX_MIME });
+}
+
 export const reportesService = {
   async getResumen(filtros: ReportesFiltros = {}) {
     const response = await api.get('/reportes/resumen', { params: filtros });
     return response.data as ReporteResumenResponse;
+  },
+
+  async getCampos(): Promise<CampoReporte[]> {
+    const response = await api.get('/reportes/campos');
+    return response.data as CampoReporte[];
+  },
+
+  async generarReporte(areas: string[] | 'ALL', campos: string[], incluirVerificables = false): Promise<{ blob: Blob; filename: string }> {
+    let response;
+    try {
+      response = await api.post('/reportes/generar', { areas, campos, incluirVerificables }, { responseType: 'blob' });
+    } catch (err: any) {
+      // Si el servidor devuelve un error JSON pero responseType es blob, lo parseamos manualmente
+      const data = err?.response?.data;
+      if (data instanceof Blob && data.type?.includes('json')) {
+        const text = await data.text();
+        try {
+          const parsed = JSON.parse(text);
+          throw new Error(parsed.error || 'Error al generar el reporte.');
+        } catch {
+          throw new Error(text || 'Error al generar el reporte.');
+        }
+      }
+      throw err;
+    }
+    const disposition = String(response.headers['content-disposition'] || '');
+    const match = disposition.match(/filename="?([^";]+)"?/i);
+    return {
+      blob: ensureBlob(response.data),
+      filename: match?.[1] || 'reporte.xlsx'
+    };
+  },
+
+  async descargarXlsxPersonalizado(filtros: ReportesFiltros = {}) {
+    const response = await api.get('/reportes/export/xlsx/personalizado', {
+      params: filtros,
+      responseType: 'blob'
+    });
+    const disposition = String(response.headers['content-disposition'] || '');
+    const match = disposition.match(/filename="?([^";]+)"?/i);
+    return {
+      blob: ensureBlob(response.data),
+      filename: match?.[1] || 'reporte_personalizado.xlsx'
+    };
   },
 
   async descargarXlsx(filtros: ReportesFiltros = {}) {
@@ -666,12 +781,10 @@ export const reportesService = {
       params: filtros,
       responseType: 'blob'
     });
-
     const disposition = String(response.headers['content-disposition'] || '');
     const match = disposition.match(/filename="?([^";]+)"?/i);
-
     return {
-      blob: response.data as Blob,
+      blob: ensureBlob(response.data),
       filename: match?.[1] || 'reporte_seguimiento.xlsx'
     };
   },
@@ -681,12 +794,10 @@ export const reportesService = {
       params: filtros,
       responseType: 'blob'
     });
-
     const disposition = String(response.headers['content-disposition'] || '');
     const match = disposition.match(/filename="?([^";]+)"?/i);
-
     return {
-      blob: response.data as Blob,
+      blob: ensureBlob(response.data),
       filename: match?.[1] || 'reporte_contrato_adjudicacion.xlsx'
     };
   }

@@ -2,8 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import cron from 'node-cron';
-// import { tareasRouter } from './routes/tareas.js'; // Comentado - tabla obsoleta
-import { actividadesRouter } from './routes/actividades.js';
 import { estadosRouter } from './routes/estados.js';
 import { notificacionesRouter } from './routes/notificaciones.js';
 import subtareasRouter from './routes/subtareas.js';
@@ -14,6 +12,7 @@ import catalogosRouter from './routes/catalogos.js';
 import reportesRouter from './routes/reportes.js';
 import permisosRouter from './routes/permisos.js';
 import auditoriaRouter from './routes/auditoria.js';
+import chatIaRouter from './routes/chatIA.js';
 import { ejecutarNotificacionesProgramadas } from './services/notificaciones.js';
 import { initMySQL, normalizePayloadEncoding } from './data/mysql.js';
 import { requireAuth } from './middleware/auth.js';
@@ -31,6 +30,18 @@ const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 const DB_RETRY_ATTEMPTS = parseInt(process.env.DB_RETRY_ATTEMPTS || '10', 10);
 const DB_RETRY_DELAY_MS = parseInt(process.env.DB_RETRY_DELAY_MS || '3000', 10);
+const realtimeClients = new Set();
+
+function emitirCambioTiempoReal(evento) {
+  const data = `event: data-change\ndata: ${JSON.stringify(evento)}\n\n`;
+  for (const client of realtimeClients) {
+    try {
+      client.write(data);
+    } catch {
+      realtimeClients.delete(client);
+    }
+  }
+}
 
 // Middleware
 app.use(cors());
@@ -49,8 +60,51 @@ app.use((req, res, next) => {
   next();
 });
 
+// Stream SSE para sincronizar cambios en vistas abiertas.
+app.get('/api/realtime/stream', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+
+  res.write(`event: connected\ndata: ${JSON.stringify({ ok: true, ts: new Date().toISOString() })}\n\n`);
+  realtimeClients.add(res);
+
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(`event: ping\ndata: ${Date.now()}\n\n`);
+    } catch {
+      clearInterval(heartbeat);
+      realtimeClients.delete(res);
+    }
+  }, 25000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    realtimeClients.delete(res);
+  });
+});
+
+app.use('/api', (req, res, next) => {
+  const isWriteMethod = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method);
+  if (!isWriteMethod) return next();
+
+  res.on('finish', () => {
+    if (res.statusCode >= 400) return;
+    if (req.path.startsWith('/realtime/stream')) return;
+
+    emitirCambioTiempoReal({
+      path: req.path,
+      method: req.method,
+      statusCode: res.statusCode,
+      at: new Date().toISOString()
+    });
+  });
+
+  next();
+});
+
 // Rutas
-// app.use('/api/tareas', tareasRouter); // Comentado - ahora son subtareas
 app.use('/api/auth', authRouter);
 app.use('/api/usuarios', usuariosRouter);
 app.use('/api', (req, res, next) => {
@@ -60,7 +114,7 @@ app.use('/api', (req, res, next) => {
 });
 app.use('/api', requireApiPermission);
 app.use('/api', auditApiChanges);
-app.use('/api/actividades', actividadesRouter); // Ahora apunta a subtareas (actividades)
+app.use('/api/actividades', subtareasRouter);
 app.use('/api/estados', estadosRouter);
 app.use('/api/notificaciones', notificacionesRouter);
 app.use('/api/subtareas', subtareasRouter);
@@ -69,6 +123,7 @@ app.use('/api/catalogos', catalogosRouter);
 app.use('/api/reportes', reportesRouter);
 app.use('/api/permisos', permisosRouter);
 app.use('/api/auditoria', auditoriaRouter);
+app.use('/api/chat-ia', chatIaRouter);
 
 // Ruta de salud
 app.get('/api/health', (req, res) => {

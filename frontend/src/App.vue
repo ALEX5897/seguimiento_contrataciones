@@ -109,6 +109,8 @@
         </router-view>
       </main>
     </div>
+
+    <ChatIaWidget v-if="auth.isAuthenticated" />
   </div>
 </template>
 
@@ -116,6 +118,8 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
+import { API_BASE_URL } from './config/constants'
+import ChatIaWidget from './components/ChatIaWidget.vue'
 
 interface MenuItem {
   key: string
@@ -140,6 +144,9 @@ const fechaActual = ref('')
 
 let inactivityTimer: number | undefined
 let dateRefreshTimer: number | undefined
+let realtimeSource: EventSource | null = null
+let realtimeReconnectTimer: number | undefined
+let realtimeRefreshTimer: number | undefined
 
 const formateadorFecha = new Intl.DateTimeFormat('es-EC', {
   weekday: 'long',
@@ -153,6 +160,7 @@ const menuConfig: MenuItem[] = [
   { key: 'actividades', to: '/actividades', label: 'Procesos', icon: 'ri-refresh-line' },
   { key: 'reportes', to: '/reportes', label: 'Reportes', icon: 'ri-bar-chart-line' },
   { key: 'notificaciones', to: '/notificaciones', label: 'Notificaciones', icon: 'ri-notification-3-line' },
+  { key: 'chat_ia', to: '/chat-ia', label: 'Chat IA', icon: 'ri-robot-2-line' },
   { key: 'admin_actividades', to: '/admin/actividades', label: 'Admin Procesos', icon: 'ri-settings-3-line', isAdmin: true },
   { key: 'admin_versiones', to: '/admin/versiones', label: 'Versiones', icon: 'ri-price-tag-3-line', isAdmin: true },
   { key: 'admin_usuarios', to: '/admin/usuarios', label: 'Usuarios', icon: 'ri-user-3-line', isAdmin: true },
@@ -232,6 +240,60 @@ function onResize() {
   }
 }
 
+function clearRealtimeTimers() {
+  if (realtimeReconnectTimer !== undefined) {
+    window.clearTimeout(realtimeReconnectTimer)
+    realtimeReconnectTimer = undefined
+  }
+  if (realtimeRefreshTimer !== undefined) {
+    window.clearTimeout(realtimeRefreshTimer)
+    realtimeRefreshTimer = undefined
+  }
+}
+
+function disconnectRealtime() {
+  clearRealtimeTimers()
+  if (realtimeSource) {
+    realtimeSource.close()
+    realtimeSource = null
+  }
+}
+
+function scheduleSoftReload() {
+  if (route.path === '/login' || !auth.isAuthenticated) return
+  if (realtimeRefreshTimer !== undefined) return
+
+  realtimeRefreshTimer = window.setTimeout(() => {
+    realtimeRefreshTimer = undefined
+    window.dispatchEvent(new CustomEvent('app:data-change'))
+  }, 900)
+}
+
+function connectRealtime() {
+  if (!auth.isAuthenticated || route.path === '/login') return
+  if (realtimeSource) return
+
+  const base = API_BASE_URL.replace(/\/$/, '')
+  realtimeSource = new EventSource(`${base}/realtime/stream`)
+
+  realtimeSource.addEventListener('data-change', () => {
+    scheduleSoftReload()
+  })
+
+  realtimeSource.onerror = () => {
+    if (realtimeSource) {
+      realtimeSource.close()
+      realtimeSource = null
+    }
+    if (realtimeReconnectTimer === undefined) {
+      realtimeReconnectTimer = window.setTimeout(() => {
+        realtimeReconnectTimer = undefined
+        connectRealtime()
+      }, 2500)
+    }
+  }
+}
+
 const activityEvents = ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'] as const
 
 onMounted(async () => {
@@ -245,6 +307,7 @@ onMounted(async () => {
 
   iniciarActualizacionFecha()
   scheduleInactivityTimer()
+  connectRealtime()
 
   activityEvents.forEach((eventName) => {
     window.addEventListener(eventName, onUserActivity, { passive: true })
@@ -255,6 +318,7 @@ onMounted(async () => {
 onUnmounted(() => {
   detenerActualizacionFecha()
   clearInactivityTimer()
+  disconnectRealtime()
 
   activityEvents.forEach((eventName) => {
     window.removeEventListener(eventName, onUserActivity)
@@ -263,21 +327,23 @@ onUnmounted(() => {
 })
 
 watch(
-  () => route.path,
-  () => {
-    if (isMobile.value) {
-      menuVisible.value = false
+  () => auth.isAuthenticated,
+  (autenticado) => {
+    if (autenticado) {
+      connectRealtime()
+      scheduleInactivityTimer()
+    } else {
+      disconnectRealtime()
+      clearInactivityTimer()
     }
   }
 )
 
 watch(
-  () => auth.isAuthenticated,
-  (isAuthenticated) => {
-    if (isAuthenticated) {
-      scheduleInactivityTimer()
-    } else {
-      clearInactivityTimer()
+  () => route.path,
+  () => {
+    if (isMobile.value) {
+      menuVisible.value = false
     }
   }
 )

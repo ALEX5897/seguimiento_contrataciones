@@ -2,8 +2,10 @@
 import express from 'express';
 import XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
+import puppeteer from 'puppeteer';
 import * as mysql from '../data/mysql.js';
 import { getScopeFromReq, normalizeText, parseDateOnly, obtenerEstadoProceso, obtenerPresupuestoProceso, procesoCuentaEnReporte } from '../utils/helpers.js';
+import { generarHTMLInformeDetalle } from '../utils/informeTemplates.js';
 
 const router = express.Router();
 
@@ -1383,204 +1385,45 @@ router.post('/generar-informe-pdf', async (req, res) => {
 // INFORME 2: DETALLE DE CAMBIOS Y ACTIVIDAD POR DIRECCIÓN
 // ──────────────────────────────────────────────────────────────────────────────
 
-function generarInformeDetallePDF(res, datos) {
-  const doc = new PDFDocument({
-    size: 'A4',
-    margin: 50,
-    bufferPages: true
-  });
+async function generarInformeDetallePDF(res, datos) {
+  let browser;
+  try {
+    const html = generarHTMLInformeDetalle(datos);
 
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="${datos.filename}"`);
-  doc.pipe(res);
+    // Lanzar navegador
+    browser = await puppeteer.launch({ headless: 'new' });
+    const page = await browser.newPage();
 
-  // ── PORTADA ─────────────────────────────────────────────────────────────
-  doc.rect(0, 0, doc.page.width, doc.page.height).fill('#165e4e');
+    // Configurar viewport
+    await page.setViewport({ width: 1200, height: 1200 });
 
-  doc.fontSize(32).font('Helvetica-Bold').fillColor('#ffffff').text('DETALLE DE CAMBIOS Y ACTIVIDAD', 50, 150, { align: 'center', width: 495 });
-  doc.moveDown(1);
-  doc.fontSize(16).font('Helvetica').text('Análisis por Dirección y Proceso', { align: 'center' });
-  doc.moveDown(2);
+    // Cargar HTML
+    await page.setContent(html, { waitUntil: 'networkidle0' });
 
-  doc.fontSize(12).fillColor('#c6fae8').text(`Período: ${datos.fechaInicio} al ${datos.fechaFin}`, { align: 'center' });
-  doc.moveDown(3);
-
-  doc.fontSize(11).font('Helvetica-Bold').fillColor('#ffffff').text(`Dirección analizadas: ${datos.totalDirecciones}`, { align: 'center' });
-  doc.fontSize(11).text(`Procesos con cambios: ${datos.totalProcesosConCambios}`, { align: 'center' });
-  doc.moveDown(5);
-
-  doc.fontSize(9).fillColor('#bfdbfe').text(`Generado: ${new Date().toLocaleString('es-EC')}`, 50, doc.page.height - 80, { align: 'center', width: 495 });
-  doc.fontSize(9).text('QuitoTurismo - Sistema de Seguimiento', { align: 'center' });
-
-  doc.addPage();
-
-  // ── RESUMEN RÁPIDO ──────────────────────────────────────────────────────
-  doc.fontSize(14).font('Helvetica-Bold').fillColor('#165e4e').text('RESUMEN DE ACTIVIDAD');
-  doc.moveDown(0.3);
-
-  const resumen = datos.resumen;
-  doc.fontSize(10).font('Helvetica').fillColor('#000').text(
-    `En el período analizado, se han registrado cambios en ${datos.totalProcesosConCambios} procesos distribuidos en ${datos.totalDirecciones} direcciones. Se contabilizan ${resumen.totalCambios} cambios de estado y ${resumen.totalComentarios} comentarios agregados. La última actualización registrada fue el ${datos.ultimaActualizacion}.`,
-    50,
-    doc.y,
-    { align: 'justify', width: 495 }
-  );
-
-  doc.moveDown(1);
-
-  // Tabla de últimos ingresos
-  doc.fontSize(11).font('Helvetica-Bold').fillColor('#165e4e').text('Últimas Actualizaciones por Dirección:');
-  doc.moveDown(0.3);
-
-  let tablaY = doc.y;
-  (datos.ultimosIngresos || []).slice(0, 5).forEach((item, idx) => {
-    const bgColor = idx % 2 === 0 ? '#f0fdf4' : '#fff';
-    doc.rect(50, tablaY, 495, 18).fill(bgColor).stroke('#bbf7d0');
-    doc.fontSize(9).font('Helvetica').fillColor('#000').text(`${item.direccion}`, 60, tablaY + 4);
-    doc.fontSize(9).font('Helvetica-Bold').fillColor('#166534').text(`${item.ultimaActualizacion}`, 400, tablaY + 4);
-    tablaY += 20;
-  });
-
-  doc.addPage();
-
-  // ── DETALLE POR DIRECCIÓN ──────────────────────────────────────────────
-  doc.fontSize(14).font('Helvetica-Bold').fillColor('#165e4e').text('DETALLE POR DIRECCIÓN');
-  doc.moveDown(0.5);
-
-  const direcciones = datos.porDireccion || [];
-  let dirY = doc.y;
-
-  direcciones.forEach((dir, dirIdx) => {
-    if (dirY > doc.page.height - 120) {
-      doc.addPage();
-      dirY = 50;
-    }
-
-    // Encabezado dirección
-    doc.rect(50, dirY, 495, 28).fill('#ecfdf5').stroke('#bbf7d0');
-    doc.fontSize(12).font('Helvetica-Bold').fillColor('#166534').text(dir.nombre, 60, dirY + 8, { width: 450 });
-    doc.fontSize(9).font('Helvetica').fillColor('#047857').text(`Última actualización: ${dir.ultimaActualizacion} • ${dir.totalCambios} cambios • ${dir.totalComentarios} comentarios`, 60, dirY + 18, { width: 450 });
-
-    dirY = doc.y + 5;
-
-    // Procesos en esta dirección
-    const procesos = dir.procesos || [];
-    procesos.forEach((proc, procIdx) => {
-      if (dirY > doc.page.height - 100) {
-        doc.addPage();
-        dirY = 50;
-      }
-
-      // Título del proceso con monto
-      doc.fontSize(10).font('Helvetica-Bold').fillColor('#0f172a').text(`📋 ${proc.nombre} - $${formatMonto(proc.monto)}`, 60, dirY);
-      doc.fontSize(8).font('Helvetica').fillColor('#666').text(`Código: ${proc.codigo}`, 70, doc.y + 1);
-      dirY = doc.y + 6;
-
-      // Tabla de etapas con estado y comentarios
-      if (proc.etapas && proc.etapas.length > 0) {
-        // Encabezados de tabla
-        const tableHeaderY = dirY;
-        const colEtapa = 60;
-        const colEstado = 260;
-        const colComentario = 340;
-        const colFecha = 480;
-        const rowHeight = 14;
-
-        // Fondo de encabezado
-        doc.rect(colEtapa - 10, tableHeaderY, 495, rowHeight).fill('#e0f2f1').stroke('#00897b');
-
-        // Encabezados
-        doc.fontSize(8).font('Helvetica-Bold').fillColor('#00897b');
-        doc.text('Etapa', colEtapa, tableHeaderY + 2, { width: 190 });
-        doc.text('Estado', colEstado, tableHeaderY + 2, { width: 70 });
-        doc.text('Comentario', colComentario, tableHeaderY + 2, { width: 130 });
-        doc.text('Fecha/Hora', colFecha, tableHeaderY + 2, { width: 65 });
-
-        dirY = tableHeaderY + rowHeight;
-
-        // Filas de datos
-        proc.etapas.forEach((etapa, etapaIdx) => {
-          // Verificar si necesitamos nueva página
-          const comentariosCount = etapa.comentarios ? etapa.comentarios.length : 0;
-          const rowsNeeded = Math.max(1, comentariosCount);
-          const heightNeeded = rowsNeeded * (rowHeight + 2) + 30;
-
-          if (dirY + heightNeeded > doc.page.height - 50) {
-            doc.addPage();
-            dirY = 50;
-          }
-
-          const bgColor = etapaIdx % 2 === 0 ? '#f5f5f5' : '#fff';
-          const estadoLabel = etapa.estado === 'completado' ? '✅ Completado' : etapa.estado === 'en_proceso' ? '⏳ En proceso' : '⏹ Pendiente';
-          const estadoColor = etapa.estado === 'completado' ? '#2e7d32' : etapa.estado === 'en_proceso' ? '#f57c00' : '#c62828';
-
-          // Primera fila de etapa
-          const primerY = dirY;
-          doc.rect(colEtapa - 10, primerY, 495, rowHeight).fill(bgColor).stroke('#e0e0e0');
-          doc.fontSize(7.5).font('Helvetica').fillColor('#1a1a1a').text(etapa.nombre, colEtapa, primerY + 2, { width: 190 });
-          doc.fontSize(7).font('Helvetica-Bold').fillColor(estadoColor).text(estadoLabel, colEstado, primerY + 2, { width: 70 });
-
-          // Si hay comentarios, mostrar el primero en la misma fila
-          if (etapa.comentarios && etapa.comentarios.length > 0) {
-            const primero = etapa.comentarios[0];
-            doc.fontSize(7).font('Helvetica').fillColor('#424242').text(primero.texto.substring(0, 40) + (primero.texto.length > 40 ? '...' : ''), colComentario, primerY + 2, { width: 130 });
-            doc.fontSize(6).font('Helvetica').fillColor('#666').text(primero.fecha, colFecha, primerY + 2, { width: 65 });
-          }
-
-          dirY += rowHeight;
-
-          // Filas adicionales para otros comentarios
-          if (etapa.comentarios && etapa.comentarios.length > 1) {
-            etapa.comentarios.slice(1).forEach((com) => {
-              if (dirY > doc.page.height - 50) {
-                doc.addPage();
-                dirY = 50;
-              }
-
-              doc.rect(colEtapa - 10, dirY, 495, rowHeight).fill(bgColor).stroke('#e0e0e0');
-              doc.fontSize(7).font('Helvetica').fillColor('#424242').text(com.texto.substring(0, 40) + (com.texto.length > 40 ? '...' : ''), colComentario, dirY + 2, { width: 130 });
-              doc.fontSize(6).font('Helvetica').fillColor('#666').text(com.fecha, colFecha, dirY + 2, { width: 65 });
-              dirY += rowHeight;
-            });
-          }
-        });
-      }
-
-      // Espaciador entre procesos
-      dirY += 8;
+    // Generar PDF
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' },
+      displayHeaderFooter: false,
+      printBackground: true
     });
 
-    // Espaciador entre direcciones
-    dirY += 8;
-  });
+    // Enviar respuesta
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${datos.filename}"`);
+    res.send(pdfBuffer);
 
-  doc.addPage();
-
-  // ── PIE DE PÁGINA ──────────────────────────────────────────────────────
-  const pages = doc.bufferedPageRange().count;
-  for (let i = 1; i < pages; i++) {
-    doc.switchToPage(i);
-
-    doc.moveTo(50, doc.page.height - 40).lineTo(doc.page.width - 50, doc.page.height - 40).stroke('#d1d5db');
-
-    doc.fontSize(8).fillColor('#9ca3af');
-    doc.text(
-      'Sistema de Seguimiento POA/PAC 2026 • Detalle de Cambios',
-      50,
-      doc.page.height - 30,
-      { align: 'left', width: 400 }
-    );
-
-    doc.fontSize(8).fillColor('#6b7280');
-    doc.text(
-      `Página ${i + 1} de ${pages}`,
-      450,
-      doc.page.height - 30,
-      { align: 'right', width: 100 }
-    );
+  } catch (error) {
+    console.error('Error en generarInformeDetallePDF:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Error al generar PDF: ' + error.message });
+    }
+  } finally {
+    // Cerrar navegador
+    if (browser) {
+      await browser.close();
+    }
   }
-
-  doc.end();
 }
 
 // POST /api/reportes/generar-informe-detalle-pdf
@@ -1778,7 +1621,7 @@ router.post('/generar-informe-detalle-pdf', async (req, res) => {
       porDireccion: direccionArray
     };
 
-    generarInformeDetallePDF(res, datosPDF);
+    await generarInformeDetallePDF(res, datosPDF);
   } catch (error) {
     console.error('Error en POST /api/reportes/generar-informe-detalle-pdf:', error);
     if (!res.headersSent) {
