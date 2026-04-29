@@ -986,17 +986,31 @@ function generarInformePDF(res, datos) {
   doc.pipe(res);
 
   // ── PORTADA ─────────────────────────────────────────────────────────────
-  doc.fontSize(28).font('Helvetica-Bold').text('INFORME DE ACTIVIDADES', { align: 'center' });
-  doc.moveDown(0.3);
-  doc.fontSize(14).font('Helvetica').text('Seguimiento de Contrataciones', { align: 'center' });
-  doc.moveDown(1);
+  doc.rect(0, 0, doc.page.width, doc.page.height).fill('#1a5fad');
 
-  doc.fontSize(11).text(`Período: ${datos.fechaInicio} al ${datos.fechaFin}`, { align: 'center' });
-  doc.fontSize(10).text(`Generado: ${new Date().toLocaleString('es-EC')}`, { align: 'center' });
+  doc.fontSize(32).font('Helvetica-Bold').fillColor('#ffffff').text('INFORME DE ACTIVIDADES', 50, 150, { align: 'center', width: 495 });
+  doc.moveDown(1);
+  doc.fontSize(16).font('Helvetica').text('Seguimiento de Contrataciones POA/PAC 2026', { align: 'center' });
   doc.moveDown(2);
 
-  // Logo/branding area
-  doc.fontSize(9).fillColor('#666666').text('QuitoTurismo - Sistema de Seguimiento POA/PAC 2026', { align: 'center' });
+  doc.fontSize(12).fillColor('#e2e8f0').text(`Período: ${datos.fechaInicio} al ${datos.fechaFin}`, { align: 'center' });
+  doc.moveDown(4);
+
+  // KPIs en la portada
+  const kpiInfos = [
+    { label: 'Procesos', valor: datos.resumen.totalProcesos },
+    { label: 'Cumplimiento', valor: `${datos.resumen.cumplimientoGeneral}%` },
+    { label: 'Presupuesto', valor: `$${formatMonto(datos.resumen.presupuestoTotal)}` }
+  ];
+
+  doc.fontSize(11).font('Helvetica-Bold').fillColor('#ffffff');
+  kpiInfos.forEach((kpi, i) => {
+    doc.text(`${kpi.label}: ${kpi.valor}`, 50, 400 + i * 40);
+  });
+
+  doc.moveDown(6);
+  doc.fontSize(10).fillColor('#bfdbfe').text(`Generado: ${new Date().toLocaleString('es-EC')}`, 50, doc.page.height - 80, { align: 'center', width: 495 });
+  doc.fontSize(9).text('QuitoTurismo - Sistema de Seguimiento', { align: 'center' });
 
   doc.addPage();
 
@@ -1019,58 +1033,87 @@ function generarInformePDF(res, datos) {
 
   // ── RESUMEN EJECUTIVO ─────────────────────────────────────────────────
   doc.fontSize(14).font('Helvetica-Bold').fillColor('#1a5fad').text('1. RESUMEN EJECUTIVO', 50);
-  doc.moveDown(0.3);
-  doc.fontSize(10).font('Helvetica').fillColor('#000');
+  doc.moveDown(0.2);
 
   const resumen = datos.resumen;
-  const texto = `En el período comprendido entre ${datos.fechaInicio} y ${datos.fechaFin}, se ha registrado un avance general del ${resumen.cumplimientoGeneral}% en los procesos de contratación supervisados. Se han completado ${resumen.completados} de ${resumen.totalVerificables} verificables programados. El presupuesto total administrado alcanza $${formatMonto(resumen.presupuestoTotal)}.`;
+  const statusColor = resumen.cumplimientoGeneral >= 80 ? '#16a34a' : resumen.cumplimientoGeneral >= 60 ? '#f59e0b' : '#dc2626';
+  const statusLabel = resumen.cumplimientoGeneral >= 80 ? 'EXCELENTE' : resumen.cumplimientoGeneral >= 60 ? 'EN DESARROLLO' : 'REQUIERE ATENCIÓN';
 
-  doc.text(texto, { align: 'justify', width: 495 });
+  // Status badge
+  doc.rect(50, doc.y, 495, 25).fill('#f3f4f6').stroke('#d1d5db');
+  doc.fontSize(11).font('Helvetica-Bold').fillColor(statusColor).text(statusLabel, 60, doc.y + 7);
+  doc.fontSize(10).font('Helvetica').fillColor('#666').text(`Cumplimiento General: ${resumen.cumplimientoGeneral}%`, 250, doc.y + 7);
+
+  doc.moveDown(2);
+
+  const texto = `En el período comprendido entre ${datos.fechaInicio} y ${datos.fechaFin}, se ha registrado un avance del ${resumen.cumplimientoGeneral}% en los procesos de contratación. De los ${resumen.totalVerificables} verificables programados, se han completado ${resumen.completados} (${Math.round((resumen.completados/resumen.totalVerificables)*100)}%). Se administra un presupuesto total de $${formatMonto(resumen.presupuestoTotal)}, con ${resumen.atrasadas} etapas aún pendientes de completar.`;
+
+  doc.fontSize(10).font('Helvetica').fillColor('#000').text(texto, 50, doc.y, { align: 'justify', width: 495 });
   doc.moveDown(0.5);
 
-  // KPIs principales
-  const kpiBoxWidth = (495 - 10) / 3;
+  // KPIs principales en cajas
+  const kpiBoxWidth = (495 - 10) / 4;
   const kpiY = doc.y;
 
   const kpis = [
-    { label: 'Procesos', valor: resumen.totalProcesos },
-    { label: 'Cumplimiento', valor: `${resumen.cumplimientoGeneral}%` },
-    { label: 'Atrasadas', valor: resumen.atrasadas }
+    { label: 'Procesos', valor: resumen.totalProcesos, icon: '📋' },
+    { label: 'Verificables', valor: resumen.totalVerificables, icon: '✓' },
+    { label: 'Completados', valor: resumen.completados, icon: '✔️' },
+    { label: 'Atrasadas', valor: resumen.atrasadas, icon: '⏱' }
   ];
 
   kpis.forEach((kpi, idx) => {
     const x = 50 + idx * (kpiBoxWidth + 5);
-    doc.rect(x, kpiY, kpiBoxWidth, 60).stroke('#e2e8f0');
-    doc.fontSize(20).font('Helvetica-Bold').fillColor('#1a5fad').text(String(kpi.valor), x + 5, kpiY + 15, { width: kpiBoxWidth - 10 });
-    doc.fontSize(9).font('Helvetica').fillColor('#666').text(kpi.label, x + 5, kpiY + 40, { width: kpiBoxWidth - 10 });
+    const isCritical = kpi.label === 'Atrasadas' && kpi.valor > 0;
+    const bgColor = isCritical ? '#fee2e2' : '#eff6ff';
+    const borderColor = isCritical ? '#fecaca' : '#bfdbfe';
+
+    doc.rect(x, kpiY, kpiBoxWidth, 55).fill(bgColor).stroke(borderColor);
+    doc.fontSize(18).font('Helvetica-Bold').fillColor('#1a5fad').text(String(kpi.valor), x + 5, kpiY + 8, { width: kpiBoxWidth - 10 });
+    doc.fontSize(8).font('Helvetica').fillColor('#666').text(kpi.label, x + 5, kpiY + 35, { width: kpiBoxWidth - 10 });
   });
 
   doc.moveDown(4);
 
   // ── INDICADORES GENERALES ───────────────────────────────────────────────
-  doc.fontSize(14).font('Helvetica-Bold').fillColor('#1a5fad').text('2. INDICADORES GENERALES');
+  doc.fontSize(14).font('Helvetica-Bold').fillColor('#1a5fad').text('2. INDICADORES GENERALES DE DESEMPEÑO');
   doc.moveDown(0.3);
-  doc.fontSize(9).font('Helvetica').fillColor('#000');
 
   const tablaIndicadores = [
-    { label: 'Total Procesos', valor: resumen.totalProcesos },
-    { label: 'Total Verificables', valor: resumen.totalVerificables },
-    { label: 'Completados', valor: resumen.completados },
-    { label: 'En Proceso', valor: resumen.enProceso },
-    { label: 'Pendientes', valor: resumen.pendientes },
-    { label: 'Etapas Atrasadas', valor: resumen.atrasadas },
-    { label: 'Cumplimiento %', valor: `${resumen.cumplimientoGeneral}%` },
-    { label: 'Presupuesto Total', valor: `$${formatMonto(resumen.presupuestoTotal)}` }
+    { label: 'Total Procesos', valor: resumen.totalProcesos, tipo: 'numero' },
+    { label: 'Total Verificables Programados', valor: resumen.totalVerificables, tipo: 'numero' },
+    { label: 'Verificables Completados', valor: resumen.completados, tipo: 'numero' },
+    { label: 'Verificables en Proceso', valor: resumen.enProceso, tipo: 'numero' },
+    { label: 'Verificables Pendientes', valor: resumen.pendientes, tipo: 'numero' },
+    { label: 'Etapas Atrasadas (crítico)', valor: resumen.atrasadas, tipo: 'numero' },
+    { label: 'Etapas que Vencen Hoy', valor: resumen.vencenHoy, tipo: 'numero' },
+    { label: 'Tasa de Cumplimiento General', valor: `${resumen.cumplimientoGeneral}%`, tipo: 'porcentaje' },
+    { label: 'Presupuesto Total Administrado', valor: `$${formatMonto(resumen.presupuestoTotal)}`, tipo: 'moneda' }
   ];
 
   let currentY = doc.y;
+  const colWidth = 260;
+  const rowHeight = 15;
+
   tablaIndicadores.forEach((item, idx) => {
-    if (currentY > doc.page.height - 100) {
+    const isEven = idx % 2 === 0;
+    const x = isEven ? 50 : 305;
+
+    if (!isEven && idx > 0) {
+      currentY += rowHeight + 2;
+    }
+
+    if (currentY > doc.page.height - 80) {
       doc.addPage();
       currentY = 50;
     }
-    doc.fontSize(9).text(`${item.label}: `, 50, currentY, { width: 200, continued: true }).font('Helvetica-Bold').text(String(item.valor));
-    currentY = doc.y + 5;
+
+    const isCritical = (item.label === 'Etapas Atrasadas (crítico)' && item.valor > 0);
+    const bgColor = isCritical ? '#fee2e2' : '#f8fafc';
+
+    doc.rect(x, currentY, colWidth, rowHeight).fill(bgColor).stroke('#e2e8f0');
+    doc.fontSize(9).font('Helvetica').fillColor('#666').text(item.label, x + 5, currentY + 3, { width: colWidth - 50 });
+    doc.fontSize(9).font('Helvetica-Bold').fillColor('#1a5fad').text(String(item.valor), x + colWidth - 35, currentY + 3, { align: 'right' });
   });
 
   doc.addPage();
@@ -1078,106 +1121,164 @@ function generarInformePDF(res, datos) {
   // ── ANÁLISIS POR DIRECCIÓN ──────────────────────────────────────────────
   doc.fontSize(14).font('Helvetica-Bold').fillColor('#1a5fad').text('3. ANÁLISIS POR DIRECCIÓN');
   doc.moveDown(0.5);
-  doc.fontSize(9).font('Helvetica').fillColor('#000');
 
   const direcciones = datos.porDireccion || [];
   let dirY = doc.y;
 
   direcciones.forEach((dir, idx) => {
-    if (dirY > doc.page.height - 150) {
+    if (dirY > doc.page.height - 160) {
       doc.addPage();
       dirY = 50;
     }
 
-    // Encabezado dirección
-    doc.rect(50, dirY, 495, 20).fill('#ecfdf5');
-    doc.fontSize(11).font('Helvetica-Bold').fillColor('#166534').text(dir.nombre, 60, dirY + 5, { width: 400 });
-    dirY = doc.y + 5;
+    // Encabezado dirección con badge
+    doc.rect(50, dirY, 495, 24).fill('#ecfdf5').stroke('#bbf7d0');
+    doc.fontSize(11).font('Helvetica-Bold').fillColor('#166534').text(dir.nombre, 60, dirY + 7, { width: 400 });
+    dirY = doc.y + 8;
 
-    // Contratos principales de esta dirección (top 3)
+    // Contratos principales (top 3)
     const contratos = (dir.contratos || []).slice(0, 3);
     if (contratos.length > 0) {
-      doc.fontSize(8).font('Helvetica').fillColor('#000').text('Contratos principales:', 60, dirY);
+      doc.fontSize(9).font('Helvetica-Bold').fillColor('#0f172a').text('Contratos con mayor monto:', 60, dirY);
       dirY = doc.y + 3;
 
-      contratos.forEach(contrato => {
-        const textoContrato = `• ${contrato.nombre} - Monto: $${formatMonto(contrato.monto)} (${contrato.avance}% completado)`;
-        doc.text(textoContrato, 70, dirY, { width: 450 });
+      contratos.forEach((contrato, cidx) => {
+        const medal = cidx === 0 ? '1️⃣' : cidx === 1 ? '2️⃣' : '3️⃣';
+        const textoContrato = `${medal} ${contrato.nombre}`;
+        doc.fontSize(8).font('Helvetica').text(textoContrato, 70, dirY);
+        doc.fontSize(8).font('Helvetica').text(`   Monto: $${formatMonto(contrato.monto)} | Avance: ${contrato.avance}%`, 75, doc.y);
         dirY = doc.y + 3;
       });
     }
 
-    // Estadísticas
-    dirY += 5;
-    const statsText = `Procesos: ${dir.procesos} | Verificables: ${dir.verificables} | Completados: ${dir.completados} | Atrasadas: ${dir.atrasadas} | Cumplimiento: ${dir.cumplimiento}%`;
-    doc.fontSize(8).text(statsText, 60, dirY, { width: 450 });
-    dirY = doc.y + 10;
+    // Tabla de estadísticas
+    dirY += 2;
+    doc.fontSize(8).font('Helvetica').fillColor('#000');
+    const statsTable = [
+      { label: 'Procesos', valor: dir.procesos },
+      { label: 'Verificables', valor: dir.verificables },
+      { label: 'Completados', valor: dir.completados },
+      { label: 'Atrasadas', valor: dir.atrasadas },
+      { label: 'Cumplimiento', valor: `${dir.cumplimiento}%` }
+    ];
+
+    let colX = 60;
+    statsTable.forEach((stat, sidx) => {
+      if (sidx > 0 && sidx % 2 === 0) {
+        dirY += 16;
+        colX = 60;
+      } else if (sidx > 0) {
+        colX = 275;
+      }
+
+      doc.rect(colX, dirY, 200, 14).stroke('#e2e8f0');
+      doc.fontSize(8).font('Helvetica-Bold').text(stat.label, colX + 4, dirY + 3, { width: 90 });
+      doc.fontSize(9).font('Helvetica-Bold').fillColor('#1a5fad').text(String(stat.valor), colX + 100, dirY + 2);
+      doc.fillColor('#000');
+    });
+
+    dirY += 20;
   });
 
   doc.addPage();
 
   // ── ETAPAS TARDÍAS ──────────────────────────────────────────────────────
-  doc.fontSize(14).font('Helvetica-Bold').fillColor('#1a5fad').text('4. ETAPAS TARDÍAS POR DIRECCIÓN');
+  doc.fontSize(14).font('Helvetica-Bold').fillColor('#1a5fad').text('4. ETAPAS EN ATRASO - PUNTOS CRÍTICOS');
   doc.moveDown(0.5);
-  doc.fontSize(9).font('Helvetica').fillColor('#000');
 
   const etapasTardias = datos.etapasTardias || [];
   let etapasY = doc.y;
 
   if (etapasTardias.length === 0) {
-    doc.text('No hay etapas tardías registradas en el período.', 60, etapasY, { fill: '#059669' });
+    doc.rect(50, etapasY, 495, 40).fill('#dcfce7');
+    doc.fontSize(10).font('Helvetica-Bold').fillColor('#166534').text('✓ EXCELENTE - No hay etapas tardías registradas', 60, etapasY + 10, { width: 450 });
+    doc.fontSize(9).font('Helvetica').fillColor('#166534').text('Todos los procesos están avanzando dentro de los plazos programados', 60, doc.y + 5, { width: 450 });
+    etapasY = doc.y + 30;
   } else {
-    etapasTardias.forEach(item => {
-      if (etapasY > doc.page.height - 80) {
+    etapasTardias.forEach((item, idx) => {
+      if (etapasY > doc.page.height - 100) {
         doc.addPage();
         etapasY = 50;
       }
-      const textoEtapa = `${item.direccion} - ${item.proceso}: "${item.etapa}" (${item.diasAtraso} días de atraso)`;
-      doc.text(textoEtapa, 60, etapasY, { width: 450 });
-      etapasY = doc.y + 3;
+
+      const urgencia = item.diasAtraso > 30 ? '🔴 CRÍTICO' : item.diasAtraso > 15 ? '🟠 ALTO' : '🟡 MEDIO';
+      const bgColor = item.diasAtraso > 30 ? '#fee2e2' : item.diasAtraso > 15 ? '#fef3c7' : '#fef08a';
+      const borderColor = item.diasAtraso > 30 ? '#fecaca' : item.diasAtraso > 15 ? '#fcd34d' : '#fef3c7';
+
+      doc.rect(50, etapasY, 495, 35).fill(bgColor).stroke(borderColor);
+      doc.fontSize(9).font('Helvetica-Bold').fillColor('#0f172a').text(`${urgencia}  ${item.direccion}`, 60, etapasY + 5);
+      doc.fontSize(8).font('Helvetica').fillColor('#374151').text(`Proceso: ${item.proceso}`, 60, doc.y + 2);
+      doc.fontSize(8).font('Helvetica').fillColor('#374151').text(`Etapa: "${item.etapa}" | Atraso: ${item.diasAtraso} días`, 60, doc.y + 2);
+      etapasY = doc.y + 8;
     });
   }
 
   doc.addPage();
 
-  // ── DIRECCIONES MÁS ACTIVAS ─────────────────────────────────────────────
-  doc.fontSize(14).font('Helvetica-Bold').fillColor('#1a5fad').text('5. DIRECCIONES MÁS ACTIVAS');
+  // ── RESUMEN DE ACTIVIDAD ────────────────────────────────────────────────
+  doc.fontSize(14).font('Helvetica-Bold').fillColor('#1a5fad').text('5. RESUMEN DE ACTIVIDAD Y PARTICIPACIÓN');
   doc.moveDown(0.5);
-  doc.fontSize(9).font('Helvetica').fillColor('#000');
+  doc.fontSize(10).font('Helvetica').fillColor('#000').text('Direcciones con mayor actividad registrada:', 60);
+  doc.moveDown(0.3);
 
   const activas = datos.activas || [];
   let activasY = doc.y;
 
-  activas.forEach((dir, idx) => {
-    const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
-    doc.text(`${medal} ${dir.nombre} - ${dir.cambios} cambios | ${dir.comentarios} comentarios`, 60, activasY);
-    activasY = doc.y + 4;
-  });
+  if (activas.length === 0) {
+    doc.fontSize(9).fillColor('#999').text('No hay registros de actividad en el período seleccionado', 60);
+  } else {
+    activas.forEach((dir, idx) => {
+      const icons = ['🥇', '🥈', '🥉', '⭐', '✓'];
+      const icon = icons[idx] || '•';
+      const totalActividad = dir.cambios + dir.comentarios;
+
+      doc.rect(50, activasY - 5, 495, 25).fill(idx % 2 === 0 ? '#f8fafc' : '#fff').stroke('#e2e8f0');
+      doc.fontSize(10).font('Helvetica-Bold').fillColor('#0f172a').text(`${icon}  ${dir.nombre}`, 60, activasY);
+      doc.fontSize(9).font('Helvetica').fillColor('#666').text(`${dir.cambios} cambios • ${dir.comentarios} etapas | Total: ${totalActividad}`, 250, activasY);
+      activasY = doc.y + 8;
+    });
+  }
 
   doc.moveDown(1);
 
   // Direcciones inactivas
   const inactivas = datos.inactivas || [];
   if (inactivas.length > 0) {
-    doc.fontSize(11).font('Helvetica-Bold').fillColor('#dc2626').text('Direcciones sin cambios registrados:');
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#b91c1c').text('⚠ Direcciones sin cambios registrados');
     doc.moveDown(0.3);
-    doc.fontSize(9).font('Helvetica').fillColor('#000');
+    doc.fontSize(9).font('Helvetica').fillColor('#0f172a');
     inactivas.forEach(dir => {
       doc.text(`• ${dir.nombre}`);
     });
+    doc.moveDown(0.5);
+    doc.fontSize(8).font('Helvetica').fillColor('#7f1d1d').text('Nota: Se recomienda realizar seguimiento con estas direcciones para verificar el estado de sus procesos.', { align: 'justify' });
   }
 
   doc.addPage();
 
   // ── PIE DE PÁGINA EN TODAS LAS PÁGINAS ──────────────────────────────────
   const pages = doc.bufferedPageRange().count;
-  for (let i = 0; i < pages; i++) {
+  for (let i = 1; i < pages; i++) { // Saltar portada (página 0)
     doc.switchToPage(i);
-    doc.fontSize(8).fillColor('#999999').text(
-      `Página ${i + 1} de ${pages}`,
+
+    // Línea divisoria
+    doc.moveTo(50, doc.page.height - 40).lineTo(doc.page.width - 50, doc.page.height - 40).stroke('#d1d5db');
+
+    // Información del pie
+    doc.fontSize(8).fillColor('#9ca3af');
+    doc.text(
+      'Sistema de Seguimiento POA/PAC 2026 • QuitoTurismo',
       50,
       doc.page.height - 30,
-      { align: 'center' }
+      { align: 'left', width: 400 }
+    );
+
+    doc.fontSize(8).fillColor('#6b7280');
+    doc.text(
+      `Página ${i + 1} de ${pages}`,
+      450,
+      doc.page.height - 30,
+      { align: 'right', width: 100 }
     );
   }
 
