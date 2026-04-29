@@ -1471,50 +1471,83 @@ function generarInformeDetallePDF(res, datos) {
         dirY = 50;
       }
 
-      // Encabezado proceso
-      doc.fontSize(10).font('Helvetica-Bold').fillColor('#0f172a').text(`📋 ${proc.nombre}`, 60, dirY);
-      doc.fontSize(9).font('Helvetica').fillColor('#666').text(`Código: ${proc.codigo} | Monto: $${formatMonto(proc.monto)}`, 70, doc.y + 2);
-      dirY = doc.y + 8;
+      // Título del proceso con monto
+      doc.fontSize(10).font('Helvetica-Bold').fillColor('#0f172a').text(`📋 ${proc.nombre} - $${formatMonto(proc.monto)}`, 60, dirY);
+      doc.fontSize(8).font('Helvetica').fillColor('#666').text(`Código: ${proc.codigo}`, 70, doc.y + 1);
+      dirY = doc.y + 6;
 
-      // Cambios de estado en este proceso
-      if (proc.cambios && proc.cambios.length > 0) {
-        doc.fontSize(9).font('Helvetica-Bold').fillColor('#059669').text('Cambios de Estado:', 70, dirY);
-        dirY = doc.y + 2;
+      // Tabla de etapas con estado y comentarios
+      if (proc.etapas && proc.etapas.length > 0) {
+        // Encabezados de tabla
+        const tableHeaderY = dirY;
+        const colEtapa = 60;
+        const colEstado = 260;
+        const colComentario = 340;
+        const colFecha = 480;
+        const rowHeight = 14;
 
-        proc.cambios.forEach(cambio => {
-          if (dirY > doc.page.height - 70) {
+        // Fondo de encabezado
+        doc.rect(colEtapa - 10, tableHeaderY, 495, rowHeight).fill('#e0f2f1').stroke('#00897b');
+
+        // Encabezados
+        doc.fontSize(8).font('Helvetica-Bold').fillColor('#00897b');
+        doc.text('Etapa', colEtapa, tableHeaderY + 2, { width: 190 });
+        doc.text('Estado', colEstado, tableHeaderY + 2, { width: 70 });
+        doc.text('Comentario', colComentario, tableHeaderY + 2, { width: 130 });
+        doc.text('Fecha/Hora', colFecha, tableHeaderY + 2, { width: 65 });
+
+        dirY = tableHeaderY + rowHeight;
+
+        // Filas de datos
+        proc.etapas.forEach((etapa, etapaIdx) => {
+          // Verificar si necesitamos nueva página
+          const comentariosCount = etapa.comentarios ? etapa.comentarios.length : 0;
+          const rowsNeeded = Math.max(1, comentariosCount);
+          const heightNeeded = rowsNeeded * (rowHeight + 2) + 30;
+
+          if (dirY + heightNeeded > doc.page.height - 50) {
             doc.addPage();
             dirY = 50;
           }
 
-          const iconoEstado = cambio.estadoNuevo === 'completado' ? '✅' : cambio.estadoNuevo === 'en_proceso' ? '⏳' : '⏹';
-          const texto = `${iconoEstado} Etapa: "${cambio.etapa}" → ${cambio.estadoAnterior.toUpperCase()} → ${cambio.estadoNuevo.toUpperCase()}`;
-          doc.fontSize(8).font('Helvetica').text(texto, 80, dirY, { width: 420 });
-          doc.fontSize(8).font('Helvetica').fillColor('#999').text(`Fecha: ${cambio.fecha} | Por: ${cambio.usuario}`, 85, doc.y, { width: 400 });
-          dirY = doc.y + 4;
-        });
-      }
+          const bgColor = etapaIdx % 2 === 0 ? '#f5f5f5' : '#fff';
+          const estadoLabel = etapa.estado === 'completado' ? '✅ Completado' : etapa.estado === 'en_proceso' ? '⏳ En proceso' : '⏹ Pendiente';
+          const estadoColor = etapa.estado === 'completado' ? '#2e7d32' : etapa.estado === 'en_proceso' ? '#f57c00' : '#c62828';
 
-      // Comentarios en este proceso
-      if (proc.comentarios && proc.comentarios.length > 0) {
-        doc.fontSize(9).font('Helvetica-Bold').fillColor('#0f172a').text('Comentarios Agregados:', 70, dirY);
-        dirY = doc.y + 2;
+          // Primera fila de etapa
+          const primerY = dirY;
+          doc.rect(colEtapa - 10, primerY, 495, rowHeight).fill(bgColor).stroke('#e0e0e0');
+          doc.fontSize(7.5).font('Helvetica').fillColor('#1a1a1a').text(etapa.nombre, colEtapa, primerY + 2, { width: 190 });
+          doc.fontSize(7).font('Helvetica-Bold').fillColor(estadoColor).text(estadoLabel, colEstado, primerY + 2, { width: 70 });
 
-        proc.comentarios.forEach(com => {
-          if (dirY > doc.page.height - 70) {
-            doc.addPage();
-            dirY = 50;
+          // Si hay comentarios, mostrar el primero en la misma fila
+          if (etapa.comentarios && etapa.comentarios.length > 0) {
+            const primero = etapa.comentarios[0];
+            doc.fontSize(7).font('Helvetica').fillColor('#424242').text(primero.texto.substring(0, 40) + (primero.texto.length > 40 ? '...' : ''), colComentario, primerY + 2, { width: 130 });
+            doc.fontSize(6).font('Helvetica').fillColor('#666').text(primero.fecha, colFecha, primerY + 2, { width: 65 });
           }
 
-          doc.rect(75, dirY - 2, 410, 2).fill('#d1d5db');
-          doc.fontSize(8).font('Helvetica').fillColor('#374151').text(`"${com.texto}"`, 80, dirY, { width: 400 });
-          doc.fontSize(7).font('Helvetica').fillColor('#9ca3af').text(`Etapa: ${com.etapa} | ${com.fecha}`, 85, doc.y, { width: 395 });
-          dirY = doc.y + 6;
+          dirY += rowHeight;
+
+          // Filas adicionales para otros comentarios
+          if (etapa.comentarios && etapa.comentarios.length > 1) {
+            etapa.comentarios.slice(1).forEach((com) => {
+              if (dirY > doc.page.height - 50) {
+                doc.addPage();
+                dirY = 50;
+              }
+
+              doc.rect(colEtapa - 10, dirY, 495, rowHeight).fill(bgColor).stroke('#e0e0e0');
+              doc.fontSize(7).font('Helvetica').fillColor('#424242').text(com.texto.substring(0, 40) + (com.texto.length > 40 ? '...' : ''), colComentario, dirY + 2, { width: 130 });
+              doc.fontSize(6).font('Helvetica').fillColor('#666').text(com.fecha, colFecha, dirY + 2, { width: 65 });
+              dirY += rowHeight;
+            });
+          }
         });
       }
 
       // Espaciador entre procesos
-      dirY += 5;
+      dirY += 8;
     });
 
     // Espaciador entre direcciones
@@ -1611,8 +1644,7 @@ router.post('/generar-informe-detalle-pdf', async (req, res) => {
         codigo: proc.codigoOlympo,
         nombre: proc.nombre,
         monto: proc.presupuesto,
-        cambios: [],
-        comentarios: []
+        etapas: [] // Tabla unificada de etapas con estado y comentarios
       };
 
       // Obtener etapas de este proceso
@@ -1620,69 +1652,80 @@ router.post('/generar-informe-detalle-pdf', async (req, res) => {
         e.codigoOlympo === proc.codigoOlympo && e.proceso === proc.nombre
       );
 
-      // Procesar cada etapa
+      // Crear mapa de etapas con sus comentarios
+      const etapasConInfo = {};
+
+      // Procesar cada etapa base
       etapasDelProceso.forEach(etapa => {
-        // Validar si la etapa tiene fecha dentro del período
         const fechaReal = etapa.fechaReal ? parseDateOnly(etapa.fechaReal) : null;
         const fechaPlanificada = etapa.fechaPlanificada ? parseDateOnly(etapa.fechaPlanificada) : null;
         const fechaEtapa = fechaReal || fechaPlanificada;
         const estaDentroDelPeriodo = fechaEtapa && fechaEtapa >= inicio && fechaEtapa <= fin;
 
-        // Incluir comentarios/observaciones de etapa.observaciones
-        if (etapa.observaciones && etapa.observaciones.trim() && estaDentroDelPeriodo) {
-          const fechaComentario = fechaReal
-            ? new Date(fechaReal).toLocaleDateString('es-EC')
-            : (fechaPlanificada ? new Date(fechaPlanificada).toLocaleDateString('es-EC') : new Date().toLocaleDateString('es-EC'));
-
-          procData.comentarios.push({
-            etapa: etapa.etapaNombre,
-            texto: etapa.observaciones,
-            fecha: fechaComentario,
-            usuario: etapa.responsableNombre || 'Sistema'
-          });
-
-          totalComentarios++;
-          porDireccion[dir].totalComentarios++;
+        if (!etapasConInfo[etapa.etapaNombre]) {
+          etapasConInfo[etapa.etapaNombre] = {
+            nombre: etapa.etapaNombre,
+            estado: etapa.estado,
+            comentarios: [],
+            tieneModificacion: false
+          };
         }
 
-        // Registrar cambios de estado dentro del período
+        // Si la etapa cambió de estado en el período
         if (etapa.estado !== 'pendiente' && estaDentroDelPeriodo) {
-          procData.cambios.push({
-            etapa: etapa.etapaNombre,
-            estadoAnterior: 'pendiente',
-            estadoNuevo: etapa.estado,
-            fecha: fechaReal
-              ? new Date(fechaReal).toLocaleDateString('es-EC')
-              : (fechaPlanificada ? new Date(fechaPlanificada).toLocaleDateString('es-EC') : new Date().toLocaleDateString('es-EC')),
-            usuario: etapa.responsableNombre || 'Sistema'
-          });
+          etapasConInfo[etapa.etapaNombre].tieneModificacion = true;
           totalCambios++;
           porDireccion[dir].totalCambios++;
         }
+
+        // Agregar observaciones de la etapa si las hay
+        if (etapa.observaciones && etapa.observaciones.trim() && estaDentroDelPeriodo) {
+          etapasConInfo[etapa.etapaNombre].comentarios.push({
+            texto: etapa.observaciones,
+            fecha: fechaReal
+              ? new Date(fechaReal).toLocaleString('es-EC')
+              : (fechaPlanificada ? new Date(fechaPlanificada).toLocaleString('es-EC') : new Date().toLocaleString('es-EC')),
+            usuario: etapa.responsableNombre || 'Sistema'
+          });
+          totalComentarios++;
+          porDireccion[dir].totalComentarios++;
+          etapasConInfo[etapa.etapaNombre].tieneModificacion = true;
+        }
       });
 
-      // Agregar comentarios de seguimientos_diarios que pertenecen a este proceso
+      // Agregar comentarios de seguimientos_diarios
       if (comentariosPeriodo && comentariosPeriodo.length > 0) {
         comentariosPeriodo.forEach(comentario => {
-          // Buscar si este comentario pertenece a una etapa de este proceso
           const etapaDelComentario = etapasDelProceso.find(
             e => e.subtareaId === comentario.subtarea_id && e.etapaId === comentario.etapa_id
           );
           if (etapaDelComentario) {
-            procData.comentarios.push({
-              etapa: etapaDelComentario.etapaNombre,
+            if (!etapasConInfo[etapaDelComentario.etapaNombre]) {
+              etapasConInfo[etapaDelComentario.etapaNombre] = {
+                nombre: etapaDelComentario.etapaNombre,
+                estado: etapaDelComentario.estado,
+                comentarios: [],
+                tieneModificacion: false
+              };
+            }
+
+            etapasConInfo[etapaDelComentario.etapaNombre].comentarios.push({
               texto: comentario.comentario,
-              fecha: new Date(comentario.fecha).toLocaleDateString('es-EC'),
+              fecha: new Date(comentario.fecha).toLocaleString('es-EC'),
               usuario: comentario.responsable || 'Sistema'
             });
 
             totalComentarios++;
             porDireccion[dir].totalComentarios++;
+            etapasConInfo[etapaDelComentario.etapaNombre].tieneModificacion = true;
           }
         });
       }
 
-      if (procData.cambios.length > 0 || procData.comentarios.length > 0) {
+      // Convertir mapa a array y agregar al proceso si tiene modificaciones
+      procData.etapas = Object.values(etapasConInfo).filter(e => e.tieneModificacion);
+
+      if (procData.etapas.length > 0) {
         porDireccion[dir].procesos.push(procData);
       }
     });
