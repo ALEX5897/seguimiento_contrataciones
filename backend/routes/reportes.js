@@ -1378,5 +1378,323 @@ router.post('/generar-informe-pdf', async (req, res) => {
   }
 });
 
+// ──────────────────────────────────────────────────────────────────────────────
+// INFORME 2: DETALLE DE CAMBIOS Y ACTIVIDAD POR DIRECCIÓN
+// ──────────────────────────────────────────────────────────────────────────────
+
+function generarInformeDetallePDF(res, datos) {
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 50,
+    bufferPages: true
+  });
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${datos.filename}"`);
+  doc.pipe(res);
+
+  // ── PORTADA ─────────────────────────────────────────────────────────────
+  doc.rect(0, 0, doc.page.width, doc.page.height).fill('#165e4e');
+
+  doc.fontSize(32).font('Helvetica-Bold').fillColor('#ffffff').text('DETALLE DE CAMBIOS Y ACTIVIDAD', 50, 150, { align: 'center', width: 495 });
+  doc.moveDown(1);
+  doc.fontSize(16).font('Helvetica').text('Análisis por Dirección y Proceso', { align: 'center' });
+  doc.moveDown(2);
+
+  doc.fontSize(12).fillColor('#c6fae8').text(`Período: ${datos.fechaInicio} al ${datos.fechaFin}`, { align: 'center' });
+  doc.moveDown(3);
+
+  doc.fontSize(11).font('Helvetica-Bold').fillColor('#ffffff').text(`Dirección analizadas: ${datos.totalDirecciones}`, { align: 'center' });
+  doc.fontSize(11).text(`Procesos con cambios: ${datos.totalProcesosConCambios}`, { align: 'center' });
+  doc.moveDown(5);
+
+  doc.fontSize(9).fillColor('#bfdbfe').text(`Generado: ${new Date().toLocaleString('es-EC')}`, 50, doc.page.height - 80, { align: 'center', width: 495 });
+  doc.fontSize(9).text('QuitoTurismo - Sistema de Seguimiento', { align: 'center' });
+
+  doc.addPage();
+
+  // ── RESUMEN RÁPIDO ──────────────────────────────────────────────────────
+  doc.fontSize(14).font('Helvetica-Bold').fillColor('#165e4e').text('RESUMEN DE ACTIVIDAD');
+  doc.moveDown(0.3);
+
+  const resumen = datos.resumen;
+  doc.fontSize(10).font('Helvetica').fillColor('#000').text(
+    `En el período analizado, se han registrado cambios en ${datos.totalProcesosConCambios} procesos distribuidos en ${datos.totalDirecciones} direcciones. Se contabilizan ${resumen.totalCambios} cambios de estado y ${resumen.totalComentarios} comentarios agregados. La última actualización registrada fue el ${datos.ultimaActualizacion}.`,
+    50,
+    doc.y,
+    { align: 'justify', width: 495 }
+  );
+
+  doc.moveDown(1);
+
+  // Tabla de últimos ingresos
+  doc.fontSize(11).font('Helvetica-Bold').fillColor('#165e4e').text('Últimas Actualizaciones por Dirección:');
+  doc.moveDown(0.3);
+
+  let tablaY = doc.y;
+  (datos.ultimosIngresos || []).slice(0, 5).forEach((item, idx) => {
+    const bgColor = idx % 2 === 0 ? '#f0fdf4' : '#fff';
+    doc.rect(50, tablaY, 495, 18).fill(bgColor).stroke('#bbf7d0');
+    doc.fontSize(9).font('Helvetica').fillColor('#000').text(`${item.direccion}`, 60, tablaY + 4);
+    doc.fontSize(9).font('Helvetica-Bold').fillColor('#166534').text(`${item.ultimaActualizacion}`, 400, tablaY + 4);
+    tablaY += 20;
+  });
+
+  doc.addPage();
+
+  // ── DETALLE POR DIRECCIÓN ──────────────────────────────────────────────
+  doc.fontSize(14).font('Helvetica-Bold').fillColor('#165e4e').text('DETALLE POR DIRECCIÓN');
+  doc.moveDown(0.5);
+
+  const direcciones = datos.porDireccion || [];
+  let dirY = doc.y;
+
+  direcciones.forEach((dir, dirIdx) => {
+    if (dirY > doc.page.height - 120) {
+      doc.addPage();
+      dirY = 50;
+    }
+
+    // Encabezado dirección
+    doc.rect(50, dirY, 495, 28).fill('#ecfdf5').stroke('#bbf7d0');
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#166534').text(dir.nombre, 60, dirY + 8, { width: 450 });
+    doc.fontSize(9).font('Helvetica').fillColor('#047857').text(`Última actualización: ${dir.ultimaActualizacion} • ${dir.totalCambios} cambios • ${dir.totalComentarios} comentarios`, 60, dirY + 18, { width: 450 });
+
+    dirY = doc.y + 5;
+
+    // Procesos en esta dirección
+    const procesos = dir.procesos || [];
+    procesos.forEach((proc, procIdx) => {
+      if (dirY > doc.page.height - 100) {
+        doc.addPage();
+        dirY = 50;
+      }
+
+      // Encabezado proceso
+      doc.fontSize(10).font('Helvetica-Bold').fillColor('#0f172a').text(`📋 ${proc.nombre}`, 60, dirY);
+      doc.fontSize(9).font('Helvetica').fillColor('#666').text(`Código: ${proc.codigo} | Monto: $${formatMonto(proc.monto)}`, 70, doc.y + 2);
+      dirY = doc.y + 8;
+
+      // Cambios de estado en este proceso
+      if (proc.cambios && proc.cambios.length > 0) {
+        doc.fontSize(9).font('Helvetica-Bold').fillColor('#059669').text('Cambios de Estado:', 70, dirY);
+        dirY = doc.y + 2;
+
+        proc.cambios.forEach(cambio => {
+          if (dirY > doc.page.height - 70) {
+            doc.addPage();
+            dirY = 50;
+          }
+
+          const iconoEstado = cambio.estadoNuevo === 'completado' ? '✅' : cambio.estadoNuevo === 'en_proceso' ? '⏳' : '⏹';
+          const texto = `${iconoEstado} Etapa: "${cambio.etapa}" → ${cambio.estadoAnterior.toUpperCase()} → ${cambio.estadoNuevo.toUpperCase()}`;
+          doc.fontSize(8).font('Helvetica').text(texto, 80, dirY, { width: 420 });
+          doc.fontSize(8).font('Helvetica').fillColor('#999').text(`Fecha: ${cambio.fecha} | Por: ${cambio.usuario}`, 85, doc.y, { width: 400 });
+          dirY = doc.y + 4;
+        });
+      }
+
+      // Comentarios en este proceso
+      if (proc.comentarios && proc.comentarios.length > 0) {
+        doc.fontSize(9).font('Helvetica-Bold').fillColor('#0f172a').text('Comentarios Agregados:', 70, dirY);
+        dirY = doc.y + 2;
+
+        proc.comentarios.forEach(com => {
+          if (dirY > doc.page.height - 70) {
+            doc.addPage();
+            dirY = 50;
+          }
+
+          doc.rect(75, dirY - 2, 410, 2).fill('#d1d5db');
+          doc.fontSize(8).font('Helvetica').fillColor('#374151').text(`"${com.texto}"`, 80, dirY, { width: 400 });
+          doc.fontSize(7).font('Helvetica').fillColor('#9ca3af').text(`Etapa: ${com.etapa} | ${com.fecha}`, 85, doc.y, { width: 395 });
+          dirY = doc.y + 6;
+        });
+      }
+
+      // Espaciador entre procesos
+      dirY += 5;
+    });
+
+    // Espaciador entre direcciones
+    dirY += 8;
+  });
+
+  doc.addPage();
+
+  // ── PIE DE PÁGINA ──────────────────────────────────────────────────────
+  const pages = doc.bufferedPageRange().count;
+  for (let i = 1; i < pages; i++) {
+    doc.switchToPage(i);
+
+    doc.moveTo(50, doc.page.height - 40).lineTo(doc.page.width - 50, doc.page.height - 40).stroke('#d1d5db');
+
+    doc.fontSize(8).fillColor('#9ca3af');
+    doc.text(
+      'Sistema de Seguimiento POA/PAC 2026 • Detalle de Cambios',
+      50,
+      doc.page.height - 30,
+      { align: 'left', width: 400 }
+    );
+
+    doc.fontSize(8).fillColor('#6b7280');
+    doc.text(
+      `Página ${i + 1} de ${pages}`,
+      450,
+      doc.page.height - 30,
+      { align: 'right', width: 100 }
+    );
+  }
+
+  doc.end();
+}
+
+// POST /api/reportes/generar-informe-detalle-pdf
+router.post('/generar-informe-detalle-pdf', async (req, res) => {
+  try {
+    const scope = getScopeFromReq(req);
+    const { fechaInicio, fechaFin } = req.body || {};
+
+    if (!fechaInicio || !fechaFin) {
+      return res.status(400).json({ error: 'Se requieren fechaInicio y fechaFin' });
+    }
+
+    const subtareas = await mysql.getAllSubtareasByScope(scope);
+    const filtros = getFiltros(req.query);
+    const reporte = construirReporte(subtareas, filtros);
+
+    // Parsear fechas
+    const inicio = new Date(fechaInicio);
+    const fin = new Date(fechaFin);
+    inicio.setHours(0, 0, 0, 0);
+    fin.setHours(23, 59, 59, 999);
+
+    // Obtener auditoría en el período
+    const auditoria = await mysql.getEventosAuditoria({
+      desde: inicio.toISOString().split('T')[0],
+      hasta: fin.toISOString().split('T')[0],
+      limit: 10000
+    });
+
+    // Procesar datos por dirección
+    const porDireccion = {};
+    let totalCambios = 0;
+    let totalComentarios = 0;
+    let ultimaActualizacion = null;
+
+    // Agrupar procesos por dirección
+    reporte.procesos.forEach(proc => {
+      const dir = proc.direccionNombre || 'Sin dirección';
+      if (!porDireccion[dir]) {
+        porDireccion[dir] = {
+          nombre: dir,
+          procesos: [],
+          totalCambios: 0,
+          totalComentarios: 0,
+          ultimaActualizacion: null
+        };
+      }
+
+      const procData = {
+        codigo: proc.codigoOlympo,
+        nombre: proc.nombre,
+        monto: proc.presupuesto,
+        cambios: [],
+        comentarios: []
+      };
+
+      // Obtener etapas de este proceso
+      const etapasDelProceso = reporte.etapas.filter(e =>
+        e.codigoOlympo === proc.codigoOlympo && e.proceso === proc.nombre
+      );
+
+      // Buscar comentarios en etapas
+      etapasDelProceso.forEach(etapa => {
+        if (etapa.observaciones) {
+          procData.comentarios.push({
+            etapa: etapa.etapaNombre,
+            texto: etapa.observaciones,
+            fecha: etapa.fechaReal || etapa.fechaPlanificada
+          });
+          totalComentarios++;
+          porDireccion[dir].totalComentarios++;
+        }
+
+        // Registrar cambios de estado (simulado desde etapas)
+        if (etapa.estado !== 'pendiente') {
+          procData.cambios.push({
+            etapa: etapa.etapaNombre,
+            estadoAnterior: 'pendiente',
+            estadoNuevo: etapa.estado,
+            fecha: etapa.fechaReal || new Date().toLocaleDateString('es-EC'),
+            usuario: etapa.responsableNombre || 'Sistema'
+          });
+          totalCambios++;
+          porDireccion[dir].totalCambios++;
+        }
+      });
+
+      if (procData.cambios.length > 0 || procData.comentarios.length > 0) {
+        porDireccion[dir].procesos.push(procData);
+      }
+    });
+
+    // Obtener última actualización y ordenar dirección
+    const direccionArray = Object.values(porDireccion).map(dir => {
+      if (dir.procesos.length > 0) {
+        const ultimaFecha = Math.max(...dir.procesos.flatMap(p =>
+          [...(p.cambios || []), ...(p.comentarios || [])].map(c =>
+            new Date(c.fecha).getTime()
+          )
+        ));
+        dir.ultimaActualizacion = new Date(ultimaFecha).toLocaleDateString('es-EC');
+      }
+      return dir;
+    });
+
+    // Encontrar la última actualización global
+    const todasLasFechas = direccionArray.flatMap(dir =>
+      dir.procesos.flatMap(p =>
+        [...(p.cambios || []), ...(p.comentarios || [])].map(c => new Date(c.fecha).getTime())
+      )
+    );
+    if (todasLasFechas.length > 0) {
+      ultimaActualizacion = new Date(Math.max(...todasLasFechas)).toLocaleDateString('es-EC');
+    }
+
+    // Últimos ingresos por dirección (ordenados)
+    const ultimosIngresos = direccionArray
+      .filter(d => d.ultimaActualizacion)
+      .sort((a, b) => new Date(b.ultimaActualizacion) - new Date(a.ultimaActualizacion))
+      .map(d => ({
+        direccion: d.nombre,
+        ultimaActualizacion: d.ultimaActualizacion,
+        cambios: d.totalCambios
+      }));
+
+    const datosPDF = {
+      filename: `informe_detalle_${sanitizeFileName(new Date().toISOString().slice(0, 10))}.pdf`,
+      fechaInicio: new Date(inicio).toLocaleDateString('es-EC'),
+      fechaFin: new Date(fin).toLocaleDateString('es-EC'),
+      totalDirecciones: direccionArray.length,
+      totalProcesosConCambios: direccionArray.reduce((sum, d) => sum + d.procesos.length, 0),
+      ultimaActualizacion: ultimaActualizacion || 'N/A',
+      resumen: {
+        totalCambios,
+        totalComentarios
+      },
+      ultimosIngresos,
+      porDireccion: direccionArray
+    };
+
+    generarInformeDetallePDF(res, datosPDF);
+  } catch (error) {
+    console.error('Error en POST /api/reportes/generar-informe-detalle-pdf:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: error.message || 'Error al generar informe de detalle' });
+    }
+  }
+});
+
 export default router;
 

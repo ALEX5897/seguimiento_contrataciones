@@ -3,12 +3,32 @@
     <header class="inf-header">
       <div>
         <h1>Informes Gerenciales</h1>
-        <p>Genera informes PDF detallados con análisis de actividades por período</p>
+        <p>Genera dos tipos de informes PDF: Resumen Ejecutivo o Detalle de Cambios</p>
       </div>
       <span class="scope-tag" :class="auth.isDireccion ? 'scope-dir' : 'scope-global'">
         {{ auth.isDireccion ? auth.user?.direccionNombre || 'Tu dirección' : 'Vista consolidada' }}
       </span>
     </header>
+
+    <!-- Selector de tipo de informe -->
+    <div class="tabs-selector">
+      <button
+        class="tab-button"
+        :class="{ active: tipoInforme === 'ejecutivo' }"
+        @click="tipoInforme = 'ejecutivo'"
+      >
+        <i class="ri-bar-chart-2-line" />
+        Resumen Ejecutivo
+      </button>
+      <button
+        class="tab-button"
+        :class="{ active: tipoInforme === 'detalle' }"
+        @click="tipoInforme = 'detalle'"
+      >
+        <i class="ri-list-details-line" />
+        Detalle de Cambios
+      </button>
+    </div>
 
     <p v-if="errorMsg" class="alert-error">{{ errorMsg }}</p>
     <p v-if="successMsg" class="alert-success">{{ successMsg }}</p>
@@ -16,6 +36,17 @@
     <div class="inf-content">
       <!-- Panel de generación -->
       <div class="panel-generacion">
+        <div class="info-tipo">
+          <h4 v-if="tipoInforme === 'ejecutivo'">📊 Resumen Ejecutivo</h4>
+          <h4 v-else>📋 Detalle de Cambios por Dirección</h4>
+          <p v-if="tipoInforme === 'ejecutivo'">
+            Visión general del cumplimiento, indicadores KPI y análisis de direcciones.
+          </p>
+          <p v-else>
+            Detalle línea por línea de cambios de estado y comentarios agregados en cada proceso.
+          </p>
+        </div>
+
         <div class="form-group">
           <label for="fechaInicio">Fecha de inicio</label>
           <input
@@ -42,14 +73,16 @@
           @click="generarInforme"
         >
           <i class="ri-file-pdf-line" />
-          {{ generando ? 'Generando PDF...' : 'Generar Informe PDF' }}
+          {{ generando ? 'Generando PDF...' : `Generar ${tipoInforme === 'ejecutivo' ? 'Resumen' : 'Detalle'}` }}
         </button>
       </div>
 
       <!-- Vista previa de información -->
       <div class="panel-preview">
-        <h3>Contenido del Informe</h3>
-        <div class="checklist">
+        <h3 v-if="tipoInforme === 'ejecutivo'">Contenido - Resumen Ejecutivo</h3>
+        <h3 v-else>Contenido - Detalle de Cambios</h3>
+
+        <div class="checklist" v-if="tipoInforme === 'ejecutivo'">
           <div class="check-item">
             <i class="ri-checkbox-circle-line" />
             <span>Resumen ejecutivo con indicadores principales</span>
@@ -75,6 +108,33 @@
             <span>Direcciones sin cambios registrados</span>
           </div>
         </div>
+
+        <div class="checklist" v-else>
+          <div class="check-item">
+            <i class="ri-checkbox-circle-line" />
+            <span>Desglose por cada dirección</span>
+          </div>
+          <div class="check-item">
+            <i class="ri-checkbox-circle-line" />
+            <span>Para cada proceso: cambios de estado en etapas</span>
+          </div>
+          <div class="check-item">
+            <i class="ri-checkbox-circle-line" />
+            <span>Comentarios agregados en el período</span>
+          </div>
+          <div class="check-item">
+            <i class="ri-checkbox-circle-line" />
+            <span>Fecha de última actualización por dirección</span>
+          </div>
+          <div class="check-item">
+            <i class="ri-checkbox-circle-line" />
+            <span>Cronología de cambios con usuario responsable</span>
+          </div>
+          <div class="check-item">
+            <i class="ri-checkbox-circle-line" />
+            <span>Resumen de actividad total en el período</span>
+          </div>
+        </div>
       </div>
 
       <!-- Historial de generaciones -->
@@ -88,6 +148,7 @@
           <div v-for="(item, idx) in historial" :key="idx" class="historial-item">
             <div class="item-info">
               <span class="item-fecha">{{ item.fecha }}</span>
+              <span class="item-tipo">{{ item.tipo === 'ejecutivo' ? '📊 Resumen' : '📋 Detalle' }}</span>
               <span class="item-periodo">{{ item.periodo }}</span>
             </div>
             <a href="#" class="item-action" @click.prevent="descargarInfomeStorage(idx)">
@@ -107,6 +168,7 @@ import { reportesService } from '../services/api';
 
 const auth = useAuthStore();
 
+const tipoInforme = ref<'ejecutivo' | 'detalle'>('ejecutivo');
 const formData = ref({
   fechaInicio: '',
   fechaFin: ''
@@ -115,7 +177,7 @@ const formData = ref({
 const generando = ref(false);
 const errorMsg = ref('');
 const successMsg = ref('');
-const historial = ref<Array<{ fecha: string; periodo: string; blob?: Blob }>>([]);
+const historial = ref<Array<{ fecha: string; periodo: string; tipo: string; blob?: Blob }>>([]);
 
 onMounted(() => {
   // Establecer rango predeterminado: últimos 30 días
@@ -141,9 +203,9 @@ function cargarHistorial() {
   }
 }
 
-function guardarHistorial(fecha: string, periodo: string) {
+function guardarHistorial(fecha: string, periodo: string, tipo: string) {
   const items = [
-    { fecha: new Date().toLocaleString('es-EC'), periodo },
+    { fecha: new Date().toLocaleString('es-EC'), periodo, tipo },
     ...historial.value
   ].slice(0, 5);
 
@@ -187,7 +249,11 @@ async function generarInforme() {
       headers['Authorization'] = `Bearer ${auth.token}`;
     }
 
-    const response = await fetch('/api/reportes/generar-informe-pdf', {
+    const endpoint = tipoInforme.value === 'ejecutivo'
+      ? '/api/reportes/generar-informe-pdf'
+      : '/api/reportes/generar-informe-detalle-pdf';
+
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -203,12 +269,13 @@ async function generarInforme() {
 
     const blob = await response.blob();
     const fecha = new Date().toISOString().slice(0, 10);
-    const filename = `informe_${fecha}.pdf`;
+    const suffix = tipoInforme.value === 'ejecutivo' ? 'resumen' : 'detalle';
+    const filename = `informe_${suffix}_${fecha}.pdf`;
 
     descargarBlob(blob, filename);
 
     const periodo = `${formData.value.fechaInicio} al ${formData.value.fechaFin}`;
-    guardarHistorial(new Date().toLocaleString('es-EC'), periodo);
+    guardarHistorial(new Date().toLocaleString('es-EC'), periodo, tipoInforme.value);
 
     successMsg.value = '✓ Informe generado exitosamente';
     setTimeout(() => { successMsg.value = ''; }, 3000);
@@ -265,6 +332,68 @@ function descargarInfomeStorage(idx: number) {
 
 .scope-global { background: #eff6ff; color: #1e3a8a; }
 .scope-dir { background: #ecfdf5; color: #166534; }
+
+/* Selector de tabs */
+.tabs-selector {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  background: #fff;
+  padding: 0.75rem;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-button:hover {
+  border-color: #1a5fad;
+  background: #eff6ff;
+}
+
+.tab-button.active {
+  background: #1a5fad;
+  border-color: #1a5fad;
+  color: #fff;
+}
+
+.tab-button i {
+  font-size: 1.1rem;
+}
+
+/* Panel info tipo informe */
+.info-tipo {
+  background: #eff6ff;
+  border-left: 4px solid #1a5fad;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.info-tipo h4 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+  color: #1a5fad;
+}
+
+.info-tipo p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
 
 .alert-error {
   padding: 0.75rem 1rem;
@@ -446,12 +575,18 @@ function descargarInfomeStorage(idx: number) {
 .item-info {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.3rem;
 }
 
 .item-fecha {
   font-size: 0.8rem;
   color: #94a3b8;
+}
+
+.item-tipo {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1a5fad;
 }
 
 .item-periodo {
