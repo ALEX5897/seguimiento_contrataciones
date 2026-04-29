@@ -37,10 +37,22 @@ const router = createRouter({
       meta: { requiresAuth: true, permissionModule: 'reportes', permissionAction: 'read', menuKey: 'reportes' }
     },
     {
+      path: '/informes',
+      name: 'informes',
+      component: () => import('../views/Informes.vue'),
+      meta: { requiresAuth: true, permissionModule: 'reportes', permissionAction: 'read', menuKey: 'reportes' }
+    },
+    {
       path: '/notificaciones',
       name: 'notificaciones',
       component: () => import('../views/AdminNotificaciones.vue'),
       meta: { requiresAuth: true, permissionModule: 'notificaciones', permissionAction: 'read', menuKey: 'notificaciones' }
+    },
+    {
+      path: '/chat-ia',
+      name: 'chat-ia',
+      component: () => import('../views/ChatIA.vue'),
+      meta: { requiresAuth: true, permissionModule: 'chat_ia', permissionAction: 'read', menuKey: 'chat_ia' }
     },
     {
       path: '/admin/actividades',

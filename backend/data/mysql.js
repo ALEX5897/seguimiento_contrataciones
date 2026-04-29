@@ -8,14 +8,6 @@ const envLoaded = dotenv.config({ path: ENV_PATH });
 if (envLoaded.error) {
   throw new Error('No se pudo cargar el archivo .env en ' + ENV_PATH);
 }
-// Log de depuración para conexión MySQL
-console.log('--- MySQL ENV DEBUG ---');
-console.log('DB_HOST:', process.env.DB_HOST);
-console.log('DB_PORT:', process.env.DB_PORT);
-console.log('DB_USER:', process.env.DB_USER);
-console.log('DB_PASSWORD:', process.env.DB_PASSWORD ? '(set)' : '(empty)');
-console.log('DB_NAME:', process.env.DB_NAME);
-console.log('-----------------------');
 
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
@@ -57,6 +49,7 @@ const DEFAULT_PERMISSION_MODULES = [
   { clave: 'admin_permisos', nombre: 'Admin Permisos', descripcion: 'Administración de permisos y menús', orden: 70 },
   { clave: 'admin_auditoria', nombre: 'Admin Auditoría', descripcion: 'Consulta de trazabilidad y bitácora de cambios', orden: 75 },
   { clave: 'notificaciones', nombre: 'Notificaciones', descripcion: 'Consulta y gestión de notificaciones', orden: 80 },
+  { clave: 'chat_ia', nombre: 'Chat IA', descripcion: 'Asistente conversacional para apoyo operativo', orden: 85 },
   { clave: 'estados', nombre: 'Estados', descripcion: 'Consulta de estados de seguimiento', orden: 90 },
   { clave: 'admin_actividades', nombre: 'Admin Procesos', descripcion: 'Configuración administrativa de procesos', orden: 100 },
   { clave: 'admin_versiones', nombre: 'Admin Versiones', descripcion: 'Operaciones administrativas de versiones', orden: 110 }
@@ -66,7 +59,9 @@ const DEFAULT_PERMISSION_MENU = [
   { clave: 'dashboard', nombre: 'Dashboard', ruta: '/', orden: 10 },
   { clave: 'actividades', nombre: 'Procesos', ruta: '/actividades', orden: 20 },
   { clave: 'reportes', nombre: 'Reportes', ruta: '/reportes', orden: 30 },
+  { clave: 'informes', nombre: 'Informes Gerenciales', ruta: '/informes', orden: 31 },
   { clave: 'notificaciones', nombre: 'Notificaciones', ruta: '/notificaciones', orden: 35 },
+  { clave: 'chat_ia', nombre: 'Chat IA', ruta: '/chat-ia', orden: 36 },
   { clave: 'admin_actividades', nombre: 'Admin Procesos', ruta: '/admin/actividades', orden: 40 },
   { clave: 'admin_versiones', nombre: 'Admin Versiones', ruta: '/admin/versiones', orden: 50 },
   { clave: 'admin_usuarios', nombre: 'Admin Usuarios', ruta: '/admin/usuarios', orden: 60 },
@@ -79,7 +74,9 @@ const MENU_TO_MODULE_PERMISSION = {
   dashboard: 'dashboard',
   actividades: 'actividades',
   reportes: 'reportes',
+  informes: 'reportes',
   notificaciones: 'notificaciones',
+  chat_ia: 'chat_ia',
   admin_actividades: 'admin_actividades',
   admin_versiones: 'admin_versiones',
   admin_usuarios: 'admin_usuarios',
@@ -110,6 +107,7 @@ const ROLE_PERMISSION_DEFAULTS = {
       admin_permisos: { read: false, create: false, update: false, delete: false },
       admin_auditoria: { read: false, create: false, update: false, delete: false },
       notificaciones: { read: true, create: false, update: true, delete: false },
+      chat_ia: { read: true, create: true, update: false, delete: false },
       estados: { read: true, create: false, update: false, delete: false },
       admin_actividades: { read: false, create: false, update: false, delete: false },
       admin_versiones: { read: false, create: false, update: false, delete: false }
@@ -119,6 +117,7 @@ const ROLE_PERMISSION_DEFAULTS = {
       actividades: true,
       reportes: true,
       notificaciones: true,
+      chat_ia: true,
       admin_actividades: false,
       admin_versiones: false,
       admin_usuarios: false,
@@ -138,6 +137,7 @@ const ROLE_PERMISSION_DEFAULTS = {
       admin_permisos: { read: false, create: false, update: false, delete: false },
       admin_auditoria: { read: false, create: false, update: false, delete: false },
       notificaciones: { read: true, create: false, update: true, delete: false },
+      chat_ia: { read: true, create: true, update: false, delete: false },
       estados: { read: true, create: false, update: false, delete: false },
       admin_actividades: { read: false, create: false, update: false, delete: false },
       admin_versiones: { read: false, create: false, update: false, delete: false }
@@ -147,6 +147,7 @@ const ROLE_PERMISSION_DEFAULTS = {
       actividades: true,
       reportes: true,
       notificaciones: true,
+      chat_ia: true,
       admin_actividades: false,
       admin_versiones: false,
       admin_usuarios: false,

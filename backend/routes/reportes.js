@@ -1,23 +1,105 @@
+﻿
 import express from 'express';
 import XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import * as mysql from '../data/mysql.js';
+import { getScopeFromReq, normalizeText, parseDateOnly, obtenerEstadoProceso, obtenerPresupuestoProceso, procesoCuentaEnReporte } from '../utils/helpers.js';
 
 const router = express.Router();
 
-function getScopeFromReq(req) {
-  return {
-    role: req.user?.role,
-    direccionNombre: req.user?.direccionNombre || null
-  };
-}
+// Reporte personalizado por direcciones y columnas seleccionadas
+router.get('/export/xlsx/personalizado', async (req, res) => {
+  try {
+    const scope = getScopeFromReq(req);
+    const subtareas = await mysql.getAllSubtareasByScope(scope);
+    // Filtros: direcciones (array), datos (array de columnas)
+    const filtros = {
+      ...getFiltros(req.query),
+      direcciones: Array.isArray(req.query.direcciones)
+        ? req.query.direcciones
+        : (req.query.direcciones ? [req.query.direcciones] : []),
+      datos: Array.isArray(req.query.datos)
+        ? req.query.datos
+        : (req.query.datos ? [req.query.datos] : [])
+    };
 
-function normalizarTexto(value) {
-  return String(value ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim();
-}
+    // Filtrar por direcciones si corresponde
+    let procesos = construirReporte(subtareas, filtros).procesos;
+    if (filtros.direcciones && filtros.direcciones.length > 0) {
+      const direccionesNorm = filtros.direcciones.map((d) => String(d).trim().toLowerCase());
+      procesos = procesos.filter((p) => direccionesNorm.includes(String(p.direccionNombre).trim().toLowerCase()));
+    }
+
+    // Columnas disponibles y mapeo
+    const columnasDisponibles = {
+      codigoOlympo: { label: 'Código Olimpo', value: (p) => p.codigoOlympo },
+      nombre: { label: 'Proceso', value: (p) => p.nombre },
+      direccionNombre: { label: 'Dirección', value: (p) => p.direccionNombre },
+      responsableNombre: { label: 'Responsable', value: (p) => p.responsableNombre },
+      tipoPlan: { label: 'Tipo de plan', value: (p) => p.tipoPlan },
+      estadoGeneralLabel: { label: 'Estado', value: (p) => p.estadoGeneralLabel },
+      porcentajeAvance: { label: 'Avance %', value: (p) => p.porcentajeAvance },
+      totalEtapas: { label: 'Verificables', value: (p) => p.totalEtapas },
+      atrasadas: { label: 'Atrasadas', value: (p) => p.atrasadas },
+      presupuesto: { label: 'Presupuesto', value: (p) => p.presupuesto },
+      costoReforma2: { label: 'Costo reforma 2', value: (p) => p.costoReforma2 },
+      proximaEtapa: { label: 'Próxima etapa', value: (p) => p.proximaEtapa },
+      completadas: { label: 'Completadas', value: (p) => p.completadas },
+      enProceso: { label: 'En proceso', value: (p) => p.enProceso },
+      pendientes: { label: 'Pendientes', value: (p) => p.pendientes },
+      vencenHoy: { label: 'Vencen hoy', value: (p) => p.vencenHoy },
+      activo: { label: 'Activo', value: (p) => p.activo ? 'Sí' : 'No' }
+    };
+
+    // Si no se selecciona ninguna columna, usar todas
+    let columnas = Object.keys(columnasDisponibles);
+    if (Array.isArray(filtros.datos) && filtros.datos.length > 0) {
+      // Mapear los nombres amigables a claves internas
+      const map = {
+        procesos: 'nombre',
+        verificables: 'totalEtapas',
+        cumplimiento: 'porcentajeAvance',
+        presupuesto: 'presupuesto',
+        atrasadas: 'atrasadas',
+        responsable: 'responsableNombre',
+        tipoPlan: 'tipoPlan',
+        estado: 'estadoGeneralLabel',
+        codigoOlympo: 'codigoOlympo',
+        fechas: 'proximaEtapa',
+      };
+      columnas = filtros.datos.map((d) => map[d] || d).filter((c) => columnasDisponibles[c]);
+      if (columnas.length === 0) columnas = Object.keys(columnasDisponibles);
+    }
+
+    // Construir filas
+    const filas = procesos.map((p) => {
+      const fila = {};
+      columnas.forEach((col) => {
+        fila[columnasDisponibles[col].label] = columnasDisponibles[col].value(p);
+      });
+      return fila;
+    });
+
+    // Generar XLSX
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(filas);
+    ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: filas.length, c: columnas.length - 1 } }) };
+    XLSX.utils.book_append_sheet(wb, ws, 'Personalizado');
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const suffix = sanitizeFileName(`${(filtros.direcciones && filtros.direcciones.join('_')) || 'todas'}_${new Date().toISOString().slice(0, 10)}`);
+    const filename = `reporte_personalizado_${suffix}.xlsx`;
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
+  } catch (error) {
+    console.error('Error en GET /api/reportes/export/xlsx/personalizado:', error);
+    res.status(500).json({ error: error.message || 'Error al exportar reporte personalizado en XLSX' });
+  }
+});
+
+// ---- Utilidades y funciones auxiliares ----
+const normalizarTexto = normalizeText;
 
 function normalizarEstado(value) {
   const estado = normalizarTexto(value).replace(/\s+/g, '_');
@@ -42,27 +124,6 @@ function estadoLabel(value) {
     default:
       return 'Pendiente';
   }
-}
-
-function parseDateOnly(value) {
-  if (!value) return null;
-
-  if (value instanceof Date) {
-    const date = new Date(value.getTime());
-    date.setHours(0, 0, 0, 0);
-    return date;
-  }
-
-  const text = String(value).trim();
-  const match = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (match) {
-    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 0, 0, 0, 0);
-  }
-
-  const date = new Date(text);
-  if (Number.isNaN(date.getTime())) return null;
-  date.setHours(0, 0, 0, 0);
-  return date;
 }
 
 function formatDate(value) {
@@ -101,33 +162,6 @@ function getFiltros(query = {}) {
     tipoPlan: String(query.tipoPlan || '').trim(),
     estado: String(query.estado || '').trim()
   };
-}
-
-function obtenerEstadoProcesoReporte(subtarea) {
-  const valor = subtarea?.activo;
-  if (valor === undefined || valor === null || valor === '') return 1;
-  if (typeof valor === 'number') {
-    if (valor === 2) return 2;
-    return valor === 0 ? 0 : 1;
-  }
-  if (typeof valor === 'boolean') return valor ? 1 : 0;
-
-  const normalizado = String(valor).trim().toLowerCase();
-  if (['2', 'desierto'].includes(normalizado)) return 2;
-  if (['0', 'false', 'inactivo'].includes(normalizado)) return 0;
-  return 1;
-}
-
-function obtenerPresupuestoReporte(subtarea) {
-  const valor = Number(subtarea?.presupuesto || subtarea?.presupuesto2026Inicial || 0);
-  return Number.isFinite(valor) ? valor : 0;
-}
-
-function procesoCuentaEnReporte(subtarea) {
-  const estado = obtenerEstadoProcesoReporte(subtarea);
-  if (estado === 0) return false;
-  if (estado === 1 && obtenerPresupuestoReporte(subtarea) <= 0) return false;
-  return true;
 }
 
 function calcularResumenProceso(subtarea, hoy) {
@@ -201,9 +235,9 @@ function calcularResumenProceso(subtarea, hoy) {
     direccionNombre: String(subtarea?.direccionNombre || ''),
     responsableNombre: String(subtarea?.responsableNombre || ''),
     tipoPlan: String(subtarea?.tipoPlan || subtarea?.pacNoPac || ''),
-    presupuesto: obtenerPresupuestoReporte(subtarea),
+    presupuesto: obtenerPresupuestoProceso(subtarea),
     costoReforma2: Number(subtarea?.costoReforma2 || subtarea?.costo2026 || 0),
-    activo: obtenerEstadoProcesoReporte(subtarea) !== 0,
+    activo: obtenerEstadoProceso(subtarea) !== 0,
     totalEtapas,
     completadas,
     enProceso,
@@ -648,4 +682,600 @@ router.get('/export/xlsx/contrato-adjudicacion', async (req, res) => {
   }
 });
 
+
+// ── WHITELIST de campos exportables ─────────────────────────────────────────
+const CAMPOS_DISPONIBLES = [
+  { key: 'codigoOlympo',           label: 'Código Olimpo',           tipo: 'text',     grupo: 'Proceso' },
+  { key: 'nombre',                  label: 'Proceso',                  tipo: 'text',     grupo: 'Proceso' },
+  { key: 'direccionNombre',         label: 'Dirección',               tipo: 'text',     grupo: 'Proceso' },
+  { key: 'responsableNombre',       label: 'Responsable',             tipo: 'text',     grupo: 'Proceso' },
+  { key: 'tipoPlan',                label: 'Tipo plan',               tipo: 'text',     grupo: 'Proceso' },
+  { key: 'cuatrimestre',            label: 'Cuatrimestre',            tipo: 'text',     grupo: 'Proceso' },
+  { key: 'plazoContrato',           label: 'Plazo contrato',          tipo: 'text',     grupo: 'Proceso' },
+  { key: 'procedimientoSugerido',   label: 'Procedimiento sugerido',  tipo: 'text',     grupo: 'Proceso' },
+  { key: 'partidaPresupuestaria',   label: 'Partida presupuestaria',  tipo: 'text',     grupo: 'Proceso' },
+  { key: 'fechaInicio',             label: 'Fecha inicio',            tipo: 'fecha',    grupo: 'Proceso' },
+  { key: 'fechaFin',                label: 'Fecha fin',               tipo: 'fecha',    grupo: 'Proceso' },
+  { key: 'activo',                  label: 'Activo',                  tipo: 'boolean',  grupo: 'Proceso' },
+  { key: 'procesoEnRiesgo',         label: 'En riesgo',               tipo: 'boolean',  grupo: 'Proceso' },
+  { key: 'observaciones',           label: 'Observaciones',           tipo: 'text',     grupo: 'Proceso' },
+  { key: 'presupuesto',             label: 'Presupuesto inicial',     tipo: 'moneda',   grupo: 'Presupuesto' },
+  { key: 'costoReforma2',           label: 'Costo 2026',              tipo: 'moneda',   grupo: 'Presupuesto' },
+  { key: 'estadoGeneralLabel',      label: 'Estado',                  tipo: 'text',     grupo: 'Seguimiento' },
+  { key: 'porcentajeAvance',        label: 'Avance %',                tipo: 'numero',   grupo: 'Seguimiento' },
+  { key: 'totalEtapas',             label: 'Verificables',            tipo: 'numero',   grupo: 'Seguimiento' },
+  { key: 'completadas',             label: 'Completadas',             tipo: 'numero',   grupo: 'Seguimiento' },
+  { key: 'enProceso',               label: 'En proceso',              tipo: 'numero',   grupo: 'Seguimiento' },
+  { key: 'pendientes',              label: 'Pendientes',              tipo: 'numero',   grupo: 'Seguimiento' },
+  { key: 'atrasadas',               label: 'Atrasadas',               tipo: 'numero',   grupo: 'Seguimiento' },
+  { key: 'vencenHoy',               label: 'Vencen hoy',             tipo: 'numero',   grupo: 'Seguimiento' },
+  { key: 'proximaEtapa',            label: 'Próxima etapa',           tipo: 'text',     grupo: 'Seguimiento' },
+];
+
+const WHITELIST_KEYS = new Set(CAMPOS_DISPONIBLES.map((c) => c.key));
+
+// GET /api/reportes/campos → devuelve el catálogo de campos exportables
+router.get('/campos', (_req, res) => {
+  res.json(CAMPOS_DISPONIBLES);
+});
+
+// Extrae el valor de un campo del objeto proceso ya procesado
+function extractCampoValue(proceso, campoKey) {
+  switch (campoKey) {
+    case 'activo':        return proceso.activo ? 'Sí' : 'No';
+    case 'procesoEnRiesgo': return proceso.procesoEnRiesgo ? 'Sí' : 'No';
+    default:              return proceso[campoKey] ?? '';
+  }
+}
+
+function formatFecha(value) {
+  const d = parseDateOnly(value);
+  if (!d) return '';
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+// Construye proceso enriquecido para exportación (combina subtarea + resumen)
+function enriquecerProceso(subtarea) {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const resumen = calcularResumenProceso(subtarea, hoy);
+  return {
+    ...resumen,
+    cuatrimestre:           String(subtarea.cuatrimestre || ''),
+    plazoContrato:          String(subtarea.plazoContrato || ''),
+    procedimientoSugerido:  String(subtarea.procedimientoSugerido || ''),
+    partidaPresupuestaria:  String(subtarea.partidaPresupuestaria || ''),
+    fechaInicio:            formatFecha(subtarea.fechaInicio),
+    fechaFin:               formatFecha(subtarea.fechaFin),
+    procesoEnRiesgo:        Boolean(subtarea.procesoEnRiesgo),
+    observaciones:          String(subtarea.observaciones || ''),
+  };
+}
+
+// Columnas fijas para el modo verificables
+const COLS_VERIFICABLES = [
+  { key: '_etapaNombre',        label: 'Verificable',        tipo: 'text',   width: 32 },
+  { key: '_etapaOrden',         label: 'Orden',              tipo: 'numero', width: 10 },
+  { key: '_etapaEstado',        label: 'Estado verificable', tipo: 'text',   width: 20 },
+  { key: '_etapaFechaPlan',     label: 'Fecha planificada',  tipo: 'fecha',  width: 18 },
+  { key: '_etapaFechaReforma',  label: 'Fecha reforma',      tipo: 'fecha',  width: 16 },
+  { key: '_etapaFechaReal',     label: 'Fecha real',         tipo: 'fecha',  width: 16 },
+  { key: '_etapaDiasAtraso',    label: 'Días atraso',        tipo: 'numero', width: 14 },
+];
+
+// Expande un proceso en sus verificables
+function expandirEnVerificables(proceso) {
+  const etapas = proceso.etapasDetalle || [];
+  if (etapas.length === 0) {
+    return [{ ...proceso, _etapaNombre: '', _etapaOrden: '', _etapaEstado: '', _etapaFechaPlan: '', _etapaFechaReforma: '', _etapaFechaReal: '', _etapaDiasAtraso: 0 }];
+  }
+  return etapas.map((e) => ({
+    ...proceso,
+    _etapaNombre:       String(e.etapaNombre || ''),
+    _etapaOrden:        Number(e.orden || 0),
+    _etapaEstado:       estadoLabel(String(e.estado || 'pendiente')),
+    _etapaFechaPlan:    String(e.fechaPlanificada || ''),
+    _etapaFechaReforma: String(e.fechaReforma || ''),
+    _etapaFechaReal:    String(e.fechaReal || ''),
+    _etapaDiasAtraso:   Number(e.diasAtraso || 0),
+  }));
+}
+
+// POST /api/reportes/generar
+router.post('/generar', async (req, res) => {
+  try {
+    const scope = getScopeFromReq(req);
+    const { areas = 'ALL', campos = [], incluirVerificables = false } = req.body || {};
+
+    // Validar campos contra whitelist
+    const camposValidados = Array.isArray(campos)
+      ? campos.filter((c) => WHITELIST_KEYS.has(String(c)))
+      : [];
+
+    if (camposValidados.length === 0) {
+      return res.status(400).json({ error: 'Debes seleccionar al menos un campo válido.' });
+    }
+
+    const metaCampos = camposValidados.map((k) => CAMPOS_DISPONIBLES.find((c) => c.key === k));
+    const todasColumnas = incluirVerificables ? [...metaCampos, ...COLS_VERIFICABLES] : metaCampos;
+
+    // Obtener datos respetando scope del usuario
+    const subtareas = await mysql.getAllSubtareasByScope(scope);
+
+    let procesosBase = subtareas
+      .filter((s) => procesoCuentaEnReporte(s))
+      .map(enriquecerProceso);
+
+    if (areas !== 'ALL' && Array.isArray(areas) && areas.length > 0) {
+      const areasNorm = areas.map((a) => String(a).trim().toLowerCase());
+      procesosBase = procesosBase.filter((p) =>
+        areasNorm.includes(String(p.direccionNombre || '').trim().toLowerCase())
+      );
+    }
+
+    // Expandir en verificables si aplica
+    const filas = incluirVerificables
+      ? procesosBase.flatMap(expandirEnVerificables)
+      : procesosBase;
+
+    // ── Generar Excel con ExcelJS ──────────────────────────────────────────
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'Sistema Seguimiento Contrataciones';
+    wb.created = new Date();
+
+    const COLOR_HEADER_BG  = '0F2F55';
+    const COLOR_HEADER_FG  = 'FFFFFF';
+    const COLOR_VERIF_BG   = '0F5132'; // verde oscuro para columnas de verificables
+    const COLOR_MONEDA_BG  = 'EEF4FF';
+    const COLOR_ALT_BG     = 'F8FAFC';
+
+    const ws = wb.addWorksheet('Reporte', {
+      views: [{ state: 'frozen', ySplit: 1 }]
+    });
+
+    const maxWidths = todasColumnas.map((m) => Math.max(m.label.length + 4, m.width || getDefaultWidth(m.tipo)));
+
+    ws.columns = todasColumnas.map((meta, i) => ({
+      header: meta.label,
+      key: meta.key,
+      width: maxWidths[i]
+    }));
+
+    // Estilo encabezados
+    const headerRow = ws.getRow(1);
+    headerRow.eachCell((cell, colIdx) => {
+      const isVerif = incluirVerificables && colIdx > metaCampos.length;
+      cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: isVerif ? COLOR_VERIF_BG : COLOR_HEADER_BG } };
+      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      cell.border = { bottom: { style: 'medium', color: { argb: isVerif ? '198754' : '2F6EB0' } } };
+    });
+    headerRow.height = 22;
+
+    // Filas de datos
+    filas.forEach((fila, rowIdx) => {
+      const rowData = {};
+      todasColumnas.forEach((meta, colIdx) => {
+        const raw = extractCampoValue(fila, meta.key);
+        rowData[meta.key] = formatCellValue(raw, meta.tipo);
+        const strLen = String(raw || '').length;
+        if (strLen + 2 > maxWidths[colIdx]) maxWidths[colIdx] = Math.min(strLen + 2, 60);
+      });
+
+      const dataRow = ws.addRow(rowData);
+      dataRow.height = 18;
+
+      if (rowIdx % 2 === 1) {
+        dataRow.eachCell({ includeEmpty: true }, (cell) => {
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_ALT_BG } };
+        });
+      }
+
+      todasColumnas.forEach((meta, colIdx) => {
+        const cell = dataRow.getCell(colIdx + 1);
+        applyColumnFormat(cell, meta.tipo, fila[meta.key]);
+
+        if (meta.tipo === 'moneda') {
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_MONEDA_BG } };
+        }
+
+        cell.alignment = { vertical: 'middle', horizontal: getAlign(meta.tipo) };
+        cell.border = { bottom: { style: 'thin', color: { argb: 'E2E8F0' } } };
+      });
+    });
+
+    ws.columns.forEach((col, i) => { col.width = maxWidths[i] + 1; });
+
+    ws.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: filas.length + 1, column: todasColumnas.length }
+    };
+
+    // ── Hoja Info ──────────────────────────────────────────────────────────
+    const wsMeta = wb.addWorksheet('Info');
+    wsMeta.columns = [{ width: 28 }, { width: 48 }];
+    [
+      ['Reporte generado el', new Date().toLocaleString('es-EC')],
+      ['Modo', incluirVerificables ? 'Por verificable (una fila por etapa)' : 'Por proceso'],
+      ['Áreas incluidas', areas === 'ALL' ? 'Todas' : (Array.isArray(areas) ? areas.join(', ') : areas)],
+      ['Total filas', filas.length],
+      ['Campos exportados', metaCampos.map((m) => m.label).join(', ')],
+    ].forEach(([k, v]) => {
+      const row = wsMeta.addRow([k, v]);
+      row.getCell(1).font = { bold: true };
+    });
+
+    // ── Enviar ─────────────────────────────────────────────────────────────
+    const areasSuffix = areas === 'ALL' ? 'todas' : (Array.isArray(areas) ? areas.slice(0, 2).join('_') : String(areas));
+    const modeSuffix  = incluirVerificables ? '_verificables' : '';
+    const filename    = `reporte_${sanitizeFileName(areasSuffix)}${modeSuffix}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+    const buffer = await wb.xlsx.writeBuffer();
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', buffer.byteLength);
+    res.send(Buffer.from(buffer));
+  } catch (error) {
+    console.error('Error en POST /api/reportes/generar:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: error.message || 'Error al generar el reporte Excel.' });
+    }
+  }
+});
+
+function getDefaultWidth(tipo) {
+  switch (tipo) {
+    case 'moneda':  return 18;
+    case 'fecha':   return 14;
+    case 'numero':  return 12;
+    case 'boolean': return 10;
+    default:        return 20;
+  }
+}
+
+function getAlign(tipo) {
+  switch (tipo) {
+    case 'moneda':
+    case 'numero':  return 'right';
+    case 'boolean': return 'center';
+    default:        return 'left';
+  }
+}
+
+function formatCellValue(raw, tipo) {
+  if (tipo === 'moneda' || tipo === 'numero') {
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : 0;
+  }
+  return raw;
+}
+
+function applyColumnFormat(cell, tipo, rawValue) {
+  switch (tipo) {
+    case 'moneda':
+      cell.numFmt = '"$"#,##0.00';
+      break;
+    case 'numero':
+      cell.numFmt = '#,##0';
+      break;
+    case 'fecha':
+      if (rawValue) cell.numFmt = 'dd/mm/yyyy';
+      break;
+    default:
+      break;
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// MÓDULO DE INFORMES EN PDF (nueva funcionalidad)
+// ──────────────────────────────────────────────────────────────────────────────
+
+import PDFDocument from 'pdfkit';
+
+function generarInformePDF(res, datos) {
+  const doc = new PDFDocument({
+    size: 'A4',
+    margin: 50,
+    bufferPages: true
+  });
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${datos.filename}"`);
+  doc.pipe(res);
+
+  // ── PORTADA ─────────────────────────────────────────────────────────────
+  doc.fontSize(28).font('Helvetica-Bold').text('INFORME DE ACTIVIDADES', { align: 'center' });
+  doc.moveDown(0.3);
+  doc.fontSize(14).font('Helvetica').text('Seguimiento de Contrataciones', { align: 'center' });
+  doc.moveDown(1);
+
+  doc.fontSize(11).text(`Período: ${datos.fechaInicio} al ${datos.fechaFin}`, { align: 'center' });
+  doc.fontSize(10).text(`Generado: ${new Date().toLocaleString('es-EC')}`, { align: 'center' });
+  doc.moveDown(2);
+
+  // Logo/branding area
+  doc.fontSize(9).fillColor('#666666').text('QuitoTurismo - Sistema de Seguimiento POA/PAC 2026', { align: 'center' });
+
+  doc.addPage();
+
+  // ── ÍNDICE ──────────────────────────────────────────────────────────────
+  doc.fontSize(14).font('Helvetica-Bold').fillColor('#000').text('ÍNDICE', 50, 50);
+  doc.fontSize(10).font('Helvetica').moveDown(0.5);
+  const items = [
+    '1. Resumen Ejecutivo',
+    '2. Indicadores Generales',
+    '3. Análisis por Dirección',
+    '4. Etapas Tardías',
+    '5. Direcciones Más Activas',
+    '6. Detalle de Cambios'
+  ];
+  items.forEach((item, i) => {
+    doc.text(item);
+  });
+
+  doc.addPage();
+
+  // ── RESUMEN EJECUTIVO ─────────────────────────────────────────────────
+  doc.fontSize(14).font('Helvetica-Bold').fillColor('#1a5fad').text('1. RESUMEN EJECUTIVO', 50);
+  doc.moveDown(0.3);
+  doc.fontSize(10).font('Helvetica').fillColor('#000');
+
+  const resumen = datos.resumen;
+  const texto = `En el período comprendido entre ${datos.fechaInicio} y ${datos.fechaFin}, se ha registrado un avance general del ${resumen.cumplimientoGeneral}% en los procesos de contratación supervisados. Se han completado ${resumen.completados} de ${resumen.totalVerificables} verificables programados. El presupuesto total administrado alcanza $${formatMonto(resumen.presupuestoTotal)}.`;
+
+  doc.text(texto, { align: 'justify', width: 495 });
+  doc.moveDown(0.5);
+
+  // KPIs principales
+  const kpiBoxWidth = (495 - 10) / 3;
+  const kpiY = doc.y;
+
+  const kpis = [
+    { label: 'Procesos', valor: resumen.totalProcesos },
+    { label: 'Cumplimiento', valor: `${resumen.cumplimientoGeneral}%` },
+    { label: 'Atrasadas', valor: resumen.atrasadas }
+  ];
+
+  kpis.forEach((kpi, idx) => {
+    const x = 50 + idx * (kpiBoxWidth + 5);
+    doc.rect(x, kpiY, kpiBoxWidth, 60).stroke('#e2e8f0');
+    doc.fontSize(20).font('Helvetica-Bold').fillColor('#1a5fad').text(String(kpi.valor), x + 5, kpiY + 15, { width: kpiBoxWidth - 10 });
+    doc.fontSize(9).font('Helvetica').fillColor('#666').text(kpi.label, x + 5, kpiY + 40, { width: kpiBoxWidth - 10 });
+  });
+
+  doc.moveDown(4);
+
+  // ── INDICADORES GENERALES ───────────────────────────────────────────────
+  doc.fontSize(14).font('Helvetica-Bold').fillColor('#1a5fad').text('2. INDICADORES GENERALES');
+  doc.moveDown(0.3);
+  doc.fontSize(9).font('Helvetica').fillColor('#000');
+
+  const tablaIndicadores = [
+    { label: 'Total Procesos', valor: resumen.totalProcesos },
+    { label: 'Total Verificables', valor: resumen.totalVerificables },
+    { label: 'Completados', valor: resumen.completados },
+    { label: 'En Proceso', valor: resumen.enProceso },
+    { label: 'Pendientes', valor: resumen.pendientes },
+    { label: 'Etapas Atrasadas', valor: resumen.atrasadas },
+    { label: 'Cumplimiento %', valor: `${resumen.cumplimientoGeneral}%` },
+    { label: 'Presupuesto Total', valor: `$${formatMonto(resumen.presupuestoTotal)}` }
+  ];
+
+  let currentY = doc.y;
+  tablaIndicadores.forEach((item, idx) => {
+    if (currentY > doc.page.height - 100) {
+      doc.addPage();
+      currentY = 50;
+    }
+    doc.fontSize(9).text(`${item.label}: `, 50, currentY, { width: 200, continued: true }).font('Helvetica-Bold').text(String(item.valor));
+    currentY = doc.y + 5;
+  });
+
+  doc.addPage();
+
+  // ── ANÁLISIS POR DIRECCIÓN ──────────────────────────────────────────────
+  doc.fontSize(14).font('Helvetica-Bold').fillColor('#1a5fad').text('3. ANÁLISIS POR DIRECCIÓN');
+  doc.moveDown(0.5);
+  doc.fontSize(9).font('Helvetica').fillColor('#000');
+
+  const direcciones = datos.porDireccion || [];
+  let dirY = doc.y;
+
+  direcciones.forEach((dir, idx) => {
+    if (dirY > doc.page.height - 150) {
+      doc.addPage();
+      dirY = 50;
+    }
+
+    // Encabezado dirección
+    doc.rect(50, dirY, 495, 20).fill('#ecfdf5');
+    doc.fontSize(11).font('Helvetica-Bold').fillColor('#166534').text(dir.nombre, 60, dirY + 5, { width: 400 });
+    dirY = doc.y + 5;
+
+    // Contratos principales de esta dirección (top 3)
+    const contratos = (dir.contratos || []).slice(0, 3);
+    if (contratos.length > 0) {
+      doc.fontSize(8).font('Helvetica').fillColor('#000').text('Contratos principales:', 60, dirY);
+      dirY = doc.y + 3;
+
+      contratos.forEach(contrato => {
+        const textoContrato = `• ${contrato.nombre} - Monto: $${formatMonto(contrato.monto)} (${contrato.avance}% completado)`;
+        doc.text(textoContrato, 70, dirY, { width: 450 });
+        dirY = doc.y + 3;
+      });
+    }
+
+    // Estadísticas
+    dirY += 5;
+    const statsText = `Procesos: ${dir.procesos} | Verificables: ${dir.verificables} | Completados: ${dir.completados} | Atrasadas: ${dir.atrasadas} | Cumplimiento: ${dir.cumplimiento}%`;
+    doc.fontSize(8).text(statsText, 60, dirY, { width: 450 });
+    dirY = doc.y + 10;
+  });
+
+  doc.addPage();
+
+  // ── ETAPAS TARDÍAS ──────────────────────────────────────────────────────
+  doc.fontSize(14).font('Helvetica-Bold').fillColor('#1a5fad').text('4. ETAPAS TARDÍAS POR DIRECCIÓN');
+  doc.moveDown(0.5);
+  doc.fontSize(9).font('Helvetica').fillColor('#000');
+
+  const etapasTardias = datos.etapasTardias || [];
+  let etapasY = doc.y;
+
+  if (etapasTardias.length === 0) {
+    doc.text('No hay etapas tardías registradas en el período.', 60, etapasY, { fill: '#059669' });
+  } else {
+    etapasTardias.forEach(item => {
+      if (etapasY > doc.page.height - 80) {
+        doc.addPage();
+        etapasY = 50;
+      }
+      const textoEtapa = `${item.direccion} - ${item.proceso}: "${item.etapa}" (${item.diasAtraso} días de atraso)`;
+      doc.text(textoEtapa, 60, etapasY, { width: 450 });
+      etapasY = doc.y + 3;
+    });
+  }
+
+  doc.addPage();
+
+  // ── DIRECCIONES MÁS ACTIVAS ─────────────────────────────────────────────
+  doc.fontSize(14).font('Helvetica-Bold').fillColor('#1a5fad').text('5. DIRECCIONES MÁS ACTIVAS');
+  doc.moveDown(0.5);
+  doc.fontSize(9).font('Helvetica').fillColor('#000');
+
+  const activas = datos.activas || [];
+  let activasY = doc.y;
+
+  activas.forEach((dir, idx) => {
+    const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
+    doc.text(`${medal} ${dir.nombre} - ${dir.cambios} cambios | ${dir.comentarios} comentarios`, 60, activasY);
+    activasY = doc.y + 4;
+  });
+
+  doc.moveDown(1);
+
+  // Direcciones inactivas
+  const inactivas = datos.inactivas || [];
+  if (inactivas.length > 0) {
+    doc.fontSize(11).font('Helvetica-Bold').fillColor('#dc2626').text('Direcciones sin cambios registrados:');
+    doc.moveDown(0.3);
+    doc.fontSize(9).font('Helvetica').fillColor('#000');
+    inactivas.forEach(dir => {
+      doc.text(`• ${dir.nombre}`);
+    });
+  }
+
+  doc.addPage();
+
+  // ── PIE DE PÁGINA EN TODAS LAS PÁGINAS ──────────────────────────────────
+  const pages = doc.bufferedPageRange().count;
+  for (let i = 0; i < pages; i++) {
+    doc.switchToPage(i);
+    doc.fontSize(8).fillColor('#999999').text(
+      `Página ${i + 1} de ${pages}`,
+      50,
+      doc.page.height - 30,
+      { align: 'center' }
+    );
+  }
+
+  doc.end();
+}
+
+function formatMonto(valor) {
+  if (!valor) return '0.00';
+  return Number(valor).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// POST /api/reportes/generar-informe-pdf
+router.post('/generar-informe-pdf', async (req, res) => {
+  try {
+    const scope = getScopeFromReq(req);
+    const { fechaInicio, fechaFin } = req.body || {};
+
+    if (!fechaInicio || !fechaFin) {
+      return res.status(400).json({ error: 'Se requieren fechaInicio y fechaFin' });
+    }
+
+    const subtareas = await mysql.getAllSubtareasByScope(scope);
+    const filtros = getFiltros(req.query);
+    const reporte = construirReporte(subtareas, filtros);
+
+    // Parsear fechas
+    const inicio = new Date(fechaInicio);
+    const fin = new Date(fechaFin);
+    inicio.setHours(0, 0, 0, 0);
+    fin.setHours(23, 59, 59, 999);
+
+    // Obtener auditoría en el período para contar cambios
+    const auditoria = await mysql.getEventosAuditoria({
+      desde: inicio.toISOString().split('T')[0],
+      hasta: fin.toISOString().split('T')[0],
+      limit: 10000
+    });
+
+    const cambiosPorDireccion = {};
+    (auditoria?.events || []).forEach(evt => {
+      const dir = evt.direccionNombre || 'Sin dirección';
+      if (!cambiosPorDireccion[dir]) cambiosPorDireccion[dir] = 0;
+      cambiosPorDireccion[dir]++;
+    });
+
+    // Preparar datos del informe
+    const datosPDF = {
+      filename: `informe_${sanitizeFileName(new Date().toISOString().slice(0, 10))}.pdf`,
+      fechaInicio: new Date(inicio).toLocaleDateString('es-EC'),
+      fechaFin: new Date(fin).toLocaleDateString('es-EC'),
+      resumen: reporte.kpis,
+      porDireccion: reporte.resumenPorDireccion.map(dir => ({
+        nombre: dir.direccionNombre,
+        procesos: dir.totalProcesos,
+        verificables: dir.totalVerificables,
+        completados: dir.completados,
+        atrasadas: dir.atrasadas,
+        cumplimiento: dir.cumplimiento,
+        contratos: reporte.procesos
+          .filter(p => p.direccionNombre === dir.direccionNombre)
+          .sort((a, b) => b.presupuesto - a.presupuesto)
+          .slice(0, 3)
+          .map(p => ({
+            nombre: p.nombre,
+            monto: p.presupuesto,
+            avance: p.porcentajeAvance
+          }))
+      })),
+      etapasTardias: reporte.etapas
+        .filter(e => e.esAtrasada && e.diasAtraso > 0)
+        .slice(0, 10)
+        .map(e => ({
+          direccion: e.direccionNombre,
+          proceso: e.proceso,
+          etapa: e.etapaNombre,
+          diasAtraso: e.diasAtraso
+        })),
+      activas: reporte.resumenPorDireccion
+        .map(dir => ({
+          nombre: dir.direccionNombre,
+          cambios: cambiosPorDireccion[dir.direccionNombre] || 0,
+          comentarios: dir.totalVerificables
+        }))
+        .sort((a, b) => (b.cambios + b.comentarios) - (a.cambios + a.comentarios))
+        .slice(0, 5),
+      inactivas: reporte.resumenPorDireccion
+        .filter(dir => (cambiosPorDireccion[dir.direccionNombre] || 0) === 0 && dir.totalProcesos === 0)
+        .map(dir => ({ nombre: dir.direccionNombre }))
+    };
+
+    generarInformePDF(res, datosPDF);
+  } catch (error) {
+    console.error('Error en POST /api/reportes/generar-informe-pdf:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: error.message || 'Error al generar informe PDF' });
+    }
+  }
+});
+
 export default router;
+
