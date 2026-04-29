@@ -202,6 +202,7 @@ function calcularResumenProceso(subtarea, hoy) {
 
     return {
       subtareaId: Number(subtarea?.id || 0),
+      etapaId: Number(etapa?.etapaId || 0),
       codigoOlympo: String(subtarea?.codigoOlympo || ''),
       proceso: String(subtarea?.nombre || ''),
       direccionNombre: String(subtarea?.direccionNombre || ''),
@@ -1576,6 +1577,17 @@ router.post('/generar-informe-detalle-pdf', async (req, res) => {
       limit: 10000
     });
 
+    // Obtener comentarios de seguimientos_diarios en el período
+    const comentariosPeriodo = await mysql.query(`
+      SELECT sd.subtarea_id, sd.etapa_id, sd.fecha, sd.comentario, sd.responsable
+      FROM seguimientos_diarios sd
+      WHERE sd.fecha >= ? AND sd.fecha <= ?
+      ORDER BY sd.fecha DESC
+    `, [
+      inicio.toISOString().split('T')[0],
+      fin.toISOString().split('T')[0]
+    ]);
+
     // Procesar datos por dirección
     const porDireccion = {};
     let totalCambios = 0;
@@ -1608,31 +1620,67 @@ router.post('/generar-informe-detalle-pdf', async (req, res) => {
         e.codigoOlympo === proc.codigoOlympo && e.proceso === proc.nombre
       );
 
-      // Buscar comentarios en etapas
+      // Procesar cada etapa
       etapasDelProceso.forEach(etapa => {
-        if (etapa.observaciones) {
+        // Validar si la etapa tiene fecha dentro del período
+        const fechaReal = etapa.fechaReal ? parseDateOnly(etapa.fechaReal) : null;
+        const fechaPlanificada = etapa.fechaPlanificada ? parseDateOnly(etapa.fechaPlanificada) : null;
+        const fechaEtapa = fechaReal || fechaPlanificada;
+        const estaDentroDelPeriodo = fechaEtapa && fechaEtapa >= inicio && fechaEtapa <= fin;
+
+        // Incluir comentarios/observaciones de etapa.observaciones
+        if (etapa.observaciones && etapa.observaciones.trim() && estaDentroDelPeriodo) {
+          const fechaComentario = fechaReal
+            ? new Date(fechaReal).toLocaleDateString('es-EC')
+            : (fechaPlanificada ? new Date(fechaPlanificada).toLocaleDateString('es-EC') : new Date().toLocaleDateString('es-EC'));
+
           procData.comentarios.push({
             etapa: etapa.etapaNombre,
             texto: etapa.observaciones,
-            fecha: etapa.fechaReal || etapa.fechaPlanificada
+            fecha: fechaComentario,
+            usuario: etapa.responsableNombre || 'Sistema'
           });
+
           totalComentarios++;
           porDireccion[dir].totalComentarios++;
         }
 
-        // Registrar cambios de estado (simulado desde etapas)
-        if (etapa.estado !== 'pendiente') {
+        // Registrar cambios de estado dentro del período
+        if (etapa.estado !== 'pendiente' && estaDentroDelPeriodo) {
           procData.cambios.push({
             etapa: etapa.etapaNombre,
             estadoAnterior: 'pendiente',
             estadoNuevo: etapa.estado,
-            fecha: etapa.fechaReal || new Date().toLocaleDateString('es-EC'),
+            fecha: fechaReal
+              ? new Date(fechaReal).toLocaleDateString('es-EC')
+              : (fechaPlanificada ? new Date(fechaPlanificada).toLocaleDateString('es-EC') : new Date().toLocaleDateString('es-EC')),
             usuario: etapa.responsableNombre || 'Sistema'
           });
           totalCambios++;
           porDireccion[dir].totalCambios++;
         }
       });
+
+      // Agregar comentarios de seguimientos_diarios que pertenecen a este proceso
+      if (comentariosPeriodo && comentariosPeriodo.length > 0) {
+        comentariosPeriodo.forEach(comentario => {
+          // Buscar si este comentario pertenece a una etapa de este proceso
+          const etapaDelComentario = etapasDelProceso.find(
+            e => e.subtareaId === comentario.subtarea_id && e.etapaId === comentario.etapa_id
+          );
+          if (etapaDelComentario) {
+            procData.comentarios.push({
+              etapa: etapaDelComentario.etapaNombre,
+              texto: comentario.comentario,
+              fecha: new Date(comentario.fecha).toLocaleDateString('es-EC'),
+              usuario: comentario.responsable || 'Sistema'
+            });
+
+            totalComentarios++;
+            porDireccion[dir].totalComentarios++;
+          }
+        });
+      }
 
       if (procData.cambios.length > 0 || procData.comentarios.length > 0) {
         porDireccion[dir].procesos.push(procData);
