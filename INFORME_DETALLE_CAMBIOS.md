@@ -60,79 +60,89 @@ Para **cada dirección**, el informe incluye:
 │ Última actualización: 15/04/2026                   │
 │ Cambios registrados: 8 | Comentarios: 12          │
 └─────────────────────────────────────────────────────┘
+
+Nota: Solo se muestran procesos que recibieron cambios 
+o comentarios en el período seleccionado
 ```
 
 ### B. **Por cada Proceso en la Dirección**
 
 ```
-📋 CONTRATO: Servicios Legales (CÓDIGO: CON-2026-001)
-   Monto: $125,000
+📋 Servicios Legales - $125,000
+Código: CON-2026-001
 
-   ✅ Cambios de Estado:
-      ✅ Etapa: "Presentación de propuesta"
-         Cambio: PENDIENTE → COMPLETADO
-         Fecha: 10/04/2026 | Por: Juan Pérez
-
-      ⏳ Etapa: "Evaluación de propuestas"
-         Cambio: PENDIENTE → EN_PROCESO
-         Fecha: 12/04/2026 | Por: María García
-
-   💬 Comentarios Agregados:
-      "Se requiere documentación adicional para completar la
-       evaluación. El proveedor tiene 5 días para enviar."
-      Etapa: Evaluación de propuestas | 12/04/2026
-
-      "Documentación recibida correctamente. Procesando..."
-      Etapa: Evaluación de propuestas | 14/04/2026
+┌─────────────────────────┬──────────────┬─────────────────────────────────────┬──────────────────────┐
+│ Etapa                   │ Estado       │ Comentario                          │ Fecha/Hora           │
+├─────────────────────────┼──────────────┼─────────────────────────────────────┼──────────────────────┤
+│ Presentación de         │ ✅ Completado│ Se requiere documentación adicional│ 10/04/2026 14:30    │
+│ propuesta               │              │ para completar la evaluación...     │                      │
+├─────────────────────────┼──────────────┼─────────────────────────────────────┼──────────────────────┤
+│                         │              │ Documentación recibida correctamen- │ 12/04/2026 09:15    │
+│                         │              │ te. Procesando...                   │                      │
+├─────────────────────────┼──────────────┼─────────────────────────────────────┼──────────────────────┤
+│ Evaluación de propuestas│ ⏳ En proceso│ Tres propuestas bajo revisión       │ 14/04/2026 11:45    │
+└─────────────────────────┴──────────────┴─────────────────────────────────────┴──────────────────────┘
 ```
 
 ---
 
-## 🔄 Información Incluida por Cambio
+## 🔄 Columnas de la Tabla por Proceso
 
-### Cambios de Estado
+Cada proceso muestra una tabla con 4 columnas:
 
+### Columna 1: **Nombre de la Etapa**
 ```
-Icono: ✅ (Completado) | ⏳ (En proceso) | ⏹ (Pendiente)
-├─ Nombre de la etapa
-├─ Estado anterior → Estado nuevo
-├─ Fecha del cambio (DD/MM/AAAA)
-└─ Usuario responsable del cambio
+Ej: Presentación de propuesta
+    Evaluación de propuestas
+    Adjudicación
 ```
 
-### Comentarios/Observaciones
-
+### Columna 2: **Estado**
 ```
-Icono: 💬
-├─ Texto del comentario (entrecomillado)
-├─ Etapa asociada
-└─ Fecha del comentario
+✅ Completado   (etapa finalizada)
+⏳ En proceso    (etapa en ejecución)
+⏹ Pendiente      (etapa no iniciada)
+```
+
+### Columna 3: **Comentario**
+```
+Texto del comentario o observación agregada
+Si hay múltiples comentarios, se muestran en filas adicionales
+```
+
+### Columna 4: **Fecha/Hora**
+```
+DD/MM/AAAA HH:MM
+Formato: 10/04/2026 14:30
+Solo se muestran etapas modificadas en el período seleccionado
 ```
 
 ---
 
 ## 📊 Datos que Incluye
 
-### De las Etapas/Verificables
-- ✅ Nombre de la etapa
-- ✅ Estado registrado (Pendiente, En proceso, Completado)
-- ✅ Fecha de cambio de estado
-- ✅ Observaciones/comentarios agregados
-- ✅ Usuario responsable
-
-### Por Proceso
-- ✅ Código Olimpo
+### De cada Proceso (Título de Cuadro)
 - ✅ Nombre del proceso
-- ✅ Monto presupuestado
-- ✅ Cronología de cambios
-- ✅ Historial completo de comentarios
+- ✅ Monto presupuestado ($)
+- ✅ Código Olimpo
 
-### Por Dirección
+### De cada Etapa (Tabla)
+- ✅ Nombre de la etapa
+- ✅ Estado actual (Completado, En proceso, Pendiente)
+- ✅ Comentarios agregados (uno o múltiples)
+- ✅ Fecha y hora exacta de cada comentario
+
+### Filtros Aplicados
+- ✅ Solo procesos con cambios O comentarios en el período
+- ✅ Solo etapas modificadas en el período seleccionado
+- ✅ Incluye comentarios de observaciones y seguimientos_diarios
+- ✅ Respeta permisos de scope del usuario (admin ve todo, dirección solo la suya)
+
+### Por Dirección (Encabezado)
 - ✅ Nombre de la dirección
 - ✅ Total de cambios registrados
 - ✅ Total de comentarios
 - ✅ Fecha de última actualización
-- ✅ Todos los procesos con actividad
 
 ---
 
@@ -332,25 +342,32 @@ RESUMEN
 
 DETALLE POR DIRECCIÓN
 
+═══════════════════════════════════════════════════════════════════════════════
 DIRECCIÓN: DAF/TICS
-├─ Cambios: 18 | Comentarios: 35
-├─ 
-├─ PROCESO: Contratación de Software
-│  ├─ Cambios:
-│  │  ├─ Etapa "Definición de requisitos": COMPLETADO (15/04)
-│  │  ├─ Etapa "Evaluación": EN_PROCESO (20/04)
-│  │  └─ Etapa "Adjudicación": PENDIENTE
-│  │
-│  └─ Comentarios:
-│     ├─ "Requisitos revisados por CTO" (15/04)
-│     └─ "Tres propuestas recibidas, evaluando..." (21/04)
-│
-└─ PROCESO: Servicio de Hosting
-   ├─ Cambios:
-   │  └─ Etapa "Contratación": COMPLETADO (25/04)
-   │
-   └─ Comentarios:
-      └─ "Servidor activo, migración en curso" (26/04)
+Última actualización: 29/04/2026 | Cambios: 18 | Comentarios: 35
+═══════════════════════════════════════════════════════════════════════════════
+
+📋 Contratación de Software - $150,000
+Código: CON-2026-001
+
+┌──────────────────────────┬──────────────┬──────────────────────────────────┬──────────────────┐
+│ Etapa                    │ Estado       │ Comentario                       │ Fecha/Hora       │
+├──────────────────────────┼──────────────┼──────────────────────────────────┼──────────────────┤
+│ Definición de requisitos │ ✅ Completado│ Requisitos revisados por CTO     │ 15/04/2026 10:30│
+├──────────────────────────┼──────────────┼──────────────────────────────────┼──────────────────┤
+│ Evaluación de propuestas │ ⏳ En proceso│ Tres propuestas recibidas...     │ 21/04/2026 14:15│
+│                          │              │ Evaluación en progreso           │ 23/04/2026 09:00│
+└──────────────────────────┴──────────────┴──────────────────────────────────┴──────────────────┘
+
+📋 Servicio de Hosting - $85,000
+Código: CON-2026-002
+
+┌──────────────────────────┬──────────────┬──────────────────────────────────┬──────────────────┐
+│ Etapa                    │ Estado       │ Comentario                       │ Fecha/Hora       │
+├──────────────────────────┼──────────────┼──────────────────────────────────┼──────────────────┤
+│ Contratación             │ ✅ Completado│ Servidor activo, migración en... │ 25/04/2026 16:45│
+│                          │              │ Datos migrados correctamente     │ 26/04/2026 11:20│
+└──────────────────────────┴──────────────┴──────────────────────────────────┴──────────────────┘
 
 [Continúa para otras direcciones...]
 ```
