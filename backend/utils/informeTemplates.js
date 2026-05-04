@@ -378,26 +378,66 @@ function generarDetalleComentarios(porDireccion) {
           </p>
         </div>
 
-        ${procesosConComentarios.map(proc => `
-          <div class="comentario-card">
-            <h3 style="color: var(--primary); margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
-              <span>📋 ${proc.nombre}</span>
-              <span style="font-size: 0.7rem; color: #94a3b8;">$${formatearMonto(proc.monto)}</span>
-            </h3>
-            <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.8rem;">
-              <strong>Código:</strong> ${proc.codigo}
-            </p>
+        <table style="width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.85rem;">
+          <thead>
+            <tr style="background: var(--secondary); border: 1px solid var(--border);">
+              <th style="padding: 12px; text-align: left; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Proceso</th>
+              <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Tipo</th>
+              <th style="padding: 12px; text-align: right; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Monto</th>
+              <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Etapa Atrasada</th>
+              <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Días Tarde</th>
+              <th style="padding: 12px; text-align: left; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Último Comentario</th>
+              <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${procesosConComentarios.map(proc => `
+              <tr style="border: 1px solid var(--border);">
+                <td style="padding: 10px; border: 1px solid var(--border); vertical-align: middle;">
+                  <div style="font-weight: 600; color: var(--primary);">${proc.nombre}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-light);">${proc.codigo}</div>
+                </td>
+                <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle;">
+                  <span style="display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; ${
+                    proc.tipoPlan === 'PAC'
+                      ? 'background: #c7d2fe; color: #3730a3;'
+                      : 'background: #ddd6fe; color: #6d28d9;'
+                  }">
+                    ${proc.tipoPlan}
+                  </span>
+                </td>
+                <td style="padding: 10px; border: 1px solid var(--border); text-align: right; vertical-align: middle; font-weight: 600; color: var(--text-main);">
+                  ${formatearMonto(proc.monto)}
+                </td>
+                <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle;">
+                  ${proc.etapaMasAtrasada ? `<span style="font-weight: 600; font-size: 1.1rem;">#${proc.etapaMasAtrasada.numero}</span>` : '<span style="color: #94a3b8;">-</span>'}
+                </td>
+                <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle;">
+                  ${proc.etapaMasAtrasada ? `
+                    <span style="display: inline-block; padding: 4px 10px; border-radius: 6px; background: #fee2e2; color: #991b1b; font-weight: 600; font-size: 0.9rem;">
+                      ${proc.etapaMasAtrasada.diasTarde} días
+                    </span>
+                  ` : '<span style="color: #94a3b8;">-</span>'}
+                </td>
+                <td style="padding: 10px; border: 1px solid var(--border); vertical-align: middle; max-width: 300px;">
+                  <div style="font-size: 0.85rem; color: var(--text-light); line-height: 1.4;">"${proc.ultimoComentario.texto}"</div>
+                </td>
+                <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle; font-size: 0.8rem; color: var(--text-light);">
+                  ${proc.ultimoComentario.fecha}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
 
-            <div class="comentario-texto">
-              "${proc.ultimoComentario.texto}"
-            </div>
-
-            <div class="comentario-meta">
-              <span>📅 ${proc.ultimoComentario.fecha}</span>
-              <span>👤 ${proc.ultimoComentario.usuario}</span>
-            </div>
-          </div>
-        `).join('')}
+        <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+          <p><strong>Notas:</strong></p>
+          <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+            <li>PAC: Plan Anual de Contrataciones</li>
+            <li>Etapa Atrasada: Número de la etapa con mayor retraso</li>
+            <li>Días Tarde: Cantidad de días que ha excedido la fecha planificada</li>
+          </ul>
+        </div>
       </div>
     `;
   }).filter(Boolean).join('');

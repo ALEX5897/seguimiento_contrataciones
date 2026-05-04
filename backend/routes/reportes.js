@@ -1781,15 +1781,31 @@ router.post('/generar-informe-ultimos-comentarios-todos', async (req, res) => {
         // Tomar el más reciente (está ordenado DESC por fecha)
         const ultimoComentario = comentariosDelProceso[0];
 
+        // Calcular etapa más atrasada
+        let etapaMasAtrasada = null;
+        let maxDiasTarde = 0;
+
+        etapasDelProceso.forEach(etapa => {
+          if (etapa.diasTarde > maxDiasTarde) {
+            maxDiasTarde = etapa.diasTarde;
+            etapaMasAtrasada = {
+              numero: etapa.numeroEtapa,
+              diasTarde: etapa.diasTarde
+            };
+          }
+        });
+
         porDireccion[dir].procesos.push({
           codigo: proc.codigoOlympo,
           nombre: proc.nombre,
           monto: proc.presupuesto,
+          tipoPlan: proc.tipoPlan || 'No definido',
           ultimoComentario: {
             texto: ultimoComentario.comentario,
             fecha: new Date(ultimoComentario.fecha).toLocaleDateString('es-EC'),
             usuario: ultimoComentario.responsable || 'Sistema'
-          }
+          },
+          etapaMasAtrasada: etapaMasAtrasada
         });
       }
     });
