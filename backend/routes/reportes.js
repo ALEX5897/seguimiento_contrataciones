@@ -1788,7 +1788,8 @@ router.post('/generar-informe-ultimos-comentarios-todos', async (req, res) => {
         // Obtener última etapa registrada (más reciente por fecha)
         let ultimaEtapaInfo = {
           nombre: 'No definida',
-          fecha: 'No definida'
+          fecha: 'No definida',
+          diasTarde: 0
         };
 
         if (etapasDelProceso.length > 0) {
@@ -1804,6 +1805,7 @@ router.post('/generar-informe-ultimos-comentarios-todos', async (req, res) => {
               if (ultimaEtapa.fechaReal || ultimaEtapa.fechaPlanificada) {
                 ultimaEtapaInfo.fecha = new Date(ultimaEtapa.fechaReal || ultimaEtapa.fechaPlanificada).toLocaleDateString('es-EC');
               }
+              ultimaEtapaInfo.diasTarde = Number(ultimaEtapa.diasTarde) || 0;
             }
           } catch (e) {
             // Si hay error, dejar valores por defecto

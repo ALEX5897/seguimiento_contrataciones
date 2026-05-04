@@ -487,8 +487,7 @@ function generarDetalleComentarios(porDireccion) {
               <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Tipo</th>
               <th style="padding: 12px; text-align: right; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Monto</th>
               <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Cuatrimestre</th>
-              <th style="padding: 12px; text-align: left; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Última Etapa</th>
-              <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Fecha Etapa</th>
+              <th style="padding: 12px; text-align: left; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Última Etapa / Fecha</th>
               <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Días Tarde</th>
               <th style="padding: 12px; text-align: left; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Último Comentario</th>
               <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Fecha Comentario</th>
@@ -516,16 +515,14 @@ function generarDetalleComentarios(porDireccion) {
                 <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle; font-size: 0.9rem;">
                   ${proc.cuatrimestre}
                 </td>
-                <td style="padding: 10px; border: 1px solid var(--border); vertical-align: middle; font-size: 0.85rem;">
-                  ${proc.ultimaEtapa?.nombre || 'No definida'}
-                </td>
-                <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle; font-size: 0.85rem;">
-                  ${proc.ultimaEtapa?.fecha || 'No definida'}
+                <td style="padding: 10px; border: 1px solid var(--border); vertical-align: middle;">
+                  <div style="font-size: 0.85rem; font-weight: 600; color: var(--primary);">${proc.ultimaEtapa?.nombre || 'No definida'}</div>
+                  <div style="font-size: 0.8rem; color: var(--text-light); margin-top: 3px;">${proc.ultimaEtapa?.fecha || 'No definida'}</div>
                 </td>
                 <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle;">
-                  ${proc.etapaPendienteMasAtrasada ? `
+                  ${proc.ultimaEtapa && proc.ultimaEtapa.diasTarde > 0 ? `
                     <span style="display: inline-block; padding: 4px 10px; border-radius: 6px; background: #fee2e2; color: #991b1b; font-weight: 600; font-size: 0.9rem;">
-                      ${proc.etapaPendienteMasAtrasada.diasTarde}
+                      ${proc.ultimaEtapa.diasTarde}
                     </span>
                   ` : '<span style="color: #94a3b8;">-</span>'}
                 </td>
