@@ -347,6 +347,8 @@ function generarHTMLUltimosComentarios(datos) {
 function generarPortadaComentarios(inicio, fin) {
   return `
     <div class="page portada">
+      <img src="https://turismo.quito.gob.ec/wp-content/uploads/2024/06/logoQT-1024x166.png"
+           style="width: 180px; margin-bottom: 2rem; opacity: 0.95;">
       <h1>ÚLTIMOS COMENTARIOS</h1>
       <p class="subtitulo">Seguimiento por Proceso</p>
       <div class="periodo">
@@ -384,8 +386,8 @@ function generarDetalleComentarios(porDireccion) {
               <th style="padding: 12px; text-align: left; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Proceso</th>
               <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Tipo</th>
               <th style="padding: 12px; text-align: right; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Monto</th>
-              <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Etapa Atrasada</th>
-              <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Días Tarde</th>
+              <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Cuatrimestre</th>
+              <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Fecha Contrato</th>
               <th style="padding: 12px; text-align: left; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Último Comentario</th>
               <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Fecha</th>
             </tr>
@@ -409,15 +411,11 @@ function generarDetalleComentarios(porDireccion) {
                 <td style="padding: 10px; border: 1px solid var(--border); text-align: right; vertical-align: middle; font-weight: 600; color: var(--text-main);">
                   ${formatearMonto(proc.monto)}
                 </td>
-                <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle;">
-                  ${proc.etapaMasAtrasada ? `<span style="font-weight: 600; font-size: 1.1rem;">#${proc.etapaMasAtrasada.numero}</span>` : '<span style="color: #94a3b8;">-</span>'}
+                <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle; font-size: 0.9rem;">
+                  ${proc.cuatrimestre}
                 </td>
-                <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle;">
-                  ${proc.etapaMasAtrasada ? `
-                    <span style="display: inline-block; padding: 4px 10px; border-radius: 6px; background: #fee2e2; color: #991b1b; font-weight: 600; font-size: 0.9rem;">
-                      ${proc.etapaMasAtrasada.diasTarde} días
-                    </span>
-                  ` : '<span style="color: #94a3b8;">-</span>'}
+                <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle; font-size: 0.9rem;">
+                  ${proc.fechaContrato}
                 </td>
                 <td style="padding: 10px; border: 1px solid var(--border); vertical-align: middle; max-width: 300px;">
                   <div style="font-size: 0.85rem; color: var(--text-light); line-height: 1.4;">"${proc.ultimoComentario.texto}"</div>
@@ -430,14 +428,17 @@ function generarDetalleComentarios(porDireccion) {
           </tbody>
         </table>
 
-        <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
-          <p><strong>Notas:</strong></p>
-          <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
-            <li>PAC: Plan Anual de Contrataciones</li>
-            <li>Etapa Atrasada: Número de la etapa con mayor retraso</li>
-            <li>Días Tarde: Cantidad de días que ha excedido la fecha planificada</li>
-          </ul>
-        </div>
+        ${procesosConComentarios.some(p => p.etapaPendienteMasAtrasada) ? `
+          <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 1rem; padding: 1rem; border-top: 1px solid var(--border); background: #f8fafc; border-radius: 8px;">
+            <p><strong>Etapa Pendiente con Mayor Atraso:</strong></p>
+            ${procesosConComentarios.filter(p => p.etapaPendienteMasAtrasada).map(proc => `
+              <div style="margin: 0.5rem 0;">
+                <strong>${proc.nombre}</strong> → ${proc.etapaPendienteMasAtrasada.nombre} (${proc.etapaPendienteMasAtrasada.diasTarde} días tarde)
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+
       </div>
     `;
   }).filter(Boolean).join('');

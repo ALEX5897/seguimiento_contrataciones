@@ -1781,31 +1781,50 @@ router.post('/generar-informe-ultimos-comentarios-todos', async (req, res) => {
         // Tomar el más reciente (está ordenado DESC por fecha)
         const ultimoComentario = comentariosDelProceso[0];
 
-        // Calcular etapa más atrasada
-        let etapaMasAtrasada = null;
+        // Obtener cuatrimestre y fecha del contrato
+        const subtarea = subtareas.find(s => s.codigoOlympo === proc.codigoOlympo);
+        const cuatrimestre = subtarea?.cuatrimestre || 'No definido';
+        const fechaContrato = subtarea?.fechaContrato
+          ? new Date(subtarea.fechaContrato).toLocaleDateString('es-EC')
+          : 'No definida';
+
+        // Calcular etapa pendiente más atrasada (excluyendo "REGISTRO DE Información ERP")
+        let etapaPendienteMasAtrasada = null;
         let maxDiasTarde = 0;
 
         etapasDelProceso.forEach(etapa => {
-          if (etapa.diasTarde > maxDiasTarde) {
+          if (etapa.estado === 'pendiente' &&
+              !etapa.nombre.toUpperCase().includes('REGISTRO DE INFORMACIÓN ERP') &&
+              etapa.diasTarde > maxDiasTarde) {
             maxDiasTarde = etapa.diasTarde;
-            etapaMasAtrasada = {
-              numero: etapa.numeroEtapa,
+            etapaPendienteMasAtrasada = {
+              nombre: etapa.nombre,
               diasTarde: etapa.diasTarde
             };
           }
         });
+
+        // Obtener última etapa para fecha alternativa
+        const ultimaEtapa = etapasDelProceso.sort((a, b) =>
+          new Date(b.fechaReal || b.fechaPlanificada) - new Date(a.fechaReal || a.fechaPlanificada)
+        )[0];
+        const fechaUltimaEtapa = ultimaEtapa
+          ? new Date(ultimaEtapa.fechaReal || ultimaEtapa.fechaPlanificada).toLocaleDateString('es-EC')
+          : 'No definida';
 
         porDireccion[dir].procesos.push({
           codigo: proc.codigoOlympo,
           nombre: proc.nombre,
           monto: proc.presupuesto,
           tipoPlan: proc.tipoPlan || 'No definido',
+          cuatrimestre: cuatrimestre,
+          fechaContrato: fechaContrato,
           ultimoComentario: {
             texto: ultimoComentario.comentario,
             fecha: new Date(ultimoComentario.fecha).toLocaleDateString('es-EC'),
             usuario: ultimoComentario.responsable || 'Sistema'
           },
-          etapaMasAtrasada: etapaMasAtrasada
+          etapaPendienteMasAtrasada: etapaPendienteMasAtrasada
         });
       }
     });
