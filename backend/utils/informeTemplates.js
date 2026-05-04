@@ -516,8 +516,9 @@ function generarDetalleComentarios(porDireccion) {
                   ${proc.cuatrimestre}
                 </td>
                 <td style="padding: 10px; border: 1px solid var(--border); vertical-align: middle;">
-                  <div style="font-size: 0.85rem; font-weight: 600; color: var(--primary);">${proc.ultimaEtapa?.nombre || 'No definida'}</div>
-                  <div style="font-size: 0.8rem; color: var(--text-light); margin-top: 3px;">${proc.ultimaEtapa?.fecha || 'No definida'}</div>
+                  <span style="font-size: 0.85rem; color: var(--text-main);">
+                    <strong>${proc.ultimaEtapa?.nombre || 'No definida'}</strong> — ${proc.ultimaEtapa?.fecha || 'No definida'}
+                  </span>
                 </td>
                 <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle;">
                   ${proc.ultimaEtapa && proc.ultimaEtapa.diasTarde > 0 ? `
