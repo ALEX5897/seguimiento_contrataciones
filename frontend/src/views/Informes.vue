@@ -34,6 +34,25 @@
     <p v-if="successMsg" class="alert-success">{{ successMsg }}</p>
 
     <div class="inf-content">
+      <!-- Panel de Últimos Comentarios (sin selección de fechas) -->
+      <div class="panel-ultimos-comentarios">
+        <div class="info-tipo">
+          <h4>💬 Últimos Comentarios de Todos los Procesos</h4>
+          <p>Genera un informe completo con el último comentario de cada proceso sin importar la fecha. Ideal para revisar el estado actual de todos los trabajos.</p>
+        </div>
+
+        <button
+          class="btn-generar-comentarios"
+          :disabled="generandoComentarios"
+          @click="generarUltimosComentarios"
+        >
+          <i class="ri-file-pdf-line" />
+          {{ generandoComentarios ? 'Generando PDF...' : 'Descargar Informe Completo' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="inf-content">
       <!-- Panel de generación -->
       <div class="panel-generacion">
         <div class="info-tipo">
@@ -175,6 +194,7 @@ const formData = ref({
 });
 
 const generando = ref(false);
+const generandoComentarios = ref(false);
 const errorMsg = ref('');
 const successMsg = ref('');
 const historial = ref<Array<{ fecha: string; periodo: string; tipo: string; blob?: Blob }>>([]);
@@ -290,6 +310,49 @@ function descargarInfomeStorage(idx: number) {
   // Nota: localStorage no puede guardar blobs directamente
   // Por ahora, regenerar es la opción
   alert('Por favor, regenera el informe para descargarlo nuevamente');
+}
+
+async function generarUltimosComentarios() {
+  errorMsg.value = '';
+  successMsg.value = '';
+
+  generandoComentarios.value = true;
+
+  try {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json'
+    };
+
+    if (auth.token) {
+      headers['Authorization'] = `Bearer ${auth.token}`;
+    }
+
+    const response = await fetch('/api/reportes/generar-informe-ultimos-comentarios-todos', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({})
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Error al generar el informe');
+    }
+
+    const blob = await response.blob();
+    const fecha = new Date().toISOString().slice(0, 10);
+    const filename = `informe_ultimos_comentarios_${fecha}.pdf`;
+
+    descargarBlob(blob, filename);
+
+    guardarHistorial(new Date().toLocaleString('es-EC'), 'Histórico completo', 'comentarios');
+
+    successMsg.value = '✓ Informe de comentarios generado exitosamente';
+    setTimeout(() => { successMsg.value = ''; }, 3000);
+  } catch (err: any) {
+    errorMsg.value = err?.message || 'No se pudo generar el informe de comentarios';
+  } finally {
+    generandoComentarios.value = false;
+  }
 }
 </script>
 
@@ -618,9 +681,83 @@ function descargarInfomeStorage(idx: number) {
   }
 }
 
+/* Panel de Últimos Comentarios */
+.panel-ultimos-comentarios {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+  border: 2px solid #10b981;
+  border-radius: 14px;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+}
+
+.panel-ultimos-comentarios .info-tipo {
+  background: transparent;
+  border-left: none;
+  flex: 1;
+}
+
+.panel-ultimos-comentarios .info-tipo h4 {
+  color: #047857;
+}
+
+.btn-generar-comentarios {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #10b981;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-generar-comentarios:hover:not(:disabled) {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-generar-comentarios:disabled {
+  background: #d1fae5;
+  color: #047857;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.btn-generar-comentarios i {
+  font-size: 1.1rem;
+}
+
+@media (max-width: 1024px) {
+  .panel-ultimos-comentarios {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .btn-generar-comentarios {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 @media (max-width: 600px) {
   .inf-header {
     flex-direction: column;
+  }
+
+  .panel-ultimos-comentarios {
+    padding: 1rem;
   }
 }
 </style>

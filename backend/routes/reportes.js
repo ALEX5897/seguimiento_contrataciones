@@ -1738,5 +1738,99 @@ router.post('/generar-informe-ultimos-comentarios', async (req, res) => {
   }
 });
 
+// POST /api/reportes/generar-informe-ultimos-comentarios-todos
+// Genera informe de últimos comentarios de TODOS los procesos sin filtro de fechas
+router.post('/generar-informe-ultimos-comentarios-todos', async (req, res) => {
+  let browser;
+  try {
+    const scope = getScopeFromReq(req);
+    const subtareas = await mysql.getAllSubtareasByScope(scope);
+    const filtros = getFiltros(req.query);
+    const reporte = construirReporte(subtareas, filtros);
+
+    // Obtener TODOS los comentarios de todas las fechas
+    const todosLosComentarios = await mysql.query(`
+      SELECT sd.subtarea_id, sd.etapa_id, sd.fecha, sd.comentario, sd.responsable
+      FROM seguimientos_diarios sd
+      ORDER BY sd.subtarea_id, sd.fecha DESC
+    `);
+
+    // Procesar datos por dirección - obtener ÚLTIMO comentario por proceso
+    const porDireccion = {};
+
+    reporte.procesos.forEach(proc => {
+      const dir = proc.direccionNombre || 'Sin dirección';
+      if (!porDireccion[dir]) {
+        porDireccion[dir] = {
+          nombre: dir,
+          procesos: []
+        };
+      }
+
+      // Obtener etapas de este proceso
+      const etapasDelProceso = reporte.etapas.filter(e =>
+        e.codigoOlympo === proc.codigoOlympo && e.proceso === proc.nombre
+      );
+
+      // Buscar el ÚLTIMO comentario de este proceso (de TODOS los comentarios)
+      const comentariosDelProceso = todosLosComentarios.filter(com =>
+        etapasDelProceso.some(e => e.subtareaId === com.subtarea_id && e.etapaId === com.etapa_id)
+      );
+
+      if (comentariosDelProceso.length > 0) {
+        // Tomar el más reciente (está ordenado DESC por fecha)
+        const ultimoComentario = comentariosDelProceso[0];
+
+        porDireccion[dir].procesos.push({
+          codigo: proc.codigoOlympo,
+          nombre: proc.nombre,
+          monto: proc.presupuesto,
+          ultimoComentario: {
+            texto: ultimoComentario.comentario,
+            fecha: new Date(ultimoComentario.fecha).toLocaleDateString('es-EC'),
+            usuario: ultimoComentario.responsable || 'Sistema'
+          }
+        });
+      }
+    });
+
+    const ahora = new Date();
+    const datosPDF = {
+      filename: `informe_ultimos_comentarios_completo_${sanitizeFileName(ahora.toISOString().slice(0, 10))}.pdf`,
+      fechaInicio: 'Histórico completo',
+      fechaFin: ahora.toLocaleDateString('es-EC'),
+      porDireccion: Object.values(porDireccion).filter(d => d.procesos.length > 0)
+    };
+
+    browser = await puppeteer.launch({ headless: 'new' });
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1200, height: 1200 });
+
+    const html = generarHTMLUltimosComentarios(datosPDF);
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' },
+      displayHeaderFooter: false,
+      printBackground: true
+    });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${datosPDF.filename}"`);
+    res.send(pdfBuffer);
+
+  } catch (error) {
+    console.error('Error en POST /api/reportes/generar-informe-ultimos-comentarios-todos:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: error.message || 'Error al generar informe de comentarios' });
+    }
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+  }
+});
+
 export default router;
 
