@@ -1781,17 +1781,33 @@ router.post('/generar-informe-ultimos-comentarios-todos', async (req, res) => {
         // Tomar el más reciente (está ordenado DESC por fecha)
         const ultimoComentario = comentariosDelProceso[0];
 
-        // Obtener cuatrimestre y fecha del contrato
+        // Obtener cuatrimestre
         const subtarea = subtareas.find(s => s.codigoOlympo === proc.codigoOlympo);
         const cuatrimestre = subtarea?.cuatrimestre || 'No definido';
-        let fechaContrato = 'No definida';
 
-        try {
-          if (subtarea?.fechaContrato) {
-            fechaContrato = new Date(subtarea.fechaContrato).toLocaleDateString('es-EC');
+        // Obtener última etapa registrada (más reciente por fecha)
+        let ultimaEtapaInfo = {
+          nombre: 'No definida',
+          fecha: 'No definida'
+        };
+
+        if (etapasDelProceso.length > 0) {
+          const ultimaEtapa = etapasDelProceso.sort((a, b) => {
+            const fechaA = new Date(b.fechaReal || b.fechaPlanificada || 0);
+            const fechaB = new Date(a.fechaReal || a.fechaPlanificada || 0);
+            return fechaA - fechaB;
+          })[0];
+
+          try {
+            if (ultimaEtapa) {
+              ultimaEtapaInfo.nombre = ultimaEtapa.nombre || 'Sin nombre';
+              if (ultimaEtapa.fechaReal || ultimaEtapa.fechaPlanificada) {
+                ultimaEtapaInfo.fecha = new Date(ultimaEtapa.fechaReal || ultimaEtapa.fechaPlanificada).toLocaleDateString('es-EC');
+              }
+            }
+          } catch (e) {
+            // Si hay error, dejar valores por defecto
           }
-        } catch (e) {
-          // Si hay error en la fecha, dejar como no definida
         }
 
         // Calcular etapa pendiente más atrasada (excluyendo "REGISTRO DE Información ERP")
@@ -1813,31 +1829,13 @@ router.post('/generar-informe-ultimos-comentarios-todos', async (req, res) => {
           }
         });
 
-        // Obtener última etapa para fecha alternativa
-        let fechaUltimaEtapa = 'No definida';
-        if (etapasDelProceso.length > 0) {
-          const ultimaEtapa = etapasDelProceso.sort((a, b) => {
-            const fechaA = new Date(b.fechaReal || b.fechaPlanificada || 0);
-            const fechaB = new Date(a.fechaReal || a.fechaPlanificada || 0);
-            return fechaA - fechaB;
-          })[0];
-
-          try {
-            if (ultimaEtapa && (ultimaEtapa.fechaReal || ultimaEtapa.fechaPlanificada)) {
-              fechaUltimaEtapa = new Date(ultimaEtapa.fechaReal || ultimaEtapa.fechaPlanificada).toLocaleDateString('es-EC');
-            }
-          } catch (e) {
-            // Si hay error en la fecha, dejar como no definida
-          }
-        }
-
         porDireccion[dir].procesos.push({
           codigo: proc.codigoOlympo,
           nombre: proc.nombre,
           monto: proc.presupuesto,
           tipoPlan: proc.tipoPlan || 'No definido',
           cuatrimestre: cuatrimestre,
-          fechaContrato: fechaContrato,
+          ultimaEtapa: ultimaEtapaInfo,
           ultimoComentario: {
             texto: ultimoComentario.comentario,
             fecha: new Date(ultimoComentario.fecha).toLocaleDateString('es-EC'),

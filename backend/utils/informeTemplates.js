@@ -487,9 +487,11 @@ function generarDetalleComentarios(porDireccion) {
               <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Tipo</th>
               <th style="padding: 12px; text-align: right; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Monto</th>
               <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Cuatrimestre</th>
-              <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Fecha Contrato</th>
+              <th style="padding: 12px; text-align: left; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Última Etapa</th>
+              <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Fecha Etapa</th>
+              <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Días Tarde</th>
               <th style="padding: 12px; text-align: left; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Último Comentario</th>
-              <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Fecha</th>
+              <th style="padding: 12px; text-align: center; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border);">Fecha Comentario</th>
             </tr>
           </thead>
           <tbody>
@@ -514,10 +516,20 @@ function generarDetalleComentarios(porDireccion) {
                 <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle; font-size: 0.9rem;">
                   ${proc.cuatrimestre}
                 </td>
-                <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle; font-size: 0.9rem;">
-                  ${proc.fechaContrato}
+                <td style="padding: 10px; border: 1px solid var(--border); vertical-align: middle; font-size: 0.85rem;">
+                  ${proc.ultimaEtapa?.nombre || 'No definida'}
                 </td>
-                <td style="padding: 10px; border: 1px solid var(--border); vertical-align: middle; max-width: 300px;">
+                <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle; font-size: 0.85rem;">
+                  ${proc.ultimaEtapa?.fecha || 'No definida'}
+                </td>
+                <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle;">
+                  ${proc.etapaPendienteMasAtrasada ? `
+                    <span style="display: inline-block; padding: 4px 10px; border-radius: 6px; background: #fee2e2; color: #991b1b; font-weight: 600; font-size: 0.9rem;">
+                      ${proc.etapaPendienteMasAtrasada.diasTarde}
+                    </span>
+                  ` : '<span style="color: #94a3b8;">-</span>'}
+                </td>
+                <td style="padding: 10px; border: 1px solid var(--border); vertical-align: middle; max-width: 250px;">
                   <div style="font-size: 0.85rem; color: var(--text-light); line-height: 1.4;">"${proc.ultimoComentario.texto}"</div>
                 </td>
                 <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle; font-size: 0.8rem; color: var(--text-light);">
