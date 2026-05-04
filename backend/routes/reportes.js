@@ -5,7 +5,7 @@ import ExcelJS from 'exceljs';
 import puppeteer from 'puppeteer';
 import * as mysql from '../data/mysql.js';
 import { getScopeFromReq, normalizeText, parseDateOnly, obtenerEstadoProceso, obtenerPresupuestoProceso, procesoCuentaEnReporte } from '../utils/helpers.js';
-import { generarHTMLInformeDetalle } from '../utils/informeTemplates.js';
+import { generarHTMLInformeDetalle, generarHTMLUltimosComentarios } from '../utils/informeTemplates.js';
 
 const router = express.Router();
 
@@ -1626,6 +1626,114 @@ router.post('/generar-informe-detalle-pdf', async (req, res) => {
     console.error('Error en POST /api/reportes/generar-informe-detalle-pdf:', error);
     if (!res.headersSent) {
       res.status(500).json({ error: error.message || 'Error al generar informe de detalle' });
+    }
+  }
+});
+
+// POST /api/reportes/generar-informe-ultimos-comentarios
+router.post('/generar-informe-ultimos-comentarios', async (req, res) => {
+  let browser;
+  try {
+    const scope = getScopeFromReq(req);
+    const { fechaInicio, fechaFin } = req.body || {};
+
+    if (!fechaInicio || !fechaFin) {
+      return res.status(400).json({ error: 'Se requieren fechaInicio y fechaFin' });
+    }
+
+    const subtareas = await mysql.getAllSubtareasByScope(scope);
+    const filtros = getFiltros(req.query);
+    const reporte = construirReporte(subtareas, filtros);
+
+    // Parsear fechas
+    const inicio = new Date(fechaInicio);
+    const fin = new Date(fechaFin);
+    inicio.setHours(0, 0, 0, 0);
+    fin.setHours(23, 59, 59, 999);
+
+    // Obtener todos los comentarios del período
+    const comentariosPeriodo = await mysql.query(`
+      SELECT sd.subtarea_id, sd.etapa_id, sd.fecha, sd.comentario, sd.responsable
+      FROM seguimientos_diarios sd
+      WHERE sd.fecha >= ? AND sd.fecha <= ?
+      ORDER BY sd.subtarea_id, sd.fecha DESC
+    `, [
+      inicio.toISOString().split('T')[0],
+      fin.toISOString().split('T')[0]
+    ]);
+
+    // Procesar datos por dirección - obtener ÚLTIMO comentario por proceso
+    const porDireccion = {};
+
+    reporte.procesos.forEach(proc => {
+      const dir = proc.direccionNombre || 'Sin dirección';
+      if (!porDireccion[dir]) {
+        porDireccion[dir] = {
+          nombre: dir,
+          procesos: []
+        };
+      }
+
+      // Obtener etapas de este proceso
+      const etapasDelProceso = reporte.etapas.filter(e =>
+        e.codigoOlympo === proc.codigoOlympo && e.proceso === proc.nombre
+      );
+
+      // Buscar el ÚLTIMO comentario de este proceso
+      const comentariosDelProceso = comentariosPeriodo.filter(com =>
+        etapasDelProceso.some(e => e.subtareaId === com.subtarea_id && e.etapaId === com.etapa_id)
+      );
+
+      if (comentariosDelProceso.length > 0) {
+        // Tomar el más reciente (está ordenado DESC por fecha)
+        const ultimoComentario = comentariosDelProceso[0];
+
+        porDireccion[dir].procesos.push({
+          codigo: proc.codigoOlympo,
+          nombre: proc.nombre,
+          monto: proc.presupuesto,
+          ultimoComentario: {
+            texto: ultimoComentario.comentario,
+            fecha: new Date(ultimoComentario.fecha).toLocaleDateString('es-EC'),
+            usuario: ultimoComentario.responsable || 'Sistema'
+          }
+        });
+      }
+    });
+
+    const datosPDF = {
+      filename: `informe_ultimos_comentarios_${sanitizeFileName(new Date().toISOString().slice(0, 10))}.pdf`,
+      fechaInicio: new Date(inicio).toLocaleDateString('es-EC'),
+      fechaFin: new Date(fin).toLocaleDateString('es-EC'),
+      porDireccion: Object.values(porDireccion).filter(d => d.procesos.length > 0)
+    };
+
+    browser = await puppeteer.launch({ headless: 'new' });
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1200, height: 1200 });
+
+    const html = generarHTMLUltimosComentarios(datosPDF);
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' },
+      displayHeaderFooter: false,
+      printBackground: true
+    });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${datosPDF.filename}"`);
+    res.send(pdfBuffer);
+
+  } catch (error) {
+    console.error('Error en POST /api/reportes/generar-informe-ultimos-comentarios:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: error.message || 'Error al generar informe de comentarios' });
+    }
+  } finally {
+    if (browser) {
+      await browser.close();
     }
   }
 });

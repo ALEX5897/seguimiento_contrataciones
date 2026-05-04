@@ -299,7 +299,112 @@ function generarPiePagina() {
   `;
 }
 
+function generarHTMLUltimosComentarios(datos) {
+  const { fechaInicio, fechaFin, porDireccion } = datos;
+
+  return `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Informe Últimos Comentarios - QuitoTurismo</title>
+      <style>
+        ${getEstilosGlobales()}
+        .comentario-card {
+          background: #f8fafc;
+          border-left: 4px solid var(--primary);
+          padding: 1.5rem;
+          margin: 1rem 0;
+          border-radius: 0 8px 8px 0;
+        }
+        .comentario-texto {
+          font-style: italic;
+          color: var(--text-light);
+          margin: 0.5rem 0;
+          line-height: 1.6;
+        }
+        .comentario-meta {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.85rem;
+          color: #94a3b8;
+          margin-top: 1rem;
+          padding-top: 1rem;
+          border-top: 1px solid var(--border);
+        }
+      </style>
+    </head>
+    <body>
+      ${generarPortadaComentarios(fechaInicio, fechaFin)}
+      ${generarDetalleComentarios(porDireccion)}
+      ${generarPiePagina()}
+    </body>
+    </html>
+  `;
+}
+
+function generarPortadaComentarios(inicio, fin) {
+  return `
+    <div class="page portada">
+      <h1>ÚLTIMOS COMENTARIOS</h1>
+      <p class="subtitulo">Seguimiento por Proceso</p>
+      <div class="periodo">
+        <p>Desde: <strong>${inicio}</strong> — Hasta: <strong>${fin}</strong></p>
+      </div>
+      <div style="position: absolute; bottom: 50px; opacity: 0.7; font-size: 0.9rem;">
+        QuitoTurismo | Generado el ${new Date().toLocaleDateString('es-EC')}
+      </div>
+    </div>
+  `;
+}
+
+function generarDetalleComentarios(porDireccion) {
+  if (!porDireccion?.length) return '<div class="page"><h3>No hay comentarios para mostrar.</h3></div>';
+
+  return porDireccion.map(dir => {
+    const procesosConComentarios = dir.procesos.filter(p => p.ultimoComentario);
+
+    if (procesosConComentarios.length === 0) {
+      return '';
+    }
+
+    return `
+      <div class="page">
+        <div class="direccion-header">
+          <h2 style="color: var(--primary); text-transform: uppercase;">${dir.nombre}</h2>
+          <p style="font-size: 0.9rem; color: var(--text-light);">
+            ${procesosConComentarios.length} proceso(s) con comentarios
+          </p>
+        </div>
+
+        ${procesosConComentarios.map(proc => `
+          <div class="comentario-card">
+            <h3 style="color: var(--primary); margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+              <span>📋 ${proc.nombre}</span>
+              <span style="font-size: 0.7rem; color: #94a3b8;">$${formatearMonto(proc.monto)}</span>
+            </h3>
+            <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.8rem;">
+              <strong>Código:</strong> ${proc.codigo}
+            </p>
+
+            <div class="comentario-texto">
+              "${proc.ultimoComentario.texto}"
+            </div>
+
+            <div class="comentario-meta">
+              <span>📅 ${proc.ultimoComentario.fecha}</span>
+              <span>👤 ${proc.ultimoComentario.usuario}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }).filter(Boolean).join('');
+}
+
 export {
   generarHTMLInformeDetalle,
+  generarHTMLUltimosComentarios,
   formatearMonto
 };
