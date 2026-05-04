@@ -1784,33 +1784,52 @@ router.post('/generar-informe-ultimos-comentarios-todos', async (req, res) => {
         // Obtener cuatrimestre y fecha del contrato
         const subtarea = subtareas.find(s => s.codigoOlympo === proc.codigoOlympo);
         const cuatrimestre = subtarea?.cuatrimestre || 'No definido';
-        const fechaContrato = subtarea?.fechaContrato
-          ? new Date(subtarea.fechaContrato).toLocaleDateString('es-EC')
-          : 'No definida';
+        let fechaContrato = 'No definida';
+
+        try {
+          if (subtarea?.fechaContrato) {
+            fechaContrato = new Date(subtarea.fechaContrato).toLocaleDateString('es-EC');
+          }
+        } catch (e) {
+          // Si hay error en la fecha, dejar como no definida
+        }
 
         // Calcular etapa pendiente más atrasada (excluyendo "REGISTRO DE Información ERP")
         let etapaPendienteMasAtrasada = null;
         let maxDiasTarde = 0;
 
         etapasDelProceso.forEach(etapa => {
+          const nombreEtapa = etapa.nombre || '';
+          const diasTarde = Number(etapa.diasTarde) || 0;
+
           if (etapa.estado === 'pendiente' &&
-              !etapa.nombre.toUpperCase().includes('REGISTRO DE INFORMACIÓN ERP') &&
-              etapa.diasTarde > maxDiasTarde) {
-            maxDiasTarde = etapa.diasTarde;
+              !nombreEtapa.toUpperCase().includes('REGISTRO DE INFORMACIÓN ERP') &&
+              diasTarde > maxDiasTarde) {
+            maxDiasTarde = diasTarde;
             etapaPendienteMasAtrasada = {
-              nombre: etapa.nombre,
-              diasTarde: etapa.diasTarde
+              nombre: nombreEtapa,
+              diasTarde: diasTarde
             };
           }
         });
 
         // Obtener última etapa para fecha alternativa
-        const ultimaEtapa = etapasDelProceso.sort((a, b) =>
-          new Date(b.fechaReal || b.fechaPlanificada) - new Date(a.fechaReal || a.fechaPlanificada)
-        )[0];
-        const fechaUltimaEtapa = ultimaEtapa
-          ? new Date(ultimaEtapa.fechaReal || ultimaEtapa.fechaPlanificada).toLocaleDateString('es-EC')
-          : 'No definida';
+        let fechaUltimaEtapa = 'No definida';
+        if (etapasDelProceso.length > 0) {
+          const ultimaEtapa = etapasDelProceso.sort((a, b) => {
+            const fechaA = new Date(b.fechaReal || b.fechaPlanificada || 0);
+            const fechaB = new Date(a.fechaReal || a.fechaPlanificada || 0);
+            return fechaA - fechaB;
+          })[0];
+
+          try {
+            if (ultimaEtapa && (ultimaEtapa.fechaReal || ultimaEtapa.fechaPlanificada)) {
+              fechaUltimaEtapa = new Date(ultimaEtapa.fechaReal || ultimaEtapa.fechaPlanificada).toLocaleDateString('es-EC');
+            }
+          } catch (e) {
+            // Si hay error en la fecha, dejar como no definida
+          }
+        }
 
         porDireccion[dir].procesos.push({
           codigo: proc.codigoOlympo,
