@@ -45,6 +45,106 @@ function generarHTMLInformeDetalle(datos) {
   `;
 }
 
+function getEstilosGlobalesAzul() {
+  return `
+    :root {
+      --primary: #1e3a8a;
+      --primary-dark: #1e40af;
+      --secondary: #dbeafe;
+      --accent: #2563eb;
+      --text-main: #334155;
+      --text-light: #64748b;
+      --border: #e2e8f0;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      line-height: 1.5;
+      color: var(--text-main);
+      background: #fff;
+    }
+
+    .page {
+      padding: 50px;
+      page-break-after: always;
+      position: relative;
+    }
+
+    /* Portada */
+    .portada {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .portada h1 { font-size: 3.5rem; margin-bottom: 0.5rem; letter-spacing: -1px; }
+    .portada .subtitulo { font-size: 1.5rem; opacity: 0.9; margin-bottom: 3rem; }
+
+    .portada .periodo {
+      background: rgba(255,255,255,0.15);
+      padding: 1.5rem 3rem;
+      border-radius: 12px;
+      backdrop-filter: blur(5px);
+      margin-bottom: 3rem;
+    }
+
+    /* Tablas */
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
+    th { background: var(--secondary); color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border); padding: 12px; }
+    td { padding: 10px; border: 1px solid var(--border); vertical-align: middle; }
+
+    /* Badges */
+    .estado-badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .estado-completado { background: #dcfce7; color: #166534; }
+    .estado-proceso { background: #fef9c3; color: #854d0e; }
+    .estado-pendiente { background: #fee2e2; color: #991b1b; }
+
+    /* Contenedores de Dirección */
+    .direccion-header {
+      background: var(--secondary);
+      border-left: 6px solid var(--primary);
+      padding: 1.5rem;
+      margin-top: 2rem;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .proceso-card {
+      margin: 1.5rem 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .proceso-header {
+      background: #f8fafc;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    @media print {
+      .page { padding: 30px; }
+      .no-break { page-break-inside: avoid; }
+    }
+  `;
+}
+
 function getEstilosGlobales() {
   return `
     :root {
@@ -310,7 +410,7 @@ function generarHTMLUltimosComentarios(datos) {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Informe Últimos Comentarios - QuitoTurismo</title>
       <style>
-        ${getEstilosGlobales()}
+        ${getEstilosGlobalesAzul()}
         .comentario-card {
           background: #f8fafc;
           border-left: 4px solid var(--primary);
