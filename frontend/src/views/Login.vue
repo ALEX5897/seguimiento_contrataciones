@@ -1,82 +1,138 @@
 ﻿<template>
-  <section class="login-view" :style="{ backgroundImage: `url(${fondoLogin})` }">
-    <div class="login-overlay"></div>
+  <section class="login-view">
+    <div class="background-container">
+      <img :src="fondoLogin" alt="Fondo" class="background-image" />
+      <div class="background-overlay"></div>
+    </div>
 
     <div class="login-shell">
+      <div class="login-header">
+        <div class="header-brand">
+          <img :src="logoQt" alt="Logo Quito Turismo" class="brand-logo" />
+          <div class="brand-info">
+            <h1 class="brand-title">Sistema de Gestión</h1>
+            <p class="brand-subtitle">Seguimiento de Contrataciones</p>
+          </div>
+        </div>
+      </div>
+
       <form class="login-card" @submit.prevent="onSubmit">
-        <div class="card-top">
-          <img :src="logoQt" alt="Logo Quito Turismo" class="card-logo" />
-          <div>
-            <h2><i class="ri-key-2-line title-icon" aria-hidden="true"></i>Ingreso al Sistema</h2>
-            <p class="subtitle">
-              Selecciona tu dirección del listado e ingresa tu contraseña.
-              <i class="ri-information-line subtitle-icon" aria-hidden="true"></i>
-            </p>
+        <div class="card-header">
+          <div class="header-divider"></div>
+          <h2 class="card-title">Acceso al Sistema</h2>
+          <p class="card-subtitle">Ingresa tus credenciales para continuar</p>
+        </div>
+
+        <div class="form-group">
+          <div class="input-field">
+            <div class="combo-box">
+              <input
+                v-model="username"
+                class="field-input"
+                type="text"
+                required
+                autocomplete="username"
+                placeholder=" "
+                spellcheck="false"
+                @focus="abrirOpciones"
+                @input="abrirOpciones"
+                @blur="ocultarOpciones"
+              />
+              <label class="field-label">
+                <i class="ri-map-pin-2-line" aria-hidden="true"></i>
+                <span>Dirección</span>
+              </label>
+              <span class="input-icon"><i class="ri-arrow-down-s-line" aria-hidden="true"></i></span>
+
+              <ul v-if="mostrarOpciones" class="combo-list" role="listbox">
+                <li
+                  v-for="opcion in opcionesFiltradas"
+                  :key="opcion"
+                  class="combo-item"
+                  @mousedown.prevent="seleccionarOpcion(opcion)"
+                >
+                  {{ opcion }}
+                </li>
+                <li v-if="opcionesFiltradas.length === 0" class="combo-empty">Sin resultados</li>
+              </ul>
+            </div>
           </div>
         </div>
 
-        <label class="field-group combo-label">
-          <span class="field-label">Dirección</span>
-          <div class="combo-box">
-            <input
-              v-model="username"
-              class="field-input"
-              type="text"
-              required
-              autocomplete="username"
-              placeholder="Selecciona una dirección"
-              spellcheck="false"
-              @focus="abrirOpciones"
-              @input="abrirOpciones"
-              @blur="ocultarOpciones"
-            />
-            <span class="combo-chevron">v</span>
-
-            <ul v-if="mostrarOpciones" class="combo-list" role="listbox">
-              <li
-                v-for="opcion in opcionesFiltradas"
-                :key="opcion"
-                class="combo-item"
-                @mousedown.prevent="seleccionarOpcion(opcion)"
+        <div class="form-group">
+          <div class="input-field">
+            <div class="password-box">
+              <input
+                v-model="password"
+                class="field-input"
+                :type="showPassword ? 'text' : 'password'"
+                required
+                autocomplete="current-password"
+                placeholder=" "
+              />
+              <label class="field-label">
+                <i class="ri-lock-2-line" aria-hidden="true"></i>
+                <span>Contraseña</span>
+              </label>
+              <button
+                type="button"
+                class="password-toggle"
+                :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                @click="showPassword = !showPassword"
               >
-                {{ opcion }}
-              </li>
-              <li v-if="opcionesFiltradas.length === 0" class="combo-empty">Sin resultados</li>
-            </ul>
+                <i :class="showPassword ? 'ri-eye-off-line' : 'ri-eye-line'" aria-hidden="true"></i>
+              </button>
+            </div>
           </div>
-        </label>
+        </div>
 
-        <label class="field-group">
-          <span class="field-label">Contraseña</span>
-          <div class="password-box">
-            <input
-              v-model="password"
-              class="field-input password-input"
-              :type="showPassword ? 'text' : 'password'"
-              required
-              autocomplete="current-password"
-              placeholder="Ingresa tu contraseña"
-            />
-            <button
-              type="button"
-              class="password-toggle"
-              :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-              @click="showPassword = !showPassword"
-            >
-              <i :class="showPassword ? 'ri-eye-off-line' : 'ri-eye-line'" aria-hidden="true"></i>
-            </button>
-          </div>
-        </label>
+        <div v-if="error" class="error-message">
+          <i class="ri-alert-circle-line" aria-hidden="true"></i>
+          <span>{{ error }}</span>
+        </div>
 
         <button type="submit" class="login-button" :disabled="auth.loading">
-          {{ auth.loading ? 'Ingresando...' : 'Ingresar' }}
+          <span v-if="auth.loading" class="button-spinner">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2" stroke-dasharray="9.42" stroke-dashoffset="0" stroke-linecap="round" />
+            </svg>
+            <span>Ingresando...</span>
+          </span>
+          <span v-else>
+            <i class="ri-login-box-line" aria-hidden="true"></i>
+            Ingresar
+          </span>
         </button>
 
-        <p v-if="error" class="error">{{ error }}</p>
+        <div class="divider"></div>
+
+        <div class="support-links">
+          <a href="#" class="support-link">
+            <i class="ri-question-line" aria-hidden="true"></i>
+            ¿Olvidaste tu contraseña?
+          </a>
+          <a href="#" class="support-link">
+            <i class="ri-phone-line" aria-hidden="true"></i>
+            Soporte
+          </a>
+        </div>
+
+        <div class="card-footer">
+          <div class="security-info">
+            <i class="ri-shield-check-line" aria-hidden="true"></i>
+            <span>Conexión segura y cifrada</span>
+          </div>
+        </div>
       </form>
     </div>
 
-    <footer class="login-footer">(c) {{ currentYear }} Quito Turismo. Todos los derechos reservados.</footer>
+    <footer class="login-footer">
+      <div class="footer-content">
+        <span class="footer-brand">Quito Turismo</span>
+        <span class="footer-sep">|</span>
+        <span class="footer-text">© {{ currentYear }} - Sistema de Gestión</span>
+      </div>
+    </footer>
   </section>
 </template>
 
@@ -86,9 +142,8 @@ import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { authService } from '../services/api';
 import { normalizarTextoBusqueda, repararTextoConTildes } from '../utils/search';
-
-const fondoLogin = 'https://as2.ftcdn.net/v2/jpg/01/70/03/67/1000_F_170036772_vOispQGM35tY2nN0PVluT6PgQd8NttZe.jpg';
-const logoQt = 'https://turismo.quito.gob.ec/wp-content/uploads/2024/06/logoQT.png';
+import logoQt from '../assets/logoqt-nuevo.png';
+import fondoLogin from '../assets/fondo-corporativo.jpg';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -162,141 +217,258 @@ async function onSubmit() {
 </script>
 
 <style scoped>
+:root {
+  --primary-dark: #0a3a52;
+  --primary-navy: #0d5a7a;
+  --primary-blue: #2e7fa3;
+  --accent-orange: #e67e22;
+  --accent-bright: #f39c12;
+  --success-green: #27ae60;
+  --error-red: #c0392b;
+  --neutral-light: #f8fafb;
+  --neutral-gray: #e8ecf1;
+  --neutral-dark: #6b7c8f;
+  --text-primary: #1a1f26;
+  --text-secondary: #5a6270;
+}
+
 .login-view {
-  --login-primary: #0d5f63;
-  --login-primary-strong: #083c46;
-  --login-glass: rgba(239, 250, 251, 0.22);
-  --login-glass-strong: rgba(255, 255, 255, 0.36);
   min-height: 100vh;
   position: relative;
-  padding: 24px;
   display: grid;
   place-items: center;
-  background-size: cover;
-  background-position: center;
+  padding: 24px;
   overflow: hidden;
 }
 
-.login-overlay {
+.background-container {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.background-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.background-overlay {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(135deg, rgba(4, 31, 37, 0.8), rgba(8, 67, 78, 0.54)),
-    radial-gradient(circle at top right, rgba(215, 162, 63, 0.26), transparent 28%),
-    radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.12), transparent 24%);
+    radial-gradient(circle at 20% 50%, rgba(10, 58, 82, 0.35), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(230, 126, 34, 0.15), transparent 45%),
+    linear-gradient(135deg, rgba(10, 58, 82, 0.5), rgba(13, 90, 122, 0.45));
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: overlay-shift 20s ease infinite;
+}
+
+@keyframes overlay-shift {
+  0%, 100% {
+    background:
+      radial-gradient(circle at 20% 50%, rgba(10, 58, 82, 0.4), transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(230, 126, 34, 0.2), transparent 45%),
+      linear-gradient(135deg, rgba(10, 58, 82, 0.6), rgba(13, 90, 122, 0.5));
+  }
+  50% {
+    background:
+      radial-gradient(circle at 30% 60%, rgba(10, 58, 82, 0.35), transparent 45%),
+      radial-gradient(circle at 70% 70%, rgba(230, 126, 34, 0.25), transparent 50%),
+      linear-gradient(135deg, rgba(13, 90, 122, 0.55), rgba(10, 58, 82, 0.6));
+  }
 }
 
 .login-shell {
   position: relative;
-  z-index: 1;
-  width: min(470px, 92vw);
+  z-index: 2;
+  width: min(520px, 95vw);
+  display: grid;
+  gap: 28px;
+}
+
+.login-header {
+  text-align: center;
+  animation: slideDown 0.7s ease-out;
+  margin-bottom: 12px;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.brand-logo {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.28));
+  transition: transform 0.3s ease;
+  animation: logoFloat 4s ease-in-out infinite;
+}
+
+.brand-logo:hover {
+  transform: scale(1.05);
+}
+
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.brand-info {
+  text-align: center;
+}
+
+.brand-title {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, white, rgba(255, 255, 255, 0.9));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.8px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.brand-subtitle {
+  margin: 6px 0 0;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .login-card {
   position: relative;
-  overflow: hidden;
-  background:
-    linear-gradient(155deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.14)),
-    linear-gradient(180deg, rgba(239, 250, 251, 0.4), rgba(214, 235, 237, 0.18));
-  border: 1px solid rgba(255, 255, 255, 0.34);
-  border-radius: 30px;
-  backdrop-filter: blur(16px) saturate(135%);
-  -webkit-backdrop-filter: blur(16px) saturate(135%);
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 24px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 52px 44px;
   box-shadow:
-    0 24px 54px rgba(3, 17, 22, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.56),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.06);
-  padding: 46px 34px 40px;
-  display: grid;
-  align-content: center;
-  gap: 20px;
+    0 24px 56px rgba(10, 58, 82, 0.16),
+    0 0 2px rgba(10, 58, 82, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  animation: slideUp 0.6s ease-out 0.1s both;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.login-card::before {
-  content: '';
-  position: absolute;
-  inset: 1px;
-  border-radius: 29px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.32), transparent 36%),
-    radial-gradient(circle at top center, rgba(255, 255, 255, 0.28), transparent 40%);
-  pointer-events: none;
+.login-card:hover {
+  box-shadow:
+    0 28px 64px rgba(10, 58, 82, 0.14),
+    0 0 1px rgba(10, 58, 82, 0.1);
+  border-color: rgba(230, 126, 34, 0.2);
 }
 
-.login-card::after {
-  content: '';
-  position: absolute;
-  top: -14%;
-  left: 8%;
-  width: 84%;
-  height: 80px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0));
-  filter: blur(10px);
-  pointer-events: none;
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.card-top {
-  display: grid;
-  gap: 18px;
-  justify-items: center;
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-header {
+  margin-bottom: 28px;
   text-align: center;
   position: relative;
-  z-index: 1;
 }
 
-.card-logo {
-  width: min(290px, 92%);
-  height: auto;
-  display: block;
-  margin: 0 auto;
-  filter: drop-shadow(0 12px 24px rgba(255, 255, 255, 0.2));
+.header-divider {
+  height: 4px;
+  width: 70px;
+  margin: 0 auto 18px;
+  background: linear-gradient(90deg, #e67e22, #1e7ba3);
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(230, 126, 34, 0.15);
 }
 
-.card-top h2 {
+.card-title {
+  margin: 0 0 10px;
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--primary-dark);
+  letter-spacing: -0.4px;
+}
+
+.card-subtitle {
   margin: 0;
-  color: #0d2430;
-  font-size: 2.05rem;
-  line-height: 1.12;
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+  font-size: 0.93rem;
+  color: var(--neutral-dark);
+  font-weight: 500;
 }
 
-.subtitle {
-  margin: 2px 0 0;
-  color: #55707a;
-  font-size: 0.94rem;
-  line-height: 1.6;
-  text-align: center;
+.form-group {
+  position: relative;
+  margin-bottom: 20px;
 }
 
-.title-icon,
-.subtitle-icon {
-  color: var(--login-primary);
-}
-
-.title-icon {
-  font-size: 1.2rem;
-}
-
-.subtitle-icon {
-  margin-left: 6px;
-  font-size: 0.95rem;
-  vertical-align: middle;
-}
-
-.field-group {
-  display: grid;
-  gap: 8px;
+.input-field {
+  position: relative;
 }
 
 .field-label {
-  color: #26414c;
-  font-size: 0.87rem;
-  font-weight: 700;
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  transform: translateY(-50%);
+  color: var(--neutral-dark);
+  font-size: 0.9rem;
+  font-weight: 500;
+  pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.field-label i {
+  font-size: 1.1rem;
+  color: var(--primary-blue);
+}
+
+.field-label span {
+  letter-spacing: 0.2px;
+}
+
+.field-input:focus ~ .field-label,
+.field-input:not(:placeholder-shown) ~ .field-label {
+  top: 8px;
+  left: 14px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--primary-blue);
+  background: white;
+  padding: 0 4px;
 }
 
 .combo-box {
@@ -305,69 +477,86 @@ async function onSubmit() {
 
 .field-input {
   width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.34);
-  border-radius: 18px;
-  padding: 13px 16px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(244, 250, 251, 0.62));
-  color: #17333c;
-  font-size: 0.96rem;
+  border: 2px solid #e0e5eb;
+  border-radius: 12px;
+  padding: 16px 16px 12px 16px;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-family: inherit;
+  font-weight: 500;
   box-shadow:
-    0 10px 22px rgba(18, 54, 63, 0.09),
-    inset 0 1px 0 rgba(255, 255, 255, 0.48);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    0 4px 14px rgba(10, 58, 82, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .field-input::placeholder {
-  color: #8ba1a8;
+  color: var(--neutral-dark);
 }
 
 .field-input:focus {
   outline: none;
-  border-color: rgba(13, 95, 99, 0.46);
+  border-color: #1e7ba3;
   box-shadow:
-    0 16px 34px rgba(13, 95, 99, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  transform: translateY(-1px);
+    0 8px 28px rgba(30, 123, 163, 0.18),
+    0 0 0 4px rgba(30, 123, 163, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
 }
 
-.combo-chevron {
+.field-input:hover {
+  border-color: rgba(230, 126, 34, 0.3);
+}
+
+.input-icon {
   position: absolute;
-  right: 18px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: #68828b;
+  color: var(--primary-blue);
   pointer-events: none;
-  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.field-input:focus ~ .input-icon {
+  opacity: 1;
+  color: var(--accent-orange);
 }
 
 .password-box {
   position: relative;
 }
 
-.password-input {
+.password-box .field-input {
   padding-right: 48px;
 }
 
 .password-toggle {
   position: absolute;
-  right: 10px;
+  right: 8px;
   top: 50%;
   transform: translateY(-50%);
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border: none;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.55);
-  color: #48656f;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(46, 127, 163, 0.08), rgba(230, 126, 34, 0.05));
+  color: var(--primary-blue);
   display: grid;
   place-items: center;
   cursor: pointer;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  font-size: 1.1rem;
+  transition: all 0.2s ease;
 }
 
 .password-toggle:hover {
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--login-primary);
+  background: linear-gradient(135deg, rgba(46, 127, 163, 0.12), rgba(230, 126, 34, 0.12));
+  color: var(--accent-orange);
 }
 
 .combo-list {
@@ -379,114 +568,348 @@ async function onSubmit() {
   margin: 0;
   padding: 8px;
   list-style: none;
-  max-height: 220px;
-  overflow: auto;
-  background: rgba(255, 255, 255, 0.86);
-  border: 1px solid rgba(255, 255, 255, 0.42);
-  border-radius: 20px;
-  box-shadow: 0 22px 40px rgba(11, 43, 50, 0.18);
-  backdrop-filter: blur(14px);
+  max-height: 240px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid var(--neutral-gray);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(10, 58, 82, 0.12);
+  backdrop-filter: blur(8px);
 }
 
 .combo-item,
 .combo-empty {
-  padding: 12px 14px;
-  border-radius: 14px;
-  font-size: 0.92rem;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .combo-item {
-  color: #183742;
+  color: var(--text-primary);
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .combo-item:hover {
-  background: rgba(13, 95, 99, 0.08);
-  color: var(--login-primary);
+  background: linear-gradient(135deg, rgba(46, 127, 163, 0.08), rgba(230, 126, 34, 0.05));
+  color: var(--primary-blue);
+  padding-left: 20px;
 }
 
 .combo-empty {
-  color: #7a9098;
+  color: var(--neutral-dark);
+  text-align: center;
+  cursor: default;
 }
 
 .login-button {
-  margin-top: 8px;
+  margin-top: 16px;
   border: none;
-  border-radius: 18px;
-  padding: 14px 20px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0)),
-    linear-gradient(135deg, var(--login-primary), var(--login-primary-strong));
-  color: #ffffff;
-  font-size: 0.98rem;
-  font-weight: 800;
-  letter-spacing: 0.01em;
+  border-radius: 14px;
+  padding: 18px 28px;
+  background: linear-gradient(135deg, #1e7ba3 0%, #0a3a52 100%);
+  color: white;
+  font-size: 0.97rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
   cursor: pointer;
-  box-shadow: 0 18px 34px rgba(8, 60, 70, 0.28);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  box-shadow:
+    0 18px 40px rgba(10, 58, 82, 0.28),
+    0 0 2px rgba(10, 58, 82, 0.12);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: inherit;
+  position: relative;
+  overflow: hidden;
+  min-height: 50px;
+  width: 100%;
+}
+
+.login-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.login-button:hover::before {
+  left: 100%;
 }
 
 .login-button:hover:not(:disabled) {
+  transform: translateY(-4px);
+  box-shadow:
+    0 28px 56px rgba(10, 58, 82, 0.35),
+    0 0 2px rgba(10, 58, 82, 0.12);
+}
+
+.login-button:active:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 22px 38px rgba(8, 60, 70, 0.34);
 }
 
 .login-button:disabled {
-  opacity: 0.78;
+  opacity: 0.75;
   cursor: not-allowed;
 }
 
-.error {
-  margin: 0;
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: rgba(176, 26, 26, 0.08);
-  color: #b42318;
-  font-size: 0.88rem;
+.login-button i {
+  font-size: 1rem;
+}
+
+.button-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.button-spinner svg {
+  display: block;
+  animation: spin-loader 0.9s linear infinite;
+  width: 16px;
+  height: 16px;
+}
+
+@keyframes spin-loader {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.error-message {
+  margin: 8px 0 0;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border-left: 4px solid var(--error-red);
+  background: linear-gradient(135deg, rgba(192, 57, 43, 0.08) 0%, rgba(192, 57, 43, 0.04) 100%);
+  color: var(--error-red);
+  font-size: 0.87rem;
   font-weight: 600;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  animation: errorSlide 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(192, 57, 43, 0.1);
+}
+
+.error-message i {
+  flex-shrink: 0;
+  margin-top: 2px;
+  font-size: 1.1rem;
+}
+
+@keyframes errorSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.divider {
+  height: 1px;
+  margin: 28px 0;
+  background: linear-gradient(90deg, transparent, var(--neutral-gray), transparent);
+}
+
+.support-links {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.support-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 13px 18px;
+  background: linear-gradient(135deg, rgba(30, 123, 163, 0.06), rgba(230, 126, 34, 0.04));
+  border: 1.5px solid #e0e5eb;
+  border-radius: 11px;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.support-link i {
+  font-size: 0.95rem;
+  color: var(--primary-blue);
+}
+
+.support-link:hover {
+  background: linear-gradient(135deg, rgba(30, 123, 163, 0.12), rgba(230, 126, 34, 0.1));
+  border-color: #1e7ba3;
+  color: #1e7ba3;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(30, 123, 163, 0.1);
+}
+
+.card-footer {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--neutral-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.security-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, rgba(39, 174, 96, 0.08), rgba(46, 204, 113, 0.04));
+  border-radius: 10px;
+  color: var(--success-green);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid rgba(39, 174, 96, 0.15);
+}
+
+.security-info i {
+  font-size: 1rem;
+  animation: pulse-security 2s ease-in-out infinite;
+}
+
+@keyframes pulse-security {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 .login-footer {
-  position: absolute;
+  position: fixed;
   left: 0;
   right: 0;
-  bottom: 12px;
+  bottom: 0;
   z-index: 1;
   text-align: center;
-  color: rgba(244, 250, 251, 0.95);
-  font-size: 0.82rem;
-  letter-spacing: 0.02em;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.02));
+  padding: 16px 12px 12px;
+  height: 60px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--neutral-dark);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.footer-brand {
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+
+.footer-sep {
+  color: var(--neutral-gray);
+  opacity: 0.8;
+}
+
+.footer-text {
+  color: var(--neutral-dark);
 }
 
 @media (max-width: 640px) {
   .login-view {
-    padding: 14px;
+    padding: 20px 16px;
+    padding-bottom: 80px;
+  }
+
+  .login-shell {
+    width: min(100%, 100vw - 32px);
   }
 
   .login-card {
-    border-radius: 24px;
-    padding: 30px 20px 24px;
-  }
-
-  .card-logo {
-    width: min(245px, 86%);
-  }
-
-  .card-top h2 {
-    font-size: 1.72rem;
-  }
-
-  .field-input,
-  .login-button {
     border-radius: 16px;
-    padding: 13px 15px;
+    padding: 32px 24px;
+  }
+
+  .header-brand {
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .brand-logo {
+    width: 48px;
+    height: 48px;
+  }
+
+  .brand-title {
+    font-size: 1.3rem;
+  }
+
+  .brand-subtitle {
+    font-size: 0.78rem;
+  }
+
+  .card-title {
+    font-size: 1.5rem;
+  }
+
+  .card-subtitle {
+    font-size: 0.85rem;
+  }
+
+  .field-input {
+    border-radius: 10px;
+    padding: 14px 14px 10px;
+    font-size: 0.9rem;
+  }
+
+  .field-label {
+    left: 14px;
+    font-size: 0.85rem;
+  }
+
+  .field-input:focus ~ .field-label,
+  .field-input:not(:placeholder-shown) ~ .field-label {
+    left: 12px;
+    font-size: 0.65rem;
+  }
+
+  .login-button {
+    border-radius: 10px;
+    padding: 14px 20px;
+    font-size: 0.9rem;
+  }
+
+  .support-links {
+    grid-template-columns: 1fr;
+  }
+
+  .support-link {
+    font-size: 0.8rem;
+    padding: 10px 14px;
   }
 
   .login-footer {
+    height: 70px;
+    padding: 16px 12px 10px;
+  }
+
+  .footer-content {
     font-size: 0.75rem;
-    bottom: 8px;
-    padding: 0 10px;
+    gap: 6px;
   }
 }
 </style>
