@@ -4,6 +4,23 @@ import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Ruta pública para obtener direcciones (sin autenticación)
+router.get('/direcciones/lista', async (req, res) => {
+  try {
+    const usuarios = await mysql.getUsuarios();
+    // Obtener direcciones únicas y ordenadas
+    const direcciones = [...new Set(
+      usuarios
+        .filter(u => u.direccionNombre && u.activo)
+        .map(u => u.direccionNombre)
+    )].sort();
+    res.json(direcciones);
+  } catch (error) {
+    console.error('Error en GET /api/usuarios/direcciones/lista:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.use(requireAuth);
 
 router.get('/', async (req, res) => {

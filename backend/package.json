@@ -1,6 +1,6 @@
 {
   "name": "seguimiento-contrataciones-backend",
-  "version": "1.0.0",
+  "version": "1.1.6",
   "description": "API para seguimiento de tareas y contrataciones POA 2026",
   "main": "server.js",
   "type": "module",

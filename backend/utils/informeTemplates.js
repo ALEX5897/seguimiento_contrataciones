@@ -408,7 +408,7 @@ function generarHTMLUltimosComentarios(datos) {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Informe Últimos Comentarios - QuitoTurismo</title>
+      <title>Informe POA - PAC - QuitoTurismo</title>
       <style>
         ${getEstilosGlobalesAzul()}
         .comentario-card {
@@ -448,8 +448,8 @@ function generarPortadaComentarios(inicio, fin) {
   return `
     <div class="page portada">
       <img src="https://turismo.quito.gob.ec/wp-content/uploads/2024/06/logoQT-1024x166.png"
-           style="width: 180px; margin-bottom: 2rem; opacity: 0.95;">
-      <h1>ÚLTIMOS COMENTARIOS</h1>
+           style="width: 500px; margin-bottom: 2rem; opacity: 0.95;">
+      <h1>POA - PAC 2026</h1>
       <p class="subtitulo">Seguimiento por Proceso</p>
       <div class="periodo">
         <p>Desde: <strong>${inicio}</strong> — Hasta: <strong>${fin}</strong></p>
@@ -465,9 +465,11 @@ function generarDetalleComentarios(porDireccion) {
   if (!porDireccion?.length) return '<div class="page"><h3>No hay comentarios para mostrar.</h3></div>';
 
   return porDireccion.map(dir => {
-    const procesosConComentarios = dir.procesos.filter(p => p.ultimoComentario);
+    const procesosParaMostrar = dir.procesos.filter(p =>
+      p.ultimoComentario || !p.etapaPendienteMasAtrasada
+    );
 
-    if (procesosConComentarios.length === 0) {
+    if (procesosParaMostrar.length === 0) {
       return '';
     }
 
@@ -476,7 +478,7 @@ function generarDetalleComentarios(porDireccion) {
         <div class="direccion-header">
           <h2 style="color: var(--primary); text-transform: uppercase;">${dir.nombre}</h2>
           <p style="font-size: 0.9rem; color: var(--text-light);">
-            ${procesosConComentarios.length} proceso(s) con comentarios
+            ${procesosParaMostrar.length} proceso(s)
           </p>
         </div>
 
@@ -494,7 +496,7 @@ function generarDetalleComentarios(porDireccion) {
             </tr>
           </thead>
           <tbody>
-            ${procesosConComentarios.map(proc => `
+            ${procesosParaMostrar.map(proc => `
               <tr style="border: 1px solid var(--border);">
                 <td style="padding: 10px; border: 1px solid var(--border); vertical-align: middle;">
                   <div style="font-weight: 600; color: var(--primary);">${proc.nombre}</div>
@@ -521,29 +523,35 @@ function generarDetalleComentarios(porDireccion) {
                   </span>
                 </td>
                 <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle;">
-                  ${proc.ultimaEtapa && proc.ultimaEtapa.diasTarde > 0 ? `
+                  ${proc.etapaPendienteMasAtrasada?.diasTarde > 0 ? `
                     <span style="display: inline-block; padding: 4px 10px; border-radius: 6px; background: #fee2e2; color: #991b1b; font-weight: 600; font-size: 0.9rem;">
-                      ${proc.ultimaEtapa.diasTarde}
+                      ${proc.etapaPendienteMasAtrasada.diasTarde} Días tarde
                     </span>
-                  ` : '<span style="color: #94a3b8;">-</span>'}
+                  ` : `<span style="display: inline-block; padding: 6px 14px; border-radius: 6px; background: #dcfce7; color: #166534; font-weight: 600; font-size: 0.9rem;">
+                      ${proc.ultimoComentario ? 'CONTRATADO' : 'A TIEMPO'}
+                    </span>`}
                 </td>
                 <td style="padding: 10px; border: 1px solid var(--border); vertical-align: middle; max-width: 250px;">
-                  <div style="font-size: 0.85rem; color: var(--text-light); line-height: 1.4;">"${proc.ultimoComentario.texto}"</div>
+                  ${proc.ultimoComentario ? `
+                    <div style="font-size: 0.85rem; color: var(--text-light); line-height: 1.4;">"${proc.ultimoComentario.texto}"</div>
+                  ` : `
+                    <div style="font-size: 0.85rem; color: #cbd5e1; font-style: italic;">Sin comentarios</div>
+                  `}
                 </td>
                 <td style="padding: 10px; border: 1px solid var(--border); text-align: center; vertical-align: middle; font-size: 0.8rem; color: var(--text-light);">
-                  ${proc.ultimoComentario.fecha}
+                  ${proc.ultimoComentario ? proc.ultimoComentario.fecha : '-'}
                 </td>
               </tr>
             `).join('')}
           </tbody>
         </table>
 
-        ${procesosConComentarios.some(p => p.etapaPendienteMasAtrasada) ? `
+        ${procesosParaMostrar.some(p => p.etapaPendienteMasAtrasada?.diasTarde > 0) ? `
           <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 1rem; padding: 1rem; border-top: 1px solid var(--border); background: #f8fafc; border-radius: 8px;">
             <p><strong>Etapa Pendiente con Mayor Atraso:</strong></p>
-            ${procesosConComentarios.filter(p => p.etapaPendienteMasAtrasada).map(proc => `
+            ${procesosParaMostrar.filter(p => p.etapaPendienteMasAtrasada?.diasTarde > 0).map(proc => `
               <div style="margin: 0.5rem 0;">
-                <strong>${proc.nombre}</strong> → ${proc.etapaPendienteMasAtrasada.nombre} (${proc.etapaPendienteMasAtrasada.diasTarde} días tarde)
+                <strong>${proc.nombre}</strong> → ${proc.etapaPendienteMasAtrasada.nombre} (${proc.etapaPendienteMasAtrasada.diasTarde} Días tarde)
               </div>
             `).join('')}
           </div>

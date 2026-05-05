@@ -9,10 +9,6 @@
       <div class="login-header">
         <div class="header-brand">
           <img :src="logoQt" alt="Logo Quito Turismo" class="brand-logo" />
-          <div class="brand-info">
-            <h1 class="brand-title">Sistema de Gestión</h1>
-            <p class="brand-subtitle">Seguimiento de Contrataciones</p>
-          </div>
         </div>
       </div>
 
@@ -111,7 +107,7 @@
             <i class="ri-question-line" aria-hidden="true"></i>
             ¿Olvidaste tu contraseña?
           </a>
-          <a href="#" class="support-link">
+          <a href="mailto:soporte@quito-turismo.gob.ec" class="support-link">
             <i class="ri-phone-line" aria-hidden="true"></i>
             Soporte
           </a>
@@ -130,7 +126,7 @@
       <div class="footer-content">
         <span class="footer-brand">Quito Turismo</span>
         <span class="footer-sep">|</span>
-        <span class="footer-text">© {{ currentYear }} - Sistema de Gestión</span>
+        <span class="footer-text">© {{ currentYear }} - Seguimiento de Contrataciones</span>
       </div>
     </footer>
   </section>
@@ -287,9 +283,9 @@ async function onSubmit() {
 .login-shell {
   position: relative;
   z-index: 2;
-  width: min(520px, 95vw);
+  width: min(430px, 95vw); /* Ancho del contenedor: máximo 520px o 95% del viewport */
   display: grid;
-  gap: 28px;
+  gap: 12px;
 }
 
 .login-header {
@@ -300,16 +296,16 @@ async function onSubmit() {
 
 .header-brand {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  gap: 16px;
   margin-bottom: 12px;
-  flex-wrap: wrap;
 }
 
 .brand-logo {
-  width: 90px;
-  height: 90px;
+  width: 400px;
+  height: 140px;
   object-fit: contain;
   filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.28));
   transition: transform 0.3s ease;
@@ -325,39 +321,25 @@ async function onSubmit() {
   50% { transform: translateY(-8px); }
 }
 
-.brand-info {
-  text-align: center;
-}
-
-.brand-title {
-  margin: 0;
-  font-size: 2rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, white, rgba(255, 255, 255, 0.9));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: -0.8px;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
 .brand-subtitle {
-  margin: 6px 0 0;
-  font-size: 0.95rem;
+  margin: 0;
+  font-size: 1.1rem;
   color: rgba(255, 255, 255, 0.95);
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.3px;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .login-card {
-  position: relative;
+  position: relative; /* Posición relativa para contenedor de elementos internos */
   background: rgba(255, 255, 255, 0.97);
   border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 24px;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  padding: 52px 44px;
+  padding: 20px 25px; /* Espaciado interno: 20px vertical, 25px horizontal */
+  /* Ancho: se ajusta automáticamente al contenedor padre (100% del width de .login-shell) */
+  /* Alto: se ajusta automáticamente según el contenido */
   box-shadow:
     0 24px 56px rgba(10, 58, 82, 0.16),
     0 0 2px rgba(10, 58, 82, 0.1),
@@ -850,16 +832,12 @@ async function onSubmit() {
   }
 
   .brand-logo {
-    width: 48px;
-    height: 48px;
-  }
-
-  .brand-title {
-    font-size: 1.3rem;
+    width: 100px;
+    height: 100px;
   }
 
   .brand-subtitle {
-    font-size: 0.78rem;
+    font-size: 0.95rem;
   }
 
   .card-title {

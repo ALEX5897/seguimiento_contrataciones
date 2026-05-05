@@ -1777,59 +1777,89 @@ router.post('/generar-informe-ultimos-comentarios-todos', async (req, res) => {
         etapasDelProceso.some(e => e.subtareaId === com.subtarea_id && e.etapaId === com.etapa_id)
       );
 
-      if (comentariosDelProceso.length > 0) {
-        // Tomar el más reciente (está ordenado DESC por fecha)
-        const ultimoComentario = comentariosDelProceso[0];
+      // Obtener cuatrimestre
+      const subtarea = subtareas.find(s => s.codigoOlympo === proc.codigoOlympo);
+      const cuatrimestre = subtarea?.cuatrimestre || 'No definido';
 
-        // Obtener cuatrimestre
-        const subtarea = subtareas.find(s => s.codigoOlympo === proc.codigoOlympo);
-        const cuatrimestre = subtarea?.cuatrimestre || 'No definido';
+      // Obtener última etapa registrada (más reciente por fecha)
+      let ultimaEtapaInfo = {
+        nombre: 'No definida',
+        fecha: 'No definida',
+        diasTarde: 0
+      };
 
-        // Obtener última etapa registrada (más reciente por fecha)
-        let ultimaEtapaInfo = {
-          nombre: 'No definida',
-          fecha: 'No definida',
-          diasTarde: 0
-        };
+      if (etapasDelProceso.length > 0) {
+        // Encontrar etapa con la fecha planificada más reciente
+        let ultimaEtapa = null;
+        let maxFecha = null;
 
-        if (etapasDelProceso.length > 0) {
-          const ultimaEtapa = etapasDelProceso.sort((a, b) => {
-            const fechaA = new Date(b.fechaReal || b.fechaPlanificada || 0);
-            const fechaB = new Date(a.fechaReal || a.fechaPlanificada || 0);
-            return fechaA - fechaB;
-          })[0];
-
-          try {
-            if (ultimaEtapa) {
-              ultimaEtapaInfo.nombre = ultimaEtapa.nombre || 'Sin nombre';
-              if (ultimaEtapa.fechaReal || ultimaEtapa.fechaPlanificada) {
-                ultimaEtapaInfo.fecha = new Date(ultimaEtapa.fechaReal || ultimaEtapa.fechaPlanificada).toLocaleDateString('es-EC');
-              }
-              ultimaEtapaInfo.diasTarde = Number(ultimaEtapa.diasTarde) || 0;
+        for (const etapa of etapasDelProceso) {
+          const fechaStr = etapa.fechaPlanificada;
+          if (fechaStr) {
+            const fecha = new Date(fechaStr);
+            if (!maxFecha || fecha > maxFecha) {
+              maxFecha = fecha;
+              ultimaEtapa = etapa;
             }
-          } catch (e) {
-            // Si hay error, dejar valores por defecto
           }
         }
 
-        // Calcular etapa pendiente más atrasada (excluyendo "REGISTRO DE Información ERP")
-        let etapaPendienteMasAtrasada = null;
-        let maxDiasTarde = 0;
+        // Si ninguna etapa tiene fecha planificada, tomar la que tenga mayor orden
+        if (!ultimaEtapa && etapasDelProceso.length > 0) {
+          ultimaEtapa = etapasDelProceso.reduce((max, current) =>
+            (Number(current.orden || 0) > Number(max.orden || 0)) ? current : max
+          );
+        }
 
-        etapasDelProceso.forEach(etapa => {
-          const nombreEtapa = etapa.nombre || '';
-          const diasTarde = Number(etapa.diasTarde) || 0;
-
-          if (etapa.estado === 'pendiente' &&
-              !nombreEtapa.toUpperCase().includes('REGISTRO DE INFORMACIÓN ERP') &&
-              diasTarde > maxDiasTarde) {
-            maxDiasTarde = diasTarde;
-            etapaPendienteMasAtrasada = {
-              nombre: nombreEtapa,
-              diasTarde: diasTarde
-            };
+        try {
+          if (ultimaEtapa) {
+            ultimaEtapaInfo.nombre = ultimaEtapa.etapaNombre || 'Sin nombre';
+            const fechaStr = ultimaEtapa.fechaPlanificada;
+            if (fechaStr) {
+              // Usar la fecha directamente sin conversión de zona horaria
+              // Si es formato YYYY-MM-DD, convertir a DD/MM/YYYY
+              if (fechaStr && fechaStr.length === 10 && fechaStr[4] === '-') {
+                const [year, month, day] = fechaStr.split('-');
+                ultimaEtapaInfo.fecha = `${day}/${month}/${year}`;
+              } else {
+                ultimaEtapaInfo.fecha = new Date(fechaStr).toLocaleDateString('es-EC');
+              }
+            }
+            ultimaEtapaInfo.diasTarde = Number(ultimaEtapa.diasAtraso) || 0;
           }
-        });
+        } catch (e) {
+          // Si hay error, dejar valores por defecto
+        }
+      }
+
+      // Calcular etapa pendiente más atrasada (excluyendo "REGISTRO DE INFORMACIÓN ERP")
+      let etapaPendienteMasAtrasada = null;
+      let maxDiasTarde = 0;
+
+      etapasDelProceso.forEach(etapa => {
+        const nombreEtapa = etapa.etapaNombre || '';
+        const diasTarde = Number(etapa.diasAtraso) || 0;
+        const nombreMayuscula = nombreEtapa.toUpperCase();
+
+        if (etapa.estado === 'pendiente' &&
+            !nombreMayuscula.includes('CARGA EN EL ERP DE RESOLUCION DE INICIO') &&
+            !nombreMayuscula.includes('REGISTRO DE INFORMACIÓN ERP') &&
+            diasTarde > maxDiasTarde) {
+          maxDiasTarde = diasTarde;
+          etapaPendienteMasAtrasada = {
+            nombre: nombreEtapa,
+            diasTarde: diasTarde
+          };
+        }
+      });
+
+      // Incluir procesos con comentarios O sin comentarios pero sin días tarde
+      if (comentariosDelProceso.length > 0 || !etapaPendienteMasAtrasada) {
+        const ultimoComentario = comentariosDelProceso.length > 0 ? {
+          texto: comentariosDelProceso[0].comentario,
+          fecha: new Date(comentariosDelProceso[0].fecha).toLocaleDateString('es-EC'),
+          usuario: comentariosDelProceso[0].responsable || 'Sistema'
+        } : null;
 
         porDireccion[dir].procesos.push({
           codigo: proc.codigoOlympo,
@@ -1837,12 +1867,12 @@ router.post('/generar-informe-ultimos-comentarios-todos', async (req, res) => {
           monto: proc.presupuesto,
           tipoPlan: proc.tipoPlan || 'No definido',
           cuatrimestre: cuatrimestre,
-          ultimaEtapa: ultimaEtapaInfo,
-          ultimoComentario: {
-            texto: ultimoComentario.comentario,
-            fecha: new Date(ultimoComentario.fecha).toLocaleDateString('es-EC'),
-            usuario: ultimoComentario.responsable || 'Sistema'
+          ultimaEtapa: {
+            nombre: ultimaEtapaInfo.nombre,
+            fecha: ultimaEtapaInfo.fecha,
+            diasTarde: ultimaEtapaInfo.diasTarde
           },
+          ultimoComentario: ultimoComentario,
           etapaPendienteMasAtrasada: etapaPendienteMasAtrasada
         });
       }

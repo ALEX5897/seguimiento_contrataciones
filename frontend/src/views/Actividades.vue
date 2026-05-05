@@ -6,6 +6,7 @@
       <div class="filter-chips">
         <span class="filter-chip primary" v-if="busquedaActividades">Búsqueda: {{ busquedaActividades }}</span>
         <span class="filter-chip direccion-active" v-if="filtroDireccion">📂 {{ filtroDireccion }}</span>
+        <span class="filter-chip" v-if="filtroResponsable">👤 {{ filtroResponsable }}</span>
         <span class="filter-chip" v-if="filtroPacNoPac">Plan: {{ filtroPacNoPac }}</span>
         <span class="filter-chip" v-if="filtroTipoContratacionLabel">Contratación: {{ filtroTipoContratacionLabel }}</span>
         <span class="filter-chip" v-if="filtroCuatrimestre">Cuatrimestre: {{ filtroCuatrimestre }}</span>
@@ -33,6 +34,11 @@
           <select v-model="filtroDireccion" class="combo-filtro">
             <option value="">Todas las direcciones</option>
             <option v-for="direccion in direccionesDisponibles" :key="direccion" :value="direccion">{{ direccion }}</option>
+          </select>
+
+          <select v-model="filtroResponsable" class="combo-filtro">
+            <option value="">Todos los responsables</option>
+            <option v-for="responsable in responsablesDisponibles" :key="responsable" :value="responsable">{{ responsable }}</option>
           </select>
 
           <select v-model="filtroPacNoPac" class="combo-filtro">
@@ -608,6 +614,7 @@ const cargando = ref(true);
 const actividades = ref<any[]>([]);
 const busquedaActividades = ref('');
 const filtroDireccion = ref('');
+const filtroResponsable = ref('');
 const filtroPacNoPac = ref('');
 const filtroTipoContratacion = ref('');
 const filtroCuatrimestre = ref('');
@@ -620,6 +627,11 @@ const actividadesVisiblesBase = computed(() =>
 const direccionesDisponibles = computed(() => {
   const direcciones = [...new Set(actividadesVisiblesBase.value.map((actividad: any) => obtenerDireccion(actividad)))] as string[];
   return direcciones.filter((direccion) => direccion !== 'N/A').sort((a, b) => a.localeCompare(b));
+});
+
+const responsablesDisponibles = computed(() => {
+  const responsables = [...new Set(actividadesVisiblesBase.value.map((actividad: any) => obtenerResponsable(actividad)))] as string[];
+  return responsables.filter((responsable) => responsable !== 'N/A').sort((a, b) => a.localeCompare(b));
 });
 const tiposContratacionDisponibles = computed(() => {
   const opciones = new Map<string, string>();
@@ -666,6 +678,7 @@ const hayFiltrosActivos = computed(() =>
   Boolean(
     busquedaActividades.value
     || filtroDireccion.value
+    || filtroResponsable.value
     || filtroPacNoPac.value
     || filtroTipoContratacion.value
     || filtroCuatrimestre.value
@@ -687,6 +700,10 @@ const actividadesActivas = computed(() => {
 
   if (filtroDireccion.value) {
     items = items.filter((a: any) => obtenerDireccion(a) === filtroDireccion.value);
+  }
+
+  if (filtroResponsable.value) {
+    items = items.filter((a: any) => obtenerResponsable(a) === filtroResponsable.value);
   }
 
   if (filtroPacNoPac.value) {
@@ -994,6 +1011,7 @@ watch(
 function limpiarFiltrosActividades() {
   busquedaActividades.value = '';
   filtroDireccion.value = '';
+  filtroResponsable.value = '';
   filtroPacNoPac.value = '';
   filtroTipoContratacion.value = '';
   filtroCuatrimestre.value = '';
@@ -2297,6 +2315,9 @@ async function onToggleProcesoDesierto() {
 .dashboard-buscador-container .buscador-input.combo-filtro::placeholder {
   color: #64748b;
   font-weight: 600;
+}
+.dashboard-buscador-container .buscador-input.combo-filtro:focus::placeholder {
+  color: transparent;
 }
 
 .kpi-grid {
