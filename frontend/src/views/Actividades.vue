@@ -28,9 +28,13 @@
               placeholder="Buscar por nombre, dirección o responsable..."
             />
           </div>
+          <button class="btn-toggle-filtros" @click="mostrarFiltros = !mostrarFiltros">
+            <i :class="mostrarFiltros ? 'ri-filter-line' : 'ri-filter-3-line'"></i>
+            {{ mostrarFiltros ? 'Ocultar filtros' : 'Mostrar filtros' }}
+          </button>
         </div>
 
-        <div class="dashboard-toolbar-filtros">
+        <div class="dashboard-toolbar-filtros" v-show="mostrarFiltros">
           <select v-model="filtroDireccion" class="combo-filtro">
             <option value="">Todas las direcciones</option>
             <option v-for="direccion in direccionesDisponibles" :key="direccion" :value="direccion">{{ direccion }}</option>
@@ -612,6 +616,7 @@ const router = useRouter();
 const auth = useAuthStore();
 const cargando = ref(true);
 const actividades = ref<any[]>([]);
+const mostrarFiltros = ref(false);
 const busquedaActividades = ref('');
 const filtroDireccion = ref('');
 const filtroResponsable = ref('');
@@ -2207,6 +2212,34 @@ async function onToggleProcesoDesierto() {
 .btn-clear-filter:hover {
   background: #fee2e2;
   border-color: #f87171;
+}
+
+.btn-toggle-filtros {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid #d9e2ea;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  color: #475569;
+  font-size: 0.71rem;
+  font-weight: 700;
+  height: 1.72rem;
+  line-height: 1.15;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-toggle-filtros:hover {
+  background: linear-gradient(180deg, #f1f5f9, #f0f7ff);
+  border-color: #94a3b8;
+  color: #1e293b;
+}
+
+.btn-toggle-filtros i {
+  font-size: 0.8rem;
 }
 
 .dashboard-toolbar {
