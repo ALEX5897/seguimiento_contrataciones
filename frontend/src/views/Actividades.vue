@@ -2132,7 +2132,7 @@ async function onToggleProcesoDesierto() {
   top: 0;
   z-index: 45;
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   padding: 0.3rem 0 0 0;
   margin-bottom: 0.3rem;
   background: transparent;
