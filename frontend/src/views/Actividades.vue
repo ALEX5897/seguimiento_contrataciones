@@ -1,7 +1,6 @@
 <template>
   <div class="actividades-view">
-    <div class="actividades-header" v-if="!cargando">
-      <h1 class="actividades-titulo">Actividades</h1>
+    <div class="actividades-btn-filtros" v-if="!cargando">
       <button class="btn-toggle-filtros" @click="mostrarFiltros = !mostrarFiltros">
         <i :class="mostrarFiltros ? 'ri-filter-line' : 'ri-filter-3-line'"></i>
         {{ mostrarFiltros ? 'Ocultar filtros' : 'Mostrar filtros' }}
@@ -2128,25 +2127,15 @@ async function onToggleProcesoDesierto() {
   margin-top: -0.5rem;
 }
 
-.actividades-header {
+.actividades-btn-filtros {
+  position: sticky;
+  top: 0;
+  z-index: 45;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.8rem;
-  background: #fff;
-  border: 1px solid #d9e2ea;
-  border-radius: 11px;
-  padding: 0.75rem 1rem;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
-}
-
-.actividades-titulo {
-  margin: 0;
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: #1e293b;
-  letter-spacing: -0.3px;
+  justify-content: flex-end;
+  padding: 0.3rem 0 0 0;
+  margin-bottom: 0.3rem;
+  background: transparent;
 }
 
 .context-summary {
