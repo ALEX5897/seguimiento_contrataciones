@@ -56,7 +56,7 @@
           @click="abrirDetalleKpi('procesos')"
         >
           <div class="kpi-header">
-            <i class="ri-file-list-3-line kpi-icon"></i>
+            <i class="ri-file-list-3-line kpi-icon" style="color: #3b82f6;"></i>
             <span class="kpi-title">Total de procesos</span>
           </div>
           <div class="kpi-donut-row">
@@ -73,7 +73,7 @@
           :data-tooltip="`Presupuesto total disponible: ${formatearMonto(presupuestoTotal)}`"
         >
           <div class="kpi-header">
-            <i class="ri-bank-card-line kpi-icon"></i>
+            <i class="ri-bank-card-line kpi-icon" style="color: #10b981;"></i>
             <span class="kpi-title">Presupuesto Total</span>
           </div>
           <strong class="kpi-value kpi-value-money">{{ formatearMonto(presupuestoTotal) }}</strong>
@@ -2136,19 +2136,32 @@ const colorCumplimientoConsolidado = computed(() =>
 
 .kpi-card {
   background: #ffffff;
-  border: 1px solid #d3e0ef;
+  border: 2px solid #d3e0ef;
   border-radius: var(--radius-md);
-  padding: 0.65rem 0.7rem;
+  padding: 0.55rem 0.7rem;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.2rem;
   box-shadow: 0 10px 26px rgba(17, 46, 78, 0.09);
   position: relative;
   overflow: hidden;
   transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
   text-align: center;
+  min-height: 110px;
+}
+
+.kpi-card.success {
+  border-color: #16a34a;
+}
+
+.kpi-card.danger {
+  border-color: #dc2626;
+}
+
+.kpi-card.warning {
+  border-color: #f59e0b;
 }
 
 .kpi-card:hover {
@@ -2161,6 +2174,8 @@ const colorCumplimientoConsolidado = computed(() =>
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
+  width: 100%;
+  flex-shrink: 0;
 }
 
 .kpi-icon {
@@ -2275,6 +2290,9 @@ const colorCumplimientoConsolidado = computed(() =>
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.02em;
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
 }
 
 .kpi-value-money {
@@ -2285,6 +2303,8 @@ const colorCumplimientoConsolidado = computed(() =>
   color: var(--c-text-muted);
   font-size: 0.68rem;
   line-height: 1.3;
+  width: 100%;
+  flex-shrink: 0;
 }
 
 .kpi-mini-track {
@@ -2315,6 +2335,7 @@ const colorCumplimientoConsolidado = computed(() =>
   justify-content: center;
   align-items: center;
   gap: 0.3rem;
+  flex-grow: 1;
 }
 
 /* ── Trend Cards ──────────────────────────────────────────────────────────── */
