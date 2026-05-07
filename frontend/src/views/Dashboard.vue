@@ -2364,10 +2364,9 @@ const colorCumplimientoConsolidado = computed(() =>
 
 .kpi-donut-row {
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1.2rem;
   flex-grow: 1;
 }
 
