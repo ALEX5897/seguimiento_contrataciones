@@ -2132,6 +2132,7 @@ const colorCumplimientoConsolidado = computed(() =>
 
 .cumplimiento-card {
   background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+  overflow: visible;
 }
 
 .kpi-card {
@@ -2477,7 +2478,8 @@ const colorCumplimientoConsolidado = computed(() =>
   z-index: 1;
   height: 100%;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  grid-auto-columns: minmax(76px, 1fr);
+  grid-auto-flow: column;
   align-items: end;
   gap: 0.55rem;
 }
@@ -4187,7 +4189,8 @@ const colorCumplimientoConsolidado = computed(() =>
   }
 
   .direccion-groups.vertical {
-    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    grid-auto-columns: minmax(64px, 1fr);
+    grid-auto-flow: column;
   }
 
   .direccion-group-bar-shell.vertical {
