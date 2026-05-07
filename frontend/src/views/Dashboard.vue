@@ -52,13 +52,20 @@
         <button
           type="button"
           class="kpi-card kpi-card-button has-tooltip"
-          :data-tooltip="`Semáforo positivo (80/50): actual ${porcentajeProcesosVisibles}%`"
+          :data-tooltip="`Procesos activos: ${procesosActivosValidos.length} - Cumplimiento: ${porcentajeCumplimientoTotalProcesos}%`"
           @click="abrirDetalleKpi('procesos')"
         >
-          <span class="kpi-title">Total de procesos</span>
-          <strong class="kpi-value">{{ kpis.totalTareas }}</strong>
-          <small class="kpi-foot">Procesos</small>
-       
+          <div class="kpi-header">
+            <i class="ri-file-list-3-line kpi-icon"></i>
+            <span class="kpi-title">Total de procesos</span>
+          </div>
+          <div class="kpi-donut-row">
+            <strong class="kpi-value">{{ procesosActivosValidos.length }}</strong>
+            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeCumplimientoTotalProcesos}%`, '--kpi-color': colorCumplimientoTotalProcesos }">
+              <span :style="{ color: colorCumplimientoTotalProcesos }">{{ porcentajeCumplimientoTotalProcesos }}%</span>
+            </div>
+          </div>
+          <small class="kpi-foot">{{ etapasCompletadasActivosValidos }}/{{ etapasActivosValidos.length }} etapas | {{ etapasAtrasadasActivosValidos }} atrasadas</small>
         </button>
         <button
           type="button"
@@ -66,14 +73,17 @@
           :data-tooltip="`Semáforo positivo (80/50): actual ${kpis.porcentajeCumplimiento}%`"
           @click="abrirDetalleKpi('cumplimiento')"
         >
-          <span class="kpi-title">Procesos Completos</span>
+          <div class="kpi-header">
+            <i class="ri-check-double-line kpi-icon" style="color: #16a34a;"></i>
+            <span class="kpi-title">Procesos Completos</span>
+          </div>
           <div class="kpi-donut-row">
             <strong class="kpi-value">{{ kpis.actividadesCompletadas }}</strong>
             <div class="kpi-mini-donut" :style="{ '--value': `${kpis.porcentajeCumplimiento}%`, '--kpi-color': colorCumplimiento }">
               <span :style="{ color: colorCumplimiento }">{{ kpis.porcentajeCumplimiento }}%</span>
             </div>
           </div>
-          <small class="kpi-foot">Procesos completos: {{ kpis.actividadesCompletadas }} de {{ kpis.totalTareas }}</small>
+          <small class="kpi-foot">{{ kpis.actividadesCompletadas }} de {{ kpis.totalTareas }} procesos</small>
         </button>
         <button
           type="button"
@@ -81,14 +91,17 @@
           :data-tooltip="`Semáforo riesgo (<=20/<=50): actual ${porcentajeAtraso}%`"
           @click="abrirDetalleKpi('retraso')"
         >
-          <span class="kpi-title">Procesos con etapas retrasadas</span>
+          <div class="kpi-header">
+            <i class="ri-alert-line kpi-icon" style="color: #dc2626;"></i>
+            <span class="kpi-title">Con etapas retrasadas</span>
+          </div>
           <div class="kpi-donut-row">
             <strong class="kpi-value">{{ kpis.atrasadas }}</strong>
             <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeAtraso}%`, '--kpi-color': colorAtraso }">
               <span :style="{ color: colorAtraso }">{{ porcentajeAtraso }}%</span>
             </div>
           </div>
-          <small class="kpi-foot">Procesos que tienen etapas fuera de fecha</small>
+          <small class="kpi-foot">Procesos fuera de fecha</small>
         </button>
         <button
           type="button"
@@ -96,14 +109,17 @@
           :data-tooltip="`Procesos con riesgo general marcado: ${detalleProcesosRiesgo.length}`"
           @click="abrirDetalleKpi('riesgo')"
         >
-          <span class="kpi-title">Procesos en riesgo</span>
+          <div class="kpi-header">
+            <i class="ri-shield-warning-line kpi-icon" style="color: #f59e0b;"></i>
+            <span class="kpi-title">En riesgo</span>
+          </div>
           <div class="kpi-donut-row">
             <strong class="kpi-value">{{ detalleProcesosRiesgo.length }}</strong>
             <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProcesosRiesgo}%`, '--kpi-color': colorProcesosRiesgo }">
               <span :style="{ color: colorProcesosRiesgo }">{{ porcentajeProcesosRiesgo }}%</span>
             </div>
           </div>
-          <small class="kpi-foot">Procesos marcados con riesgo</small>
+          <small class="kpi-foot">Marcados con riesgo</small>
         </button>
         <button
           type="button"
@@ -111,14 +127,17 @@
           :data-tooltip="`Procesos marcados como desiertos: ${detalleProcesosDesiertos.length}`"
           @click="abrirDetalleKpi('desiertos')"
         >
-          <span class="kpi-title">Procesos desiertos</span>
+          <div class="kpi-header">
+            <i class="ri-forbid-2-line kpi-icon" style="color: #f59e0b;"></i>
+            <span class="kpi-title">Desiertos</span>
+          </div>
           <div class="kpi-donut-row">
             <strong class="kpi-value">{{ detalleProcesosDesiertos.length }}</strong>
             <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProcesosDesiertos}%`, '--kpi-color': colorProcesosDesiertos }">
               <span :style="{ color: colorProcesosDesiertos }">{{ porcentajeProcesosDesiertos }}%</span>
             </div>
           </div>
-          <small class="kpi-foot">Procesos con estado desierto</small>
+          <small class="kpi-foot">Estado desierto</small>
         </button>
         <button
           type="button"
@@ -126,21 +145,102 @@
           :data-tooltip="`Procesos con presupuesto 0 o sin asignación: ${detalleProcesosDesfinanciados.length}`"
           @click="abrirDetalleKpi('desfinanciados')"
         >
-          <span class="kpi-title">Procesos desfinanciados</span>
-          <div class="kpi-donut-row">
-            <strong class="kpi-value">{{ detalleProcesosDesfinanciados.length }}</strong>
+          <div class="kpi-header">
+            <i class="ri-money-dollar-circle-line kpi-icon" style="color: #f59e0b;"></i>
+            <span class="kpi-title">Desfinanciados</span>
           </div>
-          <small class="kpi-foot">Presupuesto 0 o no asignado</small>
+          <strong class="kpi-value">{{ detalleProcesosDesfinanciados.length }}</strong>
+          <small class="kpi-foot">Sin presupuesto asignado</small>
+        </button>
+        <button
+          type="button"
+          class="kpi-card kpi-card-button has-tooltip"
+          :data-tooltip="`Presupuesto total disponible: ${formatearMonto(presupuestoTotal)}`"
+        >
+          <div class="kpi-header">
+            <i class="ri-bank-card-line kpi-icon"></i>
+            <span class="kpi-title">Presupuesto Total</span>
+          </div>
+          <strong class="kpi-value kpi-value-money">{{ formatearMonto(presupuestoTotal) }}</strong>
+          <small class="kpi-foot">Disponible</small>
+        </button>
+        <button
+          type="button"
+          class="kpi-card kpi-card-button has-tooltip"
+          :data-tooltip="`Presupuesto PAC: ${formatearMonto(presupuestoPAC)} (${porcentajPresupuestoPAC}%)`"
+        >
+          <div class="kpi-header">
+            <i class="ri-calendar-line kpi-icon" style="color: #2563eb;"></i>
+            <span class="kpi-title">Presupuesto PAC</span>
+          </div>
+          <div class="kpi-donut-row">
+            <strong class="kpi-value kpi-value-money">{{ formatearMonto(presupuestoPAC) }}</strong>
+            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajPresupuestoPAC}%`, '--kpi-color': '#2563eb' }">
+              <span style="color: #2563eb">{{ porcentajPresupuestoPAC }}%</span>
+            </div>
+          </div>
+          <small class="kpi-foot">{{ porcentajPresupuestoPAC }}% del total</small>
+        </button>
+        <button
+          type="button"
+          class="kpi-card kpi-card-button has-tooltip"
+          :data-tooltip="`Presupuesto NO PAC: ${formatearMonto(presupuestoNOPAC)} (${porcentajPresupuestoNOPAC}%)`"
+        >
+          <div class="kpi-header">
+            <i class="ri-time-line kpi-icon" style="color: #f59e0b;"></i>
+            <span class="kpi-title">Presupuesto NO PAC</span>
+          </div>
+          <div class="kpi-donut-row">
+            <strong class="kpi-value kpi-value-money">{{ formatearMonto(presupuestoNOPAC) }}</strong>
+            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajPresupuestoNOPAC}%`, '--kpi-color': '#f59e0b' }">
+              <span style="color: #f59e0b">{{ porcentajPresupuestoNOPAC }}%</span>
+            </div>
+          </div>
+          <small class="kpi-foot">{{ porcentajPresupuestoNOPAC }}% del total</small>
+        </button>
+        <button
+          type="button"
+          class="kpi-card kpi-card-button success has-tooltip"
+          :data-tooltip="`Etapas completadas: ${etapasCompletadasActivosValidos} de ${etapasActivosValidos.length}`"
+        >
+          <div class="kpi-header">
+            <i class="ri-task-2-line kpi-icon" style="color: #16a34a;"></i>
+            <span class="kpi-title">Etapas Completadas</span>
+          </div>
+          <div class="kpi-donut-row">
+            <strong class="kpi-value">{{ etapasCompletadasActivosValidos }}</strong>
+            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeCumplimientoTotalProcesos}%`, '--kpi-color': '#16a34a' }">
+              <span style="color: #16a34a">{{ porcentajeCumplimientoTotalProcesos }}%</span>
+            </div>
+          </div>
+          <small class="kpi-foot">{{ porcentajeCumplimientoTotalProcesos }}% completadas</small>
+        </button>
+        <button
+          type="button"
+          class="kpi-card kpi-card-button danger has-tooltip"
+          :data-tooltip="`Etapas atrasadas: ${etapasAtrasadasActivosValidos} pendientes con retraso`"
+        >
+          <div class="kpi-header">
+            <i class="ri-time-line kpi-icon" style="color: #dc2626;"></i>
+            <span class="kpi-title">Etapas Atrasadas</span>
+          </div>
+          <div class="kpi-donut-row">
+            <strong class="kpi-value">{{ etapasAtrasadasActivosValidos }}</strong>
+            <div class="kpi-mini-donut" :style="{ '--value': porcentajeEtapasAtrasadasTotal, '--kpi-color': '#dc2626' }">
+              <span style="color: #dc2626">{{ porcentajeEtapasAtrasadasTotal }}%</span>
+            </div>
+          </div>
+          <small class="kpi-foot">{{ porcentajeEtapasAtrasadasTotal }}% atrasadas</small>
         </button>
       </section>
 
       <section class="charts-grid priority-grid">
 
-        <!-- Tarjeta velocímetro -->
+        <!-- Tarjeta velocímetro PAC -->
         <article class="panel gauge-panel">
           <div class="panel-header">
-            <h2>Nivel de cumplimiento</h2>
-            <span>{{ etapasCompletadasConFecha }} de {{ totalEtapasConFecha }} etapas</span>
+            <h2>Cumplimiento - PAC</h2>
+            <span>{{ totalProcesosPAC }} procesos</span>
           </div>
           <div class="gauge-wrap">
             <svg class="gauge-svg" viewBox="0 0 220 130" aria-hidden="true">
@@ -156,23 +256,23 @@
                 class="gauge-progress"
                 d="M 22 108 A 88 88 0 0 1 198 108"
                 fill="none"
-                :stroke="gaugeColor"
+                :stroke="gaugeColorPAC"
                 stroke-width="16"
                 stroke-linecap="round"
                 pathLength="100"
-                :stroke-dasharray="`${gaugeProgress} 100`"
+                :stroke-dasharray="`${gaugeProgressPAC} 100`"
                 style="transition: stroke-dasharray 0.6s ease, stroke 0.4s ease;"
               />
               <g
                 class="gauge-needle"
-                :style="{ transform: `rotate(${gaugeNeedleRotation}deg)`, transformOrigin: '110px 108px', transition: 'transform 0.55s ease' }"
+                :style="{ transform: `rotate(${gaugeNeedleRotationPAC}deg)`, transformOrigin: '110px 108px', transition: 'transform 0.55s ease' }"
               >
                 <line
                   x1="110"
                   y1="108"
                   x2="110"
                   y2="38"
-                  :stroke="gaugeColor"
+                  :stroke="gaugeColorPAC"
                   stroke-width="4"
                   stroke-linecap="round"
                 />
@@ -186,18 +286,18 @@
               <text x="110" y="14" text-anchor="middle" class="gauge-zone-txt">50%</text>
               <text x="198" y="124" text-anchor="end" class="gauge-zone-txt">100%</text>
             </svg>
-            <div class="gauge-value" :style="{ color: gaugeColor }">{{ porcentajeEtapas }}%</div>
-            <div class="gauge-sub">de {{ totalEtapasConFecha }} etapas</div>
+            <div class="gauge-value" :style="{ color: gaugeColorPAC }">{{ porcentajeEtapasPAC }}%</div>
+            <div class="gauge-sub">de {{ totalEtapasConFechaPAC }} procesos</div>
             <div class="gauge-progress-list">
               <div class="gauge-progress-item">
                 <div class="gauge-progress-head">
                   <span class="gauge-progress-label">Completas</span>
-                  <span class="gauge-progress-meta">{{ etapasCompletadasConFecha }} · {{ porcentajeEtapasCompletadas }}%</span>
+                  <span class="gauge-progress-meta">{{ etapasCompletadasConFechaPAC }} · {{ porcentajeEtapasCompletadasPAC }}%</span>
                 </div>
                 <div class="gauge-progress-track">
                   <div
                     class="gauge-progress-fill success"
-                    :style="{ width: `${porcentajeEtapasCompletadas}%` }"
+                    :style="{ width: `${porcentajeEtapasCompletadasPAC}%` }"
                   ></div>
                 </div>
               </div>
@@ -205,12 +305,12 @@
               <div class="gauge-progress-item">
                 <div class="gauge-progress-head">
                   <span class="gauge-progress-label">Pendientes</span>
-                  <span class="gauge-progress-meta">{{ etapasPendientesConFecha }} · {{ porcentajeEtapasPendientes }}%</span>
+                  <span class="gauge-progress-meta">{{ etapasPendientesConFechaPAC }} · {{ porcentajeEtapasPendientesPAC }}%</span>
                 </div>
                 <div class="gauge-progress-track">
                   <div
                     class="gauge-progress-fill warning"
-                    :style="{ width: `${porcentajeEtapasPendientes}%` }"
+                    :style="{ width: `${porcentajeEtapasPendientesPAC}%` }"
                   ></div>
                 </div>
               </div>
@@ -218,12 +318,107 @@
               <div class="gauge-progress-item">
                 <div class="gauge-progress-head">
                   <span class="gauge-progress-label">Atrasadas</span>
-                  <span class="gauge-progress-meta">{{ etapasAtrasadasConFecha }} · {{ porcentajeEtapasAtrasadas }}%</span>
+                  <span class="gauge-progress-meta">{{ etapasAtrasadasConFechaPAC }} · {{ porcentajeEtapasAtrasadasPAC }}%</span>
                 </div>
                 <div class="gauge-progress-track">
                   <div
                     class="gauge-progress-fill danger"
-                    :style="{ width: `${porcentajeEtapasAtrasadas}%` }"
+                    :style="{ width: `${porcentajeEtapasAtrasadasPAC}%` }"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Tarjeta velocímetro NO PAC -->
+        <article class="panel gauge-panel">
+          <div class="panel-header">
+            <h2>Cumplimiento - NO PAC</h2>
+            <span>{{ totalProcesosNOPAC }} procesos</span>
+          </div>
+          <div class="gauge-wrap">
+            <svg class="gauge-svg" viewBox="0 0 220 130" aria-hidden="true">
+              <path
+                class="gauge-track"
+                d="M 22 108 A 88 88 0 0 1 198 108"
+                fill="none"
+                stroke="#dce5f2"
+                stroke-width="16"
+                stroke-linecap="round"
+              />
+              <path
+                class="gauge-progress"
+                d="M 22 108 A 88 88 0 0 1 198 108"
+                fill="none"
+                :stroke="gaugeColorNOPAC"
+                stroke-width="16"
+                stroke-linecap="round"
+                pathLength="100"
+                :stroke-dasharray="`${gaugeProgressNOPAC} 100`"
+                style="transition: stroke-dasharray 0.6s ease, stroke 0.4s ease;"
+              />
+              <g
+                class="gauge-needle"
+                :style="{ transform: `rotate(${gaugeNeedleRotationNOPAC}deg)`, transformOrigin: '110px 108px', transition: 'transform 0.55s ease' }"
+              >
+                <line
+                  x1="110"
+                  y1="108"
+                  x2="110"
+                  y2="38"
+                  :stroke="gaugeColorNOPAC"
+                  stroke-width="4"
+                  stroke-linecap="round"
+                />
+              </g>
+              <circle cx="110" cy="108" r="7" fill="#1e293b" />
+              <circle cx="110" cy="108" r="3.2" fill="#ffffff" />
+              <line class="gauge-mark" x1="22" y1="108" x2="30" y2="108" />
+              <line class="gauge-mark" x1="110" y1="20" x2="110" y2="28" />
+              <line class="gauge-mark" x1="198" y1="108" x2="190" y2="108" />
+              <text x="22" y="124" class="gauge-zone-txt">0%</text>
+              <text x="110" y="14" text-anchor="middle" class="gauge-zone-txt">50%</text>
+              <text x="198" y="124" text-anchor="end" class="gauge-zone-txt">100%</text>
+            </svg>
+            <div class="gauge-value" :style="{ color: gaugeColorNOPAC }">{{ porcentajeEtapasNOPAC }}%</div>
+            <div class="gauge-sub">de {{ totalEtapasConFechaNOPAC }} procesos</div>
+            <div class="gauge-progress-list">
+              <div class="gauge-progress-item">
+                <div class="gauge-progress-head">
+                  <span class="gauge-progress-label">Completas</span>
+                  <span class="gauge-progress-meta">{{ etapasCompletadasConFechaNOPAC }} · {{ porcentajeEtapasCompletadasNOPAC }}%</span>
+                </div>
+                <div class="gauge-progress-track">
+                  <div
+                    class="gauge-progress-fill success"
+                    :style="{ width: `${porcentajeEtapasCompletadasNOPAC}%` }"
+                  ></div>
+                </div>
+              </div>
+
+              <div class="gauge-progress-item">
+                <div class="gauge-progress-head">
+                  <span class="gauge-progress-label">Pendientes</span>
+                  <span class="gauge-progress-meta">{{ etapasPendientesConFechaNOPAC }} · {{ porcentajeEtapasPendientesNOPAC }}%</span>
+                </div>
+                <div class="gauge-progress-track">
+                  <div
+                    class="gauge-progress-fill warning"
+                    :style="{ width: `${porcentajeEtapasPendientesNOPAC}%` }"
+                  ></div>
+                </div>
+              </div>
+
+              <div class="gauge-progress-item">
+                <div class="gauge-progress-head">
+                  <span class="gauge-progress-label">Atrasadas</span>
+                  <span class="gauge-progress-meta">{{ etapasAtrasadasConFechaNOPAC }} · {{ porcentajeEtapasAtrasadasNOPAC }}%</span>
+                </div>
+                <div class="gauge-progress-track">
+                  <div
+                    class="gauge-progress-fill danger"
+                    :style="{ width: `${porcentajeEtapasAtrasadasNOPAC}%` }"
                   ></div>
                 </div>
               </div>
@@ -266,23 +461,29 @@
         <article class="panel donut-panel montos-panel">
           <div class="panel-header">
             <h2>Montos por dirección</h2>
-            <span>{{ formatearMonto(totalMontoDirecciones) }}</span>
+            <span>{{ montosPorDireccion.length }} direcciones</span>
           </div>
           <div v-if="montosPorDireccion.length" class="donut-wrap area-donut-stack">
             <div class="donut area-donut" :style="estiloDonaMontos">
               <div class="donut-center">
-                <strong>{{ montosPorDireccion.length }}</strong>
-                <span>Direcciones</span>
+                <strong>{{ totalMontoDirecciones > 0 ? formatearMonto(totalMontoDirecciones) : '$0' }}</strong>
+                <span>Total</span>
               </div>
             </div>
             <div class="donut-legend area-legend">
-              <div v-for="item in montosPorDireccion" :key="`monto-${item.direccion}`" class="area-legend-item static">
+              <button
+                v-for="item in montosPorDireccion"
+                :key="`monto-${item.direccion}`"
+                type="button"
+                class="area-legend-item"
+                disabled
+              >
                 <div class="area-legend-main">
                   <i class="dot" :style="{ background: item.color }"></i>
                   <span class="area-legend-name">{{ item.direccion }}</span>
                 </div>
                 <span class="area-legend-meta">{{ item.porcentajeMonto }}% · {{ formatearMonto(item.monto) }}</span>
-              </div>
+              </button>
             </div>
           </div>
           <div v-else class="empty">Sin montos disponibles por dirección para el filtro actual.</div>
@@ -929,13 +1130,6 @@ const etapas = computed(() =>
   )
 );
 
-const etapasConFechaAsignada = computed(() =>
-  etapas.value.filter((etapa: any) => {
-    const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
-    return typeof fecha === 'string' ? fecha.trim().length > 0 : Boolean(fecha);
-  })
-);
-
 const completadas = computed(() =>
   etapas.value.filter((e: any) => normalizarEstado(e.estado, e.fechaReal) === 'completado').length
 );
@@ -1069,12 +1263,6 @@ const detalleProcesosDesfinanciados = computed(() => {
       return fechaA - fechaB || a.nombre.localeCompare(b.nombre);
     });
 });
-
-const porcentajeProcesosDesfinanciados = computed(() => {
-  const total = Math.max(1, kpis.value.totalTareas);
-  return Math.min(100, Math.round((detalleProcesosDesfinanciados.value.length / total) * 100));
-});
-const colorProcesosDesfinanciados = computed(() => colorSemaforoRiesgo(porcentajeProcesosDesfinanciados.value));
 
 const detalleCumplimiento = computed(() =>
   subtareasFiltradas.value
@@ -1394,49 +1582,276 @@ watch([
   cargarResumenSemanal();
 });
 
-// Velocímetro basado solo en etapas con fecha asignada
-const totalEtapasConFecha = computed(() => etapasConFechaAsignada.value.length);
+// Obtener subtareas válidas para presupuesto (excluyendo sin presupuesto y desiertos)
+function obtenerSubtareasValidasParaPresupuesto() {
+  return subtareasBaseFiltradas.value.filter((subtarea: any) => {
+    const presupuesto = obtenerPresupuestoDashboard(subtarea);
+    const estado = obtenerEstadoProcesoDashboard(subtarea);
+    return presupuesto > 0 && estado !== 2;
+  });
+}
 
-const etapasCompletadasConFecha = computed(() =>
-  etapasConFechaAsignada.value.filter((etapa: any) => normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado').length
+// Presupuesto total
+const presupuestoTotal = computed(() =>
+  obtenerSubtareasValidasParaPresupuesto().reduce((total, subtarea) => total + obtenerPresupuestoDashboard(subtarea), 0)
 );
 
-const etapasPendientesConFecha = computed(() =>
-  Math.max(0, totalEtapasConFecha.value - etapasCompletadasConFecha.value - etapasAtrasadasConFecha.value)
+// Presupuesto PAC
+const presupuestoPAC = computed(() => {
+  return obtenerSubtareasValidasParaPresupuesto()
+    .filter((subtarea: any) => {
+      const tipo = String(subtarea?.pacNoPac || subtarea?.pac_no_pac || subtarea?.tipoPlan || '').toUpperCase();
+      return tipo === 'PAC';
+    })
+    .reduce((total, subtarea) => total + obtenerPresupuestoDashboard(subtarea), 0);
+});
+
+// Presupuesto NO PAC
+const presupuestoNOPAC = computed(() => {
+  return obtenerSubtareasValidasParaPresupuesto()
+    .filter((subtarea: any) => {
+      const tipo = String(subtarea?.pacNoPac || subtarea?.pac_no_pac || subtarea?.tipoPlan || '').toUpperCase();
+      return tipo === 'NO PAC';
+    })
+    .reduce((total, subtarea) => total + obtenerPresupuestoDashboard(subtarea), 0);
+});
+
+// Porcentaje de presupuesto PAC
+const porcentajPresupuestoPAC = computed(() => {
+  const total = presupuestoTotal.value;
+  return total > 0 ? Math.round((presupuestoPAC.value / total) * 100) : 0;
+});
+
+// Porcentaje de presupuesto NO PAC
+const porcentajPresupuestoNOPAC = computed(() => {
+  const total = presupuestoTotal.value;
+  return total > 0 ? Math.round((presupuestoNOPAC.value / total) * 100) : 0;
+});
+
+// Etapas PAC y NO PAC (solo de subtareas válidas: sin presupuesto 0 y no desiertos)
+const etapasPAC = computed(() => {
+  const subtareasValidas = obtenerSubtareasValidasParaPresupuesto();
+  return etapas.value.filter((etapa: any) => {
+    const subtarea = subtareasFiltradas.value.find(s => s.id === etapa.subtareaId);
+    if (!subtarea) return false;
+    // Verificar que la subtarea esté en la lista de válidas
+    if (!subtareasValidas.find(s => s.id === subtarea.id)) return false;
+    const tipo = String(subtarea?.pacNoPac || subtarea?.pac_no_pac || subtarea?.tipoPlan || '').toUpperCase();
+    return tipo === 'PAC';
+  });
+});
+
+const etapasNOPAC = computed(() => {
+  const subtareasValidas = obtenerSubtareasValidasParaPresupuesto();
+  return etapas.value.filter((etapa: any) => {
+    const subtarea = subtareasFiltradas.value.find(s => s.id === etapa.subtareaId);
+    if (!subtarea) return false;
+    // Verificar que la subtarea esté en la lista de válidas
+    if (!subtareasValidas.find(s => s.id === subtarea.id)) return false;
+    const tipo = String(subtarea?.pacNoPac || subtarea?.pac_no_pac || subtarea?.tipoPlan || '').toUpperCase();
+    return tipo === 'NO PAC';
+  });
+});
+
+const etapasConFechaAsignadaPAC = computed(() =>
+  etapasPAC.value.filter((etapa: any) => {
+    const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
+    return typeof fecha === 'string' ? fecha.trim().length > 0 : Boolean(fecha);
+  })
 );
 
-const etapasAtrasadasConFecha = computed(() => {
+const etapasConFechaAsignadaNOPAC = computed(() =>
+  etapasNOPAC.value.filter((etapa: any) => {
+    const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
+    return typeof fecha === 'string' ? fecha.trim().length > 0 : Boolean(fecha);
+  })
+);
+
+const totalEtapasConFechaPAC = computed(() => etapasConFechaAsignadaPAC.value.length);
+const totalEtapasConFechaNOPAC = computed(() => etapasConFechaAsignadaNOPAC.value.length);
+
+// Contar procesos únicos PAC y NO PAC de etapas con fecha
+// Nota: Según DB, hay 45 procesos PAC pero solo 26 tienen etapas con fecha
+// Los 19 faltantes no tienen etapas programadas y se excluyen
+const totalProcesosPAC = computed(() => {
+  const procesosUnicos = new Set(etapasConFechaAsignadaPAC.value.map((etapa: any) => etapa.subtareaId));
+  return procesosUnicos.size;
+});
+
+const totalProcesosNOPAC = computed(() => {
+  const procesosUnicos = new Set(etapasConFechaAsignadaNOPAC.value.map((etapa: any) => etapa.subtareaId));
+  return procesosUnicos.size;
+});
+
+const etapasCompletadasConFechaPAC = computed(() =>
+  etapasConFechaAsignadaPAC.value.filter((etapa: any) => normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado').length
+);
+
+const etapasCompletadasConFechaNOPAC = computed(() =>
+  etapasConFechaAsignadaNOPAC.value.filter((etapa: any) => normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado').length
+);
+
+const etapasAtrasadasConFechaPAC = computed(() => {
   const hoy = parseFechaDashboard(obtenerFechaHoyDashboard());
   if (!hoy) return 0;
 
-  return etapasConFechaAsignada.value.filter((etapa: any) => {
+  return etapasConFechaAsignadaPAC.value.filter((etapa: any) => {
     if (normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado') return false;
     const plan = parseFechaDashboard(etapa?.fechaPlanificada || etapa?.fechaTentativa);
     return Boolean(plan && plan < hoy);
   }).length;
 });
 
-const porcentajeEtapas = computed(() =>
-  totalEtapasConFecha.value
-    ? Math.round((etapasCompletadasConFecha.value / totalEtapasConFecha.value) * 100)
+const etapasAtrasadasConFechaNOPAC = computed(() => {
+  const hoy = parseFechaDashboard(obtenerFechaHoyDashboard());
+  if (!hoy) return 0;
+
+  return etapasConFechaAsignadaNOPAC.value.filter((etapa: any) => {
+    if (normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado') return false;
+    const plan = parseFechaDashboard(etapa?.fechaPlanificada || etapa?.fechaTentativa);
+    return Boolean(plan && plan < hoy);
+  }).length;
+});
+
+const etapasPendientesConFechaPAC = computed(() =>
+  Math.max(0, totalEtapasConFechaPAC.value - etapasCompletadasConFechaPAC.value - etapasAtrasadasConFechaPAC.value)
+);
+
+const etapasPendientesConFechaNOPAC = computed(() =>
+  Math.max(0, totalEtapasConFechaNOPAC.value - etapasCompletadasConFechaNOPAC.value - etapasAtrasadasConFechaNOPAC.value)
+);
+
+// Porcentaje de cumplimiento PAC y NO PAC (basado en total consolidado de etapas)
+const porcentajeEtapasPAC = computed(() =>
+  totalEtapasConsolidado.value
+    ? Math.round((etapasCompletadasConFechaPAC.value / totalEtapasConsolidado.value) * 100)
     : 0
 );
 
-const porcentajeEtapasCompletadas = computed(() => porcentajeEtapas.value);
-const porcentajeEtapasPendientes = computed(() =>
-  totalEtapasConFecha.value
-    ? Math.max(0, 100 - porcentajeEtapasCompletadas.value - porcentajeEtapasAtrasadas.value)
-    : 0
-);
-const porcentajeEtapasAtrasadas = computed(() =>
-  totalEtapasConFecha.value
-    ? Math.round((etapasAtrasadasConFecha.value / totalEtapasConFecha.value) * 100)
+const porcentajeEtapasNOPAC = computed(() =>
+  totalEtapasConsolidado.value
+    ? Math.round((etapasCompletadasConFechaNOPAC.value / totalEtapasConsolidado.value) * 100)
     : 0
 );
 
-const gaugeProgress = computed(() => Math.min(100, Math.max(0, porcentajeEtapas.value)));
-const gaugeNeedleRotation = computed(() => -90 + (gaugeProgress.value / 100) * 180);
-const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value));
+const porcentajeEtapasCompletadasPAC = computed(() => porcentajeEtapasPAC.value);
+const porcentajeEtapasCompletadasNOPAC = computed(() => porcentajeEtapasNOPAC.value);
+
+const porcentajeEtapasPendientesPAC = computed(() =>
+  Math.max(0, 100 - porcentajeEtapasCompletadasPAC.value - porcentajeEtapasAtrasadasPAC.value)
+);
+
+const porcentajeEtapasPendientesNOPAC = computed(() =>
+  Math.max(0, 100 - porcentajeEtapasCompletadasNOPAC.value - porcentajeEtapasAtrasadasNOPAC.value)
+);
+
+const porcentajeEtapasAtrasadasPAC = computed(() =>
+  totalEtapasConFechaPAC.value
+    ? Math.round((etapasAtrasadasConFechaPAC.value / totalEtapasConFechaPAC.value) * 100)
+    : 0
+);
+
+const porcentajeEtapasAtrasadasNOPAC = computed(() =>
+  totalEtapasConFechaNOPAC.value
+    ? Math.round((etapasAtrasadasConFechaNOPAC.value / totalEtapasConFechaNOPAC.value) * 100)
+    : 0
+);
+
+const gaugeProgressPAC = computed(() => Math.min(100, Math.max(0, porcentajeEtapasPAC.value)));
+const gaugeNeedleRotationPAC = computed(() => -90 + (gaugeProgressPAC.value / 100) * 180);
+const gaugeColorPAC = computed(() => colorSemaforoPositivo(porcentajeEtapasPAC.value));
+
+const gaugeProgressNOPAC = computed(() => Math.min(100, Math.max(0, porcentajeEtapasNOPAC.value)));
+const gaugeNeedleRotationNOPAC = computed(() => -90 + (gaugeProgressNOPAC.value / 100) * 180);
+const gaugeColorNOPAC = computed(() => colorSemaforoPositivo(porcentajeEtapasNOPAC.value));
+
+// Total de procesos activos válidos (excluyendo desiertos, desfinanciados y sin etapas con fecha)
+const procesosActivosValidos = computed(() => {
+  return subtareasBaseFiltradas.value.filter((subtarea: any) => {
+    const presupuesto = obtenerPresupuestoDashboard(subtarea);
+    const estado = obtenerEstadoProcesoDashboard(subtarea);
+    // Excluir desfinanciados (presupuesto = 0) y desiertos (estado = 2)
+    if (presupuesto <= 0 || estado === 2) return false;
+    // Excluir procesos sin etapas con fecha
+    const etapasConFecha = getEtapasConFechaSubtarea(subtarea);
+    return etapasConFecha.length > 0;
+  });
+});
+
+// Etapas de procesos activos válidos (solo con fecha asignada)
+const etapasActivosValidos = computed(() =>
+  procesosActivosValidos.value.flatMap((subtarea: any) =>
+    (subtarea.seguimientoEtapas || []).filter((etapa: any) => {
+      const fecha = etapa?.fechaPlanificada || etapa?.fechaTentativa;
+      return typeof fecha === 'string' ? fecha.trim().length > 0 : Boolean(fecha);
+    }).map((etapa: any) => ({
+      ...etapa,
+      id: etapa.id || `${subtarea.id}-${etapa.etapaId || etapa.nombre}`,
+      subtareaId: subtarea.id
+    }))
+  )
+);
+
+// Etapas completadas de procesos activos válidos
+const etapasCompletadasActivosValidos = computed(() =>
+  etapasActivosValidos.value.filter((etapa: any) =>
+    normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado'
+  ).length
+);
+
+// Etapas atrasadas (pendientes con días de retraso) de procesos activos válidos
+const etapasAtrasadasActivosValidos = computed(() => {
+  const hoy = parseFechaDashboard(obtenerFechaHoyDashboard());
+  if (!hoy) return 0;
+
+  return etapasActivosValidos.value.filter((etapa: any) => {
+    if (normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado') return false;
+    const plan = parseFechaDashboard(etapa?.fechaPlanificada || etapa?.fechaTentativa);
+    return Boolean(plan && plan < hoy);
+  }).length;
+});
+
+// Etapas en progreso (pendientes sin días de retraso) de procesos activos válidos
+const etapasEnProgresoActivosValidos = computed(() =>
+  Math.max(0, etapasActivosValidos.value.length - etapasCompletadasActivosValidos.value - etapasAtrasadasActivosValidos.value)
+);
+
+// Porcentaje de cumplimiento para Total de procesos (basado en etapas)
+const porcentajeCumplimientoTotalProcesos = computed(() =>
+  etapasActivosValidos.value.length
+    ? Math.round((etapasCompletadasActivosValidos.value / etapasActivosValidos.value.length) * 100)
+    : 0
+);
+
+// Porcentaje de etapas atrasadas
+const porcentajeEtapasAtrasadasTotal = computed(() =>
+  etapasActivosValidos.value.length
+    ? Math.round((etapasAtrasadasActivosValidos.value / etapasActivosValidos.value.length) * 100)
+    : 0
+);
+
+const colorCumplimientoTotalProcesos = computed(() =>
+  colorSemaforoPositivo(porcentajeCumplimientoTotalProcesos.value)
+);
+
+// Cumplimiento total consolidado (PAC + NO PAC) - Basado en etapas
+const totalEtapasConsolidado = computed(() =>
+  totalEtapasConFechaPAC.value + totalEtapasConFechaNOPAC.value
+);
+
+const etapasCompletadasConsolidado = computed(() =>
+  etapasCompletadasConFechaPAC.value + etapasCompletadasConFechaNOPAC.value
+);
+
+const porcentajeCumplimientoConsolidado = computed(() =>
+  totalEtapasConsolidado.value
+    ? Math.round((etapasCompletadasConsolidado.value / totalEtapasConsolidado.value) * 100)
+    : 0
+);
+
+const colorCumplimientoConsolidado = computed(() =>
+  colorSemaforoPositivo(porcentajeCumplimientoConsolidado.value)
+);
 
 </script>
 
@@ -1750,21 +2165,38 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
   grid-template-columns: minmax(0, 1fr);
 }
 
+.cumplimiento-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+}
+
 .kpi-card {
   background: #ffffff;
   border: 1px solid #d3e0ef;
   border-radius: var(--radius-md);
   padding: 0.88rem 0.95rem;
   display: grid;
-  gap: 0.34rem;
+  gap: 0.5rem;
   box-shadow: 0 10px 26px rgba(17, 46, 78, 0.09);
   position: relative;
   overflow: hidden;
-  transition: box-shadow 0.2s, transform 0.2s;
+  transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
 }
 
 .kpi-card:hover {
   box-shadow: 0 14px 30px rgba(17, 46, 78, 0.13);
+  border-color: #b8d1f0;
+}
+
+.kpi-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.kpi-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  opacity: 0.85;
 }
 
 .kpi-card.has-tooltip {
@@ -1985,10 +2417,14 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.9rem;
+  gap: 1.2rem;
   color: var(--c-text-secondary);
-  font-size: 0.73rem;
+  font-size: 0.75rem;
   font-weight: 700;
+  margin-bottom: 0.5rem;
+  padding: 0.4rem 0;
+  background: linear-gradient(180deg, transparent 0%, #f8fafc 100%);
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .direccion-bars-wrap {
@@ -1998,10 +2434,10 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 
 .direccion-vertical-chart {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-columns: 50px minmax(0, 1fr);
   align-items: end;
-  gap: 0.75rem;
-  min-width: 720px;
+  gap: 0.9rem;
+  min-width: 100%;
 }
 
 .direccion-y-axis {
@@ -2010,10 +2446,11 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
   flex-direction: column;
   justify-content: space-between;
   align-items: flex-end;
-  color: var(--c-text-muted);
-  font-size: 0.68rem;
+  color: var(--c-text-secondary);
+  font-size: 0.7rem;
   font-weight: 700;
   padding-bottom: 1.65rem;
+  padding-right: 0.3rem;
 }
 
 .direccion-chart-canvas {
@@ -2056,8 +2493,8 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 }
 
 .direccion-group-bar-shell.vertical {
-  width: 54px;
-  height: 150px;
+  width: 64px;
+  height: 180px;
   display: flex;
   align-items: flex-end;
 }
@@ -2065,13 +2502,19 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 .direccion-group-bar.vertical {
   width: 100%;
   height: 100%;
-  border-radius: 10px 10px 0 0;
-  border: 1px solid #dbeafe;
-  background: #f8fafc;
+  border-radius: 12px 12px 0 0;
+  border: 1.5px solid #e2e8f0;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
   display: flex;
   flex-direction: column-reverse;
   overflow: hidden;
-  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.direccion-group-bar.vertical:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.12);
 }
 
 .direccion-group-button {
@@ -2126,15 +2569,16 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 
 .direccion-group-label {
   width: 100%;
-  font-size: 0.63rem;
+  font-size: 0.68rem;
   text-align: center;
   color: var(--c-text-secondary);
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.2;
   white-space: normal;
   overflow: visible;
   text-overflow: clip;
   word-break: break-word;
+  margin-top: 0.35rem;
 }
 
 .trend-chart {
@@ -2182,31 +2626,37 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 .kpi-mini-donut {
   --value: 0%;
   --kpi-color: #0d9488;
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   background: conic-gradient(var(--kpi-color) var(--value), #e2e8f0 var(--value));
   display: grid;
   place-items: center;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.12));
+  transition: filter 0.2s;
+}
+
+.kpi-card:hover .kpi-mini-donut {
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.16));
 }
 
 .kpi-mini-donut span {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: #fff;
   display: grid;
   place-items: center;
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   font-weight: 800;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
 }
 
 /* ── Charts Grid & Panels ─────────────────────────────────────────────────── */
 .charts-grid,
 .bottom-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.72rem;
 }
 
@@ -2243,11 +2693,12 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 }
 
 .priority-grid .panel {
-  padding: 0.78rem 0.82rem;
+  padding: 0.9rem 1rem;
   height: 100%;
   min-height: var(--panel-compact-height);
   display: flex;
   flex-direction: column;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
 }
 
 .secondary-grid .panel {
@@ -2323,6 +2774,14 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
   max-width: 310px;
 }
 
+.gauge-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
 .priority-grid .donut-wrap {
   height: 100%;
   align-items: stretch;
@@ -2353,14 +2812,21 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
   font-size: 0.6rem;
 }
 
-.priority-grid .area-legend {
-  max-height: calc(8 * 1.55rem);
-  min-height: calc(8 * 1.55rem);
+.priority-grid .area-legend,
+.priority-grid .montos-panel .area-legend {
+  max-height: 240px;
+  min-height: auto;
   overflow-y: auto;
-  gap: 0.22rem;
+  gap: 0.28rem;
   width: 100%;
   align-content: start;
   padding-right: 0.18rem;
+}
+
+.priority-grid .montos-panel {
+  height: 100%;
+  min-height: var(--panel-compact-height);
+  max-height: none;
 }
 
 .priority-grid .area-legend-item {
@@ -2682,7 +3148,7 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 1.2rem;
+  gap: 1.4rem;
 }
 
 .donut {
@@ -2694,7 +3160,12 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
   display: flex;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 4px 12px rgba(34,197,94,0.2));
+  filter: drop-shadow(0 6px 16px rgba(15,23,42,0.12));
+  transition: filter 0.2s;
+}
+
+.donut:hover {
+  filter: drop-shadow(0 8px 20px rgba(15,23,42,0.18));
 }
 
 .donut-center {
@@ -2704,18 +3175,23 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
   background: #fff;
   display: grid;
   place-items: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: box-shadow 0.2s;
+}
+
+.donut:hover .donut-center {
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
 }
 
 .donut-center strong {
   color: var(--c-text-primary);
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: 800;
 }
 
 .donut-center span {
   color: var(--c-text-muted);
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 600;
 }
 
@@ -2745,32 +3221,34 @@ const gaugeColor = computed(() => colorSemaforoPositivo(porcentajeEtapas.value))
 }
 
 .area-legend-item {
-  border: 1px solid var(--c-border);
+  border: 1.5px solid var(--c-border);
   border-radius: 10px;
   background: var(--c-surface);
   color: var(--c-text-secondary);
   width: 100%;
   text-align: left;
-  padding: 0.5rem 0.65rem;
+  padding: 0.55rem 0.7rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.6rem;
   cursor: pointer;
-  font-size: 0.8rem;
-  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  font-size: 0.78rem;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, transform 0.2s;
 }
 
-.area-legend-item:hover {
+.area-legend-item:hover:not(.static) {
   border-color: #93c5fd;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.16);
   background: #f8fbff;
+  transform: translateX(2px);
 }
 
 .area-legend-item.active {
   border-color: var(--c-accent);
   background: var(--c-accent-light);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  font-weight: 600;
 }
 
 .area-legend-item.static {
