@@ -2426,7 +2426,7 @@ const colorCumplimientoConsolidado = computed(() =>
 }
 
 .direccion-bars-wrap {
-  overflow-x: auto;
+  overflow-x: visible;
   padding-bottom: 0.2rem;
 }
 
@@ -2477,7 +2477,7 @@ const colorCumplimientoConsolidado = computed(() =>
   z-index: 1;
   height: 100%;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
   align-items: end;
   gap: 0.55rem;
 }
@@ -4187,7 +4187,7 @@ const colorCumplimientoConsolidado = computed(() =>
   }
 
   .direccion-groups.vertical {
-    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
   }
 
   .direccion-group-bar-shell.vertical {
