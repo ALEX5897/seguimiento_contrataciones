@@ -70,7 +70,7 @@
               <span :style="{ color: colorCumplimientoTotalProcesos }">{{ porcentajeCumplimientoTotalProcesos }}%</span>
             </div>
           </div>
-          <small class="kpi-foot">{{ etapasCompletadasActivosValidos }}/{{ etapasActivosValidos.length }} etapas | {{ etapasAtrasadasActivosValidos }} atrasadas</small>
+          <small class="kpi-foot">% de avance general</small>
         </button>
 <button
           type="button"
@@ -82,7 +82,7 @@
             <span class="kpi-title">Presupuesto Total</span>
           </div>
           <strong class="kpi-value kpi-value-money">{{ formatearMonto(presupuestoTotal) }}</strong>
-          <small class="kpi-foot">Disponible</small>
+          <small class="kpi-foot"></small>
         </button>
 <button
           type="button"
@@ -134,7 +134,7 @@
               <span :style="{ color: colorCumplimiento }">{{ kpis.porcentajeCumplimiento }}%</span>
             </div>
           </div>
-          <small class="kpi-foot">{{ kpis.actividadesCompletadas }} de {{ kpis.totalTareas }} procesos</small>
+          <small class="kpi-foot">% del total de procesos</small>
         </button>
 <button
           type="button"
@@ -164,12 +164,7 @@
             <i class="ri-shield-warning-line kpi-icon" style="color: #f59e0b;"></i>
             <span class="kpi-title">En riesgo</span>
           </div>
-          <div class="kpi-donut-row">
-            <strong class="kpi-value">{{ detalleProcesosRiesgo.length }}</strong>
-            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProcesosRiesgo}%`, '--kpi-color': colorProcesosRiesgo }">
-              <span :style="{ color: colorProcesosRiesgo }">{{ porcentajeProcesosRiesgo }}%</span>
-            </div>
-          </div>
+          <strong class="kpi-value">{{ detalleProcesosRiesgo.length }}</strong>
           <small class="kpi-foot">Marcados con riesgo</small>
         </button>
 <button
@@ -182,12 +177,7 @@
             <i class="ri-forbid-2-line kpi-icon" style="color: #f59e0b;"></i>
             <span class="kpi-title">Desiertos</span>
           </div>
-          <div class="kpi-donut-row">
-            <strong class="kpi-value">{{ detalleProcesosDesiertos.length }}</strong>
-            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProcesosDesiertos}%`, '--kpi-color': colorProcesosDesiertos }">
-              <span :style="{ color: colorProcesosDesiertos }">{{ porcentajeProcesosDesiertos }}%</span>
-            </div>
-          </div>
+          <strong class="kpi-value">{{ detalleProcesosDesiertos.length }}</strong>
           <small class="kpi-foot">Estado desierto</small>
         </button>
 <button
