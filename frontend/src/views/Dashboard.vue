@@ -198,40 +198,6 @@
           </div>
           <small class="kpi-foot">{{ porcentajPresupuestoNOPAC }}% del total</small>
         </button>
-        <button
-          type="button"
-          class="kpi-card kpi-card-button success has-tooltip"
-          :data-tooltip="`Etapas completadas: ${etapasCompletadasActivosValidos} de ${etapasActivosValidos.length}`"
-        >
-          <div class="kpi-header">
-            <i class="ri-task-2-line kpi-icon" style="color: #16a34a;"></i>
-            <span class="kpi-title">Etapas Completadas</span>
-          </div>
-          <div class="kpi-donut-row">
-            <strong class="kpi-value">{{ etapasCompletadasActivosValidos }}</strong>
-            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeCumplimientoTotalProcesos}%`, '--kpi-color': '#16a34a' }">
-              <span style="color: #16a34a">{{ porcentajeCumplimientoTotalProcesos }}%</span>
-            </div>
-          </div>
-          <small class="kpi-foot">{{ porcentajeCumplimientoTotalProcesos }}% completadas</small>
-        </button>
-        <button
-          type="button"
-          class="kpi-card kpi-card-button danger has-tooltip"
-          :data-tooltip="`Etapas atrasadas: ${etapasAtrasadasActivosValidos} pendientes con retraso`"
-        >
-          <div class="kpi-header">
-            <i class="ri-time-line kpi-icon" style="color: #dc2626;"></i>
-            <span class="kpi-title">Etapas Atrasadas</span>
-          </div>
-          <div class="kpi-donut-row">
-            <strong class="kpi-value">{{ etapasAtrasadasActivosValidos }}</strong>
-            <div class="kpi-mini-donut" :style="{ '--value': porcentajeEtapasAtrasadasTotal, '--kpi-color': '#dc2626' }">
-              <span style="color: #dc2626">{{ porcentajeEtapasAtrasadasTotal }}%</span>
-            </div>
-          </div>
-          <small class="kpi-foot">{{ porcentajeEtapasAtrasadasTotal }}% atrasadas</small>
-        </button>
       </section>
 
       <section class="charts-grid priority-grid">
@@ -464,12 +430,7 @@
             <span>{{ montosPorDireccion.length }} direcciones</span>
           </div>
           <div v-if="montosPorDireccion.length" class="donut-wrap area-donut-stack">
-            <div class="donut area-donut" :style="estiloDonaMontos">
-              <div class="donut-center">
-                <strong>{{ totalMontoDirecciones > 0 ? formatearMonto(totalMontoDirecciones) : '$0' }}</strong>
-                <span>Total</span>
-              </div>
-            </div>
+            <div class="donut area-donut" :style="estiloDonaMontos"></div>
             <div class="donut-legend area-legend">
               <button
                 v-for="item in montosPorDireccion"
@@ -485,6 +446,10 @@
                 <span class="area-legend-meta">{{ item.porcentajeMonto }}% · {{ formatearMonto(item.monto) }}</span>
               </button>
             </div>
+          </div>
+          <div v-if="montosPorDireccion.length" class="montos-total-display">
+            <strong>{{ totalMontoDirecciones > 0 ? formatearMonto(totalMontoDirecciones) : '$0' }}</strong>
+            <span>Monto Total</span>
           </div>
           <div v-else class="empty">Sin montos disponibles por dirección para el filtro actual.</div>
         </article>
@@ -2938,6 +2903,29 @@ const colorCumplimientoConsolidado = computed(() =>
   width: 100%;
   align-content: start;
   padding-right: 0.18rem;
+}
+
+.montos-total-display {
+  flex: 0 0 auto;
+  padding: 0.6rem 0.8rem;
+  text-align: center;
+  border-top: 1px solid rgba(226, 232, 240, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.montos-total-display strong {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.montos-total-display span {
+  font-size: 0.7rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .secondary-grid .actividad-bar-button {
