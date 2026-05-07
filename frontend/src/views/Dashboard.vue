@@ -2136,12 +2136,13 @@ const colorCumplimientoConsolidado = computed(() =>
 
 .kpi-card {
   background: #ffffff;
-  border: 2px solid #d3e0ef;
+  border: 1px solid #d3e0ef;
+  border-left: 4px solid #d3e0ef;
   border-radius: var(--radius-md);
   padding: 0.55rem 0.7rem;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   gap: 0.2rem;
   box-shadow: 0 10px 26px rgba(17, 46, 78, 0.09);
@@ -2153,15 +2154,19 @@ const colorCumplimientoConsolidado = computed(() =>
 }
 
 .kpi-card.success {
-  border-color: #16a34a;
+  border-left-color: #16a34a;
 }
 
 .kpi-card.danger {
-  border-color: #dc2626;
+  border-left-color: #dc2626;
 }
 
 .kpi-card.warning {
-  border-color: #f59e0b;
+  border-left-color: #f59e0b;
+}
+
+.kpi-card-button:not(.success):not(.danger):not(.warning) {
+  border-left-color: #3b82f6;
 }
 
 .kpi-card:hover {
@@ -2304,7 +2309,7 @@ const colorCumplimientoConsolidado = computed(() =>
   font-size: 0.68rem;
   line-height: 1.3;
   width: 100%;
-  flex-shrink: 0;
+  text-align: center;
 }
 
 .kpi-mini-track {
