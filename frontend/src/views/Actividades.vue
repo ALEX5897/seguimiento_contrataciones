@@ -88,6 +88,41 @@
       </div>
     </section>
 
+    <div v-if="!cargando" class="resumen-general-container">
+      <h3 class="resumen-general-titulo">Resumen General</h3>
+      <section class="kpi-grid professional-kpi-grid actividades-resumen-grid">
+        <article class="kpi-card">
+          <span class="kpi-title">Monto Total</span>
+          <div class="kpi-value-monto">{{ formatearMontoCabecera(montoTotal) }}</div>
+          <small class="kpi-foot">Presupuesto total asignado</small>
+        </article>
+
+        <article class="kpi-card success">
+          <span class="kpi-title">Monto PAC</span>
+          <div class="kpi-value-monto">{{ formatearMontoCabecera(montoPAC) }}</div>
+          <small class="kpi-foot">Presupuesto en Plan Anual</small>
+        </article>
+
+        <article class="kpi-card warning">
+          <span class="kpi-title">Monto NO PAC</span>
+          <div class="kpi-value-monto">{{ formatearMontoCabecera(montoNoPAC) }}</div>
+          <small class="kpi-foot">Presupuesto fuera de Plan</small>
+        </article>
+
+        <article class="kpi-card">
+          <span class="kpi-title">Procesos PAC</span>
+          <div class="kpi-value">{{ procesosPAC }}</div>
+          <small class="kpi-foot">Procesos en Plan Anual</small>
+        </article>
+
+        <article class="kpi-card warning">
+          <span class="kpi-title">Procesos NO PAC</span>
+          <div class="kpi-value">{{ procesosNoPAC }}</div>
+          <small class="kpi-foot">Procesos fuera de Plan</small>
+        </article>
+      </section>
+    </div>
+
     <section v-if="!cargando" class="kpi-grid professional-kpi-grid actividades-kpi-grid">
       <article class="kpi-card">
         <span class="kpi-title">Total de procesos</span>
@@ -844,6 +879,32 @@ const porcentajeProcesosDesfinanciados = computed(() => {
 });
 
 const colorProcesosDesfinanciados = computed(() => colorSemaforoRiesgo(porcentajeProcesosDesfinanciados.value));
+
+const montoTotal = computed(() => {
+  return actividadesKpiPrincipales.value.reduce((sum: number, actividad: any) =>
+    sum + (obtenerPresupuesto(actividad) || 0), 0
+  );
+});
+
+const montoPAC = computed(() => {
+  return actividadesKpiPrincipales.value
+    .filter((actividad: any) => obtenerPacNoPacCabecera(actividad)?.includes('PAC'))
+    .reduce((sum: number, actividad: any) => sum + (obtenerPresupuesto(actividad) || 0), 0);
+});
+
+const montoNoPAC = computed(() => {
+  return actividadesKpiPrincipales.value
+    .filter((actividad: any) => !obtenerPacNoPacCabecera(actividad)?.includes('PAC'))
+    .reduce((sum: number, actividad: any) => sum + (obtenerPresupuesto(actividad) || 0), 0);
+});
+
+const procesosPAC = computed(() =>
+  actividadesKpiPrincipales.value.filter((actividad: any) => obtenerPacNoPacCabecera(actividad)?.includes('PAC')).length
+);
+
+const procesosNoPAC = computed(() =>
+  actividadesKpiPrincipales.value.filter((actividad: any) => !obtenerPacNoPacCabecera(actividad)?.includes('PAC')).length
+);
 
 const actividadSeleccionada = ref<any | null>(null);
 const etapasActividad = ref<any[]>([]);
@@ -2136,6 +2197,36 @@ async function onToggleProcesoDesierto() {
   padding: 0.3rem 0 0 0;
   margin-bottom: 0.3rem;
   background: transparent;
+}
+
+.resumen-general-container {
+  background: #fff;
+  border: 1px solid #d9e2ea;
+  border-radius: 11px;
+  padding: 1rem 0.45rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+.resumen-general-titulo {
+  margin: 0 0 0.8rem 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.3px;
+  padding: 0 0.55rem;
+}
+
+.actividades-resumen-grid {
+  gap: 0.6rem;
+}
+
+.kpi-value-monto {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0.35rem 0;
+  word-break: break-word;
 }
 
 .context-summary {
