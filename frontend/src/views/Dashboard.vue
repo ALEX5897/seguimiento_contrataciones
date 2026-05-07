@@ -49,7 +49,7 @@
 
 
       <section class="kpi-grid professional-kpi-grid">
-        <button
+<button
           type="button"
           class="kpi-card kpi-card-button has-tooltip"
           :data-tooltip="`Procesos activos: ${procesosActivosValidos.length} - Cumplimiento: ${porcentajeCumplimientoTotalProcesos}%`"
@@ -67,7 +67,53 @@
           </div>
           <small class="kpi-foot">{{ etapasCompletadasActivosValidos }}/{{ etapasActivosValidos.length }} etapas | {{ etapasAtrasadasActivosValidos }} atrasadas</small>
         </button>
-        <button
+<button
+          type="button"
+          class="kpi-card kpi-card-button has-tooltip"
+          :data-tooltip="`Presupuesto total disponible: ${formatearMonto(presupuestoTotal)}`"
+        >
+          <div class="kpi-header">
+            <i class="ri-bank-card-line kpi-icon"></i>
+            <span class="kpi-title">Presupuesto Total</span>
+          </div>
+          <strong class="kpi-value kpi-value-money">{{ formatearMonto(presupuestoTotal) }}</strong>
+          <small class="kpi-foot">Disponible</small>
+        </button>
+<button
+          type="button"
+          class="kpi-card kpi-card-button has-tooltip"
+          :data-tooltip="`Presupuesto PAC: ${formatearMonto(presupuestoPAC)} (${porcentajPresupuestoPAC}%)`"
+        >
+          <div class="kpi-header">
+            <i class="ri-calendar-line kpi-icon" style="color: #2563eb;"></i>
+            <span class="kpi-title">Presupuesto PAC</span>
+          </div>
+          <div class="kpi-donut-row">
+            <strong class="kpi-value kpi-value-money">{{ formatearMonto(presupuestoPAC) }}</strong>
+            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajPresupuestoPAC}%`, '--kpi-color': '#2563eb' }">
+              <span style="color: #2563eb">{{ porcentajPresupuestoPAC }}%</span>
+            </div>
+          </div>
+          <small class="kpi-foot">{{ porcentajPresupuestoPAC }}% del total</small>
+        </button>
+<button
+          type="button"
+          class="kpi-card kpi-card-button has-tooltip"
+          :data-tooltip="`Presupuesto NO PAC: ${formatearMonto(presupuestoNOPAC)} (${porcentajPresupuestoNOPAC}%)`"
+        >
+          <div class="kpi-header">
+            <i class="ri-time-line kpi-icon" style="color: #f59e0b;"></i>
+            <span class="kpi-title">Presupuesto NO PAC</span>
+          </div>
+          <div class="kpi-donut-row">
+            <strong class="kpi-value kpi-value-money">{{ formatearMonto(presupuestoNOPAC) }}</strong>
+            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajPresupuestoNOPAC}%`, '--kpi-color': '#f59e0b' }">
+              <span style="color: #f59e0b">{{ porcentajPresupuestoNOPAC }}%</span>
+            </div>
+          </div>
+          <small class="kpi-foot">{{ porcentajPresupuestoNOPAC }}% del total</small>
+        </button>
+<button
           type="button"
           class="kpi-card kpi-card-button success has-tooltip"
           :data-tooltip="`Semáforo positivo (80/50): actual ${kpis.porcentajeCumplimiento}%`"
@@ -85,7 +131,7 @@
           </div>
           <small class="kpi-foot">{{ kpis.actividadesCompletadas }} de {{ kpis.totalTareas }} procesos</small>
         </button>
-        <button
+<button
           type="button"
           class="kpi-card kpi-card-button danger has-tooltip"
           :data-tooltip="`Semáforo riesgo (<=20/<=50): actual ${porcentajeAtraso}%`"
@@ -103,7 +149,7 @@
           </div>
           <small class="kpi-foot">Procesos fuera de fecha</small>
         </button>
-        <button
+<button
           type="button"
           class="kpi-card kpi-card-button warning has-tooltip"
           :data-tooltip="`Procesos con riesgo general marcado: ${detalleProcesosRiesgo.length}`"
@@ -121,7 +167,7 @@
           </div>
           <small class="kpi-foot">Marcados con riesgo</small>
         </button>
-        <button
+<button
           type="button"
           class="kpi-card kpi-card-button warning has-tooltip"
           :data-tooltip="`Procesos marcados como desiertos: ${detalleProcesosDesiertos.length}`"
@@ -139,7 +185,7 @@
           </div>
           <small class="kpi-foot">Estado desierto</small>
         </button>
-        <button
+<button
           type="button"
           class="kpi-card kpi-card-button warning has-tooltip"
           :data-tooltip="`Procesos con presupuesto 0 o sin asignación: ${detalleProcesosDesfinanciados.length}`"
@@ -151,52 +197,6 @@
           </div>
           <strong class="kpi-value">{{ detalleProcesosDesfinanciados.length }}</strong>
           <small class="kpi-foot">Sin presupuesto asignado</small>
-        </button>
-        <button
-          type="button"
-          class="kpi-card kpi-card-button has-tooltip"
-          :data-tooltip="`Presupuesto total disponible: ${formatearMonto(presupuestoTotal)}`"
-        >
-          <div class="kpi-header">
-            <i class="ri-bank-card-line kpi-icon"></i>
-            <span class="kpi-title">Presupuesto Total</span>
-          </div>
-          <strong class="kpi-value kpi-value-money">{{ formatearMonto(presupuestoTotal) }}</strong>
-          <small class="kpi-foot">Disponible</small>
-        </button>
-        <button
-          type="button"
-          class="kpi-card kpi-card-button has-tooltip"
-          :data-tooltip="`Presupuesto PAC: ${formatearMonto(presupuestoPAC)} (${porcentajPresupuestoPAC}%)`"
-        >
-          <div class="kpi-header">
-            <i class="ri-calendar-line kpi-icon" style="color: #2563eb;"></i>
-            <span class="kpi-title">Presupuesto PAC</span>
-          </div>
-          <div class="kpi-donut-row">
-            <strong class="kpi-value kpi-value-money">{{ formatearMonto(presupuestoPAC) }}</strong>
-            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajPresupuestoPAC}%`, '--kpi-color': '#2563eb' }">
-              <span style="color: #2563eb">{{ porcentajPresupuestoPAC }}%</span>
-            </div>
-          </div>
-          <small class="kpi-foot">{{ porcentajPresupuestoPAC }}% del total</small>
-        </button>
-        <button
-          type="button"
-          class="kpi-card kpi-card-button has-tooltip"
-          :data-tooltip="`Presupuesto NO PAC: ${formatearMonto(presupuestoNOPAC)} (${porcentajPresupuestoNOPAC}%)`"
-        >
-          <div class="kpi-header">
-            <i class="ri-time-line kpi-icon" style="color: #f59e0b;"></i>
-            <span class="kpi-title">Presupuesto NO PAC</span>
-          </div>
-          <div class="kpi-donut-row">
-            <strong class="kpi-value kpi-value-money">{{ formatearMonto(presupuestoNOPAC) }}</strong>
-            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajPresupuestoNOPAC}%`, '--kpi-color': '#f59e0b' }">
-              <span style="color: #f59e0b">{{ porcentajPresupuestoNOPAC }}%</span>
-            </div>
-          </div>
-          <small class="kpi-foot">{{ porcentajPresupuestoNOPAC }}% del total</small>
         </button>
       </section>
 
@@ -2116,7 +2116,7 @@ const colorCumplimientoConsolidado = computed(() =>
 }
 
 .professional-kpi-grid {
-  grid-template-columns: repeat(9, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: stretch;
 }
 
