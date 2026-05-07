@@ -2,7 +2,7 @@
   <div class="actividades-view">
    
 
-    <section class="context-summary" v-if="!cargando">
+    <section class="context-summary" v-if="!cargando" v-show="mostrarFiltros">
       <div class="filter-chips">
         <span class="filter-chip primary" v-if="busquedaActividades">Búsqueda: {{ busquedaActividades }}</span>
         <span class="filter-chip direccion-active" v-if="filtroDireccion">📂 {{ filtroDireccion }}</span>
@@ -2220,9 +2220,9 @@ async function onToggleProcesoDesierto() {
   gap: 0.35rem;
   padding: 0.22rem 0.65rem;
   border-radius: 8px;
-  border: 1px solid #d9e2ea;
-  background: linear-gradient(180deg, #ffffff, #f8fbff);
-  color: #475569;
+  border: 1px solid #3b82f6;
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+  color: #ffffff;
   font-size: 0.71rem;
   font-weight: 700;
   height: 1.72rem;
@@ -2230,12 +2230,13 @@ async function onToggleProcesoDesierto() {
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .btn-toggle-filtros:hover {
-  background: linear-gradient(180deg, #f1f5f9, #f0f7ff);
-  border-color: #94a3b8;
-  color: #1e293b;
+  background: linear-gradient(180deg, #2563eb, #1d4ed8);
+  border-color: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
 .btn-toggle-filtros i {
