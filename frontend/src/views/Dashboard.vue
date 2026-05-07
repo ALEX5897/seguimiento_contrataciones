@@ -2983,8 +2983,8 @@ const colorCumplimientoConsolidado = computed(() =>
 
 .donut-chart-row .area-donut {
   flex: 0 0 auto;
-  width: 160px;
-  height: 160px;
+  width: 110px;
+  height: 110px;
 }
 
 .montos-total-display {
