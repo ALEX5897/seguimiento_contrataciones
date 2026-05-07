@@ -2116,7 +2116,7 @@ const colorCumplimientoConsolidado = computed(() =>
 }
 
 .professional-kpi-grid {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(9, minmax(0, 1fr));
   align-items: stretch;
 }
 
