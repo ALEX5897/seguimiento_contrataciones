@@ -70,7 +70,7 @@
               <span :style="{ color: colorCumplimientoTotalProcesos }">{{ porcentajeCumplimientoTotalProcesos }}%</span>
             </div>
           </div>
-          <small class="kpi-foot">% de avance general</small>
+          <small class="kpi-foot">{{ porcentajeCumplimientoTotalProcesos }}% de avance general</small>
         </button>
 <button
           type="button"
@@ -134,7 +134,7 @@
               <span :style="{ color: colorCumplimiento }">{{ kpis.porcentajeCumplimiento }}%</span>
             </div>
           </div>
-          <small class="kpi-foot">% del total de procesos</small>
+          <small class="kpi-foot">{{ kpis.porcentajeCumplimiento }}% del total de procesos</small>
         </button>
 <button
           type="button"
