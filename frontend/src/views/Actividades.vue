@@ -1,6 +1,12 @@
 <template>
   <div class="actividades-view">
-   
+    <div class="actividades-header" v-if="!cargando">
+      <h1 class="actividades-titulo">Actividades</h1>
+      <button class="btn-toggle-filtros" @click="mostrarFiltros = !mostrarFiltros">
+        <i :class="mostrarFiltros ? 'ri-filter-line' : 'ri-filter-3-line'"></i>
+        {{ mostrarFiltros ? 'Ocultar filtros' : 'Mostrar filtros' }}
+      </button>
+    </div>
 
     <section class="context-summary" v-if="!cargando" v-show="mostrarFiltros">
       <div class="filter-chips">
@@ -28,10 +34,6 @@
               placeholder="Buscar por nombre, dirección o responsable..."
             />
           </div>
-          <button class="btn-toggle-filtros" @click="mostrarFiltros = !mostrarFiltros">
-            <i :class="mostrarFiltros ? 'ri-filter-line' : 'ri-filter-3-line'"></i>
-            {{ mostrarFiltros ? 'Ocultar filtros' : 'Mostrar filtros' }}
-          </button>
         </div>
 
         <div class="dashboard-toolbar-filtros" v-show="mostrarFiltros">
@@ -2129,13 +2131,22 @@ async function onToggleProcesoDesierto() {
 .actividades-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.2rem;
+  margin-bottom: 0.8rem;
   background: #fff;
   border: 1px solid #d9e2ea;
-  border-radius: 14px;
-  padding: 0.85rem 1rem;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+  border-radius: 11px;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+.actividades-titulo {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.3px;
 }
 
 .context-summary {
