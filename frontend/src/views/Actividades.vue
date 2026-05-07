@@ -91,38 +91,56 @@
     <div v-if="!cargando" class="resumen-general-container">
       <h3 class="resumen-general-titulo">Resumen General</h3>
       <section class="kpi-grid professional-kpi-grid actividades-resumen-grid">
-        <article class="kpi-card">
-          <span class="kpi-title">Monto Total</span>
+        <article class="kpi-card kpi-monto">
+          <div class="kpi-header">
+            <i class="ri-money-dollar-circle-line kpi-icon"></i>
+            <span class="kpi-title">Monto Total</span>
+          </div>
           <div class="kpi-value-monto">{{ formatearMontoCabecera(montoTotal) }}</div>
           <small class="kpi-foot">Presupuesto total asignado</small>
         </article>
 
-        <article class="kpi-card success">
-          <span class="kpi-title">Monto PAC</span>
+        <article class="kpi-card kpi-success">
+          <div class="kpi-header">
+            <i class="ri-check-double-line kpi-icon"></i>
+            <span class="kpi-title">Monto PAC</span>
+          </div>
           <div class="kpi-value-monto">{{ formatearMontoCabecera(montoPAC) }}</div>
           <small class="kpi-foot">Presupuesto en Plan Anual</small>
         </article>
 
-        <article class="kpi-card warning">
-          <span class="kpi-title">Monto NO PAC</span>
+        <article class="kpi-card kpi-warning">
+          <div class="kpi-header">
+            <i class="ri-alert-line kpi-icon"></i>
+            <span class="kpi-title">Monto NO PAC</span>
+          </div>
           <div class="kpi-value-monto">{{ formatearMontoCabecera(montoNoPAC) }}</div>
           <small class="kpi-foot">Presupuesto fuera de Plan</small>
         </article>
 
-        <article class="kpi-card">
-          <span class="kpi-title">Procesos PAC</span>
+        <article class="kpi-card kpi-info">
+          <div class="kpi-header">
+            <i class="ri-book-line kpi-icon"></i>
+            <span class="kpi-title">Procesos PAC</span>
+          </div>
           <div class="kpi-value">{{ procesosPAC }}</div>
           <small class="kpi-foot">Procesos en Plan Anual</small>
         </article>
 
-        <article class="kpi-card warning">
-          <span class="kpi-title">Procesos NO PAC</span>
+        <article class="kpi-card kpi-danger">
+          <div class="kpi-header">
+            <i class="ri-error-warning-line kpi-icon"></i>
+            <span class="kpi-title">Procesos NO PAC</span>
+          </div>
           <div class="kpi-value">{{ procesosNoPAC }}</div>
           <small class="kpi-foot">Procesos fuera de Plan</small>
         </article>
 
-        <article class="kpi-card">
-          <span class="kpi-title">Total de procesos</span>
+        <article class="kpi-card kpi-info">
+          <div class="kpi-header">
+            <i class="ri-file-list-line kpi-icon"></i>
+            <span class="kpi-title">Total de procesos</span>
+          </div>
           <div class="kpi-donut-row">
             <strong class="kpi-value">{{ kpisProcesos.totalProcesos }}</strong>
             <div class="kpi-mini-donut" :style="{ '--value': `${kpisProcesos.porcentajeCumplimiento}%`, '--kpi-color': colorCumplimiento }">
@@ -132,8 +150,11 @@
           <small class="kpi-foot">Total de procesos y cumplimiento general</small>
         </article>
 
-        <article class="kpi-card success">
-          <span class="kpi-title">Procesos completos</span>
+        <article class="kpi-card kpi-success">
+          <div class="kpi-header">
+            <i class="ri-check-circle-line kpi-icon"></i>
+            <span class="kpi-title">Procesos completos</span>
+          </div>
           <div class="kpi-donut-row">
             <strong class="kpi-value">{{ kpisProcesos.actividadesCompletadas }}</strong>
             <div class="kpi-mini-donut" :style="{ '--value': `${kpisProcesos.porcentajeCumplimiento}%`, '--kpi-color': colorCumplimiento }">
@@ -143,8 +164,11 @@
           <small class="kpi-foot">Procesos completos: {{ kpisProcesos.actividadesCompletadas }} de {{ kpisProcesos.totalProcesos }}</small>
         </article>
 
-        <article class="kpi-card danger">
-          <span class="kpi-title">Procesos con etapas retrasadas</span>
+        <article class="kpi-card kpi-danger">
+          <div class="kpi-header">
+            <i class="ri-time-line kpi-icon"></i>
+            <span class="kpi-title">Procesos con etapas retrasadas</span>
+          </div>
           <div class="kpi-donut-row">
             <strong class="kpi-value">{{ kpisProcesos.atrasadas }}</strong>
             <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeAtrasoProcesos}%`, '--kpi-color': colorAtraso }">
@@ -154,8 +178,11 @@
           <small class="kpi-foot">Procesos que tienen etapas fuera de fecha</small>
         </article>
 
-        <article class="kpi-card warning">
-          <span class="kpi-title">Procesos en riesgo</span>
+        <article class="kpi-card kpi-warning">
+          <div class="kpi-header">
+            <i class="ri-alert-fill kpi-icon"></i>
+            <span class="kpi-title">Procesos en riesgo</span>
+          </div>
           <div class="kpi-donut-row">
             <strong class="kpi-value">{{ procesosRiesgoKpi.length }}</strong>
             <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProcesosRiesgo}%`, '--kpi-color': colorProcesosRiesgo }">
@@ -165,8 +192,11 @@
           <small class="kpi-foot">Procesos marcados con riesgo</small>
         </article>
 
-        <article class="kpi-card warning">
-          <span class="kpi-title">Procesos desiertos</span>
+        <article class="kpi-card kpi-warning">
+          <div class="kpi-header">
+            <i class="ri-forbid-line kpi-icon"></i>
+            <span class="kpi-title">Procesos desiertos</span>
+          </div>
           <div class="kpi-donut-row">
             <strong class="kpi-value">{{ procesosDesiertosKpi.length }}</strong>
             <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProcesosDesiertos}%`, '--kpi-color': colorProcesosDesiertos }">
@@ -176,8 +206,11 @@
           <small class="kpi-foot">Procesos con estado desierto</small>
         </article>
 
-        <article class="kpi-card warning">
-          <span class="kpi-title">Procesos desfinanciados</span>
+        <article class="kpi-card kpi-danger">
+          <div class="kpi-header">
+            <i class="ri-wallet-2-line kpi-icon"></i>
+            <span class="kpi-title">Procesos desfinanciados</span>
+          </div>
           <div class="kpi-donut-row">
             <strong class="kpi-value">{{ procesosDesfinanciadosKpi.length }}</strong>
             <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProcesosDesfinanciados}%`, '--kpi-color': colorProcesosDesfinanciados }">
@@ -2225,6 +2258,63 @@ async function onToggleProcesoDesierto() {
   color: #1e293b;
   margin: 0.35rem 0;
   word-break: break-word;
+}
+
+.kpi-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.kpi-icon {
+  font-size: 1.3rem;
+  opacity: 0.8;
+}
+
+.kpi-card.kpi-monto {
+  background: linear-gradient(135deg, #fef3c7 0%, #fef9e7 100%);
+  border-color: #fcd34d;
+}
+
+.kpi-card.kpi-monto .kpi-icon {
+  color: #d97706;
+}
+
+.kpi-card.kpi-success {
+  background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%);
+  border-color: #86efac;
+}
+
+.kpi-card.kpi-success .kpi-icon {
+  color: #16a34a;
+}
+
+.kpi-card.kpi-warning {
+  background: linear-gradient(135deg, #fed7aa 0%, #fef3c7 100%);
+  border-color: #fdba74;
+}
+
+.kpi-card.kpi-warning .kpi-icon {
+  color: #ea580c;
+}
+
+.kpi-card.kpi-info {
+  background: linear-gradient(135deg, #dbeafe 0%, #f0f9ff 100%);
+  border-color: #93c5fd;
+}
+
+.kpi-card.kpi-info .kpi-icon {
+  color: #2563eb;
+}
+
+.kpi-card.kpi-danger {
+  background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%);
+  border-color: #fecaca;
+}
+
+.kpi-card.kpi-danger .kpi-icon {
+  color: #dc2626;
 }
 
 .context-summary {
