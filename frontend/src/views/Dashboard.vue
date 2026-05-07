@@ -434,27 +434,29 @@
             <h2>Montos por dirección</h2>
             <span>{{ montosPorDireccion.length }} direcciones</span>
           </div>
-          <div v-if="montosPorDireccion.length" class="donut-wrap area-donut-stack">
-            <div class="donut area-donut" :style="estiloDonaMontos"></div>
-            <div class="donut-legend area-legend">
-              <button
-                v-for="item in montosPorDireccion"
-                :key="`monto-${item.direccion}`"
-                type="button"
-                class="area-legend-item"
-                disabled
-              >
-                <div class="area-legend-main">
-                  <i class="dot" :style="{ background: item.color }"></i>
-                  <span class="area-legend-name">{{ item.direccion }}</span>
-                </div>
-                <span class="area-legend-meta">{{ item.porcentajeMonto }}% · {{ formatearMonto(item.monto) }}</span>
-              </button>
+          <div v-if="montosPorDireccion.length" class="montos-content-wrapper">
+            <div class="donut-wrap area-donut-stack">
+              <div class="donut area-donut" :style="estiloDonaMontos"></div>
+              <div class="donut-legend area-legend">
+                <button
+                  v-for="item in montosPorDireccion"
+                  :key="`monto-${item.direccion}`"
+                  type="button"
+                  class="area-legend-item"
+                  disabled
+                >
+                  <div class="area-legend-main">
+                    <i class="dot" :style="{ background: item.color }"></i>
+                    <span class="area-legend-name">{{ item.direccion }}</span>
+                  </div>
+                  <span class="area-legend-meta">{{ item.porcentajeMonto }}% · {{ formatearMonto(item.monto) }}</span>
+                </button>
+              </div>
             </div>
-          </div>
-          <div v-if="montosPorDireccion.length" class="montos-total-display">
-            <strong>{{ totalMontoDirecciones > 0 ? formatearMonto(totalMontoDirecciones) : '$0' }}</strong>
-            <span>Monto Total</span>
+            <div class="montos-total-display">
+              <strong>{{ totalMontoDirecciones > 0 ? formatearMonto(totalMontoDirecciones) : '$0' }}</strong>
+              <span>Monto Total</span>
+            </div>
           </div>
           <div v-else class="empty">Sin montos disponibles por dirección para el filtro actual.</div>
         </article>
@@ -2952,7 +2954,6 @@ const colorCumplimientoConsolidado = computed(() =>
 }
 
 .montos-panel .donut-wrap {
-  flex: 1 1 0;
   height: 100%;
   min-height: 0;
   overflow: hidden;
@@ -2974,14 +2975,32 @@ const colorCumplimientoConsolidado = computed(() =>
   padding-right: 0.18rem;
 }
 
+.montos-content-wrapper {
+  display: flex;
+  flex-direction: row;
+  gap: 0.8rem;
+  align-items: stretch;
+  min-height: 0;
+  flex: 1 1 0;
+}
+
+.montos-content-wrapper .donut-wrap {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
 .montos-total-display {
   flex: 0 0 auto;
   padding: 0.6rem 0.8rem;
   text-align: center;
-  border-top: 1px solid rgba(226, 232, 240, 0.5);
+  border-left: 1px solid rgba(226, 232, 240, 0.5);
+  border-top: none;
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+  justify-content: center;
+  align-items: center;
+  min-width: 100px;
 }
 
 .montos-total-display strong {
