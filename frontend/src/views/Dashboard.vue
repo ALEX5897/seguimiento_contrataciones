@@ -7,6 +7,11 @@
     <template v-else>
       <section class="context-summary">
         <div class="filter-chips">
+          <button class="btn-toggle-filtros" @click="mostrarFiltros = !mostrarFiltros" :title="mostrarFiltros ? 'Ocultar filtros' : 'Mostrar filtros'">
+            <i :class="mostrarFiltros ? 'ri-filter-2-fill' : 'ri-filter-2-line'" aria-hidden="true"></i>
+            {{ mostrarFiltros ? 'Ocultar' : 'Mostrar' }} filtros
+          </button>
+
           <span class="filter-chip primary" v-if="areaSeleccionada || !filtroDireccion">Vista: {{ areaSeleccionada || 'General' }}</span>
           <span class="filter-chip primary" v-if="responsableSeleccionado">Responsable: {{ responsableSeleccionado }}</span>
           <span class="filter-chip direccion-active" v-if="filtroDireccion">📂 {{ filtroDireccion }}</span>
@@ -20,7 +25,7 @@
           </button>
         </div>
 
-        <div class="dashboard-toolbar">
+        <div class="dashboard-toolbar" v-show="mostrarFiltros">
           <div class="dashboard-toolbar-filtros">
             <select v-model="filtroDireccion" class="combo-filtro">
               <option value="">Todas las direcciones</option>
@@ -796,6 +801,7 @@ const detalleKpi = ref<{ activo: boolean; tipo: 'procesos' | 'cumplimiento' | 'r
   activo: false,
   tipo: 'cumplimiento'
 });
+const mostrarFiltros = ref(false);
 const GUAYAQUIL_TIMEZONE = 'America/Guayaquil';
 
 // --- Computed y variables dependientes de serieSemanal ---
@@ -1941,6 +1947,34 @@ const colorCumplimientoConsolidado = computed(() =>
   gap: 0.55rem;
   flex-wrap: wrap;
   margin-top: 0.5rem;
+}
+
+.btn-toggle-filtros {
+  height: 30px;
+  padding: 0 0.68rem;
+  border-radius: 7px;
+  border: 1px solid #7c3aed;
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  color: #ffffff;
+  font-size: 0.73rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(124, 58, 237, 0.28);
+  transition: background 0.15s, border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+.btn-toggle-filtros:hover {
+  background: linear-gradient(135deg, #6d28d9, #9d67ff);
+  border-color: #5b21b6;
+  box-shadow: 0 5px 11px rgba(124, 58, 237, 0.34);
+  transform: translateY(-1px);
+}
+
+.btn-toggle-filtros:active {
+  transform: translateY(0);
 }
 
 .btn-clear-filter {
