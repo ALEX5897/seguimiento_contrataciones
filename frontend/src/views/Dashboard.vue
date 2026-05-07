@@ -2656,12 +2656,12 @@ const colorCumplimientoConsolidado = computed(() =>
 .charts-grid,
 .bottom-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.72rem;
 }
 
 .priority-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: stretch;
 }
 
@@ -2736,8 +2736,16 @@ const colorCumplimientoConsolidado = computed(() =>
 }
 
 .priority-grid .panel-header {
-  margin-bottom: 0.45rem;
-  padding-bottom: 0.3rem;
+  margin-bottom: 0.35rem;
+  padding-bottom: 0.25rem;
+}
+
+.priority-grid .panel-header h2 {
+  font-size: 0.9rem;
+}
+
+.priority-grid .panel-header span {
+  font-size: 0.68rem;
 }
 
 .priority-grid .gauge-wrap {
@@ -2746,15 +2754,15 @@ const colorCumplimientoConsolidado = computed(() =>
 }
 
 .priority-grid .gauge-svg {
-  max-width: 198px;
+  max-width: 160px;
 }
 
 .priority-grid .gauge-value {
-  font-size: 2rem;
+  font-size: 1.6rem;
 }
 
 .priority-grid .gauge-sub {
-  font-size: 0.82rem;
+  font-size: 0.72rem;
 }
 
 .priority-grid .gauge-legend {
@@ -2771,7 +2779,7 @@ const colorCumplimientoConsolidado = computed(() =>
 
 .priority-grid .gauge-progress-list {
   width: 100%;
-  max-width: 310px;
+  max-width: 100%;
 }
 
 .gauge-wrap {
@@ -2795,29 +2803,29 @@ const colorCumplimientoConsolidado = computed(() =>
 }
 
 .priority-grid .donut {
-  width: 108px;
-  height: 108px;
+  width: 100px;
+  height: 100px;
 }
 
 .priority-grid .donut-center {
-  width: 68px;
-  height: 68px;
+  width: 62px;
+  height: 62px;
 }
 
 .priority-grid .donut-center strong {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
 }
 
 .priority-grid .donut-center span {
-  font-size: 0.6rem;
+  font-size: 0.58rem;
 }
 
 .priority-grid .area-legend,
 .priority-grid .montos-panel .area-legend {
-  max-height: 240px;
+  max-height: 180px;
   min-height: auto;
   overflow-y: auto;
-  gap: 0.28rem;
+  gap: 0.18rem;
   width: 100%;
   align-content: start;
   padding-right: 0.18rem;
@@ -2830,13 +2838,13 @@ const colorCumplimientoConsolidado = computed(() =>
 }
 
 .priority-grid .area-legend-item {
-  min-height: 1.45rem;
-  padding: 0.24rem 0.3rem;
-  font-size: 0.62rem;
+  min-height: 1.35rem;
+  padding: 0.2rem 0.28rem;
+  font-size: 0.6rem;
 }
 
 .priority-grid .area-legend-meta {
-  font-size: 0.58rem;
+  font-size: 0.56rem;
 }
 
 .priority-grid .area-legend-name {
@@ -3839,31 +3847,31 @@ const colorCumplimientoConsolidado = computed(() =>
 
 .gauge-progress-item {
   display: grid;
-  gap: 0.24rem;
+  gap: 0.2rem;
 }
 
 .gauge-progress-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.4rem;
+  gap: 0.3rem;
 }
 
 .gauge-progress-label {
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   color: var(--c-text-secondary);
   font-weight: 700;
 }
 
 .gauge-progress-meta {
-  font-size: 0.7rem;
+  font-size: 0.63rem;
   color: var(--c-text-muted);
   font-weight: 700;
 }
 
 .gauge-progress-track {
   width: 100%;
-  height: 8px;
+  height: 6px;
   border-radius: 999px;
   background: #e6edf6;
   overflow: hidden;
