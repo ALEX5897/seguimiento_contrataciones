@@ -144,7 +144,7 @@
         >
           <div class="kpi-header">
             <i class="ri-alert-line kpi-icon" style="color: #dc2626;"></i>
-            <span class="kpi-title">Con etapas retrasadas</span>
+            <span class="kpi-title">Procesos retrasados</span>
           </div>
           <div class="kpi-donut-row">
             <strong class="kpi-value">{{ kpis.atrasadas }}</strong>
@@ -2364,9 +2364,10 @@ const colorCumplimientoConsolidado = computed(() =>
 
 .kpi-donut-row {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.5rem;
   flex-grow: 1;
 }
 
