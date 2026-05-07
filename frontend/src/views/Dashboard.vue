@@ -2138,13 +2138,17 @@ const colorCumplimientoConsolidado = computed(() =>
   background: #ffffff;
   border: 1px solid #d3e0ef;
   border-radius: var(--radius-md);
-  padding: 0.88rem 0.95rem;
-  display: grid;
-  gap: 0.5rem;
+  padding: 0.65rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.3rem;
   box-shadow: 0 10px 26px rgba(17, 46, 78, 0.09);
   position: relative;
   overflow: hidden;
   transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+  text-align: center;
 }
 
 .kpi-card:hover {
@@ -2155,11 +2159,12 @@ const colorCumplimientoConsolidado = computed(() =>
 .kpi-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 0.4rem;
 }
 
 .kpi-icon {
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   flex-shrink: 0;
   opacity: 0.85;
 }
@@ -2257,18 +2262,19 @@ const colorCumplimientoConsolidado = computed(() =>
 
 .kpi-title {
   color: var(--c-text-muted);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
+  line-height: 1.2;
 }
 
 .kpi-value {
   color: var(--c-text-primary);
-  font-size: 2rem;
+  font-size: 1.65rem;
   font-weight: 800;
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
 }
 
 .kpi-value-money {
@@ -2277,7 +2283,8 @@ const colorCumplimientoConsolidado = computed(() =>
 
 .kpi-foot {
   color: var(--c-text-muted);
-  font-size: 0.74rem;
+  font-size: 0.68rem;
+  line-height: 1.3;
 }
 
 .kpi-mini-track {
@@ -2305,9 +2312,9 @@ const colorCumplimientoConsolidado = computed(() =>
 
 .kpi-donut-row {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.3rem;
 }
 
 /* ── Trend Cards ──────────────────────────────────────────────────────────── */
