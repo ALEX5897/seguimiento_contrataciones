@@ -91,7 +91,7 @@
     <div v-if="!cargando" class="resumen-general-container">
       <h3 class="resumen-general-titulo">Resumen General</h3>
       <section class="kpi-grid professional-kpi-grid actividades-resumen-grid">
-        <article class="kpi-card kpi-monto">
+        <article class="kpi-card">
           <div class="kpi-header">
             <i class="ri-money-dollar-circle-line kpi-icon"></i>
             <span class="kpi-title">Monto Total</span>
@@ -100,7 +100,7 @@
           <small class="kpi-foot">Presupuesto total asignado</small>
         </article>
 
-        <article class="kpi-card kpi-success">
+        <article class="kpi-card">
           <div class="kpi-header">
             <i class="ri-check-double-line kpi-icon"></i>
             <span class="kpi-title">Monto PAC</span>
@@ -109,7 +109,7 @@
           <small class="kpi-foot">Presupuesto en Plan Anual</small>
         </article>
 
-        <article class="kpi-card kpi-warning">
+        <article class="kpi-card">
           <div class="kpi-header">
             <i class="ri-alert-line kpi-icon"></i>
             <span class="kpi-title">Monto NO PAC</span>
@@ -118,7 +118,7 @@
           <small class="kpi-foot">Presupuesto fuera de Plan</small>
         </article>
 
-        <article class="kpi-card kpi-info">
+        <article class="kpi-card">
           <div class="kpi-header">
             <i class="ri-book-line kpi-icon"></i>
             <span class="kpi-title">Procesos PAC</span>
@@ -127,7 +127,7 @@
           <small class="kpi-foot">Procesos en Plan Anual</small>
         </article>
 
-        <article class="kpi-card kpi-danger">
+        <article class="kpi-card">
           <div class="kpi-header">
             <i class="ri-error-warning-line kpi-icon"></i>
             <span class="kpi-title">Procesos NO PAC</span>
@@ -136,7 +136,7 @@
           <small class="kpi-foot">Procesos fuera de Plan</small>
         </article>
 
-        <article class="kpi-card kpi-info">
+        <article class="kpi-card">
           <div class="kpi-header">
             <i class="ri-file-list-line kpi-icon"></i>
             <span class="kpi-title">Total de procesos</span>
@@ -150,7 +150,7 @@
           <small class="kpi-foot">Total de procesos y cumplimiento general</small>
         </article>
 
-        <article class="kpi-card kpi-success">
+        <article class="kpi-card">
           <div class="kpi-header">
             <i class="ri-check-circle-line kpi-icon"></i>
             <span class="kpi-title">Procesos completos</span>
@@ -164,7 +164,7 @@
           <small class="kpi-foot">Procesos completos: {{ kpisProcesos.actividadesCompletadas }} de {{ kpisProcesos.totalProcesos }}</small>
         </article>
 
-        <article class="kpi-card kpi-danger">
+        <article class="kpi-card">
           <div class="kpi-header">
             <i class="ri-time-line kpi-icon"></i>
             <span class="kpi-title">Procesos con etapas retrasadas</span>
@@ -178,7 +178,7 @@
           <small class="kpi-foot">Procesos que tienen etapas fuera de fecha</small>
         </article>
 
-        <article class="kpi-card kpi-warning">
+        <article class="kpi-card">
           <div class="kpi-header">
             <i class="ri-alert-fill kpi-icon"></i>
             <span class="kpi-title">Procesos en riesgo</span>
@@ -192,7 +192,7 @@
           <small class="kpi-foot">Procesos marcados con riesgo</small>
         </article>
 
-        <article class="kpi-card kpi-warning">
+        <article class="kpi-card">
           <div class="kpi-header">
             <i class="ri-forbid-line kpi-icon"></i>
             <span class="kpi-title">Procesos desiertos</span>
@@ -206,7 +206,7 @@
           <small class="kpi-foot">Procesos con estado desierto</small>
         </article>
 
-        <article class="kpi-card kpi-danger">
+        <article class="kpi-card">
           <div class="kpi-header">
             <i class="ri-wallet-2-line kpi-icon"></i>
             <span class="kpi-title">Procesos desfinanciados</span>
@@ -2272,49 +2272,13 @@ async function onToggleProcesoDesierto() {
   opacity: 0.8;
 }
 
-.kpi-card.kpi-monto {
-  background: linear-gradient(135deg, #fef3c7 0%, #fef9e7 100%);
-  border-color: #fcd34d;
-}
-
-.kpi-card.kpi-monto .kpi-icon {
-  color: #d97706;
-}
-
-.kpi-card.kpi-success {
-  background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%);
-  border-color: #86efac;
-}
-
-.kpi-card.kpi-success .kpi-icon {
-  color: #16a34a;
-}
-
-.kpi-card.kpi-warning {
-  background: linear-gradient(135deg, #fed7aa 0%, #fef3c7 100%);
-  border-color: #fdba74;
-}
-
-.kpi-card.kpi-warning .kpi-icon {
-  color: #ea580c;
-}
-
-.kpi-card.kpi-info {
+.kpi-card {
   background: linear-gradient(135deg, #dbeafe 0%, #f0f9ff 100%);
-  border-color: #93c5fd;
+  border-color: #93c5fd !important;
 }
 
-.kpi-card.kpi-info .kpi-icon {
+.kpi-card .kpi-icon {
   color: #2563eb;
-}
-
-.kpi-card.kpi-danger {
-  background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%);
-  border-color: #fecaca;
-}
-
-.kpi-card.kpi-danger .kpi-icon {
-  color: #dc2626;
 }
 
 .context-summary {
