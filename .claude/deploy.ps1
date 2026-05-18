@@ -4,7 +4,7 @@
 
 param(
     [string]$action = "pull_and_build",
-    [string]$host = "srvr-seg-contratos"
+    [string]$targetHost = "srvr-seg-contratos"
 )
 
 $config = @{
@@ -27,25 +27,27 @@ $commands = @{
     )
     "restart_backend" = @(
         "cd $($config.project_path)/backend",
-        "npm start > /var/log/seguimiento-backend.log 2>&1 &"
+        "mkdir -p $($config.project_path)/logs",
+        "npm start > $($config.project_path)/logs/backend.log 2>&1 &"
     )
     "restart_frontend" = @(
         "cd $($config.project_path)/frontend",
-        "npm run dev > /var/log/seguimiento-frontend.log 2>&1 &"
+        "mkdir -p $($config.project_path)/logs",
+        "npm run dev > $($config.project_path)/logs/frontend.log 2>&1 &"
     )
     "status" = @(
         "ps aux | grep -E '(node|npm)' | grep -v grep"
     )
     "logs_backend" = @(
-        "tail -f /var/log/seguimiento-backend.log"
+        "tail -f $($config.project_path)/logs/backend.log"
     )
     "logs_frontend" = @(
-        "tail -f /var/log/seguimiento-frontend.log"
+        "tail -f $($config.project_path)/logs/frontend.log"
     )
 }
 
 Write-Host "🚀 Ejecutando: $action" -ForegroundColor Cyan
-Write-Host "Servidor: $host ($($config.host))" -ForegroundColor Gray
+Write-Host "Servidor: $targetHost ($($config.host))" -ForegroundColor Gray
 
 if (-not $commands.ContainsKey($action)) {
     Write-Host "❌ Acción desconocida: $action" -ForegroundColor Red
@@ -55,7 +57,7 @@ if (-not $commands.ContainsKey($action)) {
 
 $cmd = $commands[$action] -join "; "
 
-ssh $host $cmd
+ssh $targetHost $cmd
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✅ Completado exitosamente" -ForegroundColor Green
