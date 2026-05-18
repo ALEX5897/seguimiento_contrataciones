@@ -203,8 +203,11 @@ onMounted(() => {
   const hoy = new Date();
   const hace30 = new Date(hoy.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  formData.value.fechaFin = hoy.toISOString().split('T')[0];
-  formData.value.fechaInicio = hace30.toISOString().split('T')[0];
+  const fechaFinStr = hoy.toISOString().split('T')[0];
+  const fechaInicioStr = hace30.toISOString().split('T')[0];
+
+  if (fechaFinStr) formData.value.fechaFin = fechaFinStr;
+  if (fechaInicioStr) formData.value.fechaInicio = fechaInicioStr;
 
   // Cargar historial de localStorage
   cargarHistorial();

@@ -315,25 +315,6 @@ function construirPayloadEdicionUsuario(usuario: any) {
   };
 }
 
-async function guardarUsuario(usuario: any) {
-  guardando.value = true;
-  mensaje.value = '';
-  try {
-    await usuariosService.update(usuario.id, construirPayloadEdicionUsuario(usuario));
-    usuario.nuevaPassword = '';
-    mensaje.value = 'Usuario actualizado';
-    await cargarUsuarios();
-
-    if (Number(usuario.id) === Number(auth.user?.id)) {
-      await auth.fetchMe();
-    }
-  } catch (e: any) {
-    mensaje.value = e?.response?.data?.error || e?.message || 'No se pudo actualizar el usuario';
-  } finally {
-    guardando.value = false;
-  }
-}
-
 async function guardarTodosUsuarios() {
   if (!usuarios.value.length) return;
   guardando.value = true;

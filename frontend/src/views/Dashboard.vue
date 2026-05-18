@@ -1129,11 +1129,6 @@ const porcentajeAtraso = computed(() => {
   return Math.min(100, Math.round((kpis.value.atrasadas / totalProcesos) * 100));
 });
 
-const porcentajeProcesosVisibles = computed(() => {
-  const total = Math.max(1, subtareasElegibles.value.length);
-  return Math.min(100, Math.round((kpis.value.totalTareas / total) * 100));
-});
-
 const colorCumplimiento = computed(() => colorSemaforoPositivo(kpis.value.porcentajeCumplimiento));
 const colorAtraso = computed(() => colorSemaforoRiesgo(porcentajeAtraso.value));
 const detalleProcesosRiesgo = computed(() =>
@@ -1148,12 +1143,6 @@ const detalleProcesosRiesgo = computed(() =>
     }))
     .sort((a, b) => a.nombre.localeCompare(b.nombre))
 );
-const porcentajeProcesosRiesgo = computed(() => {
-  const total = Math.max(1, kpis.value.totalTareas);
-  return Math.min(100, Math.round((detalleProcesosRiesgo.value.length / total) * 100));
-});
-const colorProcesosRiesgo = computed(() => colorSemaforoRiesgo(porcentajeProcesosRiesgo.value));
-
 const detalleProcesosDesiertos = computed(() => {
   let items = subtareasConEstadoBaseFiltradas.value.filter((subtarea: any) => obtenerEstadoProcesoDashboard(subtarea) === 2);
 
@@ -1172,14 +1161,6 @@ const detalleProcesosDesiertos = computed(() => {
       responsable: responsableBase(subtarea)
     }))
     .sort((a, b) => a.nombre.localeCompare(b.nombre));
-});
-
-const totalProcesosConsideradosDashboard = computed(() =>
-  Math.max(1, subtareasFiltradas.value.length + detalleProcesosDesiertos.value.length)
-);
-
-const porcentajeProcesosDesiertos = computed(() => {
-  return Math.min(100, Math.round((detalleProcesosDesiertos.value.length / totalProcesosConsideradosDashboard.value) * 100));
 });
 
 function obtenerEtapaSolicitudCertificacionPresupuestaria(subtarea: any) {
@@ -1759,34 +1740,10 @@ const etapasCompletadasActivosValidos = computed(() =>
   ).length
 );
 
-// Etapas atrasadas (pendientes con días de retraso) de procesos activos válidos
-const etapasAtrasadasActivosValidos = computed(() => {
-  const hoy = parseFechaDashboard(obtenerFechaHoyDashboard());
-  if (!hoy) return 0;
-
-  return etapasActivosValidos.value.filter((etapa: any) => {
-    if (normalizarEstado(etapa.estado, etapa.fechaReal) === 'completado') return false;
-    const plan = parseFechaDashboard(etapa?.fechaPlanificada || etapa?.fechaTentativa);
-    return Boolean(plan && plan < hoy);
-  }).length;
-});
-
-// Etapas en progreso (pendientes sin días de retraso) de procesos activos válidos
-const etapasEnProgresoActivosValidos = computed(() =>
-  Math.max(0, etapasActivosValidos.value.length - etapasCompletadasActivosValidos.value - etapasAtrasadasActivosValidos.value)
-);
-
 // Porcentaje de cumplimiento para Total de procesos (basado en etapas)
 const porcentajeCumplimientoTotalProcesos = computed(() =>
   etapasActivosValidos.value.length
     ? Math.round((etapasCompletadasActivosValidos.value / etapasActivosValidos.value.length) * 100)
-    : 0
-);
-
-// Porcentaje de etapas atrasadas
-const porcentajeEtapasAtrasadasTotal = computed(() =>
-  etapasActivosValidos.value.length
-    ? Math.round((etapasAtrasadasActivosValidos.value / etapasActivosValidos.value.length) * 100)
     : 0
 );
 
@@ -1797,20 +1754,6 @@ const colorCumplimientoTotalProcesos = computed(() =>
 // Cumplimiento total consolidado (PAC + NO PAC) - Basado en etapas
 const totalEtapasConsolidado = computed(() =>
   totalEtapasConFechaPAC.value + totalEtapasConFechaNOPAC.value
-);
-
-const etapasCompletadasConsolidado = computed(() =>
-  etapasCompletadasConFechaPAC.value + etapasCompletadasConFechaNOPAC.value
-);
-
-const porcentajeCumplimientoConsolidado = computed(() =>
-  totalEtapasConsolidado.value
-    ? Math.round((etapasCompletadasConsolidado.value / totalEtapasConsolidado.value) * 100)
-    : 0
-);
-
-const colorCumplimientoConsolidado = computed(() =>
-  colorSemaforoPositivo(porcentajeCumplimientoConsolidado.value)
 );
 
 </script>
