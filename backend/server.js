@@ -61,7 +61,7 @@ app.use((req, res, next) => {
 });
 
 // Stream SSE para sincronizar cambios en vistas abiertas.
-app.get('/api/realtime/stream', (req, res) => {
+app.get('/api/realtime/stream', requireAuth, (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');

@@ -4,8 +4,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'cambiar-este-secreto-en-produccion
 
 export function obtenerToken(req) {
   const authHeader = String(req.headers.authorization || '');
-  if (!authHeader.startsWith('Bearer ')) return null;
-  return authHeader.slice('Bearer '.length).trim() || null;
+  if (authHeader.startsWith('Bearer ')) {
+    return authHeader.slice('Bearer '.length).trim() || null;
+  }
+  // Permitir token en query param (para EventSource que no puede enviar headers)
+  return req.query?.token || null;
 }
 
 export function generarToken(usuario) {

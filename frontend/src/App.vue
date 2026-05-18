@@ -275,7 +275,8 @@ function connectRealtime() {
   if (realtimeSource) return
 
   const base = API_BASE_URL.replace(/\/$/, '')
-  realtimeSource = new EventSource(`${base}/realtime/stream`)
+  const url = `${base}/realtime/stream?token=${encodeURIComponent(auth.token || '')}`
+  realtimeSource = new EventSource(url)
 
   realtimeSource.addEventListener('data-change', () => {
     scheduleSoftReload()
