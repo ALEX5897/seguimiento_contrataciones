@@ -40,6 +40,14 @@
           </select>
         </label>
         <label>
+          Válido desde (opcional)
+          <input v-model="form.fechaInicioRol" type="date" />
+        </label>
+        <label>
+          Válido hasta (opcional)
+          <input v-model="form.fechaFinRol" type="date" />
+        </label>
+        <label>
           Estado
           <select v-model="form.activo" required>
             <option :value="true">Activo</option>
@@ -76,6 +84,7 @@
           <th>Nombre</th>
           <th>Usuario</th>
           <th>Rol</th>
+          <th>Vigencia del rol</th>
           <th>Dirección</th>
           <th>Orden login</th>
           <th>Activo</th>
@@ -97,6 +106,16 @@
                 {{ etiquetaRol(rol) }}
               </option>
             </select>
+          </td>
+          <td>
+            <div class="vigencia-rol-inline">
+              <input :value="u.fechaInicioRol" @input="(e: any) => u.fechaInicioRol = e.target.value" type="date" title="Válido desde (dejar vacío = siempre)" />
+              <span>–</span>
+              <input :value="u.fechaFinRol" @input="(e: any) => u.fechaFinRol = e.target.value" type="date" title="Válido hasta (dejar vacío = siempre)" />
+              <span v-if="rolVencido(u)" class="chip-rol-vencido">⏰ Vencido</span>
+              <span v-else-if="u.fechaFinRol" class="chip-rol-temporal">Temporal</span>
+              <span v-else class="chip-rol-permanente">Permanente</span>
+            </div>
           </td>
           <td>
             <input
@@ -123,7 +142,6 @@
             />
           </td>
           <td class="acciones-fila">
-            <button type="button" class="btn-guardar" @click="guardarUsuario(u)" :disabled="guardando">Guardar</button>
             <button
               type="button"
               class="btn-eliminar"
@@ -166,9 +184,11 @@ const form = ref({
   username: '',
   ordenLogin: 0,
   password: '12345',
-  role: 'reporteria',
+  role: 'direccion',
   direccionNombre: '',
-  activo: true
+  activo: true,
+  fechaInicioRol: '',
+  fechaFinRol: ''
 });
 
 async function cargarUsuarios() {
@@ -180,6 +200,8 @@ async function cargarUsuarios() {
     direccionNombre: normalizarDireccion(u.direccionNombre || ''),
     ordenLogin: Number(u.ordenLogin ?? 0),
     activo: Boolean(u.activo),
+    fechaInicioRol: String(u.fechaInicioRol || u.fecha_inicio_rol || '').trim() || '',
+    fechaFinRol: String(u.fechaFinRol || u.fecha_fin_rol || '').trim() || '',
     nuevaPassword: ''
   }));
 }
@@ -233,7 +255,7 @@ async function crearUsuario() {
       activo: form.value.activo
     });
     mensaje.value = 'Usuario creado correctamente';
-    form.value = { nombre: '', username: '', ordenLogin: 0, password: '12345', role: 'reporteria', direccionNombre: '', activo: true };
+    form.value = { nombre: '', username: '', ordenLogin: 0, password: '12345', role: 'direccion', direccionNombre: '', activo: true, fechaInicioRol: '', fechaFinRol: '' };
     await cargarUsuarios();
   } catch (e: any) {
     mensaje.value = e?.response?.data?.error || 'No se pudo crear el usuario';
@@ -249,6 +271,8 @@ function construirPayloadNuevoUsuario() {
   const password = form.value.password?.trim() || '12345';
   const direccionNombre = role === 'direccion' ? normalizarDireccion(form.value.direccionNombre) : null;
   const ordenLogin = Math.max(0, Number(form.value.ordenLogin ?? 0));
+  const fechaInicioRol = form.value.fechaInicioRol ? String(form.value.fechaInicioRol).trim() : null;
+  const fechaFinRol = form.value.fechaFinRol ? String(form.value.fechaFinRol).trim() : null;
 
   return {
     nombre,
@@ -256,7 +280,9 @@ function construirPayloadNuevoUsuario() {
     role,
     password,
     direccionNombre,
-    ordenLogin
+    ordenLogin,
+    fechaInicioRol,
+    fechaFinRol
   };
 }
 
@@ -283,7 +309,9 @@ function construirPayloadEdicionUsuario(usuario: any) {
     direccionNombre: usuario.role === 'direccion' ? normalizarDireccion(usuario.direccionNombre) : null,
     ordenLogin: Math.max(0, Number(usuario.ordenLogin ?? 0)),
     activo: Boolean(usuario.activo),
-    password: usuario.nuevaPassword?.trim() || undefined
+    password: usuario.nuevaPassword?.trim() || undefined,
+    fechaInicioRol: usuario.fechaInicioRol ? String(usuario.fechaInicioRol).trim() : null,
+    fechaFinRol: usuario.fechaFinRol ? String(usuario.fechaFinRol).trim() : null
   };
 }
 
@@ -353,6 +381,12 @@ async function eliminarUsuario(usuario: any) {
 onMounted(async () => {
   await Promise.all([cargarUsuarios(), cargarDireccionesDisponibles(), cargarRolesDisponibles()]);
 });
+
+const hoyISO = new Date().toISOString().slice(0, 10);
+
+function rolVencido(usuario: any) {
+  return Boolean(usuario.fechaFinRol) && usuario.fechaFinRol < hoyISO;
+}
 
 function etiquetaRol(role: string) {
   const normalized = String(role || '').trim().toLowerCase();
@@ -559,6 +593,49 @@ function normalizarUsername(value: string | null | undefined) {
   gap: 0.35rem;
   font-size: 0.82rem;
   color: #334155;
+}
+
+.vigencia-rol-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.vigencia-rol-inline input {
+  flex: 1;
+  min-width: 100px;
+}
+
+.vigencia-rol-inline span {
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.chip-rol-vencido,
+.chip-rol-temporal,
+.chip-rol-permanente {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chip-rol-vencido {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.chip-rol-temporal {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.chip-rol-permanente {
+  background: #e0f2fe;
+  color: #0c4a6e;
 }
 
 .mensaje {

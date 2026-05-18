@@ -99,6 +99,28 @@
         </tbody>
       </table>
     </section>
+
+    <section class="card" v-if="detalleRol">
+      <h2>Campos del modal de seguimiento</h2>
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Campo</th>
+            <th>Puede ver</th>
+            <th>Puede editar</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="campo in detalleRol.campos" :key="campo.clave">
+            <td><strong>{{ campo.nombre }}</strong></td>
+            <td><input type="checkbox" v-model="campo.puedeVer" /></td>
+            <td>
+              <input type="checkbox" v-model="campo.puedeEditar" :disabled="!campo.puedeVer" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
   </div>
 </template>
 
@@ -171,6 +193,11 @@ function clonarDetalle(detalle: PermisosRolDetalle): PermisosRolDetalle {
     menu: detalle.menu.map((m) => ({
       ...m,
       puedeIngresar: Boolean(m.puedeIngresar)
+    })),
+    campos: detalle.campos.map((c) => ({
+      ...c,
+      puedeVer: Boolean(c.puedeVer),
+      puedeEditar: Boolean(c.puedeEditar)
     }))
   };
 }
@@ -283,6 +310,11 @@ async function guardar() {
       menu: detalleRol.value.menu.map((m) => ({
         clave: m.clave,
         puedeIngresar: Boolean(m.puedeIngresar)
+      })),
+      campos: detalleRol.value.campos.map((c) => ({
+        clave: c.clave,
+        puedeVer: Boolean(c.puedeVer),
+        puedeEditar: Boolean(c.puedeEditar)
       }))
     };
 
@@ -291,7 +323,8 @@ async function guardar() {
         ...m,
         permisos: { ...m.permisos }
       })),
-      menu: payload.menu.map((m) => ({ ...m }))
+      menu: payload.menu.map((m) => ({ ...m })),
+      campos: payload.campos.map((c) => ({ ...c }))
     };
 
     for (const itemMenu of payloadAjustado.menu) {

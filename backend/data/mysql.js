@@ -28,6 +28,13 @@ const DEFAULT_UNASSIGNED_USERNAME = normalizeUsername(process.env.DEFAULT_UNASSI
 const DEFAULT_UNASSIGNED_PASSWORD = process.env.DEFAULT_UNASSIGNED_PASSWORD || '12345';
 const CORE_ROLES = ['admin', 'direccion', 'reporteria'];
 
+const CAMPOS_ETAPAS_CATALOGO = [
+  { clave: 'fecha_reforma', nombre: 'Fecha reforma', orden: 1 },
+  { clave: 'fecha_reforma_3', nombre: 'Fecha reforma 3', orden: 2 },
+  { clave: 'fecha_completo', nombre: 'Fecha de completo', orden: 3 },
+  { clave: 'estado_etapa', nombre: 'Estado', orden: 4 }
+];
+
 let pool;
 let subtareasColumnsCache = null;
 
@@ -259,6 +266,8 @@ function toCamelRow(row) {
     es_version_actual: 'esVersionActual',
     version_id: 'versionId',
     orden_login: 'ordenLogin',
+    fecha_inicio_rol: 'fechaInicioRol',
+    fecha_fin_rol: 'fechaFinRol',
     total_actividades: 'totalActividades',
     presupuesto_total: 'presupuestoTotal',
     actividades_activas: 'actividadesActivas',
@@ -435,6 +444,9 @@ async function createSchema() {
   if (!subtareasColsSet.has('riesgo_comentario')) {
     await query('ALTER TABLE subtareas ADD COLUMN riesgo_comentario TEXT NULL AFTER proceso_en_riesgo').catch(() => {});
   }
+  if (!subtareasColsSet.has('fecha_reforma_3')) {
+    await query('ALTER TABLE subtareas ADD COLUMN fecha_reforma_3 DATE NULL AFTER riesgo_comentario').catch(() => {});
+  }
 
   await query(`
     CREATE TABLE IF NOT EXISTS etapas_pac (
@@ -468,6 +480,9 @@ async function createSchema() {
   const subtareasEtapasColsSet = new Set(subtareasEtapasCols.map((row) => row.name));
   if (!subtareasEtapasColsSet.has('fecha_reforma')) {
     await query('ALTER TABLE subtareas_etapas ADD COLUMN fecha_reforma DATE NULL AFTER fecha_tentativa').catch(() => {});
+  }
+  if (!subtareasEtapasColsSet.has('fecha_reforma_3')) {
+    await query('ALTER TABLE subtareas_etapas ADD COLUMN fecha_reforma_3 DATE NULL AFTER fecha_reforma').catch(() => {});
   }
 
   await query(`
@@ -587,6 +602,8 @@ async function createSchema() {
 
   await query(`ALTER TABLE usuarios MODIFY COLUMN role VARCHAR(80) NOT NULL`).catch(() => {});
   await query(`ALTER TABLE usuarios ADD COLUMN orden_login INT NOT NULL DEFAULT 0 AFTER direccion_nombre`).catch(() => {});
+  await query(`ALTER TABLE usuarios ADD COLUMN fecha_inicio_rol DATE NULL AFTER activo`).catch(() => {});
+  await query(`ALTER TABLE usuarios ADD COLUMN fecha_fin_rol DATE NULL AFTER fecha_inicio_rol`).catch(() => {});
 
   await query(`
     CREATE TABLE IF NOT EXISTS permisos_modulos_catalogo (
@@ -644,6 +661,19 @@ async function createSchema() {
       CONSTRAINT fk_permisos_roles_menu_catalogo
         FOREIGN KEY (menu_clave) REFERENCES permisos_menu_catalogo(clave)
         ON DELETE CASCADE
+    ) ENGINE=InnoDB;
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS permisos_roles_campos_etapas (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      role VARCHAR(80) NOT NULL,
+      campo_clave VARCHAR(80) NOT NULL,
+      puede_ver BOOLEAN NOT NULL DEFAULT true,
+      puede_editar BOOLEAN NOT NULL DEFAULT true,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_permisos_roles_campos (role, campo_clave)
     ) ENGINE=InnoDB;
   `);
 
@@ -904,6 +934,14 @@ async function seedPermisosBase() {
         [role, menu.clave, canAccess]
       );
     }
+
+    for (const campo of CAMPOS_ETAPAS_CATALOGO) {
+      await query(
+        `INSERT IGNORE INTO permisos_roles_campos_etapas (role, campo_clave, puede_ver, puede_editar)
+         VALUES (?, ?, true, true)`,
+        [role, campo.clave]
+      );
+    }
   }
 }
 
@@ -1107,7 +1145,7 @@ export async function getUsuarioByLoginIdentifier(identifier) {
 
 export async function getUsuarioById(id) {
   const rows = await query(
-    `SELECT id, username, nombre, role, direccion_nombre, orden_login, activo, created_at, updated_at
+    `SELECT id, username, nombre, role, direccion_nombre, orden_login, activo, fecha_inicio_rol, fecha_fin_rol, created_at, updated_at
      FROM usuarios
      WHERE id = ?
      LIMIT 1`,
@@ -1118,12 +1156,14 @@ export async function getUsuarioById(id) {
   item.nombre = normalizeText(item.nombre || '');
   item.direccionNombre = item.direccionNombre ? normalizeText(item.direccionNombre) : null;
   item.activo = Boolean(item.activo);
+  item.fechaInicioRol = item.fechaInicioRol ? formatearFechaISO(item.fechaInicioRol) : null;
+  item.fechaFinRol = item.fechaFinRol ? formatearFechaISO(item.fechaFinRol) : null;
   return item;
 }
 
 export async function getUsuarios() {
   const rows = await query(
-    `SELECT id, username, nombre, role, direccion_nombre, orden_login, activo, created_at, updated_at
+    `SELECT id, username, nombre, role, direccion_nombre, orden_login, activo, fecha_inicio_rol, fecha_fin_rol, created_at, updated_at
      FROM usuarios
      ORDER BY orden_login ASC, nombre ASC`
   );
@@ -1132,6 +1172,8 @@ export async function getUsuarios() {
     item.nombre = normalizeText(item.nombre || '');
     item.direccionNombre = item.direccionNombre ? normalizeText(item.direccionNombre) : null;
     item.activo = Boolean(item.activo);
+    item.fechaInicioRol = item.fechaInicioRol ? formatearFechaISO(item.fechaInicioRol) : null;
+    item.fechaFinRol = item.fechaFinRol ? formatearFechaISO(item.fechaFinRol) : null;
     return item;
   });
 }
@@ -1207,14 +1249,25 @@ function normalizeActivo(value, defaultValue = true) {
   return Boolean(defaultValue);
 }
 
+function formatearFechaISO(fecha) {
+  if (!fecha) return null;
+  if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}/.test(fecha)) return fecha.substring(0, 10);
+  if (fecha instanceof Date) return fecha.toISOString().substring(0, 10);
+  const d = new Date(fecha);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString().substring(0, 10);
+}
+
 export async function createUsuario(data = {}) {
   const username = normalizeUsername(data.username);
   const nombre = normalizeText(data.nombre);
   const password = String(data.password || '12345');
-  const role = normalizeRoleKey(data.role || '');
+  const role = normalizeRoleKey(data.role || 'direccion');
   const direccionNombre = data.direccionNombre ? normalizeText(data.direccionNombre) : null;
   const ordenLogin = Math.max(0, Number.parseInt(String(data.ordenLogin ?? 0), 10) || 0);
   const activo = normalizeActivo(data.activo, true);
+  const fechaInicioRol = data.fechaInicioRol && /^\d{4}-\d{2}-\d{2}$/.test(String(data.fechaInicioRol)) ? String(data.fechaInicioRol).trim() : null;
+  const fechaFinRol = data.fechaFinRol && /^\d{4}-\d{2}-\d{2}$/.test(String(data.fechaFinRol)) ? String(data.fechaFinRol).trim() : null;
 
   if (!username || !nombre || !password) throw new Error('username, nombre y password son requeridos');
 
@@ -1231,9 +1284,9 @@ export async function createUsuario(data = {}) {
   const passwordHash = await bcrypt.hash(password, 10);
 
   const result = await query(
-    `INSERT INTO usuarios (username, nombre, password_hash, role, direccion_nombre, orden_login, activo)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [username, nombre, passwordHash, role, role === 'direccion' ? direccionNombre : null, ordenLogin, activo]
+    `INSERT INTO usuarios (username, nombre, password_hash, role, direccion_nombre, orden_login, activo, fecha_inicio_rol, fecha_fin_rol)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [username, nombre, passwordHash, role, role === 'direccion' ? direccionNombre : null, ordenLogin, activo, fechaInicioRol, fechaFinRol]
   );
 
   return getUsuarioById(result.insertId);
@@ -1284,6 +1337,16 @@ export async function updateUsuario(id, data = {}) {
     sets.push('password_hash = ?');
     values.push(passwordHash);
   }
+  if (data.fechaInicioRol !== undefined) {
+    const fecha = data.fechaInicioRol && /^\d{4}-\d{2}-\d{2}$/.test(String(data.fechaInicioRol)) ? String(data.fechaInicioRol).trim() : null;
+    sets.push('fecha_inicio_rol = ?');
+    values.push(fecha);
+  }
+  if (data.fechaFinRol !== undefined) {
+    const fecha = data.fechaFinRol && /^\d{4}-\d{2}-\d{2}$/.test(String(data.fechaFinRol)) ? String(data.fechaFinRol).trim() : null;
+    sets.push('fecha_fin_rol = ?');
+    values.push(fecha);
+  }
 
   if (!sets.length) return getUsuarioById(id);
   values.push(id);
@@ -1294,6 +1357,25 @@ export async function updateUsuario(id, data = {}) {
 export async function deleteUsuario(id) {
   const result = await query('DELETE FROM usuarios WHERE id = ?', [id]);
   return result.affectedRows > 0;
+}
+
+export async function verificarVigenciaRol(userId) {
+  const rows = await query(
+    `SELECT role, fecha_fin_rol FROM usuarios WHERE id = ? AND activo = true LIMIT 1`,
+    [userId]
+  );
+  if (!rows[0]) return;
+
+  const usuario = rows[0];
+  if (!usuario.fecha_fin_rol) return;
+
+  const hoy = new Date().toISOString().slice(0, 10);
+  if (usuario.fecha_fin_rol < hoy && usuario.role !== 'direccion') {
+    await query(
+      `UPDATE usuarios SET role = ?, fecha_inicio_rol = NULL, fecha_fin_rol = NULL WHERE id = ?`,
+      ['direccion', userId]
+    );
+  }
 }
 
 export async function verifyUsuarioCredentials(username, plainPassword) {
@@ -1459,7 +1541,7 @@ export async function getPermisosRol(role) {
     getPermisosMenuCatalogo()
   ]);
 
-  const [modulosRows, menuRows] = await Promise.all([
+  const [modulosRows, menuRows, camposRows] = await Promise.all([
     query(
       `SELECT modulo_clave, puede_leer, puede_crear, puede_actualizar, puede_borrar
        FROM permisos_roles_modulos
@@ -1469,6 +1551,12 @@ export async function getPermisosRol(role) {
     query(
       `SELECT menu_clave, puede_ingresar
        FROM permisos_roles_menu
+       WHERE role = ?`,
+      [roleName]
+    ),
+    query(
+      `SELECT campo_clave, puede_ver, puede_editar
+       FROM permisos_roles_campos_etapas
        WHERE role = ?`,
       [roleName]
     )
@@ -1490,6 +1578,16 @@ export async function getPermisosRol(role) {
     menuRows.map((row) => [String(row.menu_clave), Boolean(row.puede_ingresar)])
   );
 
+  const camposByClave = new Map(
+    camposRows.map((row) => [
+      String(row.campo_clave),
+      {
+        puedeVer: Boolean(row.puede_ver),
+        puedeEditar: Boolean(row.puede_editar)
+      }
+    ])
+  );
+
   return {
     role: roleName,
     modulos: modulosCatalogo.map((modulo) => ({
@@ -1505,6 +1603,11 @@ export async function getPermisosRol(role) {
         const moduleRead = Boolean(modulosByClave.get(requiredModule)?.read);
         return base && moduleRead;
       })()
+    })),
+    campos: CAMPOS_ETAPAS_CATALOGO.map((campo) => ({
+      ...campo,
+      puedeVer: camposByClave.has(campo.clave) ? camposByClave.get(campo.clave).puedeVer : true,
+      puedeEditar: camposByClave.has(campo.clave) ? camposByClave.get(campo.clave).puedeEditar : true
     }))
   };
 }
@@ -1545,6 +1648,11 @@ export async function createRole(data = {}) {
     menu: plantilla.menu.map((item) => ({
       clave: item.clave,
       puedeIngresar: copiarPermisos ? Boolean(item.puedeIngresar) : false
+    })),
+    campos: plantilla.campos.map((item) => ({
+      clave: item.clave,
+      puedeVer: copiarPermisos ? Boolean(item.puedeVer) : true,
+      puedeEditar: copiarPermisos ? Boolean(item.puedeEditar) : true
     }))
   };
 
@@ -1568,6 +1676,7 @@ export async function deleteRole(role) {
     await conn.beginTransaction();
     await conn.execute('DELETE FROM permisos_roles_menu WHERE role = ?', [roleName]);
     await conn.execute('DELETE FROM permisos_roles_modulos WHERE role = ?', [roleName]);
+    await conn.execute('DELETE FROM permisos_roles_campos_etapas WHERE role = ?', [roleName]);
     await conn.commit();
   } catch (error) {
     await conn.rollback();
@@ -1585,6 +1694,7 @@ export async function updatePermisosRol(role, data = {}) {
 
   const modulos = Array.isArray(data.modulos) ? data.modulos : [];
   const menu = Array.isArray(data.menu) ? data.menu : [];
+  const campos = Array.isArray(data.campos) ? data.campos : [];
 
   const conn = await getPool().getConnection();
   try {
@@ -1637,6 +1747,22 @@ export async function updatePermisosRol(role, data = {}) {
          ON DUPLICATE KEY UPDATE
            puede_ingresar = VALUES(puede_ingresar)`,
         [roleName, clave, puedeIngresar]
+      );
+    }
+
+    for (const item of campos) {
+      const clave = String(item?.clave || '').trim();
+      if (!clave) continue;
+      const puedeVer = Boolean(item?.puedeVer);
+      const puedeEditar = Boolean(item?.puedeEditar);
+
+      await conn.execute(
+        `INSERT INTO permisos_roles_campos_etapas (role, campo_clave, puede_ver, puede_editar)
+         VALUES (?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           puede_ver = VALUES(puede_ver),
+           puede_editar = VALUES(puede_editar)`,
+        [roleName, clave, puedeVer, puedeEditar]
       );
     }
 
@@ -1697,6 +1823,7 @@ export async function getPermisosSesionRol(role) {
   const permisos = await getPermisosRol(role);
   const modulos = {};
   const menu = {};
+  const campos = {};
 
   for (const modulo of permisos.modulos) {
     modulos[modulo.clave] = modulo.permisos;
@@ -1704,11 +1831,18 @@ export async function getPermisosSesionRol(role) {
   for (const item of permisos.menu) {
     menu[item.clave] = Boolean(item.puedeIngresar);
   }
+  for (const campo of permisos.campos) {
+    campos[campo.clave] = {
+      ver: Boolean(campo.puedeVer),
+      editar: Boolean(campo.puedeEditar)
+    };
+  }
 
   return {
     role: permisos.role,
     modulos,
-    menu
+    menu,
+    campos
   };
 }
 
@@ -2277,7 +2411,7 @@ function normalizarFechaSalida(fecha) {
 
 export async function getSubtareaEtapas(subtareaId) {
   const rows = await query(
-    `SELECT se.id, se.subtarea_id, se.etapa_id, se.aplica, se.fecha_tentativa, se.fecha_reforma,
+    `SELECT se.id, se.subtarea_id, se.etapa_id, se.aplica, se.fecha_tentativa, se.fecha_reforma, se.fecha_reforma_3,
             COALESCE(sg.estado, 'pendiente') AS estado,
             COALESCE(sg.fecha_planificada, se.fecha_reforma, se.fecha_tentativa) AS fecha_planificada,
             sg.fecha_real, sg.responsable_id, sg.observaciones,
@@ -2381,6 +2515,7 @@ export async function setSubtareaEtapas(subtareaId, etapas) {
       aplica: Boolean(etapa.aplica),
       fechaTentativa: normalizarFechaManual(etapa.fechaTentativa) || normalizarFechaManual(etapa.fechaPlanificada) || null,
       fechaReforma: normalizarFechaManual(etapa.fechaReforma ?? etapa.fechaTentativa ?? etapa.fechaPlanificada) || null,
+      fechaReforma3: normalizarFechaManual(etapa.fechaReforma3) || null,
       estadoFinal,
       fechaRealFinal,
       responsableId: responsable.id,
@@ -2403,13 +2538,14 @@ export async function setSubtareaEtapas(subtareaId, etapas) {
     for (const etapa of etapasEnriquecidas) {
       // Usar la conexión de transacción
       await conn.execute(
-        `INSERT INTO subtareas_etapas (subtarea_id, etapa_id, aplica, fecha_tentativa, fecha_reforma)
-         VALUES (?, ?, ?, ?, ?)
+        `INSERT INTO subtareas_etapas (subtarea_id, etapa_id, aplica, fecha_tentativa, fecha_reforma, fecha_reforma_3)
+         VALUES (?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
            aplica = VALUES(aplica),
            fecha_tentativa = VALUES(fecha_tentativa),
-           fecha_reforma = VALUES(fecha_reforma)`,
-        [subtareaId, etapa.etapaId, etapa.aplica, etapa.fechaTentativa, etapa.fechaReforma]
+           fecha_reforma = VALUES(fecha_reforma),
+           fecha_reforma_3 = VALUES(fecha_reforma_3)`,
+        [subtareaId, etapa.etapaId, etapa.aplica, etapa.fechaTentativa, etapa.fechaReforma, etapa.fechaReforma3]
       );
 
       await conn.execute(
@@ -2473,15 +2609,16 @@ export async function actualizarEtapaSubtarea(codigoOlympo, etapaId, data = {}) 
   const responsable = await resolverResponsable(data);
 
   await query(
-    `INSERT INTO subtareas_etapas (subtarea_id, etapa_id, aplica, fecha_tentativa, fecha_reforma)
-     VALUES (?, ?, ?, ?, ?)
-     ON DUPLICATE KEY UPDATE aplica = VALUES(aplica), fecha_reforma = VALUES(fecha_reforma)`,
+    `INSERT INTO subtareas_etapas (subtarea_id, etapa_id, aplica, fecha_tentativa, fecha_reforma, fecha_reforma_3)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE aplica = VALUES(aplica), fecha_reforma = VALUES(fecha_reforma), fecha_reforma_3 = VALUES(fecha_reforma_3)`,
     [
       subtarea.id,
       etapaId,
       true,
       data.fechaPlanificada || data.fechaTentativa || null,
-      data.fechaReforma || data.fechaPlanificada || data.fechaTentativa || null
+      data.fechaReforma || data.fechaPlanificada || data.fechaTentativa || null,
+      data.fechaReforma3 || null
     ]
   );
 

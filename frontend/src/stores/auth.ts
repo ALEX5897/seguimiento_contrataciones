@@ -26,17 +26,18 @@ const EMPTY_ACTIONS: PermisosAcciones = {
 
 function readPermissionsFromStorage(): PermisosSesion {
   const raw = localStorage.getItem(PERMISSIONS_KEY);
-  if (!raw) return { role: '', modulos: {}, menu: {} };
+  if (!raw) return { role: '', modulos: {}, menu: {}, campos: {} };
 
   try {
     const parsed = JSON.parse(raw) as Partial<PermisosSesion>;
     return {
       role: String(parsed.role || ''),
       modulos: parsed.modulos && typeof parsed.modulos === 'object' ? parsed.modulos : {},
-      menu: parsed.menu && typeof parsed.menu === 'object' ? parsed.menu : {}
+      menu: parsed.menu && typeof parsed.menu === 'object' ? parsed.menu : {},
+      campos: parsed.campos && typeof parsed.campos === 'object' ? parsed.campos : {}
     };
   } catch {
-    return { role: '', modulos: {}, menu: {} };
+    return { role: '', modulos: {}, menu: {}, campos: {} };
   }
 }
 
@@ -53,7 +54,7 @@ function normalizeMePayload(payload: any): { user: UsuarioSesion; permisos: Perm
   const permisos = payload?.permisos as PermisosSesion | undefined;
   return {
     user,
-    permisos: permisos || { role: user.role || '', modulos: {}, menu: {} }
+    permisos: permisos || { role: user.role || '', modulos: {}, menu: {}, campos: {} }
   };
 }
 
@@ -110,7 +111,7 @@ export const useAuthStore = defineStore('auth', {
     setSession(token: string, user: UsuarioSesion, permisos?: PermisosSesion) {
       this.token = token;
       this.user = user;
-      this.permisos = permisos || { role: user.role || '', modulos: {}, menu: {} };
+      this.permisos = permisos || { role: user.role || '', modulos: {}, menu: {}, campos: {} };
       localStorage.setItem(TOKEN_KEY, token);
       localStorage.setItem(USER_KEY, JSON.stringify(user));
       localStorage.setItem(PERMISSIONS_KEY, JSON.stringify(this.permisos));
@@ -119,7 +120,7 @@ export const useAuthStore = defineStore('auth', {
     clearSession() {
       this.token = '';
       this.user = null;
-      this.permisos = { role: '', modulos: {}, menu: {} };
+      this.permisos = { role: '', modulos: {}, menu: {}, campos: {} };
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
       localStorage.removeItem(PERMISSIONS_KEY);

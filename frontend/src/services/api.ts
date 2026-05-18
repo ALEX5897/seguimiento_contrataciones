@@ -264,6 +264,7 @@ export interface PermisosSesion {
   role: string;
   modulos: Record<string, PermisosAcciones>;
   menu: Record<string, boolean>;
+  campos: Record<string, { ver: boolean; editar: boolean }>;
 }
 
 export interface PermisoModuloCatalogo {
@@ -284,10 +285,19 @@ export interface PermisoMenuCatalogo {
   puedeIngresar: boolean;
 }
 
+export interface PermisoCampoEtapa {
+  clave: string;
+  nombre: string;
+  orden: number;
+  puedeVer: boolean;
+  puedeEditar: boolean;
+}
+
 export interface PermisosRolDetalle {
   role: string;
   modulos: PermisoModuloCatalogo[];
   menu: PermisoMenuCatalogo[];
+  campos: PermisoCampoEtapa[];
 }
 
 export interface AuditoriaEvento {

@@ -126,6 +126,7 @@ router.post('/logout', requireAuth, async (req, res) => {
 
 router.get('/me', requireAuth, async (req, res) => {
   try {
+    await mysql.verificarVigenciaRol(req.user.id);
     const usuario = await mysql.getUsuarioById(req.user.id);
     if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
     const permisos = await mysql.getPermisosSesionRol(usuario.role);

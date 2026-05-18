@@ -129,7 +129,7 @@ interface MenuItem {
   isAdmin?: boolean
 }
 
-const APP_VERSION = 'v1.1.6'
+const APP_VERSION = 'v1.2.0'
 const INACTIVITY_LIMIT_MS = 20 * 60 * 1000
 
 const route = useRoute()

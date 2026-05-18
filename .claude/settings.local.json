@@ -2,7 +2,29 @@
   "permissions": {
     "allow": [
       "Bash(npx tsc *)",
-      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }; Start-Sleep -Seconds 2)"
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }; Start-Sleep -Seconds 2)",
+      "Bash(curl -s http://localhost:3000/api/health -w \"\\\\n\")",
+      "Bash(curl -s http://localhost:5173/)",
+      "Bash(echo \"✅ Backend: $\\(curl -s http://localhost:3000/api/health 2>&1)",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force; Get-Process npm -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Seconds 3; Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue })",
+      "Bash(mysql -h 172.16.1.80 -u usr-cont -p'mas_TER$*25@' poa_pac -e \"SELECT id, codigo, nombre FROM procesos WHERE codigo = '01.01.002.047.630207.000.009' LIMIT 1\")",
+      "PowerShell(Start-Sleep -Seconds 5; Get-Job | ForEach-Object { Write-Host \"$\\($_.Name\\): $\\($_.State\\)\" })",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue | Select-Object Name, ProcessName, Handles | ForEach-Object { \"Proceso: $\\($_.ProcessName\\)\" })",
+      "Bash(cmd /c start-simple.bat)",
+      "Bash(pkill -f node)",
+      "PowerShell(taskkill *)",
+      "Bash(curl -L -o logoqt-nuevo.png \"https://turismo.quito.gob.ec/wp-content/uploads/2024/06/logoQT.png\")",
+      "Bash(curl -L -o fondo-corporativo.jpg \"https://as2.ftcdn.net/v2/jpg/01/70/03/67/1000_F_170036772_vOispQGM35tY2nN0PVluT6PgQd8NttZe.jpg\")",
+      "Bash(sed -n '137,418p')",
+      "Read(//tmp/**)",
+      "Bash(git checkout *)",
+      "Bash(git reflog *)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :5173)",
+      "Bash(taskkill /PID 80100 /F)",
+      "PowerShell(Stop-Process -Id 80100 -Force -ErrorAction SilentlyContinue)",
+      "Bash(python3)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue })"
     ]
   }
 }

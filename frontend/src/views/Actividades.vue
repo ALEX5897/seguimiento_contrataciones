@@ -274,7 +274,11 @@
           <p><strong>Dirección:</strong> {{ obtenerDireccion(actividad) }}</p>
           <p><strong>Responsable:</strong> {{ obtenerResponsable(actividad) }}</p>
           <p><strong>Cuatrimestre:</strong> {{ obtenerCuatrimestreTexto(actividad) }}</p>
-          <p><strong>Presupuesto:</strong> ${{ obtenerPresupuesto(actividad).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
+          <p>
+            <strong>Presupuesto:</strong>
+            ${{ obtenerPresupuesto(actividad).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+            <span class="actividad-presupuesto-porcentaje">({{ porcentajePresupuesto(actividad).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}%)</span>
+          </p>
           <p><strong>Período:</strong> {{ formatearFecha(periodoPrimeraUltimaActividad(actividad).desde) }} - {{ formatearFecha(periodoPrimeraUltimaActividad(actividad).hasta) }}</p>
         </div>
 
@@ -442,9 +446,10 @@
                 <th>#</th>
                 <th>Etapa</th>
                 <th>Fecha límite</th>
-                <th>Fecha reforma</th>
-                <th>Fecha de completo</th>
-                <th>Estado</th>
+                <th v-if="verFechaReforma">Fecha reforma</th>
+                <th v-if="verFechaReforma3">Fecha reforma 3</th>
+                <th v-if="verFechaCompleto">Fecha de completo</th>
+                <th v-if="verEstadoEtapa">Estado</th>
                 <th>Retraso</th>
                 <th>Seguimiento</th>
               </tr>
@@ -458,18 +463,27 @@
                 <td><span class="etapa-numero-badge">{{ index + 1 }}</span></td>
                 <td>{{ etapa.etapaNombre || etapa.nombre }}</td>
                 <td>{{ formatearFecha(etapa.fechaPlanificada || etapa.fechaTentativa) }}</td>
-                <td>
+                <td v-if="verFechaReforma">
                   <input
                     v-model="etapa.fechaReforma"
                     type="date"
                     class="estado-select-detalle"
-                    :disabled="guardandoEstadoEtapaId === (etapa.id || etapa.etapaId)"
+                    :disabled="guardandoEstadoEtapaId === (etapa.id || etapa.etapaId) || !editarFechaReforma"
                     @change="onFechaReformaChange(etapa)"
                   />
                 </td>
-                <td>
+                <td v-if="verFechaReforma3">
                   <input
-                    v-if="estadoNormalizado(etapa.estado) === 'completado' && permiteEditarFechaCompletado"
+                    v-model="etapa.fechaReforma3"
+                    type="date"
+                    class="estado-select-detalle"
+                    :disabled="guardandoEstadoEtapaId === (etapa.id || etapa.etapaId) || !editarFechaReforma3"
+                    @change="onFechaReforma3Change(etapa)"
+                  />
+                </td>
+                <td v-if="verFechaCompleto">
+                  <input
+                    v-if="estadoNormalizado(etapa.estado) === 'completado' && permiteEditarFechaCompletado && editarFechaCompleto"
                     v-model="etapa.fechaReal"
                     type="date"
                     class="estado-select-detalle"
@@ -481,12 +495,12 @@
                   </span>
                   <span v-else>-</span>
                 </td>
-                <td>
+                <td v-if="verEstadoEtapa">
                   <div class="estado-editor">
                     <select
                       v-model="etapa.estado"
                       :class="['estado-select-detalle', claseEstadoSemaforo(etapa)]"
-                      :disabled="guardandoEstadoEtapaId === (etapa.id || etapa.etapaId)"
+                      :disabled="guardandoEstadoEtapaId === (etapa.id || etapa.etapaId) || !editarEstadoEtapa"
                       @change="onEstadoEtapaChange(etapa)"
                     >
                       <option value="pendiente">Pendiente</option>
@@ -917,24 +931,30 @@ const montoTotal = computed(() => {
   );
 });
 
+const porcentajePresupuesto = (actividad: any) => {
+  const presupuesto = obtenerPresupuesto(actividad) || 0;
+  const total = montoTotal.value || 0;
+  return total ? (presupuesto / total) * 100 : 0;
+};
+
 const montoPAC = computed(() => {
   return actividadesKpiPrincipales.value
-    .filter((actividad: any) => obtenerPacNoPacCabecera(actividad)?.includes('PAC'))
+    .filter((actividad: any) => obtenerTipoPlanNormalizado(actividad) === 'PAC')
     .reduce((sum: number, actividad: any) => sum + (obtenerPresupuesto(actividad) || 0), 0);
 });
 
 const montoNoPAC = computed(() => {
   return actividadesKpiPrincipales.value
-    .filter((actividad: any) => !obtenerPacNoPacCabecera(actividad)?.includes('PAC'))
+    .filter((actividad: any) => obtenerTipoPlanNormalizado(actividad) === 'NO PAC')
     .reduce((sum: number, actividad: any) => sum + (obtenerPresupuesto(actividad) || 0), 0);
 });
 
 const procesosPAC = computed(() =>
-  actividadesKpiPrincipales.value.filter((actividad: any) => obtenerPacNoPacCabecera(actividad)?.includes('PAC')).length
+  actividadesKpiPrincipales.value.filter((actividad: any) => obtenerTipoPlanNormalizado(actividad) === 'PAC').length
 );
 
 const procesosNoPAC = computed(() =>
-  actividadesKpiPrincipales.value.filter((actividad: any) => !obtenerPacNoPacCabecera(actividad)?.includes('PAC')).length
+  actividadesKpiPrincipales.value.filter((actividad: any) => obtenerTipoPlanNormalizado(actividad) === 'NO PAC').length
 );
 
 const actividadSeleccionada = ref<any | null>(null);
@@ -957,7 +977,7 @@ const conteoSeguimientosPorEtapa = ref<Record<number, number>>({});
 const alertasPorEtapa = ref<Record<number, boolean>>({});
 const ultimaActualizacionPorEtapa = ref<Record<number, string | null>>({});
 const etapaResaltadaId = ref<number | null>(null);
-const timelineContraida = ref(true);
+const timelineContraida = ref(false);
 const procesoEnRiesgo = ref(false);
 const procesoDesierto = ref(false);
 const mostrarPanelRiesgo = ref(false);
@@ -981,6 +1001,54 @@ const puedeVerDetalleRiesgo = computed(() =>
 const puedeEliminarSeguimientos = computed(() =>
   auth.isAdmin || auth.can('actividades', 'delete') || auth.can('admin_actividades', 'delete')
 );
+
+const verFechaReforma = computed(() => {
+  if (auth.isAdmin) return true;
+  const campos = auth.permisos?.campos || {};
+  return campos.fecha_reforma?.ver !== false;
+});
+
+const editarFechaReforma = computed(() => {
+  if (auth.isAdmin) return true;
+  const campos = auth.permisos?.campos || {};
+  return campos.fecha_reforma?.editar !== false;
+});
+
+const verFechaReforma3 = computed(() => {
+  if (auth.isAdmin) return true;
+  const campos = auth.permisos?.campos || {};
+  return campos.fecha_reforma_3?.ver !== false;
+});
+
+const editarFechaReforma3 = computed(() => {
+  if (auth.isAdmin) return true;
+  const campos = auth.permisos?.campos || {};
+  return campos.fecha_reforma_3?.editar !== false;
+});
+
+const verFechaCompleto = computed(() => {
+  if (auth.isAdmin) return true;
+  const campos = auth.permisos?.campos || {};
+  return campos.fecha_completo?.ver !== false;
+});
+
+const editarFechaCompleto = computed(() => {
+  if (auth.isAdmin) return true;
+  const campos = auth.permisos?.campos || {};
+  return campos.fecha_completo?.editar !== false;
+});
+
+const verEstadoEtapa = computed(() => {
+  if (auth.isAdmin) return true;
+  const campos = auth.permisos?.campos || {};
+  return campos.estado_etapa?.ver !== false;
+});
+
+const editarEstadoEtapa = computed(() => {
+  if (auth.isAdmin) return true;
+  const campos = auth.permisos?.campos || {};
+  return campos.estado_etapa?.editar !== false;
+});
 
 const etapasConFecha = computed(() =>
   etapasActividad.value
@@ -1096,6 +1164,9 @@ watch(
       if (!esFormatoValido(etapa?.fechaReforma)) {
         etapa.fechaReforma = normalizarFechaInput(etapa?.fechaReforma);
       }
+      if (!esFormatoValido(etapa?.fechaReforma3)) {
+        etapa.fechaReforma3 = normalizarFechaInput(etapa?.fechaReforma3);
+      }
       if (!esFormatoValido(etapa?.fechaPlanificada)) {
         etapa.fechaPlanificada = normalizarFechaInput(etapa?.fechaPlanificada);
       }
@@ -1167,6 +1238,15 @@ function obtenerPacNoPacCabecera(actividad: any) {
   ).trim();
 
   return valor || 'PAC/No PAC no definido';
+}
+
+function obtenerTipoPlanNormalizado(actividad: any) {
+  return String(
+    actividad?.pacNoPac
+    ?? actividad?.pac_no_pac
+    ?? actividad?.tipoPlan
+    ?? ''
+  ).toUpperCase().trim();
 }
 
 function formatearMontoCabecera(valor: number) {
@@ -1282,6 +1362,7 @@ function getEtapas(actividad: any) {
     ...etapa,
     fechaTentativa: normalizarFechaInput(etapa?.fechaTentativa),
     fechaReforma: normalizarFechaInput(etapa?.fechaReforma),
+    fechaReforma3: normalizarFechaInput(etapa?.fechaReforma3),
     fechaPlanificada: normalizarFechaInput(etapa?.fechaPlanificada),
     fechaReal: normalizarFechaInput(etapa?.fechaReal),
     estado: estadoNormalizado(etapa?.estado) === 'completado' ? 'completado' : 'pendiente'
@@ -1306,6 +1387,7 @@ function fusionarEtapasPreservandoFechas(actuales: any[], recargadas: any[]) {
       ...etapa,
       fechaTentativa: etapa.fechaTentativa || etapa.fechaPlanificada || etapaActual.fechaTentativa || etapaActual.fechaPlanificada || null,
       fechaReforma: etapa.fechaReforma || etapaActual.fechaReforma || null,
+      fechaReforma3: etapa.fechaReforma3 || etapaActual.fechaReforma3 || null,
       fechaPlanificada: etapa.fechaPlanificada || etapa.fechaTentativa || etapaActual.fechaPlanificada || etapaActual.fechaTentativa || null,
       fechaReal: etapa.fechaReal || etapaActual.fechaReal || null
     };
@@ -1668,7 +1750,7 @@ async function abrirDetalleActividad(actividad: any, actualizarRuta = true) {
 
   actividadSeleccionada.value = actividad;
   etapasActividad.value = getEtapas(actividad);
-  timelineContraida.value = true;
+  timelineContraida.value = false;
   etapaSeguimiento.value = null;
   seguimientosEtapa.value = [];
   conteoSeguimientosPorEtapa.value = {};
@@ -1806,23 +1888,24 @@ function construirPayloadEtapas() {
   const payload = etapasActividad.value.map((etapa: any) => {
     const fechaTentativa = normalizarFechaInput(etapa?.fechaTentativa) || normalizarFechaInput(etapa?.fechaPlanificada);
     const fechaReal = estadoNormalizado(etapa?.estado) === 'completado' ? normalizarFechaInput(etapa?.fechaReal) : null;
-    
+
     // Debug: log para ver qué está pasando
     if (etapa?.fechaTentativa && !fechaTentativa?.match(/^\d{4}-\d{2}-\d{2}$/)) {
       console.warn(`[construirPayloadEtapas] fechaTentativa no normalizada: ${etapa?.fechaTentativa} -> ${fechaTentativa}`);
     }
-    
+
     return {
       etapaId: obtenerEtapaId(etapa),
       aplica: Boolean(Number(etapa?.aplica ?? 1)),
       fechaTentativa: fechaTentativa || null,
       fechaReforma: normalizarFechaInput(etapa?.fechaReforma) || null,
+      fechaReforma3: normalizarFechaInput(etapa?.fechaReforma3) || null,
       estado: etapa?.estado || 'pendiente',
       fechaReal: fechaReal || null,
       observaciones: etapa?.observaciones || ''
     };
   }).filter((etapa: any) => Boolean(etapa.etapaId));
-  
+
   console.log('[construirPayloadEtapas] Payload final:', JSON.stringify(payload, null, 2));
   return payload;
 }
@@ -1848,6 +1931,11 @@ function onFechaCompletadoChange(etapa: any) {
 
 function onFechaReformaChange(etapa: any) {
   etapa.fechaReforma = normalizarFechaInput(etapa?.fechaReforma);
+  guardarEstadoEtapa(etapa);
+}
+
+function onFechaReforma3Change(etapa: any) {
+  etapa.fechaReforma3 = normalizarFechaInput(etapa?.fechaReforma3);
   guardarEstadoEtapa(etapa);
 }
 
