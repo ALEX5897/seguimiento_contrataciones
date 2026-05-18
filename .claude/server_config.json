@@ -1,0 +1,20 @@
+{
+  "server": {
+    "host": "172.16.1.72",
+    "user": "acasa",
+    "port": 22,
+    "ssh_key": "~/.ssh/srvr_seg_contratos",
+    "project_path": "/opt/seguimiento_contrataciones"
+  },
+  "commands": {
+    "connect": "ssh srvr-seg-contratos",
+    "pull_and_build": "cd /opt/seguimiento_contrataciones && git fetch origin && git reset --hard origin/main && git clean -fd && cd frontend && npm install && npm run build",
+    "restart_services": "cd /opt/seguimiento_contrataciones/backend && npm start > /var/log/seguimiento-backend.log 2>&1 &",
+    "check_status": "ps aux | grep -E '(node|npm)' | grep -v grep"
+  },
+  "notes": {
+    "ssh_key_setup": "Clave SSH generada: ~/.ssh/srvr_seg_contratos",
+    "next_step": "Agregar la clave pública al servidor: cat ~/.ssh/srvr_seg_contratos.pub >> ~/.ssh/authorized_keys",
+    "ssh_host_alias": "srvr-seg-contratos (configurado en ~/.ssh/config)"
+  }
+}
