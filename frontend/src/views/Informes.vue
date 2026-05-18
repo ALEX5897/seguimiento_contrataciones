@@ -181,14 +181,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
-import { reportesService } from '../services/api';
 
 const auth = useAuthStore();
 
 const tipoInforme = ref<'ejecutivo' | 'detalle'>('ejecutivo');
-const formData = ref({
+const formData = ref<{ fechaInicio: string; fechaFin: string }>({
   fechaInicio: '',
   fechaFin: ''
 });
@@ -223,7 +222,7 @@ function cargarHistorial() {
   }
 }
 
-function guardarHistorial(fecha: string, periodo: string, tipo: string) {
+function guardarHistorial(_fecha: string, periodo: string, tipo: string) {
   const items = [
     { fecha: new Date().toLocaleString('es-EC'), periodo, tipo },
     ...historial.value
@@ -306,7 +305,7 @@ async function generarInforme() {
   }
 }
 
-function descargarInfomeStorage(idx: number) {
+function descargarInfomeStorage(_idx: number) {
   // Nota: localStorage no puede guardar blobs directamente
   // Por ahora, regenerar es la opción
   alert('Por favor, regenera el informe para descargarlo nuevamente');

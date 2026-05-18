@@ -1181,9 +1181,6 @@ const totalProcesosConsideradosDashboard = computed(() =>
 const porcentajeProcesosDesiertos = computed(() => {
   return Math.min(100, Math.round((detalleProcesosDesiertos.value.length / totalProcesosConsideradosDashboard.value) * 100));
 });
-const colorProcesosDesiertos = computed(() =>
-  detalleProcesosDesiertos.value.length > 0 ? '#f97316' : '#94a3b8'
-);
 
 function obtenerEtapaSolicitudCertificacionPresupuestaria(subtarea: any) {
   return getEtapasConFechaSubtarea(subtarea).find((etapa: any) => {
