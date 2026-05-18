@@ -110,6 +110,7 @@ app.use('/api/usuarios', usuariosRouter);
 app.use('/api', (req, res, next) => {
   if (req.path === '/health') return next();
   if (req.path.startsWith('/auth')) return next();
+  if (req.path.startsWith('/realtime/stream')) return next();
   return requireAuth(req, res, next);
 });
 app.use('/api', requireApiPermission);
