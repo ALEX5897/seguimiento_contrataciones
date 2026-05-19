@@ -1391,7 +1391,10 @@ async function generarInformeDetallePDF(res, datos) {
     const html = generarHTMLInformeDetalle(datos);
 
     // Lanzar navegador
-    browser = await puppeteer.launch({ headless: 'new' });
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
     const page = await browser.newPage();
 
     // Configurar viewport
@@ -1708,7 +1711,10 @@ router.post('/generar-informe-ultimos-comentarios', async (req, res) => {
       porDireccion: Object.values(porDireccion).filter(d => d.procesos.length > 0)
     };
 
-    browser = await puppeteer.launch({ headless: 'new' });
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 1200 });
 
@@ -1886,7 +1892,10 @@ router.post('/generar-informe-ultimos-comentarios-todos', async (req, res) => {
       porDireccion: Object.values(porDireccion).filter(d => d.procesos.length > 0)
     };
 
-    browser = await puppeteer.launch({ headless: 'new' });
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 1200 });
 
