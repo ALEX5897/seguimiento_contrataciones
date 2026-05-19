@@ -9,6 +9,23 @@ import { generarHTMLInformeDetalle, generarHTMLUltimosComentarios } from '../uti
 
 const router = express.Router();
 
+async function lanzarNavegador() {
+  try {
+    return await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+  } catch (error) {
+    const mensaje = error?.message || '';
+    if (mensaje.includes('No usable sandbox') || mensaje.includes('Failed to launch')) {
+      const err = new Error('Chrome no disponible en el servidor. Por favor contacta al administrador.');
+      err.statusCode = 503;
+      throw err;
+    }
+    throw error;
+  }
+}
+
 // Reporte personalizado por direcciones y columnas seleccionadas
 router.get('/export/xlsx/personalizado', async (req, res) => {
   try {
@@ -1376,7 +1393,8 @@ router.post('/generar-informe-pdf', async (req, res) => {
   } catch (error) {
     console.error('Error en POST /api/reportes/generar-informe-pdf:', error);
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message || 'Error al generar informe PDF' });
+      const statusCode = error?.statusCode || 500;
+      res.status(statusCode).json({ error: error.message || 'Error al generar informe PDF' });
     }
   }
 });
@@ -1391,10 +1409,7 @@ async function generarInformeDetallePDF(res, datos) {
     const html = generarHTMLInformeDetalle(datos);
 
     // Lanzar navegador
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    browser = await lanzarNavegador();
     const page = await browser.newPage();
 
     // Configurar viewport
@@ -1419,7 +1434,8 @@ async function generarInformeDetallePDF(res, datos) {
   } catch (error) {
     console.error('Error en generarInformeDetallePDF:', error);
     if (!res.headersSent) {
-      res.status(500).json({ error: 'Error al generar PDF: ' + error.message });
+      const statusCode = error?.statusCode || 500;
+      res.status(statusCode).json({ error: 'Error al generar PDF: ' + error.message });
     }
   } finally {
     // Cerrar navegador
@@ -1628,7 +1644,8 @@ router.post('/generar-informe-detalle-pdf', async (req, res) => {
   } catch (error) {
     console.error('Error en POST /api/reportes/generar-informe-detalle-pdf:', error);
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message || 'Error al generar informe de detalle' });
+      const statusCode = error?.statusCode || 500;
+      res.status(statusCode).json({ error: error.message || 'Error al generar informe de detalle' });
     }
   }
 });
@@ -1711,10 +1728,7 @@ router.post('/generar-informe-ultimos-comentarios', async (req, res) => {
       porDireccion: Object.values(porDireccion).filter(d => d.procesos.length > 0)
     };
 
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    browser = await lanzarNavegador();
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 1200 });
 
@@ -1892,10 +1906,7 @@ router.post('/generar-informe-ultimos-comentarios-todos', async (req, res) => {
       porDireccion: Object.values(porDireccion).filter(d => d.procesos.length > 0)
     };
 
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    browser = await lanzarNavegador();
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 1200 });
 
