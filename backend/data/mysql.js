@@ -1034,9 +1034,12 @@ export async function getAllSubtareas() {
     item.costo2026 = Number(row.costo_2026 ?? 0);
     item.fechaInicio = normalizarFechaSalida(row.fecha_inicio) || null;
     item.fechaFin = normalizarFechaSalida(row.fecha_fin) || null;
+    item.cuatrimestre = row.cuatrimestre || null;
+    item.plazoContrato = row.plazo_contrato || null;
+    item.procedimientoSugerido = row.procedimiento_sugerido || null;
     item.procesoEnRiesgo = Boolean(Number(row.proceso_en_riesgo ?? 0));
     item.riesgoComentario = row.riesgo_comentario ? normalizeTextEncoding(row.riesgo_comentario) : null;
-    item.avanceGeneral = 0;
+    item.avanceGeneral = Number(row.avance_general ?? 0);
     item.estado = 'pendiente';
     item.etapas = bySubtarea.get(row.id) || [];
     item.seguimientoEtapas = item.etapas
@@ -2342,7 +2345,8 @@ export async function updateSubtarea(idOrCode, data) {
     riesgoComentario: 'riesgo_comentario',
     activo: 'activo',
     fechaInicio: 'fecha_inicio',
-    fechaFin: 'fecha_fin'
+    fechaFin: 'fecha_fin',
+    avanceGeneral: 'avance_general'
   };
 
   Object.entries(fieldMap).forEach(([camel, sql]) => {
