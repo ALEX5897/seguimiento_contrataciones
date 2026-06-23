@@ -1193,15 +1193,22 @@ function abrirFormularioNueva() {
 function abrirFormularioEdicion(actividad: Actividad) {
   modoEdicion.value = true;
   pestañaActiva.value = 'general';
-  // Convertir fechas ISO a formato YYYY-MM-DD
+  // Convertir fechas ISO a formato YYYY-MM-DD y normalizar tipos
   const actividadCopia = { ...actividad };
+
+  // Normalizar fechas
   if (actividadCopia.fechaInicio) {
     actividadCopia.fechaInicio = actividadCopia.fechaInicio.split('T')[0];
   }
   if (actividadCopia.fechaFin) {
     actividadCopia.fechaFin = actividadCopia.fechaFin.split('T')[0];
   }
+
+  // Normalizar tipos de datos
   actividadCopia.activo = estadoProcesoNumero(actividadCopia.activo);
+  actividadCopia.cuatrimestre = actividadCopia.cuatrimestre ? Number(actividadCopia.cuatrimestre) : null;
+  actividadCopia.avanceGeneral = Number(actividadCopia.avanceGeneral || 0);
+
   formulario.value = actividadCopia;
   sincronizarPresupuestoTexto(actividadCopia.presupuesto);
   sincronizarCostoReforma2Texto(actividadCopia.costoReforma2);
