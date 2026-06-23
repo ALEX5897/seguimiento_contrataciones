@@ -270,8 +270,7 @@
                   <label for="fechaInicio">Fecha Inicio</label>
                   <input
                     id="fechaInicio"
-                    :value="formulario.fechaInicio"
-                    @input="formulario.fechaInicio = $event.target.value"
+                    v-model="formulario.fechaInicio"
                     type="date"
                   />
                   <small class="field-help" v-if="formulario.fechaInicio">
@@ -282,8 +281,7 @@
                   <label for="fechaFin">Fecha Fin</label>
                   <input
                     id="fechaFin"
-                    :value="formulario.fechaFin"
-                    @input="formulario.fechaFin = $event.target.value"
+                    v-model="formulario.fechaFin"
                     type="date"
                   />
                   <small class="field-help" v-if="formulario.fechaFin">
@@ -352,8 +350,7 @@
                 <div class="avance-input-group">
                   <input
                     id="avanceGeneral"
-                    :value="formulario.avanceGeneral || 0"
-                    @input="formulario.avanceGeneral = Number($event.target.value)"
+                    v-model.number="formulario.avanceGeneral"
                     type="range"
                     min="0"
                     max="100"
@@ -818,7 +815,7 @@ interface Actividad {
   avanceGeneral?: number;
   activo: boolean | number;
   observaciones?: string;
-  cuatrimestre?: string | null;
+  cuatrimestre?: number | string | null;
   plazoContrato?: string;
   procedimientoSugerido?: string | null;
   etapas?: any[];
