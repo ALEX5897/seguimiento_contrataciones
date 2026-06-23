@@ -101,145 +101,267 @@
       <button class="pag-btn" :disabled="paginaActual >= totalPaginasActs" @click="paginaActual++">Siguiente ›</button>
     </div>
 
-    <!-- Modal de Formulario -->
+    <!-- Modal de Formulario con Pestañas -->
     <div v-if="mostrarFormulario" class="modal-overlay" @click.self="cerrarFormulario">
-      <div class="modal-content" @click.stop>
-        <h2>{{ modoEdicion ? '✏️ Editar Proceso' : '➕ Nuevo Proceso' }}</h2>
-        
-        <form @submit.prevent="guardarActividad">
-          <div class="form-grupo">
-            <label for="nombre">Nombre *</label>
-            <input
-              id="nombre"
-              v-model="formulario.nombre"
-              type="text"
-              required
-              placeholder="Nombre del proceso"
-            />
+      <div class="modal-content modal-with-tabs" @click.stop>
+        <div class="modal-header-tabs">
+          <h2>{{ modoEdicion ? '✏️ Editar Proceso' : '➕ Nuevo Proceso' }}</h2>
+          <button class="btn-close-modal" @click="cerrarFormulario">✕</button>
+        </div>
+
+        <!-- Pestañas -->
+        <div class="tabs-container">
+          <div class="tabs-nav">
+            <button
+              v-for="tab in tabs"
+              :key="tab.id"
+              :class="['tab-btn', { 'tab-active': pestañaActiva === tab.id }]"
+              @click="pestañaActiva = tab.id"
+              :title="tab.label"
+            >
+              {{ tab.icon }} {{ tab.label }}
+            </button>
           </div>
 
-          <div class="form-fila">
-            <div class="form-grupo">
-              <label for="codigoOlympo">Código Olympo</label>
-              <input
-                id="codigoOlympo"
-                v-model="formulario.codigoOlympo"
-                type="text"
-                placeholder="Ej: 01.01.001.166.840107.000.009"
-              />
+          <form @submit.prevent="guardarActividad" class="tabs-content">
+            <!-- Pestaña 1: Información General -->
+            <div v-if="pestañaActiva === 'general'" class="tab-pane">
+              <div class="form-grupo">
+                <label for="nombre">Nombre *</label>
+                <input
+                  id="nombre"
+                  v-model="formulario.nombre"
+                  type="text"
+                  required
+                  placeholder="Nombre del proceso"
+                />
+              </div>
+
+              <div class="form-fila">
+                <div class="form-grupo">
+                  <label for="direccionId">Dirección</label>
+                  <select id="direccionId" v-model.number="formulario.direccionId">
+                    <option :value="undefined">Sin dirección</option>
+                    <option
+                      v-for="direccion in direccionesCatalogo"
+                      :key="direccion.id"
+                      :value="direccion.id"
+                    >
+                      {{ direccion.nombre }}
+                    </option>
+                  </select>
+                </div>
+                <div class="form-grupo">
+                  <label for="tipoPlan">Tipo Plan</label>
+                  <select id="tipoPlan" v-model="formulario.tipoPlan">
+                    <option value="PAC">PAC</option>
+                    <option value="No PAC">No PAC</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-fila">
+                <div class="form-grupo">
+                  <label for="responsableId">Responsable</label>
+                  <select id="responsableId" v-model="formulario.responsableId">
+                    <option :value="null">Sin responsable</option>
+                    <option
+                      v-for="responsable in responsablesFiltrados"
+                      :key="responsable.id"
+                      :value="responsable.id"
+                    >
+                      {{ responsable.nombre }}
+                      <template v-if="responsable.direccionNombre">
+                        - {{ responsable.direccionNombre }}
+                      </template>
+                    </option>
+                  </select>
+                </div>
+                <div class="form-grupo">
+                  <label for="estado">Estado</label>
+                  <select id="estado" v-model="formulario.estado">
+                    <option value="pendiente">Pendiente</option>
+                    <option value="en_proceso">En proceso</option>
+                    <option value="completado">Completo</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-grupo">
+                <label for="estadoProceso">Estado del proceso</label>
+                <select id="estadoProceso" v-model.number="formulario.activo">
+                  <option :value="1">Activo</option>
+                  <option :value="0">Inactivo</option>
+                  <option :value="2">Desierto</option>
+                </select>
+              </div>
             </div>
-            <div class="form-grupo">
-              <label for="responsableId">Responsable</label>
-              <select id="responsableId" v-model="formulario.responsableId">
-                <option :value="null">Sin responsable</option>
-                <option
-                  v-for="responsable in responsablesFiltrados"
-                  :key="responsable.id"
-                  :value="responsable.id"
-                >
-                  {{ responsable.nombre }}
-                  <template v-if="responsable.direccionNombre">
-                    - {{ responsable.direccionNombre }}
-                  </template>
-                </option>
-              </select>
+
+            <!-- Pestaña 2: Datos Presupuestarios -->
+            <div v-if="pestañaActiva === 'presupuestario'" class="tab-pane">
+              <div class="form-grupo">
+                <label for="codigoOlympo">Código Olympo</label>
+                <input
+                  id="codigoOlympo"
+                  v-model="formulario.codigoOlympo"
+                  type="text"
+                  placeholder="Ej: 01.01.001.166.840107.000.009"
+                />
+              </div>
+
+              <div class="form-fila">
+                <div class="form-grupo">
+                  <label for="partidaPresupuestaria">Partida Presupuestaria</label>
+                  <input
+                    id="partidaPresupuestaria"
+                    v-model="formulario.partidaPresupuestaria"
+                    type="text"
+                    placeholder="Ej: 840107"
+                  />
+                </div>
+                <div class="form-grupo">
+                  <label for="fuenteFinanciamiento">Fuente Financiamiento</label>
+                  <input
+                    id="fuenteFinanciamiento"
+                    v-model="formulario.fuenteFinanciamiento"
+                    type="text"
+                    placeholder="Ej: Fondos Propios"
+                  />
+                </div>
+              </div>
+
+              <div class="form-fila">
+                <div class="form-grupo">
+                  <label for="presupuesto">Presupuesto (2026 Inicial)</label>
+                  <input
+                    id="presupuesto"
+                    v-model="presupuestoTexto"
+                    type="text"
+                    inputmode="decimal"
+                    class="input-money"
+                    placeholder="Ej: 1.200,00"
+                    @input="onPresupuestoInput"
+                    @focus="onPresupuestoFocus"
+                    @blur="onPresupuestoBlur"
+                  />
+                  <small class="field-help">Ingresa montos con o sin centavos. Ejemplo: 1200 → 1.200,00</small>
+                </div>
+                <div class="form-grupo">
+                  <label for="costoReforma2">Costo 2026 / Reforma 2</label>
+                  <input
+                    id="costoReforma2"
+                    v-model="costoReforma2Texto"
+                    type="text"
+                    inputmode="decimal"
+                    class="input-money"
+                    placeholder="Ej: 500,00"
+                    @input="onCostoReforma2Input"
+                    @focus="onCostoReforma2Focus"
+                    @blur="onCostoReforma2Blur"
+                  />
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div class="form-grupo">
-            <label for="direccionId">Dirección</label>
-            <select id="direccionId" v-model.number="formulario.direccionId">
-              <option :value="undefined">Sin dirección</option>
-              <option
-                v-for="direccion in direccionesCatalogo"
-                :key="direccion.id"
-                :value="direccion.id"
-              >
-                {{ direccion.nombre }}
-              </option>
-            </select>
-          </div>
+            <!-- Pestaña 3: Cronograma -->
+            <div v-if="pestañaActiva === 'cronograma'" class="tab-pane">
+              <div class="form-fila">
+                <div class="form-grupo">
+                  <label for="fechaInicio">Fecha Inicio</label>
+                  <input
+                    id="fechaInicio"
+                    v-model="formulario.fechaInicio"
+                    type="date"
+                  />
+                </div>
+                <div class="form-grupo">
+                  <label for="fechaFin">Fecha Fin</label>
+                  <input
+                    id="fechaFin"
+                    v-model="formulario.fechaFin"
+                    type="date"
+                  />
+                </div>
+              </div>
 
-          <div class="form-grupo">
-            <label for="tipoPlan">Tipo Plan</label>
-            <select id="tipoPlan" v-model="formulario.tipoPlan">
-              <option value="PAC">PAC</option>
-              <option value="No PAC">No PAC</option>
-            </select>
-          </div>
-
-          <div class="form-fila">
-            <div class="form-grupo">
-              <label for="partidaPresupuestaria">Partida Presupuestaria</label>
-              <input
-                id="partidaPresupuestaria"
-                v-model="formulario.partidaPresupuestaria"
-                type="text"
-                placeholder="Ej: 840107"
-              />
+              <div class="form-fila">
+                <div class="form-grupo">
+                  <label for="cuatrimestre">Cuatrimestre</label>
+                  <select id="cuatrimestre" v-model="formulario.cuatrimestre">
+                    <option :value="null">Sin cuatrimestre</option>
+                    <option value="1">1er Cuatrimestre</option>
+                    <option value="2">2do Cuatrimestre</option>
+                    <option value="3">3er Cuatrimestre</option>
+                  </select>
+                </div>
+                <div class="form-grupo">
+                  <label for="plazoContrato">Plazo de Contrato</label>
+                  <input
+                    id="plazoContrato"
+                    v-model="formulario.plazoContrato"
+                    type="text"
+                    placeholder="Ej: 120 días"
+                  />
+                </div>
+              </div>
             </div>
-            <div class="form-grupo">
-              <label for="fuenteFinanciamiento">Fuente Financiamiento</label>
-              <input
-                id="fuenteFinanciamiento"
-                v-model="formulario.fuenteFinanciamiento"
-                type="text"
-                placeholder="Ej: Fondos Propios"
-              />
+
+            <!-- Pestaña 4: Procuración -->
+            <div v-if="pestañaActiva === 'procuracion'" class="tab-pane">
+              <div class="form-grupo">
+                <label for="procedimientoSugerido">Procedimiento Sugerido</label>
+                <select id="procedimientoSugerido" v-model="formulario.procedimientoSugerido">
+                  <option :value="null">Sin especificar</option>
+                  <option value="Ínfimas cuantías">Ínfimas cuantías</option>
+                  <option value="Catálogo Electrónico">Catálogo Electrónico</option>
+                  <option value="Subasta Inversa Electrónica">Subasta Inversa Electrónica</option>
+                  <option value="Concurso de Ofertas">Concurso de Ofertas</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
             </div>
-          </div>
 
-          <div class="form-grupo">
-            <label for="presupuesto">Presupuesto</label>
-            <input
-              id="presupuesto"
-              v-model="presupuestoTexto"
-              type="text"
-              inputmode="decimal"
-              class="input-money"
-              placeholder="Ej: 1.200,00"
-              @input="onPresupuestoInput"
-              @focus="onPresupuestoFocus"
-              @blur="onPresupuestoBlur"
-            />
-            <small class="field-help">Ingresa montos con o sin centavos. Ejemplo: 1200 → 1.200,00</small>
-          </div>
+            <!-- Pestaña 5: Notas -->
+            <div v-if="pestañaActiva === 'notas'" class="tab-pane">
+              <div class="form-grupo">
+                <label for="observaciones">Observaciones</label>
+                <textarea
+                  id="observaciones"
+                  v-model="formulario.observaciones"
+                  rows="6"
+                  class="textarea-observaciones-proceso"
+                  placeholder="Escribe aquí notas, alcance, observaciones o contexto relevante del proceso"
+                />
+                <small class="field-help">Este espacio admite texto libre para describir mejor el proceso.</small>
+              </div>
 
-          <div class="form-grupo">
-            <label for="estado">Estado</label>
-            <select id="estado" v-model="formulario.estado">
-              <option value="pendiente">Pendiente</option>
-              <option value="en_proceso">En proceso</option>
-              <option value="completado">Completo</option>
-            </select>
-          </div>
+              <div class="form-grupo">
+                <label for="avanceGeneral">Avance General (%)</label>
+                <div class="avance-input-group">
+                  <input
+                    id="avanceGeneral"
+                    v-model.number="formulario.avanceGeneral"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    class="input-range-avance"
+                  />
+                  <span class="avance-value">{{ formulario.avanceGeneral || 0 }}%</span>
+                </div>
+                <div class="progreso-barra-formulario">
+                  <div class="progreso-fill" :style="{ width: (formulario.avanceGeneral || 0) + '%' }"></div>
+                </div>
+              </div>
+            </div>
 
-          <div class="form-grupo">
-            <label for="estadoProceso">Estado del proceso</label>
-            <select id="estadoProceso" v-model.number="formulario.activo">
-              <option :value="1">Activo</option>
-              <option :value="0">Inactivo</option>
-              <option :value="2">Desierto</option>
-            </select>
-          </div>
-
-          <div class="form-grupo">
-            <label for="observaciones">Observaciones</label>
-            <textarea
-              id="observaciones"
-              v-model="formulario.observaciones"
-              rows="5"
-              class="textarea-observaciones-proceso"
-              placeholder="Escribe aquí notas, alcance, observaciones o contexto relevante del proceso"
-            />
-            <small class="field-help">Este espacio admite texto libre para describir mejor el proceso.</small>
-          </div>
-
-          <div class="botones-modal">
-            <button type="submit" class="btn-primary">💾 Guardar</button>
-            <button type="button" class="btn-secondary" @click="cerrarFormulario">❌ Cancelar</button>
-          </div>
-        </form>
+            <!-- Botones en la parte inferior -->
+            <div class="botones-modal">
+              <button type="submit" class="btn-primary">💾 Guardar</button>
+              <button type="button" class="btn-secondary" @click="cerrarFormulario">❌ Cancelar</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
 
@@ -671,6 +793,9 @@ interface Actividad {
   avanceGeneral?: number;
   activo: boolean | number;
   observaciones?: string;
+  cuatrimestre?: string | null;
+  plazoContrato?: string;
+  procedimientoSugerido?: string | null;
   etapas?: any[];
 }
 
@@ -722,6 +847,16 @@ const direccionesCatalogo = ref<DireccionCatalogo[]>([]);
 const errorCargaCatalogos = ref('');
 const nuevaEtapaNombre = ref('');
 const busquedaEtapas = ref('');
+
+// Pestañas del modal
+const pestañaActiva = ref('general');
+const tabs = [
+  { id: 'general', icon: '📋', label: 'Información General' },
+  { id: 'presupuestario', icon: '💰', label: 'Datos Presupuestarios' },
+  { id: 'cronograma', icon: '📅', label: 'Cronograma' },
+  { id: 'procuracion', icon: '🛒', label: 'Procuración' },
+  { id: 'notas', icon: '📝', label: 'Notas' }
+];
 
 // Seguimientos diarios
 const mostrarSeguimientos = ref(false);
@@ -780,12 +915,16 @@ function getFormularioVacio(): Partial<Actividad> {
     estado: 'pendiente',
     avanceGeneral: 0,
     activo: 1,
-    observaciones: ''
+    observaciones: '',
+    cuatrimestre: null,
+    plazoContrato: '',
+    procedimientoSugerido: null
   };
 }
 
 const formulario = ref<Partial<Actividad>>(getFormularioVacio());
 const presupuestoTexto = ref('0,00');
+const costoReforma2Texto = ref('0,00');
 
 const notificacion = ref<{ mensaje: string; tipo: 'success' | 'error' }>({ mensaje: '', tipo: 'success' });
 
@@ -944,6 +1083,24 @@ function onPresupuestoFocus(event: Event) {
   (event.target as HTMLInputElement | null)?.select();
 }
 
+function sincronizarCostoReforma2Texto(valor: string | number | undefined | null) {
+  const monto = normalizarMontoMoneda(valor);
+  formulario.value.costoReforma2 = monto;
+  costoReforma2Texto.value = formatearMontoMoneda(monto);
+}
+
+function onCostoReforma2Input() {
+  formulario.value.costoReforma2 = normalizarMontoMoneda(costoReforma2Texto.value);
+}
+
+function onCostoReforma2Blur() {
+  sincronizarCostoReforma2Texto(costoReforma2Texto.value);
+}
+
+function onCostoReforma2Focus(event: Event) {
+  (event.target as HTMLInputElement | null)?.select();
+}
+
 onMounted(async () => {
   window.addEventListener('keydown', manejarEscapeModales);
   console.log('AdminActividades: montada');
@@ -1026,13 +1183,16 @@ async function cargarDireccionesCatalogo() {
 
 function abrirFormularioNueva() {
   modoEdicion.value = false;
+  pestañaActiva.value = 'general';
   formulario.value = getFormularioVacio();
   sincronizarPresupuestoTexto(formulario.value.presupuesto);
+  sincronizarCostoReforma2Texto(formulario.value.costoReforma2);
   mostrarFormulario.value = true;
 }
 
 function abrirFormularioEdicion(actividad: Actividad) {
   modoEdicion.value = true;
+  pestañaActiva.value = 'general';
   // Convertir fechas ISO a formato YYYY-MM-DD
   const actividadCopia = { ...actividad };
   if (actividadCopia.fechaInicio) {
@@ -1044,6 +1204,7 @@ function abrirFormularioEdicion(actividad: Actividad) {
   actividadCopia.activo = estadoProcesoNumero(actividadCopia.activo);
   formulario.value = actividadCopia;
   sincronizarPresupuestoTexto(actividadCopia.presupuesto);
+  sincronizarCostoReforma2Texto(actividadCopia.costoReforma2);
   mostrarFormulario.value = true;
 }
 
@@ -1062,28 +1223,31 @@ async function guardarActividad() {
 
     const direccionIdNormalizado = Number(formulario.value.direccionId) || null;
     const presupuestoNormalizado = normalizarMontoMoneda(presupuestoTexto.value);
+    const costoReforma2Normalizado = normalizarMontoMoneda(costoReforma2Texto.value);
+
     formulario.value.presupuesto = presupuestoNormalizado;
+    formulario.value.costoReforma2 = costoReforma2Normalizado;
     presupuestoTexto.value = formatearMontoMoneda(presupuestoNormalizado);
+    costoReforma2Texto.value = formatearMontoMoneda(costoReforma2Normalizado);
 
     const {
       direccionNombre: _direccionNombre,
       direccionEncargada: _direccionEncargada,
-      costoReforma2: _costoReforma2,
-      avanceGeneral: _avanceGeneral,
-      fechaInicio: _fechaInicio,
-      fechaFin: _fechaFin,
+      responsableNombre: _responsableNombre,
+      etapas: _etapas,
       ...formularioBase
     } = formulario.value as any;
 
     const payload = {
       ...formularioBase,
       presupuesto: presupuestoNormalizado,
+      costoReforma2: costoReforma2Normalizado,
       activo: estadoProcesoNumero(formulario.value.activo),
       direccionId: direccionIdNormalizado,
       responsableId: formulario.value.responsableId ? Number(formulario.value.responsableId) : null,
       responsableNombre: responsables.value.find(r => r.id === Number(formulario.value.responsableId))?.nombre || null
     };
-    
+
     if (modoEdicion.value && formulario.value.id) {
       await api.put(`/subtareas/${formulario.value.id}`, payload);
       mostrarNotificacion('Proceso actualizado correctamente', 'success');
@@ -3188,6 +3352,261 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
   .admin-actividades .modal-content.modal-etapas h2 {
     font-size: 1.1rem;
   }
+
+  /* Modal con Pestañas */
+  .modal-content.modal-with-tabs {
+    max-width: 800px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+
+    .modal-header-tabs {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid #e2e8f0;
+      background: linear-gradient(135deg, #f8fafc 0%, #eef4ff 100%);
+
+      h2 {
+        margin: 0;
+        color: #0f2f55;
+        font-size: 1.4rem;
+      }
+
+      .btn-close-modal {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #64748b;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: all 0.2s;
+
+        &:hover {
+          background: #e2e8f0;
+          color: #1e293b;
+        }
+      }
+    }
+
+    .tabs-container {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .tabs-nav {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: #f8fafc;
+      border-bottom: 2px solid #e2e8f0;
+      flex-wrap: wrap;
+      align-items: center;
+
+      .tab-btn {
+        padding: 0.6rem 1.2rem;
+        border: none;
+        background: transparent;
+        color: #64748b;
+        cursor: pointer;
+        font-size: 0.95rem;
+        font-weight: 500;
+        border-radius: 6px 6px 0 0;
+        transition: all 0.2s;
+        white-space: nowrap;
+
+        &:hover {
+          background: #e2e8f0;
+          color: #334155;
+        }
+
+        &.tab-active {
+          color: #0f2f55;
+          background: white;
+          border-bottom: 3px solid #3b82f6;
+          padding-bottom: calc(0.6rem - 3px);
+        }
+      }
+    }
+
+    .tabs-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+
+      .tab-pane {
+        animation: fadeIn 0.2s ease-out;
+      }
+
+      .form-grupo {
+        margin-bottom: 1.5rem;
+
+        label {
+          display: block;
+          margin-bottom: 0.5rem;
+          color: #334155;
+          font-weight: 600;
+          font-size: 0.95rem;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="range"],
+        select,
+        textarea {
+          width: 100%;
+          padding: 0.65rem;
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          font-size: 0.95rem;
+          font-family: inherit;
+          transition: border-color 0.2s;
+
+          &:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          }
+
+          &:disabled {
+            background: #f1f5f9;
+            color: #94a3b8;
+            cursor: not-allowed;
+          }
+        }
+
+        textarea {
+          resize: vertical;
+          min-height: 100px;
+        }
+
+        .field-help {
+          display: block;
+          margin-top: 0.4rem;
+          color: #78909c;
+          font-size: 0.85rem;
+        }
+      }
+
+      .form-fila {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+
+        .form-grupo {
+          margin-bottom: 0;
+        }
+      }
+
+      .input-money {
+        font-family: 'Courier New', monospace;
+      }
+
+      .avance-input-group {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 0.75rem;
+
+        .input-range-avance {
+          flex: 1;
+          height: 6px;
+          border-radius: 3px;
+          outline: none;
+          accent-color: #3b82f6;
+          cursor: pointer;
+        }
+
+        .avance-value {
+          min-width: 50px;
+          text-align: right;
+          font-weight: 600;
+          color: #0f2f55;
+          font-size: 1.1rem;
+        }
+      }
+
+      .progreso-barra-formulario {
+        width: 100%;
+        height: 8px;
+        background: #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+
+        .progreso-fill {
+          height: 100%;
+          background: linear-gradient(90deg, #3b82f6, #0ea5e9);
+          transition: width 0.3s ease;
+        }
+      }
+
+      .botones-modal {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e2e8f0;
+        justify-content: flex-end;
+        position: sticky;
+        bottom: 0;
+        background: white;
+
+        button {
+          padding: 0.7rem 1.5rem;
+          border: none;
+          border-radius: 8px;
+          font-size: 0.95rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+
+          &.btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #0ea5e9);
+            color: white;
+
+            &:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+            }
+
+            &:active {
+              transform: translateY(0);
+            }
+          }
+
+          &.btn-secondary {
+            background: #e2e8f0;
+            color: #334155;
+
+            &:hover {
+              background: #cbd5e1;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 900px) {
@@ -3249,6 +3668,39 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
     .modal-content.modal-etapas {
       padding: 0.5rem;
       max-width: 99vw;
+    }
+
+    .modal-content.modal-with-tabs {
+      max-width: 98vw;
+      width: 100% !important;
+      max-height: 95vh;
+
+      .modal-header-tabs {
+        padding: 1rem 1rem;
+
+        h2 {
+          font-size: 1.15rem;
+        }
+      }
+
+      .tabs-nav {
+        padding: 0.5rem 0.5rem;
+        gap: 0.25rem;
+
+        .tab-btn {
+          padding: 0.5rem 0.8rem;
+          font-size: 0.85rem;
+        }
+      }
+
+      .tabs-content {
+        padding: 1.2rem;
+
+        .form-fila {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+      }
     }
   }
 }
