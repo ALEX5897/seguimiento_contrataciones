@@ -270,17 +270,25 @@
                   <label for="fechaInicio">Fecha Inicio</label>
                   <input
                     id="fechaInicio"
-                    v-model="formulario.fechaInicio"
+                    :value="formulario.fechaInicio"
+                    @input="formulario.fechaInicio = $event.target.value"
                     type="date"
                   />
+                  <small class="field-help" v-if="formulario.fechaInicio">
+                    Seleccionada: {{ formatearFechaParaVista(formulario.fechaInicio) }}
+                  </small>
                 </div>
                 <div class="form-grupo">
                   <label for="fechaFin">Fecha Fin</label>
                   <input
                     id="fechaFin"
-                    v-model="formulario.fechaFin"
+                    :value="formulario.fechaFin"
+                    @input="formulario.fechaFin = $event.target.value"
                     type="date"
                   />
+                  <small class="field-help" v-if="formulario.fechaFin">
+                    Seleccionada: {{ formatearFechaParaVista(formulario.fechaFin) }}
+                  </small>
                 </div>
               </div>
 
@@ -293,6 +301,9 @@
                     <option :value="2">2do Cuatrimestre</option>
                     <option :value="3">3er Cuatrimestre</option>
                   </select>
+                  <small class="field-help" v-if="formulario.cuatrimestre">
+                    Seleccionado: Cuatrimestre {{ formulario.cuatrimestre }}
+                  </small>
                 </div>
                 <div class="form-grupo">
                   <label for="plazoContrato">Plazo de Contrato</label>
@@ -318,29 +329,31 @@
                   <option value="Concurso de Ofertas">Concurso de Ofertas</option>
                   <option value="Otro">Otro</option>
                 </select>
+                <small class="field-help" v-if="formulario.procedimientoSugerido">
+                  Procedimiento: {{ formulario.procedimientoSugerido }}
+                </small>
+              </div>
+
+              <div class="form-fila">
+                <div class="form-grupo">
+                  <label for="pacNoPac">PAC / No PAC</label>
+                  <select id="pacNoPac" v-model="formulario.tipoPlan">
+                    <option value="PAC">PAC</option>
+                    <option value="No PAC">No PAC</option>
+                  </select>
+                </div>
               </div>
             </div>
 
             <!-- Pestaña 5: Notas -->
             <div v-if="pestañaActiva === 'notas'" class="tab-pane">
               <div class="form-grupo">
-                <label for="observaciones">Observaciones</label>
-                <textarea
-                  id="observaciones"
-                  v-model="formulario.observaciones"
-                  rows="6"
-                  class="textarea-observaciones-proceso"
-                  placeholder="Escribe aquí notas, alcance, observaciones o contexto relevante del proceso"
-                />
-                <small class="field-help">Este espacio admite texto libre para describir mejor el proceso.</small>
-              </div>
-
-              <div class="form-grupo">
                 <label for="avanceGeneral">Avance General (%)</label>
                 <div class="avance-input-group">
                   <input
                     id="avanceGeneral"
-                    v-model.number="formulario.avanceGeneral"
+                    :value="formulario.avanceGeneral || 0"
+                    @input="formulario.avanceGeneral = Number($event.target.value)"
                     type="range"
                     min="0"
                     max="100"
@@ -352,6 +365,18 @@
                 <div class="progreso-barra-formulario">
                   <div class="progreso-fill" :style="{ width: (formulario.avanceGeneral || 0) + '%' }"></div>
                 </div>
+              </div>
+
+              <div class="form-grupo">
+                <label for="observaciones">Observaciones</label>
+                <textarea
+                  id="observaciones"
+                  v-model="formulario.observaciones"
+                  rows="8"
+                  class="textarea-observaciones-proceso"
+                  placeholder="Escribe aquí notas, alcance, observaciones o contexto relevante del proceso"
+                />
+                <small class="field-help">Este espacio admite texto libre para describir mejor el proceso. {{ (formulario.observaciones || '').length }} caracteres.</small>
               </div>
             </div>
 
@@ -2052,12 +2077,237 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
     background: white;
     border-radius: 14px;
     border: 1px solid #d9e2ea;
-    padding: 2rem;
+    padding: 0;
     max-width: 500px;
     width: 90%;
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 24px 56px rgba(15, 23, 42, 0.18);
+
+    &.modal-with-tabs {
+      max-width: 850px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 0;
+
+      .modal-header-tabs {
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8fafc;
+
+        h2 {
+          margin: 0;
+          font-size: 1.3rem;
+          color: #1e293b;
+          font-weight: 700;
+        }
+
+        .btn-close-modal {
+          background: none;
+          border: none;
+          font-size: 1.5rem;
+          cursor: pointer;
+          color: #64748b;
+          padding: 0;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 6px;
+          transition: all 0.2s;
+
+          &:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: #1e293b;
+          }
+        }
+      }
+
+      .tabs-container {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .tabs-nav {
+        padding: 0.5rem 2rem 0 2rem;
+        gap: 0.5rem;
+        border-bottom: 2px solid #e2e8f0;
+        background: white !important;
+        flex-wrap: wrap;
+        box-shadow: none !important;
+
+        .tab-btn {
+          padding: 0.8rem 1.2rem;
+          font-size: 0.95rem;
+          font-weight: 500;
+          background: transparent;
+          color: #64748b;
+          border: none;
+          cursor: pointer;
+          border-bottom: 3px solid transparent;
+          transition: all 0.2s;
+          position: relative;
+          bottom: -2px;
+          white-space: nowrap;
+
+          &:hover:not(.tab-active) {
+            color: #475569;
+            background: rgba(100, 116, 139, 0.05);
+            border-bottom-color: #cbd5e1;
+          }
+
+          &.tab-active {
+            color: #3b82f6;
+            font-weight: 600;
+            background: transparent;
+            border-bottom-color: #3b82f6;
+            box-shadow: none;
+          }
+        }
+      }
+
+      .tabs-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 2rem;
+        padding-bottom: 1rem;
+
+        &::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        &::-webkit-scrollbar-track {
+          background: #f1f5f9;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 4px;
+
+          &:hover {
+            background: #94a3b8;
+          }
+        }
+
+        .tab-pane {
+          animation: fadeIn 0.2s ease-out;
+        }
+
+        .form-grupo {
+          margin-bottom: 1.3rem;
+
+          label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1e293b;
+            font-size: 0.95rem;
+          }
+
+          input[type="text"],
+          input[type="number"],
+          input[type="date"],
+          select,
+          textarea {
+            width: 100%;
+            padding: 0.75rem 0.9rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.2s;
+            background: white;
+
+            &:hover {
+              border-color: #cbd5e1;
+            }
+
+            &:focus {
+              outline: none;
+              border-color: #3b82f6;
+              box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+              background: #f0f9ff;
+            }
+          }
+
+          .field-help {
+            display: block;
+            margin-top: 0.35rem;
+            color: #64748b;
+            font-size: 0.8rem;
+            line-height: 1.4;
+          }
+        }
+
+        .form-fila {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1rem;
+
+          .form-grupo {
+            margin-bottom: 0;
+          }
+
+          &.full-width {
+            grid-template-columns: 1fr;
+          }
+        }
+      }
+
+      .botones-modal {
+        padding: 1.2rem 2rem;
+        border-top: 1px solid #e2e8f0;
+        background: #f8fafc;
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+
+        button {
+          padding: 0.8rem 1.8rem;
+          font-size: 1rem;
+          font-weight: 600;
+          border-radius: 8px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-primary {
+          background: linear-gradient(135deg, #3b82f6, #2563eb);
+          color: white;
+          flex-shrink: 0;
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+          }
+
+          &:active {
+            transform: translateY(0);
+          }
+        }
+
+        .btn-secondary {
+          background: white;
+          color: #64748b;
+          border: 2px solid #e2e8f0;
+
+          &:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #1e293b;
+          }
+        }
+      }
+    }
 
     &.modal-etapas {
       max-width: 700px;
@@ -2376,10 +2626,26 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
       }
 
       .textarea-observaciones-proceso {
-        min-height: 120px;
+        min-height: 140px;
         resize: vertical;
         background: #f8fafc;
-        line-height: 1.55;
+        line-height: 1.6;
+        font-size: 0.95rem;
+        padding: 0.85rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        transition: all 0.2s;
+
+        &:focus {
+          outline: none;
+          border-color: #3b82f6;
+          background: #f0f9ff;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        &:hover:not(:focus) {
+          border-color: #cbd5e1;
+        }
       }
 
       .field-help {
@@ -3556,37 +3822,95 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
         display: flex;
         gap: 1rem;
         align-items: center;
-        margin-bottom: 0.75rem;
+        margin-bottom: 1rem;
+        padding: 1.2rem;
+        background: #f0f9ff;
+        border-radius: 8px;
+        border: 2px solid #e0f2fe;
 
         .input-range-avance {
           flex: 1;
-          height: 6px;
-          border-radius: 3px;
+          height: 8px;
+          border-radius: 4px;
           outline: none;
           accent-color: #3b82f6;
           cursor: pointer;
+          -webkit-appearance: none;
+          appearance: none;
+          background: #e2e8f0;
+
+          &::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+            border: 2px solid white;
+            transition: all 0.2s;
+
+            &:hover {
+              transform: scale(1.15);
+              box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            }
+          }
+
+          &::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+            border: 2px solid white;
+            transition: all 0.2s;
+
+            &:hover {
+              transform: scale(1.15);
+              box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            }
+          }
+
+          &::-webkit-slider-runnable-track {
+            background: #e2e8f0;
+            height: 8px;
+            border-radius: 4px;
+          }
+
+          &::-moz-range-track {
+            background: transparent;
+            border: none;
+          }
         }
 
         .avance-value {
-          min-width: 50px;
+          min-width: 60px;
           text-align: right;
-          font-weight: 600;
-          color: #0f2f55;
-          font-size: 1.1rem;
+          font-weight: 700;
+          color: #3b82f6;
+          font-size: 1.25rem;
+          padding: 0.5rem 1rem;
+          background: white;
+          border-radius: 6px;
+          border: 2px solid #3b82f6;
         }
       }
 
       .progreso-barra-formulario {
         width: 100%;
-        height: 8px;
+        height: 10px;
         background: #e2e8f0;
-        border-radius: 4px;
+        border-radius: 6px;
         overflow: hidden;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 
         .progreso-fill {
           height: 100%;
           background: linear-gradient(90deg, #3b82f6, #0ea5e9);
-          transition: width 0.3s ease;
+          transition: width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+          box-shadow: 0 0 8px rgba(59, 130, 246, 0.2);
         }
       }
 

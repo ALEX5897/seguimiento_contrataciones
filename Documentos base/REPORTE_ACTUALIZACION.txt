@@ -1,0 +1,327 @@
+REPORTE DE ACTUALIZACIÓN DE MONTOS PRESUPUESTARIOS
+============================================================
+Fecha: 7/5/2026, 9:44:16
+Archivo actualizado: update_datos.xlsx
+Fuente de datos: base_1.xlsx (COSTO 2026)
+============================================================
+
+RESUMEN GENERAL:
+------------------------------------------------------------
+  Total de registros procesados: 271
+  Registros actualizados: 34
+  Registros sin cambios: 59
+  Códigos no encontrados: 178
+
+REGISTROS ACTUALIZADOS (34):
+------------------------------------------------------------
+
+1. Código Olympo: 01.01.001.021.530807.000.009
+   Monto anterior: 0
+   Monto nuevo:   10000
+   Diferencia:    +10000
+
+2. Código Olympo: 01.01.001.029.530301.000.009
+   Monto anterior: 500
+   Monto nuevo:   1500
+   Diferencia:    +1000
+
+3. Código Olympo: 01.01.001.029.530302.000.009
+   Monto anterior: 33268.92000000001
+   Monto nuevo:   40000
+   Diferencia:    +6731.079999999987
+
+4. Código Olympo: 01.01.001.041.530404.000.009
+   Monto anterior: 23440.7
+   Monto nuevo:   6000
+   Diferencia:    -17440.7
+
+5. Código Olympo: 01.01.001.045.530405.000.009
+   Monto anterior: 9089.3
+   Monto nuevo:   10000
+   Diferencia:    +910.7000000000007
+
+6. Código Olympo: 01.01.001.057.530402.000.009
+   Monto anterior: 0
+   Monto nuevo:   249995.5
+   Diferencia:    +249995.5
+
+7. Código Olympo: 01.01.001.064.530811.000.009
+   Monto anterior: 0
+   Monto nuevo:   1000
+   Diferencia:    +1000
+
+8. Código Olympo: 01.01.001.111.530255.000.009
+   Monto anterior: 5000
+   Monto nuevo:   6000
+   Diferencia:    +1000
+
+9. Código Olympo: 01.01.001.154.530208.000.009
+   Monto anterior: 125000
+   Monto nuevo:   201453
+   Diferencia:    +76453
+
+10. Código Olympo: 01.01.001.080.530602.000.009
+   Monto anterior: 0
+   Monto nuevo:   6600
+   Diferencia:    +6600
+
+11. Código Olympo: 01.01.001.156.530601.000.009
+   Monto anterior: 0
+   Monto nuevo:   14400
+   Diferencia:    +14400
+
+12. Código Olympo: 01.01.001.159.530207.000.009
+   Monto anterior: 195000
+   Monto nuevo:   315000
+   Diferencia:    +120000
+
+13. Código Olympo: 01.01.001.008.530704.000.009
+   Monto anterior: 0
+   Monto nuevo:   3500
+   Diferencia:    +3500
+
+14. Código Olympo: 01.01.001.122.530813.000.009
+   Monto anterior: 0
+   Monto nuevo:   2740
+   Diferencia:    +2740
+
+15. Código Olympo: 01.01.001.122.530813.001.009
+   Monto anterior: 2740
+   Monto nuevo:   0
+   Diferencia:    -2740
+
+16. Código Olympo: 01.01.001.165.840107.000.009
+   Monto anterior: 0
+   Monto nuevo:   17000
+   Diferencia:    +17000
+
+17. Código Olympo: 01.01.001.178.840107.000.009
+   Monto anterior: 0
+   Monto nuevo:   3000
+   Diferencia:    +3000
+
+18. Código Olympo: 01.01.001.181.530702.000.009
+   Monto anterior: 0
+   Monto nuevo:   26000
+   Diferencia:    +26000
+
+19. Código Olympo: 01.01.001.182.530702.000.009
+   Monto anterior: 40000
+   Monto nuevo:   65000
+   Diferencia:    +25000
+
+20. Código Olympo: 01.01.001.183.840107.000.009
+   Monto anterior: 0
+   Monto nuevo:   106000
+   Diferencia:    +106000
+
+21. Código Olympo: 01.01.002.046.630207.001.009
+   Monto anterior: 438975
+   Monto nuevo:   1127950
+   Diferencia:    +688975
+
+22. Código Olympo: 01.01.002.047.630207.000.009
+   Monto anterior: 495000
+   Monto nuevo:   1057000
+   Diferencia:    +562000
+
+23. Código Olympo: 01.01.002.053.530207.000.009
+   Monto anterior: 48775
+   Monto nuevo:   27795
+   Diferencia:    -20980
+
+24. Código Olympo: 01.01.002.009.630601.000.009
+   Monto anterior: 42500
+   Monto nuevo:   85000
+   Diferencia:    +42500
+
+25. Código Olympo: 01.01.002.049.530613.000.009
+   Monto anterior: 129695.75
+   Monto nuevo:   87195.75
+   Diferencia:    -42500
+
+26. Código Olympo: 01.01.002.050.630601.000.009
+   Monto anterior: 0
+   Monto nuevo:   25000
+   Diferencia:    +25000
+
+27. Código Olympo: 01.01.002.052.630201.000.009
+   Monto anterior: 0
+   Monto nuevo:   60500
+   Diferencia:    +60500
+
+28. Código Olympo: 02.01.001.021.730207.000.002
+   Monto anterior: 0
+   Monto nuevo:   88500
+   Diferencia:    +88500
+
+29. Código Olympo: 02.01.001.031.730702.000.002
+   Monto anterior: 0
+   Monto nuevo:   39246.509999999995
+   Diferencia:    +39246.509999999995
+
+30. Código Olympo: 02.01.001.017.730425.000.002
+   Monto anterior: 135000
+   Monto nuevo:   147000
+   Diferencia:    +12000
+
+31. Código Olympo: 02.01.001.043.730249.000.002
+   Monto anterior: 0
+   Monto nuevo:   1918669.92
+   Diferencia:    +1918669.92
+
+32. Código Olympo: 02.01.001.049.730207.000.002
+   Monto anterior: 0
+   Monto nuevo:   120000
+   Diferencia:    +120000
+
+33. Código Olympo: 02.01.001.047.730249.000.002
+   Monto anterior: 0
+   Monto nuevo:   40000
+   Diferencia:    +40000
+
+34. Código Olympo: 02.01.001.048.730249.000.002
+   Monto anterior: 0
+   Monto nuevo:   150000
+   Diferencia:    +150000
+
+------------------------------------------------------------
+Total anterior de registros actualizados: 1723984.67
+Total nuevo de registros actualizados:   6059045.68
+Diferencia total: +4335061.01
+
+
+REGISTROS SIN CAMBIOS (59):
+------------------------------------------------------------
+
+1. Código Olympo: 01.01.001.013.530813.000.009
+   Monto (sin cambios): 0
+
+2. Código Olympo: 01.01.001.016.530807.000.009
+   Monto (sin cambios): 18812
+
+3. Código Olympo: 01.01.001.026.570201.000.009
+   Monto (sin cambios): 39850
+
+4. Código Olympo: 01.01.001.031.530209.000.009
+   Monto (sin cambios): 1600
+
+5. Código Olympo: 01.01.001.035.530403.000.009
+   Monto (sin cambios): 0
+
+6. Código Olympo: 01.01.001.039.530404.000.009
+   Monto (sin cambios): 1000
+
+7. Código Olympo: 01.01.001.046.530405.000.009
+   Monto (sin cambios): 2500
+
+8. Código Olympo: 01.01.001.047.530405.000.009
+   Monto (sin cambios): 2500
+
+9. Código Olympo: 01.01.001.048.530105.000.009
+   Monto (sin cambios): 283
+
+10. Código Olympo: 01.01.001.114.530202.000.009
+   Monto (sin cambios): 0
+
+11. Código Olympo: 01.01.001.014.530802.000.009
+   Monto (sin cambios): 676
+
+12. Código Olympo: 01.01.001.052.530404.000.009
+   Monto (sin cambios): 3000
+
+13. Código Olympo: 01.01.001.160.530404.000.009
+   Monto (sin cambios): 0
+
+14. Código Olympo: 01.01.001.161.530241.000.009
+   Monto (sin cambios): 3500
+
+15. Código Olympo: 01.01.001.004.531406.000.009
+   Monto (sin cambios): 0
+
+16. Código Olympo: 01.01.001.004.531407.000.009
+   Monto (sin cambios): 0
+
+17. Código Olympo: 01.01.001.008.530243.000.009
+   Monto (sin cambios): 0
+
+18. Código Olympo: 01.01.001.009.530404.000.009
+   Monto (sin cambios): 0
+
+19. Código Olympo: 01.01.001.017.530702.000.009
+   Monto (sin cambios): 0
+
+20. Código Olympo: 01.01.001.055.530702.000.009
+   Monto (sin cambios): 7000
+
+... y 39 registros más sin cambios
+
+
+CÓDIGOS NO ENCONTRADOS EN LA FUENTE (178):
+------------------------------------------------------------
+
+1. Código Olympo: 01.01.001.006.530255.000.009
+   Monto anterior: 5610
+
+2. Código Olympo: 01.01.001.024.530502.000.009
+   Monto anterior: 18000
+
+3. Código Olympo: 01.01.001.033.530811.000.009
+   Monto anterior: 0
+
+4. Código Olympo: 01.01.001.036.530404.000.009
+   Monto anterior: 0
+
+5. Código Olympo: 01.01.001.037.530404.000.009
+   Monto anterior: 0
+
+6. Código Olympo: 01.01.001.040.530203.000.009
+   Monto anterior: 500
+
+7. Código Olympo: 01.01.001.196.570201.000.009
+   Monto anterior: 2000
+
+8. Código Olympo: 01.01.001.197.530301.000.009
+   Monto anterior: 1000
+
+9. Código Olympo: 01.01.001.197.530302.000.009
+   Monto anterior: 74267.51
+
+10. Código Olympo: 01.01.001.198.840103.000.009
+   Monto anterior: 10000
+
+11. Código Olympo: 01.01.001.199.530404.000.009
+   Monto anterior: 1600
+
+12. Código Olympo: 01.01.001.200.530402.000.009
+   Monto anterior: 10000
+
+13. Código Olympo: 01.01.001.203.530701.000.009
+   Monto anterior: 0
+
+14. Código Olympo: 01.01.001.203.530702.000.009
+   Monto anterior: 0
+
+15. Código Olympo: 01.01.001.042.530404.000.009
+   Monto anterior: 0
+
+16. Código Olympo: 01.01.001.043.530404.000.009
+   Monto anterior: 0
+
+17. Código Olympo: 01.01.001.044.530404.000.009
+   Monto anterior: 0
+
+18. Código Olympo: 01.01.001.050.530106.000.009
+   Monto anterior: 500
+
+19. Código Olympo: 01.01.001.050.530204.000.009
+   Monto anterior: 1000
+
+20. Código Olympo: 01.01.001.050.530502.000.009
+   Monto anterior: 500
+
+... y 158 códigos más no encontrados
+
+
+============================================================
+Fin del reporte

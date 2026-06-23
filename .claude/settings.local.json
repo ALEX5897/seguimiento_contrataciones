@@ -24,7 +24,21 @@
       "Bash(taskkill /PID 80100 /F)",
       "PowerShell(Stop-Process -Id 80100 -Force -ErrorAction SilentlyContinue)",
       "Bash(python3)",
-      "PowerShell(Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue })"
+      "PowerShell(Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue })",
+      "Bash(git reset *)",
+      "PowerShell(. \"C:\\\\Users\\\\acasa\\\\OneDrive - QuitoTurismo\\\\Documentos\\\\Desarrollo\\\\Seguimiento_contrataciones\\\\.claude\\\\deploy.ps1\" -action pull_and_build)",
+      "PowerShell(. \"C:\\\\Users\\\\acasa\\\\OneDrive - QuitoTurismo\\\\Documentos\\\\Desarrollo\\\\Seguimiento_contrataciones\\\\.claude\\\\deploy.ps1\" -action restart_backend)",
+      "PowerShell(. \"C:\\\\Users\\\\acasa\\\\OneDrive - QuitoTurismo\\\\Documentos\\\\Desarrollo\\\\Seguimiento_contrataciones\\\\.claude\\\\deploy.ps1\" -action restart_frontend)",
+      "PowerShell(. \"C:\\\\Users\\\\acasa\\\\OneDrive - QuitoTurismo\\\\Documentos\\\\Desarrollo\\\\Seguimiento_contrataciones\\\\.claude\\\\deploy.ps1\" -action status)",
+      "Bash(ssh srvr-seg-contratos *)",
+      "Bash(node scripts/estadisticas-dashboard.mjs)",
+      "Bash(node scripts/check-columns.mjs)",
+      "Bash(node *)",
+      "Bash(ssh -i ~/.ssh/srvr_seg_contratos acasa@172.16.1.72 \"cd /opt/seguimiento_contrataciones && pwd\")",
+      "Bash(ssh -i ~/.ssh/srvr_seg_contratos acasa@172.16.1.72 \"which pm2\")",
+      "Bash(ssh -i ~/.ssh/srvr_seg_contratos acasa@172.16.1.72)",
+      "Bash(ssh -i ~/.ssh/srvr_seg_contratos acasa@172.16.1.72 'sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u acasa --hp /home/acasa && pm2 save')",
+      "PowerShell(Start-Process \"http://localhost:5173\")"
     ]
   }
 }
