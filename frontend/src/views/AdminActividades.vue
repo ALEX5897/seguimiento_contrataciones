@@ -287,11 +287,11 @@
               <div class="form-fila">
                 <div class="form-grupo">
                   <label for="cuatrimestre">Cuatrimestre</label>
-                  <select id="cuatrimestre" v-model="formulario.cuatrimestre">
+                  <select id="cuatrimestre" v-model.number="formulario.cuatrimestre">
                     <option :value="null">Sin cuatrimestre</option>
-                    <option value="1">1er Cuatrimestre</option>
-                    <option value="2">2do Cuatrimestre</option>
-                    <option value="3">3er Cuatrimestre</option>
+                    <option :value="1">1er Cuatrimestre</option>
+                    <option :value="2">2do Cuatrimestre</option>
+                    <option :value="3">3er Cuatrimestre</option>
                   </select>
                 </div>
                 <div class="form-grupo">
@@ -1216,8 +1216,10 @@ function cerrarFormulario() {
 
 async function guardarActividad() {
   try {
-    if (!formulario.value.nombre) {
-      mostrarNotificacion('El nombre es requerido', 'error');
+    // Validar campo requerido: Nombre
+    if (!formulario.value.nombre || !formulario.value.nombre.trim()) {
+      mostrarNotificacion('⚠️  El nombre del proceso es requerido', 'error');
+      pestañaActiva.value = 'general';
       return;
     }
 
@@ -1229,6 +1231,10 @@ async function guardarActividad() {
     formulario.value.costoReforma2 = costoReforma2Normalizado;
     presupuestoTexto.value = formatearMontoMoneda(presupuestoNormalizado);
     costoReforma2Texto.value = formatearMontoMoneda(costoReforma2Normalizado);
+
+    // Normalizar tipos de datos
+    const cuatrimestreNormalizado = formulario.value.cuatrimestre ? Number(formulario.value.cuatrimestre) : null;
+    const avanceGeneralNormalizado = Math.max(0, Math.min(100, Number(formulario.value.avanceGeneral) || 0));
 
     const {
       direccionNombre: _direccionNombre,
@@ -1242,6 +1248,8 @@ async function guardarActividad() {
       ...formularioBase,
       presupuesto: presupuestoNormalizado,
       costoReforma2: costoReforma2Normalizado,
+      cuatrimestre: cuatrimestreNormalizado,
+      avanceGeneral: avanceGeneralNormalizado,
       activo: estadoProcesoNumero(formulario.value.activo),
       direccionId: direccionIdNormalizado,
       responsableId: formulario.value.responsableId ? Number(formulario.value.responsableId) : null,
@@ -1250,16 +1258,17 @@ async function guardarActividad() {
 
     if (modoEdicion.value && formulario.value.id) {
       await api.put(`/subtareas/${formulario.value.id}`, payload);
-      mostrarNotificacion('Proceso actualizado correctamente', 'success');
+      mostrarNotificacion('✅ Proceso actualizado correctamente', 'success');
     } else {
       await api.post('/subtareas', payload);
-      mostrarNotificacion('Proceso creado correctamente', 'success');
+      mostrarNotificacion('✅ Proceso creado correctamente', 'success');
     }
     cerrarFormulario();
     await cargarActividades();
   } catch (error: any) {
     console.error('Error al guardar:', error);
-    mostrarNotificacion('Error al guardar: ' + (error?.response?.data?.error || error?.message || 'Desconocido'), 'error');
+    const mensajeError = error?.response?.data?.error || error?.message || 'Desconocido';
+    mostrarNotificacion(`❌ Error al guardar: ${mensajeError}`, 'error');
   }
 }
 
@@ -3365,34 +3374,43 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1.5rem 2rem;
-      border-bottom: 1px solid #e2e8f0;
+      padding: 1.75rem 2rem;
+      border-bottom: 2px solid #cbd5e1;
       background: linear-gradient(135deg, #f8fafc 0%, #eef4ff 100%);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 
       h2 {
         margin: 0;
         color: #0f2f55;
-        font-size: 1.4rem;
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
       }
 
       .btn-close-modal {
-        background: none;
-        border: none;
+        background: rgba(100, 116, 139, 0.1);
+        border: 2px solid transparent;
         font-size: 1.5rem;
         cursor: pointer;
         color: #64748b;
         padding: 0;
-        width: 32px;
-        height: 32px;
+        width: 40px;
+        height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 6px;
-        transition: all 0.2s;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        font-weight: bold;
 
         &:hover {
           background: #e2e8f0;
           color: #1e293b;
+          border-color: #cbd5e1;
+        }
+
+        &:active {
+          background: #cbd5e1;
         }
       }
     }
@@ -3406,35 +3424,36 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
 
     .tabs-nav {
       display: flex;
-      gap: 0.5rem;
-      padding: 0.75rem 1rem;
-      background: #f8fafc;
-      border-bottom: 2px solid #e2e8f0;
+      gap: 0.25rem;
+      padding: 1rem;
+      background: linear-gradient(to right, #f8fafc, #eef4ff);
+      border-bottom: 2px solid #cbd5e1;
       flex-wrap: wrap;
       align-items: center;
+      box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.05);
 
       .tab-btn {
-        padding: 0.6rem 1.2rem;
+        padding: 0.7rem 1.3rem;
         border: none;
-        background: transparent;
+        background: rgba(100, 116, 139, 0.08);
         color: #64748b;
         cursor: pointer;
         font-size: 0.95rem;
-        font-weight: 500;
-        border-radius: 6px 6px 0 0;
-        transition: all 0.2s;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.2s ease;
         white-space: nowrap;
+        position: relative;
 
         &:hover {
-          background: #e2e8f0;
-          color: #334155;
+          background: rgba(59, 130, 246, 0.1);
+          color: #0f2f55;
         }
 
         &.tab-active {
-          color: #0f2f55;
-          background: white;
-          border-bottom: 3px solid #3b82f6;
-          padding-bottom: calc(0.6rem - 3px);
+          color: white;
+          background: linear-gradient(135deg, #3b82f6, #0ea5e9);
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
         }
       }
     }
@@ -3455,10 +3474,11 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
 
         label {
           display: block;
-          margin-bottom: 0.5rem;
-          color: #334155;
-          font-weight: 600;
+          margin-bottom: 0.6rem;
+          color: #1e293b;
+          font-weight: 700;
           font-size: 0.95rem;
+          letter-spacing: 0.3px;
         }
 
         input[type="text"],
@@ -3467,43 +3487,54 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
         select,
         textarea {
           width: 100%;
-          padding: 0.65rem;
-          border: 1px solid #cbd5e1;
-          border-radius: 6px;
+          padding: 0.75rem 0.9rem;
+          border: 2px solid #cbd5e1;
+          border-radius: 8px;
           font-size: 0.95rem;
           font-family: inherit;
-          transition: border-color 0.2s;
+          transition: all 0.2s ease;
+          background: #fafbfc;
+
+          &:hover {
+            border-color: #94a3b8;
+            background: white;
+          }
 
           &:focus {
             outline: none;
             border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), inset 0 0 0 1px rgba(59, 130, 246, 0.2);
           }
 
           &:disabled {
             background: #f1f5f9;
             color: #94a3b8;
             cursor: not-allowed;
+            border-color: #e2e8f0;
           }
         }
 
         textarea {
           resize: vertical;
-          min-height: 100px;
+          min-height: 120px;
+          font-family: 'Segoe UI', system-ui, sans-serif;
         }
 
         .field-help {
           display: block;
-          margin-top: 0.4rem;
-          color: #78909c;
+          margin-top: 0.6rem;
+          color: #64748b;
           font-size: 0.85rem;
+          font-style: italic;
         }
       }
 
       .form-fila {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
+        gap: 2rem;
+        margin-bottom: 0.5rem;
 
         .form-grupo {
           margin-bottom: 0;
@@ -3554,44 +3585,57 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
 
       .botones-modal {
         display: flex;
-        gap: 1rem;
+        gap: 1.2rem;
         margin-top: 2rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid #e2e8f0;
+        padding: 1.5rem;
+        border-top: 2px solid #cbd5e1;
         justify-content: flex-end;
         position: sticky;
         bottom: 0;
-        background: white;
+        background: linear-gradient(to top, white 80%, rgba(255, 255, 255, 0.7));
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
 
         button {
-          padding: 0.7rem 1.5rem;
+          padding: 0.85rem 2rem;
           border: none;
           border-radius: 8px;
           font-size: 0.95rem;
-          font-weight: 600;
+          font-weight: 700;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all 0.25s ease;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          min-width: 140px;
 
           &.btn-primary {
             background: linear-gradient(135deg, #3b82f6, #0ea5e9);
             color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
 
             &:hover {
               transform: translateY(-2px);
-              box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+              box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
             }
 
             &:active {
               transform: translateY(0);
+              box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
             }
           }
 
           &.btn-secondary {
             background: #e2e8f0;
             color: #334155;
+            border: 2px solid transparent;
 
             &:hover {
               background: #cbd5e1;
+              transform: translateY(-1px);
+            }
+
+            &:active {
+              background: #cbd5e1;
+              transform: translateY(0);
             }
           }
         }
