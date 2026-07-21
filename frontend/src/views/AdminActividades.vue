@@ -16,7 +16,7 @@
           class="buscador-input"
           type="text"
           v-model="busqueda"
-          placeholder="Buscar por nombre, dirección o tipo..."
+          placeholder="Buscar por nombre, código olympo, dirección o tipo..."
         />
         <button v-if="busqueda" class="buscador-clear" @click="busqueda = ''">✕</button>
       </div>
@@ -968,6 +968,7 @@ const actividadesFiltradas = computed(() => {
     const q = normalizarTextoBusqueda(busqueda.value);
     resultado = resultado.filter(a =>
       normalizarTextoBusqueda(a.nombre || '').includes(q) ||
+      normalizarTextoBusqueda(a.codigoOlympo || '').includes(q) ||
       normalizarTextoBusqueda(a.direccionNombre || '').includes(q) ||
       normalizarTextoBusqueda(a.tipoPlan || '').includes(q)
     );
@@ -1263,12 +1264,13 @@ async function guardarActividad() {
 
     // Normalizar tipos de datos
     const cuatrimestreNormalizado = formulario.value.cuatrimestre ? Number(formulario.value.cuatrimestre) : null;
-    const avanceGeneralNormalizado = Math.max(0, Math.min(100, Number(formulario.value.avanceGeneral) || 0));
 
     const {
       direccionNombre: _direccionNombre,
       direccionEncargada: _direccionEncargada,
       responsableNombre: _responsableNombre,
+      avanceGeneral: _avanceGeneral,
+      avance_general: _avance_general,
       etapas: _etapas,
       ...formularioBase
     } = formulario.value as any;
@@ -1278,7 +1280,6 @@ async function guardarActividad() {
       presupuesto: presupuestoNormalizado,
       costoReforma2: costoReforma2Normalizado,
       cuatrimestre: cuatrimestreNormalizado,
-      avanceGeneral: avanceGeneralNormalizado,
       activo: estadoProcesoNumero(formulario.value.activo),
       direccionId: direccionIdNormalizado,
       responsableId: formulario.value.responsableId ? Number(formulario.value.responsableId) : null,

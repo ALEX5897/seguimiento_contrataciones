@@ -2345,14 +2345,15 @@ export async function updateSubtarea(idOrCode, data) {
     riesgoComentario: 'riesgo_comentario',
     activo: 'activo',
     fechaInicio: 'fecha_inicio',
-    fechaFin: 'fecha_fin',
-    avanceGeneral: 'avance_general'
+    fechaFin: 'fecha_fin'
   };
 
   Object.entries(fieldMap).forEach(([camel, sql]) => {
     if (data[camel] !== undefined) {
+      const value = data[camel];
       sets.push(`${sql} = ?`);
-      values.push(data[camel]);
+      // Convert empty strings to null for database compatibility
+      values.push(value === '' ? null : value);
     }
   });
 
@@ -2363,16 +2364,38 @@ export async function updateSubtarea(idOrCode, data) {
 
   if (data.responsableId !== undefined || data.responsableNombre !== undefined || data.responsable !== undefined) {
     const responsable = await resolverResponsable(data);
-    sets.push('responsable_id = ?');
-    values.push(responsable.id);
-    sets.push('responsable = ?');
-    values.push(responsable.nombre);
+    if (responsable) {
+      sets.push('responsable_id = ?');
+      values.push(responsable.id);
+      sets.push('responsable = ?');
+      values.push(responsable.nombre);
+    }
   }
 
   if (!sets.length) return getSubtareaById(id);
   values.push(id);
 
-  await query(`UPDATE subtareas SET ${sets.join(', ')} WHERE id = ?`, values);
+  const sql = `UPDATE subtareas SET ${sets.join(', ')} WHERE id = ?`;
+  console.log('🔧 DEBUG updateSubtarea:', {
+    id,
+    sql,
+    valuesCount: values.length,
+    dataKeys: Object.keys(data),
+    timestamp: new Date().toISOString()
+  });
+
+  try {
+    await query(sql, values);
+  } catch (error) {
+    console.error('❌ Error en updateSubtarea SQL:', {
+      sql,
+      values,
+      error: error.message,
+      sqlError: error.sqlMessage || error.code
+    });
+    throw error;
+  }
+
   return getSubtareaById(id);
 }
 

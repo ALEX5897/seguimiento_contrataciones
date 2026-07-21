@@ -93,7 +93,12 @@ export const useAuthStore = defineStore('auth', {
     token: localStorage.getItem(TOKEN_KEY) || '',
     user: (() => {
       const raw = localStorage.getItem(USER_KEY);
-      return raw ? (JSON.parse(raw) as UsuarioSesion) : null;
+      if (!raw || raw === 'undefined') return null;
+      try {
+        return JSON.parse(raw) as UsuarioSesion;
+      } catch {
+        return null;
+      }
     })() as UsuarioSesion | null,
     permisos: readPermissionsFromStorage() as PermisosSesion,
     loading: false

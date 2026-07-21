@@ -844,15 +844,26 @@ const actividadesActivas = computed(() => {
 
 const actividadesAgrupadasPorCuatrimestre = computed(() => {
   const base = actividadesActivas.value;
-  const orden = [1, 2, 3];
+  const orden = [1, 2, 3, 4];
 
-  return orden
+  const grupos = orden
     .map((cuatrimestre) => ({
       key: `c${cuatrimestre}`,
       titulo: `Cuatrimestre ${cuatrimestre}`,
       items: base.filter((actividad: any) => obtenerCuatrimestreOrden(actividad) === cuatrimestre)
     }))
     .filter((grupo) => grupo.items.length > 0);
+
+  const sinCuatrimestre = base.filter((actividad: any) => obtenerCuatrimestreOrden(actividad) > 4);
+  if (sinCuatrimestre.length > 0) {
+    grupos.push({
+      key: 'otros',
+      titulo: 'Sin cuatrimestre definido',
+      items: sinCuatrimestre
+    });
+  }
+
+  return grupos;
 });
 
 const actividadesKpiPrincipales = computed(() =>
