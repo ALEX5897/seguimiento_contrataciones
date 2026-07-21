@@ -325,6 +325,12 @@
                   <option value="Catálogo Electrónico">Catálogo Electrónico</option>
                   <option value="Subasta Inversa Electrónica">Subasta Inversa Electrónica</option>
                   <option value="Concurso de Ofertas">Concurso de Ofertas</option>
+                  <option value="Licitación">Licitación</option>
+                  <option value="Feria Inclusiva">Feria Inclusiva</option>
+                  <option value="Concurso Público">Concurso Público</option>
+                  <option value="Internacional">Internacional</option>
+                  <option value="Giro Específico del Negocio">Giro Específico del Negocio</option>
+                  <option value="Comunicación Social - Contratación Directa">Comunicación Social - Contratación Directa</option>
                   <option value="Otro">Otro</option>
                 </select>
                 <small class="field-help" v-if="formulario.procedimientoSugerido">
