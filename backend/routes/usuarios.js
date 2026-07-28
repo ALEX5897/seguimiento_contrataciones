@@ -75,4 +75,33 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+router.get('/:id/direcciones', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const direcciones = await mysql.getDireccionesUsuario(id);
+    res.json(direcciones);
+  } catch (error) {
+    console.error(`Error en GET /api/usuarios/${req.params.id}/direcciones:`, error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/:id/direcciones', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { direccionIds = [] } = req.body;
+
+    if (!Array.isArray(direccionIds)) {
+      return res.status(400).json({ error: 'direccionIds debe ser un array' });
+    }
+
+    await mysql.setDireccionesUsuario(id, direccionIds);
+    const direcciones = await mysql.getDireccionesUsuario(id);
+    res.json({ success: true, direcciones });
+  } catch (error) {
+    console.error(`Error en PUT /api/usuarios/${req.params.id}/direcciones:`, error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
 export default router;

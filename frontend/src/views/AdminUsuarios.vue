@@ -89,6 +89,7 @@
           <th>Orden login</th>
           <th>Activo</th>
           <th>Nueva contraseña</th>
+          <th>Gestionar Direcciones</th>
           <th>Acción</th>
         </tr>
       </thead>
@@ -141,6 +142,16 @@
               placeholder="Dejar vacío para no cambiar"
             />
           </td>
+          <td>
+            <button
+              type="button"
+              class="btn-small"
+              @click="abrirGestorDirecciones(u)"
+              :disabled="guardando"
+            >
+              🎯 Direcciones
+            </button>
+          </td>
           <td class="acciones-fila">
             <button
               type="button"
@@ -157,6 +168,45 @@
       </table>
     </section>
 
+    <!-- Modal Gestor de Direcciones -->
+    <div v-if="modalDirecciones.mostrar" class="modal-overlay" @click.self="cerrarModalDirecciones">
+      <div class="modal-content modal-direcciones" @click.stop>
+        <div class="modal-header">
+          <h2>🎯 Gestionar Direcciones - {{ modalDirecciones.usuario?.nombre }}</h2>
+          <button class="btn-close-modal" @click="cerrarModalDirecciones">✕</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-subtitle">Selecciona las direcciones a las que este usuario puede acceder:</p>
+          <div class="checkboxes-grupo">
+            <label v-for="dir in direccionesCatalogo" :key="dir.id" class="checkbox-item">
+              <input
+                type="checkbox"
+                :checked="modalDirecciones.direccionesSeleccionadas.includes(dir.id)"
+                @change="toggleDireccionSeleccionada(dir.id)"
+              />
+              <span>{{ dir.nombre }}</span>
+            </label>
+          </div>
+          <div class="info-box">
+            <p v-if="modalDirecciones.direccionesSeleccionadas.length === 0" class="info-note">
+              ℹ️ Si no selecciona ninguna dirección, el usuario podrá acceder a TODAS las direcciones.
+            </p>
+            <p v-else class="info-note">
+              ✓ El usuario podrá ver procesos de {{ modalDirecciones.direccionesSeleccionadas.length }} dirección(es) seleccionada(s).
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-primary" @click="guardarDirecciones" :disabled="guardando">
+            {{ guardando ? 'Guardando...' : 'Guardar' }}
+          </button>
+          <button type="button" class="btn-secondary" @click="cerrarModalDirecciones" :disabled="guardando">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
     <datalist id="direcciones-disponibles">
       <option v-for="direccion in direccionesDisponibles" :key="direccion" :value="direccion" />
     </datalist>
@@ -172,9 +222,16 @@ import api from '../services/api';
 const auth = useAuthStore();
 const usuarios = ref<any[]>([]);
 const direccionesDisponibles = ref<string[]>([]);
+const direccionesCatalogo = ref<any[]>([]);
 const rolesDisponibles = ref<string[]>(['admin', 'direccion', 'reporteria']);
 const guardando = ref(false);
 const mensaje = ref('');
+
+const modalDirecciones = ref({
+  mostrar: false,
+  usuario: null as any,
+  direccionesSeleccionadas: [] as number[]
+});
 
 const usuariosActivos = computed(() => usuarios.value.filter((u: any) => u.activo).length);
 const usuariosDireccion = computed(() => usuarios.value.filter((u: any) => u.role === 'direccion').length);
@@ -209,6 +266,7 @@ async function cargarUsuarios() {
 async function cargarDireccionesDisponibles() {
   const response = await api.get('/catalogos/direcciones');
   const rows = Array.isArray(response.data) ? response.data : [];
+  direccionesCatalogo.value = rows.filter((item: any) => item?.activo !== false);
   direccionesDisponibles.value = rows
     .filter((item: any) => item?.activo !== false)
     .map((item: any) => normalizarDireccion(item?.nombre || ''))
@@ -425,6 +483,59 @@ function normalizarUsername(value: string | null | undefined) {
     .trim()
     .replace(/\s+/g, '_');
 }
+
+async function abrirGestorDirecciones(usuario: any) {
+  modalDirecciones.value.usuario = usuario;
+  const response = await api.get(`/usuarios/${usuario.id}/direcciones`);
+  const direcciones = Array.isArray(response.data) ? response.data : [];
+  modalDirecciones.value.direccionesSeleccionadas = direcciones.map((d: any) => d.id);
+  modalDirecciones.value.mostrar = true;
+}
+
+function cerrarModalDirecciones() {
+  modalDirecciones.value.mostrar = false;
+  modalDirecciones.value.usuario = null;
+  modalDirecciones.value.direccionesSeleccionadas = [];
+}
+
+function toggleDireccionSeleccionada(direccionId: number) {
+  const index = modalDirecciones.value.direccionesSeleccionadas.indexOf(direccionId);
+  if (index > -1) {
+    modalDirecciones.value.direccionesSeleccionadas.splice(index, 1);
+  } else {
+    modalDirecciones.value.direccionesSeleccionadas.push(direccionId);
+  }
+}
+
+async function guardarDirecciones() {
+  if (!modalDirecciones.value.usuario) return;
+
+  guardando.value = true;
+  try {
+    await api.put(`/usuarios/${modalDirecciones.value.usuario.id}/direcciones`, {
+      direccionIds: modalDirecciones.value.direccionesSeleccionadas
+    });
+    mensaje.value = 'Direcciones del usuario guardadas correctamente';
+    setTimeout(() => { mensaje.value = ''; }, 3000);
+    cerrarModalDirecciones();
+  } catch (error: any) {
+    mensaje.value = `Error: ${error.response?.data?.error || error.message}`;
+  } finally {
+    guardando.value = false;
+  }
+}
+
+onMounted(async () => {
+  await cargarDireccionesDisponibles();
+  await cargarRolesDisponibles();
+  await cargarUsuarios();
+});
+
+watch(() => form.value.role, () => {
+  if (form.value.role !== 'direccion') {
+    form.value.direccionNombre = '';
+  }
+});
 </script>
 
 <style scoped>
@@ -625,6 +736,188 @@ function normalizarUsername(value: string | null | undefined) {
   font-weight: 600;
 }
 
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-direcciones {
+  max-width: 450px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.btn-close-modal {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #64748b;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.btn-close-modal:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-subtitle {
+  margin: 0 0 1rem;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.checkboxes-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.checkbox-item:hover {
+  background: #f8fafc;
+}
+
+.checkbox-item input[type="checkbox"] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+.checkbox-item span {
+  color: #334155;
+  font-size: 0.95rem;
+}
+
+.info-box {
+  background: #f0f9ff;
+  border-left: 3px solid #0284c7;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.info-note {
+  margin: 0;
+  color: #0c4a6e;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-top: 1px solid #e2e8f0;
+  justify-content: flex-end;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.btn-secondary {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #cbd5e1;
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-small {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  background: #dbeafe;
+  color: #0c4a6e;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-small:hover:not(:disabled) {
+  background: #bfdbfe;
+}
+
+.btn-small:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 @media (max-width: 980px) {
   .encabezado {
     flex-direction: column;
@@ -646,6 +939,11 @@ function normalizarUsername(value: string | null | undefined) {
   .tabla {
     display: block;
     overflow-x: auto;
+  }
+
+  .modal-content {
+    width: 95%;
+    max-height: 95vh;
   }
 }
 </style>

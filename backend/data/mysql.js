@@ -754,6 +754,22 @@ async function createSchema() {
     FOREIGN KEY (responsable_id) REFERENCES responsables_catalogo(id)
     ON DELETE SET NULL
   `).catch(() => {});
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS usuarios_direcciones (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      usuario_id INT NOT NULL,
+      direccion_id INT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY unique_usuario_direccion (usuario_id, direccion_id),
+      CONSTRAINT fk_usuarios_direcciones_usuario
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+        ON DELETE CASCADE,
+      CONSTRAINT fk_usuarios_direcciones_direccion
+        FOREIGN KEY (direccion_id) REFERENCES direcciones_catalogo(id)
+        ON DELETE CASCADE
+    ) ENGINE=InnoDB;
+  `);
 }
 
 async function seedInitialData() {
@@ -1395,6 +1411,52 @@ export async function verifyUsuarioCredentials(username, plainPassword) {
     direccionNombre: usuario.direccionNombre,
     activo: usuario.activo
   };
+}
+
+export async function getDireccionesUsuario(usuarioId) {
+  const rows = await query(
+    `SELECT d.id, d.nombre
+     FROM usuarios_direcciones ud
+     JOIN direcciones_catalogo d ON d.id = ud.direccion_id
+     WHERE ud.usuario_id = ?
+     ORDER BY d.nombre`,
+    [usuarioId]
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    nombre: row.nombre
+  }));
+}
+
+export async function setDireccionesUsuario(usuarioId, direccionIds = []) {
+  const conn = await getPool().getConnection();
+  try {
+    await conn.beginTransaction();
+
+    await conn.execute('DELETE FROM usuarios_direcciones WHERE usuario_id = ?', [usuarioId]);
+
+    for (const dirId of direccionIds) {
+      await conn.execute(
+        'INSERT INTO usuarios_direcciones (usuario_id, direccion_id) VALUES (?, ?)',
+        [usuarioId, dirId]
+      );
+    }
+
+    await conn.commit();
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  } finally {
+    conn.release();
+  }
+}
+
+export async function puedeProcesoCualquierDireccion(usuarioId) {
+  const rows = await query(
+    'SELECT COUNT(*) AS total FROM usuarios_direcciones WHERE usuario_id = ?',
+    [usuarioId]
+  );
+  return Number(rows[0]?.total || 0) === 0;
 }
 
 export async function getAllResponsables() {
