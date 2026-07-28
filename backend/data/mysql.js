@@ -2466,11 +2466,13 @@ export async function getSubtareaEtapas(subtareaId) {
     }
     const fechaTentativa = toISODate(item.fechaTentativa);
     const fechaReforma = toISODate(item.fechaReforma);
+    const fechaReforma3 = toISODate(item.fechaReforma3);
     const fechaPlanificada = toISODate(item.fechaPlanificada);
     const fechaReal = toISODate(item.fechaReal);
     // Si no hay fechaTentativa, usar fechaPlanificada; si tampoco, dejar vacío
     item.fechaTentativa = fechaTentativa || fechaPlanificada || '';
     item.fechaReforma = fechaReforma || '';
+    item.fechaReforma3 = fechaReforma3 || '';
     item.fechaPlanificada = fechaPlanificada;
     item.fechaReal = fechaReal;
     return item;
