@@ -67,10 +67,26 @@ router.post('/admin/etapas', async (req, res) => {
   }
 });
 
+// Función auxiliar para obtener scope con direcciones asignadas
+async function getScopeWithDirecciones(req) {
+  const scope = getScopeFromReq(req);
+  if (scope.userId) {
+    try {
+      const direcciones = await mysql.getDireccionesUsuario(scope.userId);
+      scope.direccionesAsignadas = direcciones.map((d) => d.id);
+    } catch (err) {
+      console.error('Error al cargar direcciones del usuario:', err);
+      scope.direccionesAsignadas = [];
+    }
+  }
+  return scope;
+}
+
 // GET /api/subtareas - Listar todas las subtareas con su seguimiento
 router.get('/', async (req, res) => {
   try {
-    const subtareas = await mysql.getAllSubtareasByScope(getScopeFromReq(req));
+    const scope = await getScopeWithDirecciones(req);
+    const subtareas = await mysql.getAllSubtareasByScope(scope);
     
     // Las subtareas ya vienen con las etapas asignadas desde getAllSubtareas()
     // Mapear a la estructura que espera el frontend
@@ -108,7 +124,8 @@ router.get('/', async (req, res) => {
 // GET /api/subtareas/resumen/diario - Indicadores diarios de seguimiento
 router.get('/resumen/diario', async (req, res) => {
   try {
-    const subtareas = await mysql.getAllSubtareasByScope(getScopeFromReq(req));
+    const scope = await getScopeWithDirecciones(req);
+    const subtareas = await mysql.getAllSubtareasByScope(scope);
     
     const subtareasContabilizadas = subtareas.filter((subtarea) => procesoCuentaEnResumenYAtrasos(subtarea));
 
