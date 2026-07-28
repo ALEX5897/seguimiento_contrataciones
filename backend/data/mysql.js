@@ -1072,10 +1072,31 @@ export async function getAllSubtareas() {
 
 export async function getAllSubtareasByScope(scope = {}) {
   const items = await getAllSubtareas();
-  if (scope?.role === 'direccion') {
+  const userId = scope?.userId;
+  const userRole = scope?.role;
+
+  // Si el usuario tiene direcciones asignadas, filtrar por esas
+  if (userId) {
+    try {
+      const direccionesAsignadas = await getDireccionesUsuario(userId);
+
+      // Si tiene direcciones asignadas, ver solo procesos de esas direcciones
+      if (Array.isArray(direccionesAsignadas) && direccionesAsignadas.length > 0) {
+        const dirIds = new Set(direccionesAsignadas.map((d: any) => d.id));
+        return items.filter((item: any) => dirIds.has(item.direccionId));
+      }
+      // Si no tiene direcciones asignadas, puede ver todas (sin restricciones)
+    } catch (err) {
+      console.error('Error al obtener direcciones del usuario:', err);
+    }
+  }
+
+  // Fallback para usuarios con rol "direccion" (sin nuevas restricciones de acceso)
+  if (userRole === 'direccion') {
     const direccion = String(scope?.direccionNombre || '').trim().toLowerCase();
     return items.filter((item) => String(item?.direccionNombre || '').trim().toLowerCase() === direccion);
   }
+
   return items;
 }
 
@@ -1087,11 +1108,31 @@ export async function getSubtareaById(id) {
 export async function getSubtareaByIdByScope(id, scope = {}) {
   const subtarea = await getSubtareaById(id);
   if (!subtarea) return null;
-  if (scope?.role !== 'direccion') return subtarea;
 
-  const direccion = String(scope?.direccionNombre || '').trim().toLowerCase();
-  const subtareaDireccion = String(subtarea?.direccionNombre || '').trim().toLowerCase();
-  return direccion && direccion === subtareaDireccion ? subtarea : null;
+  // Si el usuario tiene direcciones asignadas, verificar que el proceso sea de una de esas direcciones
+  if (scope?.userId) {
+    try {
+      const direccionesAsignadas = await getDireccionesUsuario(scope.userId);
+      if (Array.isArray(direccionesAsignadas) && direccionesAsignadas.length > 0) {
+        const dirIds = new Set(direccionesAsignadas.map((d: any) => d.id));
+        return dirIds.has(subtarea.direccionId) ? subtarea : null;
+      }
+      // Si no tiene restricciones de dirección, devolver la subtarea
+      return subtarea;
+    } catch (err) {
+      console.error('Error al verificar acceso a subtarea:', err);
+      return subtarea;
+    }
+  }
+
+  // Fallback para usuarios con rol "direccion"
+  if (scope?.role === 'direccion') {
+    const direccion = String(scope?.direccionNombre || '').trim().toLowerCase();
+    const subtareaDireccion = String(subtarea?.direccionNombre || '').trim().toLowerCase();
+    return direccion && direccion === subtareaDireccion ? subtarea : null;
+  }
+
+  return subtarea;
 }
 
 export async function getSubtareaByCodigoOlympo(codigoOlympo) {
@@ -1102,11 +1143,30 @@ export async function getSubtareaByCodigoOlympo(codigoOlympo) {
 export async function getSubtareaByCodigoOlympoByScope(codigoOlympo, scope = {}) {
   const subtarea = await getSubtareaByCodigoOlympo(codigoOlympo);
   if (!subtarea) return null;
-  if (scope?.role !== 'direccion') return subtarea;
 
-  const direccion = String(scope?.direccionNombre || '').trim().toLowerCase();
-  const subtareaDireccion = String(subtarea?.direccionNombre || '').trim().toLowerCase();
-  return direccion && direccion === subtareaDireccion ? subtarea : null;
+  // Si el usuario tiene direcciones asignadas, verificar acceso
+  if (scope?.userId) {
+    try {
+      const direccionesAsignadas = await getDireccionesUsuario(scope.userId);
+      if (Array.isArray(direccionesAsignadas) && direccionesAsignadas.length > 0) {
+        const dirIds = new Set(direccionesAsignadas.map((d: any) => d.id));
+        return dirIds.has(subtarea.direccionId) ? subtarea : null;
+      }
+      return subtarea;
+    } catch (err) {
+      console.error('Error al verificar acceso a subtarea:', err);
+      return subtarea;
+    }
+  }
+
+  // Fallback para usuarios con rol "direccion"
+  if (scope?.role === 'direccion') {
+    const direccion = String(scope?.direccionNombre || '').trim().toLowerCase();
+    const subtareaDireccion = String(subtarea?.direccionNombre || '').trim().toLowerCase();
+    return direccion && direccion === subtareaDireccion ? subtarea : null;
+  }
+
+  return subtarea;
 }
 
 export async function getUsuarioByUsername(username) {

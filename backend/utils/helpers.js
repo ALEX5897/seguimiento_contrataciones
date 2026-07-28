@@ -3,6 +3,7 @@
 export function getScopeFromReq(req) {
   return {
     role: req.user?.role,
+    userId: req.user?.id || null,
     direccionNombre: req.user?.direccionNombre || null
   };
 }
