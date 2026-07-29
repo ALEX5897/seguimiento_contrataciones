@@ -2574,8 +2574,11 @@ export async function getSubtareaEtapas(subtareaId) {
     const estadoNormalizado = String(item.estado || '').toLowerCase().trim();
 
     // Calcular días de retraso: (fechaReal - fechaReforma)
-    // Solo si está completado y hay fechaReforma
     item.diasRetraso = null;
+
+    // DEBUG: Log SIEMPRE
+    console.log(`[Etapa ${item.etapaId}] estado='${item.estado}' (normalizado='${estadoNormalizado}'), fechaReal=${fechaReal}, fechaReforma=${fechaReforma}`);
+
     if (estadoNormalizado === 'completado' && fechaReal && fechaReforma) {
       // Parsear fechas YYYY-MM-DD manualmente para evitar problemas de timezone
       const parseYYYYMMDD = (dateStr) => {
@@ -2591,9 +2594,7 @@ export async function getSubtareaEtapas(subtareaId) {
       const diffTime = realDate - reformaDate;
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       item.diasRetraso = Math.max(0, diffDays); // No negativos
-      console.log(`  [RETRASO CALCULADO] Etapa ${item.etapaId}: fechaReal=${fechaReal}, fechaReforma=${fechaReforma}, diasRetraso=${item.diasRetraso} (diff=${diffDays})`);
-    } else if (estadoNormalizado === 'completado') {
-      console.log(`  [NO CALCULO] Etapa ${item.etapaId}: estado=completado pero fechaReal=${fechaReal}, fechaReforma=${fechaReforma}`);
+      console.log(`  → CALCULADO: diasRetraso=${item.diasRetraso}`);
     }
 
     return item;
