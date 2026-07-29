@@ -2678,7 +2678,7 @@ export async function setSubtareaEtapas(subtareaId, etapas) {
          VALUES (?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
            aplica = VALUES(aplica),
-           fecha_tentativa = VALUES(fecha_tentativa),
+           fecha_tentativa = COALESCE(VALUES(fecha_tentativa), fecha_tentativa),
            fecha_reforma = VALUES(fecha_reforma),
            fecha_reforma_3 = VALUES(fecha_reforma_3)`,
         [subtareaId, etapa.etapaId, etapa.aplica, etapa.fechaTentativa, etapa.fechaReforma, etapa.fechaReforma3]
