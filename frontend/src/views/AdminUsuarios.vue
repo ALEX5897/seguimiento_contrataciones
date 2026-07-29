@@ -366,6 +366,7 @@ async function guardarUsuario() {
       await usuariosService.create(payload);
       mensaje.value = 'Usuario creado correctamente ✓';
     } else {
+      if (!modalUsuario.value.usuarioId) throw new Error('ID de usuario requerido');
       await usuariosService.update(modalUsuario.value.usuarioId, payload);
       mensaje.value = 'Usuario actualizado correctamente ✓';
 
