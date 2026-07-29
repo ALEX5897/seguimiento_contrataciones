@@ -2570,9 +2570,20 @@ export async function getSubtareaEtapas(subtareaId) {
     item.fechaPlanificada = fechaPrincipal;
     item.fechaReal = fechaReal;
 
+    // Calcular días de retraso: (fechaReal - fechaReforma)
+    // Solo si está completado y hay fechaReforma
+    item.diasRetraso = null;
+    if (item.estado === 'completado' && fechaReal && fechaReforma) {
+      const realDate = new Date(fechaReal);
+      const reformaDate = new Date(fechaReforma);
+      const diffTime = realDate - reformaDate;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      item.diasRetraso = Math.max(0, diffDays); // No negativos
+    }
+
     // Debug: log si hay fechas especiales
     if (fechaReforma || fechaReforma3 || fechaReal) {
-      console.log(`  [getSubtareaEtapas Etapa ${item.etapaId}] Recuperado: fechaReforma=${fechaReforma}, fechaTentativa=${fechaTentativa}, fechaReforma3=${fechaReforma3}, estado=${item.estado}, fechaReal=${fechaReal}`);
+      console.log(`  [getSubtareaEtapas Etapa ${item.etapaId}] Recuperado: fechaReforma=${fechaReforma}, fechaTentativa=${fechaTentativa}, fechaReforma3=${fechaReforma3}, estado=${item.estado}, fechaReal=${fechaReal}, diasRetraso=${item.diasRetraso}`);
     }
 
     return item;

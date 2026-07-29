@@ -519,12 +519,12 @@
                 </td>
                 <td>
                   <span
-                    v-if="estadoNormalizado(etapa.estado) === 'completado' && etapa.fechaReal && (etapa.fechaPlanificada || etapa.fechaTentativa)"
-                    :class="['cumplimiento-chip', etapaCompletadaATiempo(etapa, actividadSeleccionada) ? 'a-tiempo' : 'con-retraso']"
+                    v-if="estadoNormalizado(etapa.estado) === 'completado' && etapa.fechaReal && (etapa.fechaReforma || etapa.fechaTentativa)"
+                    :class="['cumplimiento-chip', diasRetrasoCompletado(etapa, actividadSeleccionada) === 0 ? 'a-tiempo' : 'con-retraso']"
                   >
-                    {{ etapaCompletadaATiempo(etapa, actividadSeleccionada) ? '✅ A tiempo' : `✅ ${diasRetrasoCompletado(etapa, actividadSeleccionada)} días tarde` }}
+                    {{ diasRetrasoCompletado(etapa, actividadSeleccionada) === 0 ? '✅ A tiempo' : `⚠️ ${diasRetrasoCompletado(etapa, actividadSeleccionada)} días tarde` }}
                   </span>
-                  <span v-else-if="esEtapaAtrasada(etapa, actividadSeleccionada)" class="retraso-chip">⚠️ {{ diasRetraso(etapa, actividadSeleccionada) }} días tarde</span>
+                  <span v-else-if="esEtapaAtrasada(etapa, actividadSeleccionada)" class="retraso-chip">⏰ {{ diasRetraso(etapa, actividadSeleccionada) }} días atrasada</span>
                   <span v-else>-</span>
                 </td>
                 <td>
@@ -1547,16 +1547,14 @@ function diasRetraso(etapa: any, actividad?: any) {
 function diasRetrasoCompletado(etapa: any, actividad?: any) {
   if (actividad && !procesoCuentaEnReportesYAtrasos(actividad)) return 0;
 
-  const fechaTentativaObj = parseFechaComparable(etapa?.fechaPlanificada || etapa?.fechaTentativa);
+  // Usar fechaReforma (fecha límite reformada) o fechaTentativa como fallback
+  const fechaLimiteObj = parseFechaComparable(etapa?.fechaReforma || etapa?.fechaTentativa);
   const fechaRealObj = parseFechaComparable(etapa?.fechaReal);
-  if (!fechaTentativaObj || !fechaRealObj) return 0;
+  if (!fechaLimiteObj || !fechaRealObj) return 0;
 
-  return Math.max(0, Math.floor((fechaRealObj.getTime() - fechaTentativaObj.getTime()) / (1000 * 60 * 60 * 24)));
+  return Math.max(0, Math.floor((fechaRealObj.getTime() - fechaLimiteObj.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
-function etapaCompletadaATiempo(etapa: any, actividad?: any) {
-  return diasRetrasoCompletado(etapa, actividad) === 0;
-}
 
 function tareasCompletadas(actividad: any) {
   return getEtapasConFecha(actividad).filter((etapa: any) => estadoNormalizado(etapa.estado) === 'completado').length;
