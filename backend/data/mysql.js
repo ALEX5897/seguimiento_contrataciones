@@ -2533,9 +2533,6 @@ export async function getSubtareaEtapas(subtareaId) {
   const rows = await query(
     `SELECT se.id, se.subtarea_id, se.etapa_id, se.aplica, se.fecha_tentativa, se.fecha_reforma, se.fecha_reforma_3,
             COALESCE(sg.estado, 'pendiente') AS estado,
-            sg.fecha_planificada,
-            se.fecha_reforma AS fecha_reforma_actual,
-            se.fecha_tentativa AS fecha_tentativa_actual,
             sg.fecha_real, sg.responsable_id, sg.observaciones,
             COALESCE(sg.responsable, s.responsable) AS responsable_nombre,
             COALESCE(sg.responsable_id, s.responsable_id) AS responsable_id_ref,
@@ -2562,16 +2559,13 @@ export async function getSubtareaEtapas(subtareaId) {
     const fechaTentativa = toISODate(item.fechaTentativa);
     const fechaReforma = toISODate(item.fechaReforma);
     const fechaReforma3 = toISODate(item.fechaReforma3);
-    const fechaPlanificada = toISODate(item.fechaPlanificada);
     const fechaReal = toISODate(item.fechaReal);
-    const fechaReformaActual = toISODate(row.fecha_reforma_actual);
-    const fechaTentativaActual = toISODate(row.fecha_tentativa_actual);
 
-    // Usar fecha_reforma si está disponible, sino fecha_tentativa, sino fecha_planificada
-    const fechaPrincipal = fechaReformaActual || fechaTentativaActual || fechaPlanificada || '';
+    // La fecha principal viene de fecha_reforma, fallback a fecha_tentativa
+    const fechaPrincipal = fechaReforma || fechaTentativa || '';
 
-    item.fechaTentativa = fechaTentativaActual || '';
-    item.fechaReforma = fechaReformaActual || '';
+    item.fechaTentativa = fechaTentativa || '';
+    item.fechaReforma = fechaReforma || '';
     item.fechaReforma3 = fechaReforma3 || '';
     item.fechaPlanificada = fechaPrincipal;
     item.fechaReal = fechaReal;
@@ -2677,27 +2671,43 @@ export async function setSubtareaEtapas(subtareaId, etapas) {
         [subtareaId, etapa.etapaId, etapa.aplica, etapa.fechaTentativa, etapa.fechaReforma, etapa.fechaReforma3]
       );
 
-      await conn.execute(
-        `INSERT INTO seguimiento_etapas (subtarea_id, etapa_id, estado, fecha_planificada, fecha_real, responsable_id, observaciones, responsable)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE
-           estado = VALUES(estado),
-           fecha_planificada = VALUES(fecha_planificada),
-           fecha_real = VALUES(fecha_real),
-           responsable_id = VALUES(responsable_id),
-           observaciones = VALUES(observaciones),
-           responsable = COALESCE(VALUES(responsable), responsable)`,
-        [
-          subtareaId,
-          etapa.etapaId,
-          etapa.estadoFinal,
-          etapa.fechaReforma || etapa.fechaTentativa,
-          etapa.fechaRealFinal,
-          etapa.responsableId,
-          etapa.observaciones,
-          etapa.responsableNombre
-        ]
-      );
+      // Solo guardar seguimiento_etapas si existe registro previo, para preservar fecha_planificada
+      const existe = Boolean(existentesPorEtapa.get(etapa.etapaId));
+      if (existe) {
+        await conn.execute(
+          `INSERT INTO seguimiento_etapas (subtarea_id, etapa_id, estado, fecha_real, responsable_id, observaciones, responsable)
+           VALUES (?, ?, ?, ?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE
+             estado = VALUES(estado),
+             fecha_real = VALUES(fecha_real),
+             responsable_id = VALUES(responsable_id),
+             observaciones = VALUES(observaciones),
+             responsable = COALESCE(VALUES(responsable), responsable)`,
+          [
+            subtareaId,
+            etapa.etapaId,
+            etapa.estadoFinal,
+            etapa.fechaRealFinal,
+            etapa.responsableId,
+            etapa.observaciones,
+            etapa.responsableNombre
+          ]
+        );
+      } else {
+        // Primera vez que se guarda, crear registro con estado inicial
+        await conn.execute(
+          `INSERT INTO seguimiento_etapas (subtarea_id, etapa_id, estado, responsable_id, observaciones, responsable)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [
+            subtareaId,
+            etapa.etapaId,
+            etapa.estadoFinal,
+            etapa.responsableId,
+            etapa.observaciones,
+            etapa.responsableNombre
+          ]
+        );
+      }
       procesadas++;
     }
 
