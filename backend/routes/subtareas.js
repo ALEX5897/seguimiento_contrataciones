@@ -250,8 +250,8 @@ router.put('/:subtareaRef/etapas', async (req, res) => {
     const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, scope);
     if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
     const { etapas } = req.body;
-    const resultado = await mysql.setSubtareaEtapas(subtareaId, etapas || []);
-    res.json(resultado);
+    await mysql.setSubtareaEtapas(subtareaId, etapas || []);
+    res.json({ success: true, message: 'Etapas guardadas correctamente' });
   } catch (error) {
     console.error(`Error en PUT /api/subtareas/${req.params.subtareaRef}/etapas:`, error);
     res.status(500).json({ error: error.message });

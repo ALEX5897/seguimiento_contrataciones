@@ -1172,30 +1172,30 @@ function esFormatoValido(fecha: any): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(fecha);
 }
 
-// Watcher para garantizar que las fechas en etapasActividad siempre sean strings en formato yyyy-MM-dd
-watch(
-  () => etapasActividad.value.length,
-  () => {
-    // Normalizar todas las fechas en todas las etapas solo cuando la longitud cambie
-    etapasActividad.value.forEach((etapa: any) => {
-      if (!esFormatoValido(etapa?.fechaTentativa)) {
-        etapa.fechaTentativa = normalizarFechaInput(etapa?.fechaTentativa);
-      }
-      if (!esFormatoValido(etapa?.fechaReforma)) {
-        etapa.fechaReforma = normalizarFechaInput(etapa?.fechaReforma);
-      }
-      if (!esFormatoValido(etapa?.fechaReforma3)) {
-        etapa.fechaReforma3 = normalizarFechaInput(etapa?.fechaReforma3);
-      }
-      if (!esFormatoValido(etapa?.fechaPlanificada)) {
-        etapa.fechaPlanificada = normalizarFechaInput(etapa?.fechaPlanificada);
-      }
-      if (!esFormatoValido(etapa?.fechaReal)) {
-        etapa.fechaReal = normalizarFechaInput(etapa?.fechaReal);
-      }
-    });
-  }
-);
+// Watcher deshabilitado - las fechas ya se normalizan al cargar desde el servidor
+// watch(
+//   () => etapasActividad.value.length,
+//   () => {
+//     // Normalizar todas las fechas en todas las etapas solo cuando la longitud cambie
+//     etapasActividad.value.forEach((etapa: any) => {
+//       if (!esFormatoValido(etapa?.fechaTentativa)) {
+//         etapa.fechaTentativa = normalizarFechaInput(etapa?.fechaTentativa);
+//       }
+//       if (!esFormatoValido(etapa?.fechaReforma)) {
+//         etapa.fechaReforma = normalizarFechaInput(etapa?.fechaReforma);
+//       }
+//       if (!esFormatoValido(etapa?.fechaReforma3)) {
+//         etapa.fechaReforma3 = normalizarFechaInput(etapa?.fechaReforma3);
+//       }
+//       if (!esFormatoValido(etapa?.fechaPlanificada)) {
+//         etapa.fechaPlanificada = normalizarFechaInput(etapa?.fechaPlanificada);
+//       }
+//       if (!esFormatoValido(etapa?.fechaReal)) {
+//         etapa.fechaReal = normalizarFechaInput(etapa?.fechaReal);
+//       }
+//     });
+//   }
+// );
 
 function limpiarFiltrosActividades() {
   busquedaActividades.value = '';
@@ -2034,11 +2034,8 @@ async function guardarEstadoEtapa(etapa: any) {
       etapas: construirPayloadEtapas()
     });
 
-    // Mostrar "Guardado" por 2 segundos sin recargar la tabla
+    // Mostrar "Guardado" permanentemente (sin desaparecer)
     estadoGuardado.value = 'guardado';
-    setTimeout(() => {
-      estadoGuardado.value = null;
-    }, 2000);
   } finally {
     guardandoEstadoEtapaId.value = null;
   }
@@ -4309,6 +4306,7 @@ h1 {
   align-items: center;
   gap: 0.5rem;
   margin-left: auto;
+  min-height: 32px;
 }
 
 .estado-badge {
