@@ -462,7 +462,7 @@
               >
                 <td><span class="etapa-numero-badge">{{ index + 1 }}</span></td>
                 <td>{{ etapa.etapaNombre || etapa.nombre }}</td>
-                <td>{{ formatearFecha(etapa.fechaPlanificada || etapa.fechaTentativa) }}</td>
+                <td>{{ formatearFecha(etapa.fechaTentativa) }}</td>
                 <td v-if="verFechaReforma">
                   <input
                     v-model="etapa.fechaReforma"
