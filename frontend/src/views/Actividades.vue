@@ -476,7 +476,7 @@
                     v-model="etapa.fechaReforma"
                     type="date"
                     class="estado-select-detalle"
-                    :disabled="guardandoEstadoEtapaId === (etapa.id || etapa.etapaId) || !editarFechaReforma"
+                    :disabled="!editarFechaReforma"
                     @change="onFechaReformaChange(etapa)"
                   />
                 </td>
@@ -485,7 +485,7 @@
                     v-model="etapa.fechaReforma3"
                     type="date"
                     class="estado-select-detalle"
-                    :disabled="guardandoEstadoEtapaId === (etapa.id || etapa.etapaId) || !editarFechaReforma3"
+                    :disabled="!editarFechaReforma3"
                     @change="onFechaReforma3Change(etapa)"
                   />
                 </td>
@@ -495,7 +495,6 @@
                     v-model="etapa.fechaReal"
                     type="date"
                     class="estado-select-detalle"
-                    :disabled="guardandoEstadoEtapaId === (etapa.id || etapa.etapaId)"
                     @change="onFechaCompletadoChange(etapa)"
                   />
                   <span v-else-if="estadoNormalizado(etapa.estado) === 'completado' && etapa.fechaReal">
@@ -508,7 +507,7 @@
                     <select
                       v-model="etapa.estado"
                       :class="['estado-select-detalle', claseEstadoSemaforo(etapa)]"
-                      :disabled="guardandoEstadoEtapaId === (etapa.id || etapa.etapaId) || !editarEstadoEtapa"
+                      :disabled="!editarEstadoEtapa"
                       @change="onEstadoEtapaChange(etapa)"
                     >
                       <option value="pendiente">Pendiente</option>
@@ -2026,8 +2025,6 @@ function onFechaReforma3Change(etapa: any) {
 
 async function guardarEstadoEtapa(etapa: any) {
   if (!actividadSeleccionada.value?.id) return;
-  const filaId = Number(etapa?.id ?? etapa?.etapaId ?? 0);
-  guardandoEstadoEtapaId.value = filaId || null;
   estadoGuardado.value = 'guardando';
   try {
     await api.put(`/subtareas/${actividadSeleccionada.value.id}/etapas`, {
@@ -2036,8 +2033,9 @@ async function guardarEstadoEtapa(etapa: any) {
 
     // Mostrar "Guardado" permanentemente (sin desaparecer)
     estadoGuardado.value = 'guardado';
-  } finally {
-    guardandoEstadoEtapaId.value = null;
+  } catch (error) {
+    console.error('Error al guardar etapa:', error);
+    estadoGuardado.value = null;
   }
 }
 
