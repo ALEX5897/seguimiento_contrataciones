@@ -352,6 +352,14 @@
               </span>
             </div>
           </div>
+          <div class="modal-header-status">
+            <span v-if="estadoGuardado === 'guardando'" class="estado-badge guardando">
+              ⏳ Guardando...
+            </span>
+            <span v-else-if="estadoGuardado === 'guardado'" class="estado-badge guardado">
+              ✓ Guardado
+            </span>
+          </div>
           <button type="button" class="btn-close" @click="cerrarDetalleActividad">✕</button>
         </div>
 
@@ -977,6 +985,7 @@ const nuevoAlerta = ref(false);
 const guardandoSeguimiento = ref(false);
 const eliminandoSeguimientoId = ref<number | null>(null);
 const guardandoEstadoEtapaId = ref<number | null>(null);
+const estadoGuardado = ref<'guardando' | 'guardado' | null>(null);
 const guardandoRiesgoProceso = ref(false);
 const cargandoSeguimientos = ref(false);
 const cargandoConteosSeguimientos = ref(false);
@@ -1065,8 +1074,8 @@ const etapasConFecha = computed(() =>
   etapasActividad.value
     .filter((e: any) => e?.fechaPlanificada || e?.fechaTentativa)
     .sort((a: any, b: any) => {
-      const fechaA = new Date(a.fechaPlanificada || a.fechaTentativa);
-      const fechaB = new Date(b.fechaPlanificada || b.fechaTentativa);
+      const fechaA = new Date(a.fechaTentativa || '9999-12-31');
+      const fechaB = new Date(b.fechaTentativa || '9999-12-31');
       return fechaA.getTime() - fechaB.getTime();
     })
 );
@@ -2027,6 +2036,7 @@ async function guardarEstadoEtapa(etapa: any) {
   if (!actividadSeleccionada.value?.id) return;
   const filaId = Number(etapa?.id ?? etapa?.etapaId ?? 0);
   guardandoEstadoEtapaId.value = filaId || null;
+  estadoGuardado.value = 'guardando';
   try {
     await api.put(`/subtareas/${actividadSeleccionada.value.id}/etapas`, {
       etapas: construirPayloadEtapas()
@@ -2045,6 +2055,12 @@ async function guardarEstadoEtapa(etapa: any) {
     }
     actividadSeleccionada.value.etapas = [...etapasActividad.value];
     actividadSeleccionada.value.seguimientoEtapas = [...etapasActividad.value];
+
+    // Mostrar "Guardado" por 2 segundos
+    estadoGuardado.value = 'guardado';
+    setTimeout(() => {
+      estadoGuardado.value = null;
+    }, 2000);
   } finally {
     guardandoEstadoEtapaId.value = null;
   }
@@ -4308,5 +4324,36 @@ h1 {
   .dashboard-toolbar-filtros .combo-filtro {
     width: 100%;
   }
+}
+
+.modal-header-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.estado-badge {
+  font-size: 0.85rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.estado-badge.guardando {
+  background: #fef3c7;
+  color: #92400e;
+  animation: pulse 1s infinite;
+}
+
+.estado-badge.guardado {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 </style>
