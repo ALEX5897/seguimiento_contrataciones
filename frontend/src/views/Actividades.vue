@@ -520,9 +520,9 @@
                 <td>
                   <span
                     v-if="estadoNormalizado(etapa.estado) === 'completado' && etapa.fechaReal && (etapa.fechaReforma || etapa.fechaTentativa)"
-                    :class="['cumplimiento-chip', diasRetrasoCompletado(etapa, actividadSeleccionada) === 0 ? 'a-tiempo' : 'con-retraso']"
+                    :class="['cumplimiento-chip', diasRetrasoCompletado(etapa) === 0 ? 'a-tiempo' : 'con-retraso']"
                   >
-                    {{ diasRetrasoCompletado(etapa, actividadSeleccionada) === 0 ? '✅ A tiempo' : `⚠️ ${diasRetrasoCompletado(etapa, actividadSeleccionada)} días tarde` }}
+                    {{ diasRetrasoCompletado(etapa) === 0 ? '✅ A tiempo' : `⚠️ ${diasRetrasoCompletado(etapa)} días tarde` }}
                   </span>
                   <span v-else-if="esEtapaAtrasada(etapa, actividadSeleccionada)" class="retraso-chip">⏰ {{ diasRetraso(etapa, actividadSeleccionada) }} días atrasada</span>
                   <span v-else>-</span>
@@ -1544,10 +1544,8 @@ function diasRetraso(etapa: any, actividad?: any) {
   return Math.max(0, Math.floor((hoy.getTime() - fechaObj.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
-function diasRetrasoCompletado(etapa: any, actividad?: any) {
-  if (actividad && !procesoCuentaEnReportesYAtrasos(actividad)) return 0;
-
-  // SIEMPRE usar diasRetraso del servidor (no fallback)
+function diasRetrasoCompletado(etapa: any) {
+  // Usar diasRetraso del servidor directamente
   return etapa?.diasRetraso ?? 0;
 }
 
@@ -1768,6 +1766,12 @@ async function abrirDetalleActividad(actividad: any, actualizarRuta = true) {
     const etapasRecargadas = Array.isArray(response.data)
       ? response.data
       : (response.data?.value || []);
+
+    // DEBUG: Verificar qué recibe el frontend
+    if (etapasRecargadas.length > 0) {
+      console.log('[Frontend] Etapa 1 recibida:', JSON.stringify(etapasRecargadas[0], null, 2));
+      console.log('[Frontend] Etapa 1 diasRetraso:', etapasRecargadas[0].diasRetraso);
+    }
 
     etapasActividad.value = etapasRecargadas;
     sincronizarActividadEnListado(actividadId, etapasActividad.value);
