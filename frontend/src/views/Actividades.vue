@@ -1547,17 +1547,8 @@ function diasRetraso(etapa: any, actividad?: any) {
 function diasRetrasoCompletado(etapa: any, actividad?: any) {
   if (actividad && !procesoCuentaEnReportesYAtrasos(actividad)) return 0;
 
-  // Usar diasRetraso del servidor si está disponible
-  if (typeof etapa?.diasRetraso === 'number' && etapa.diasRetraso !== null) {
-    return etapa.diasRetraso;
-  }
-
-  // Fallback: calcular localmente si no viene del servidor
-  const fechaLimiteObj = parseFechaComparable(etapa?.fechaReforma || etapa?.fechaTentativa);
-  const fechaRealObj = parseFechaComparable(etapa?.fechaReal);
-  if (!fechaLimiteObj || !fechaRealObj) return 0;
-
-  return Math.max(0, Math.floor((fechaRealObj.getTime() - fechaLimiteObj.getTime()) / (1000 * 60 * 60 * 24)));
+  // SIEMPRE usar diasRetraso del servidor (no fallback)
+  return etapa?.diasRetraso ?? 0;
 }
 
 
