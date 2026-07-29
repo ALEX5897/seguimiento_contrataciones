@@ -1380,30 +1380,9 @@ function getEtapas(actividad: any) {
   }));
 }
 
-function fusionarEtapasPreservandoFechas(actuales: any[], recargadas: any[]) {
-  const actualesNormalizadas = getEtapas({ etapas: actuales || [] });
-  const recargadasNormalizadas = getEtapas({ etapas: recargadas || [] });
-  const actualesPorId = new Map(
-    actualesNormalizadas
-      .map((etapa: any) => [obtenerEtapaId(etapa), etapa] as [number | null, any])
-      .filter((item: [number | null, any]) => Boolean(item[0]))
-  );
-
-  return recargadasNormalizadas.map((etapa: any) => {
-    const etapaId = obtenerEtapaId(etapa);
-    const etapaActual: any = etapaId ? actualesPorId.get(etapaId) : null;
-    if (!etapaActual) return etapa;
-
-    return {
-      ...etapa,
-      // Usar valores del servidor primero, luego fallback a actual si servidor no tiene valor explícito
-      fechaTentativa: etapa.fechaTentativa !== undefined && etapa.fechaTentativa !== null ? etapa.fechaTentativa : (etapa.fechaPlanificada !== undefined && etapa.fechaPlanificada !== null ? etapa.fechaPlanificada : (etapaActual.fechaTentativa || etapaActual.fechaPlanificada || null)),
-      fechaReforma: etapa.fechaReforma !== undefined && etapa.fechaReforma !== null ? etapa.fechaReforma : (etapaActual.fechaReforma || null),
-      fechaReforma3: etapa.fechaReforma3 !== undefined && etapa.fechaReforma3 !== null ? etapa.fechaReforma3 : (etapaActual.fechaReforma3 || null),
-      fechaPlanificada: etapa.fechaPlanificada !== undefined && etapa.fechaPlanificada !== null ? etapa.fechaPlanificada : (etapa.fechaTentativa !== undefined && etapa.fechaTentativa !== null ? etapa.fechaTentativa : (etapaActual.fechaPlanificada || etapaActual.fechaTentativa || null)),
-      fechaReal: etapa.fechaReal !== undefined && etapa.fechaReal !== null ? etapa.fechaReal : (etapaActual.fechaReal || null)
-    };
-  });
+function fusionarEtapasPreservandoFechas(_actuales: any[], recargadas: any[]) {
+  // El servidor es la fuente de verdad - simplemente retornar los datos tal cual vienen
+  return recargadas || [];
 }
 
 function getEtapasConFecha(actividad: any) {
@@ -1898,18 +1877,16 @@ function obtenerUltimaActualizacionTexto(etapa: any) {
 
 function construirPayloadEtapas() {
   const payload = etapasActividad.value.map((etapa: any) => {
-    const fechaTentativa = normalizarFechaInput(etapa?.fechaTentativa) || normalizarFechaInput(etapa?.fechaPlanificada);
+    // Solo usar fechaTentativa del objeto etapa, NO usar fechaPlanificada como fallback
+    const fechaTentativa = normalizarFechaInput(etapa?.fechaTentativa) || null;
     const fechaReal = estadoNormalizado(etapa?.estado) === 'completado' ? normalizarFechaInput(etapa?.fechaReal) : null;
 
-    // Debug: log para ver qué está pasando
-    if (etapa?.fechaTentativa && !fechaTentativa?.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      console.warn(`[construirPayloadEtapas] fechaTentativa no normalizada: ${etapa?.fechaTentativa} -> ${fechaTentativa}`);
-    }
+    console.log(`[construirPayloadEtapas Etapa ${obtenerEtapaId(etapa)}] Input: fechaTentativa=${etapa?.fechaTentativa}, fechaReforma=${etapa?.fechaReforma}, fechaPlanificada=${etapa?.fechaPlanificada}`);
 
     return {
       etapaId: obtenerEtapaId(etapa),
       aplica: Boolean(Number(etapa?.aplica ?? 1)),
-      fechaTentativa: fechaTentativa || null,
+      fechaTentativa: fechaTentativa,
       fechaReforma: normalizarFechaInput(etapa?.fechaReforma) || null,
       fechaReforma3: normalizarFechaInput(etapa?.fechaReforma3) || null,
       estado: etapa?.estado || 'pendiente',
