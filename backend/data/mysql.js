@@ -2533,7 +2533,9 @@ export async function getSubtareaEtapas(subtareaId) {
   const rows = await query(
     `SELECT se.id, se.subtarea_id, se.etapa_id, se.aplica, se.fecha_tentativa, se.fecha_reforma, se.fecha_reforma_3,
             COALESCE(sg.estado, 'pendiente') AS estado,
-            COALESCE(sg.fecha_planificada, se.fecha_reforma, se.fecha_tentativa) AS fecha_planificada,
+            sg.fecha_planificada,
+            se.fecha_reforma AS fecha_reforma_actual,
+            se.fecha_tentativa AS fecha_tentativa_actual,
             sg.fecha_real, sg.responsable_id, sg.observaciones,
             COALESCE(sg.responsable, s.responsable) AS responsable_nombre,
             COALESCE(sg.responsable_id, s.responsable_id) AS responsable_id_ref,
@@ -2562,11 +2564,16 @@ export async function getSubtareaEtapas(subtareaId) {
     const fechaReforma3 = toISODate(item.fechaReforma3);
     const fechaPlanificada = toISODate(item.fechaPlanificada);
     const fechaReal = toISODate(item.fechaReal);
-    // Si no hay fechaTentativa, usar fechaPlanificada; si tampoco, dejar vacío
-    item.fechaTentativa = fechaTentativa || fechaPlanificada || '';
-    item.fechaReforma = fechaReforma || '';
+    const fechaReformaActual = toISODate(row.fecha_reforma_actual);
+    const fechaTentativaActual = toISODate(row.fecha_tentativa_actual);
+
+    // Usar fecha_reforma si está disponible, sino fecha_tentativa, sino fecha_planificada
+    const fechaPrincipal = fechaReformaActual || fechaTentativaActual || fechaPlanificada || '';
+
+    item.fechaTentativa = fechaTentativaActual || '';
+    item.fechaReforma = fechaReformaActual || '';
     item.fechaReforma3 = fechaReforma3 || '';
-    item.fechaPlanificada = fechaPlanificada;
+    item.fechaPlanificada = fechaPrincipal;
     item.fechaReal = fechaReal;
     return item;
   });
