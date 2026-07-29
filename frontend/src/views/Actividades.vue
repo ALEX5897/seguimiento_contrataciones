@@ -476,7 +476,7 @@
                     v-model="etapa.fechaReforma"
                     type="date"
                     class="estado-select-detalle"
-                    :disabled="!editarFechaReforma"
+                    :disabled="estadoGuardado || !editarFechaReforma"
                     @change="onFechaReformaChange(etapa)"
                   />
                 </td>
@@ -485,7 +485,7 @@
                     v-model="etapa.fechaReforma3"
                     type="date"
                     class="estado-select-detalle"
-                    :disabled="!editarFechaReforma3"
+                    :disabled="estadoGuardado || !editarFechaReforma3"
                     @change="onFechaReforma3Change(etapa)"
                   />
                 </td>
@@ -495,6 +495,7 @@
                     v-model="etapa.fechaReal"
                     type="date"
                     class="estado-select-detalle"
+                    :disabled="estadoGuardado"
                     @change="onFechaCompletadoChange(etapa)"
                   />
                   <span v-else-if="estadoNormalizado(etapa.estado) === 'completado' && etapa.fechaReal">
@@ -507,7 +508,7 @@
                     <select
                       v-model="etapa.estado"
                       :class="['estado-select-detalle', claseEstadoSemaforo(etapa)]"
-                      :disabled="!editarEstadoEtapa"
+                      :disabled="estadoGuardado || !editarEstadoEtapa"
                       @change="onEstadoEtapaChange(etapa)"
                     >
                       <option value="pendiente">Pendiente</option>
