@@ -448,7 +448,7 @@
           </div>
 
           <div v-if="etapasConFecha.length" class="tabla-etapas-wrap">
-          <table class="tabla-etapas">
+          <table class="tabla-etapas" v-memo="[etapasConFecha]">
             <thead>
               <tr>
                 <th>#</th>
