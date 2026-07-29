@@ -447,7 +447,7 @@
 
           </div>
 
-          <div v-if="etapasConFecha.length" class="tabla-etapas-wrap" :class="{ 'tabla-guardando': estadoGuardado }">
+          <div v-if="etapasConFecha.length" class="tabla-etapas-wrap">
           <table class="tabla-etapas">
             <thead>
               <tr>
@@ -1734,18 +1734,22 @@ function cerrarDetalleActividad() {
 async function abrirDetalleActividad(actividad: any, actualizarRuta = true) {
   if (!actividad) return;
   const actividadId = Number(actividad.id);
+  const esRefrescoSilencioso = !actualizarRuta && Number(actividadSeleccionada.value?.id) === actividadId;
 
   actividadSeleccionada.value = actividad;
-  etapasActividad.value = [];
-  timelineContraida.value = false;
-  etapaSeguimiento.value = null;
-  seguimientosEtapa.value = [];
-  conteoSeguimientosPorEtapa.value = {};
-  alertasPorEtapa.value = {};
-  ultimaActualizacionPorEtapa.value = {};
-  cargandoSeguimientos.value = false;
-  errorSeguimiento.value = '';
-  cargarEstadoRiesgoProceso(actividad);
+
+  if (!esRefrescoSilencioso) {
+    etapasActividad.value = [];
+    timelineContraida.value = false;
+    etapaSeguimiento.value = null;
+    seguimientosEtapa.value = [];
+    conteoSeguimientosPorEtapa.value = {};
+    alertasPorEtapa.value = {};
+    ultimaActualizacionPorEtapa.value = {};
+    cargandoSeguimientos.value = false;
+    errorSeguimiento.value = '';
+    cargarEstadoRiesgoProceso(actividad);
+  }
 
   if (actualizarRuta) {
     try {
@@ -3415,12 +3419,6 @@ h1 {
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   background: #ffffff;
-  transition: opacity 0.1s ease;
-}
-
-.tabla-etapas-wrap.tabla-guardando {
-  opacity: 0.7;
-  pointer-events: none;
 }
 
 .resumen-detalle {
