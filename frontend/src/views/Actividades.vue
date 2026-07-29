@@ -2031,8 +2031,10 @@ async function guardarEstadoEtapa(etapa: any) {
       etapas: construirPayloadEtapas()
     });
 
-    // Mostrar "Guardado" permanentemente (sin desaparecer)
     estadoGuardado.value = 'guardado';
+    setTimeout(() => {
+      estadoGuardado.value = null;
+    }, 1500);
   } catch (error) {
     console.error('Error al guardar etapa:', error);
     estadoGuardado.value = null;
