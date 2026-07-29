@@ -1547,7 +1547,12 @@ function diasRetraso(etapa: any, actividad?: any) {
 function diasRetrasoCompletado(etapa: any, actividad?: any) {
   if (actividad && !procesoCuentaEnReportesYAtrasos(actividad)) return 0;
 
-  // Usar fechaReforma (fecha límite reformada) o fechaTentativa como fallback
+  // Usar diasRetraso del servidor si está disponible
+  if (typeof etapa?.diasRetraso === 'number' && etapa.diasRetraso !== null) {
+    return etapa.diasRetraso;
+  }
+
+  // Fallback: calcular localmente si no viene del servidor
   const fechaLimiteObj = parseFechaComparable(etapa?.fechaReforma || etapa?.fechaTentativa);
   const fechaRealObj = parseFechaComparable(etapa?.fechaReal);
   if (!fechaLimiteObj || !fechaRealObj) return 0;

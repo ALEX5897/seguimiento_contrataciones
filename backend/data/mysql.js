@@ -2570,10 +2570,13 @@ export async function getSubtareaEtapas(subtareaId) {
     item.fechaPlanificada = fechaPrincipal;
     item.fechaReal = fechaReal;
 
+    // Normalizar estado a minúsculas para comparación
+    const estadoNormalizado = String(item.estado || '').toLowerCase().trim();
+
     // Calcular días de retraso: (fechaReal - fechaReforma)
     // Solo si está completado y hay fechaReforma
     item.diasRetraso = null;
-    if (item.estado === 'completado' && fechaReal && fechaReforma) {
+    if (estadoNormalizado === 'completado' && fechaReal && fechaReforma) {
       const realDate = new Date(fechaReal);
       const reformaDate = new Date(fechaReforma);
       const diffTime = realDate - reformaDate;
