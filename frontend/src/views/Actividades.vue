@@ -2034,21 +2034,7 @@ async function guardarEstadoEtapa(etapa: any) {
       etapas: construirPayloadEtapas()
     });
 
-    const recarga = await api.get(`/subtareas/${actividadSeleccionada.value.id}/etapas`);
-    const etapasRecargadas = Array.isArray(recarga.data)
-      ? recarga.data
-      : (recarga.data?.value || []);
-
-    // El servidor es la fuente de verdad
-    etapasActividad.value = etapasRecargadas;
-    const actividadId = Number(actividadSeleccionada.value?.id || 0);
-    if (actividadId > 0) {
-      sincronizarActividadEnListado(actividadId, etapasActividad.value);
-    }
-    actividadSeleccionada.value.etapas = [...etapasActividad.value];
-    actividadSeleccionada.value.seguimientoEtapas = [...etapasActividad.value];
-
-    // Mostrar "Guardado" por 2 segundos
+    // Mostrar "Guardado" por 2 segundos sin recargar la tabla
     estadoGuardado.value = 'guardado';
     setTimeout(() => {
       estadoGuardado.value = null;
