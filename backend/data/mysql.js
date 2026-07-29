@@ -2562,13 +2562,19 @@ export async function getSubtareaEtapas(subtareaId) {
     const fechaReal = toISODate(item.fechaReal);
 
     // La fecha principal viene de fecha_reforma, fallback a fecha_tentativa
-    const fechaPrincipal = fechaReforma || fechaTentativa || '';
+    const fechaPrincipal = fechaReforma || fechaTentativa || null;
 
-    item.fechaTentativa = fechaTentativa || '';
-    item.fechaReforma = fechaReforma || '';
-    item.fechaReforma3 = fechaReforma3 || '';
+    item.fechaTentativa = fechaTentativa;
+    item.fechaReforma = fechaReforma;
+    item.fechaReforma3 = fechaReforma3;
     item.fechaPlanificada = fechaPrincipal;
     item.fechaReal = fechaReal;
+
+    // Debug: log si hay fechas especiales
+    if (fechaReforma || fechaReforma3 || fechaReal) {
+      console.log(`  [getSubtareaEtapas Etapa ${item.etapaId}] Recuperado: fechaReforma=${fechaReforma}, fechaTentativa=${fechaTentativa}, fechaReforma3=${fechaReforma3}, estado=${item.estado}, fechaReal=${fechaReal}`);
+    }
+
     return item;
   });
 }
@@ -2609,7 +2615,7 @@ function normalizarFechaManual(fecha) {
 
 export async function setSubtareaEtapas(subtareaId, etapas) {
   console.log(`[setSubtareaEtapas] Iniciando con ${etapas?.length || 0} etapas para subtarea ${subtareaId}`);
-  
+
   const existentes = await query(
     'SELECT etapa_id, estado, fecha_real FROM seguimiento_etapas WHERE subtarea_id = ?',
     [subtareaId]
@@ -2633,12 +2639,19 @@ export async function setSubtareaEtapas(subtareaId, etapas) {
         ? (fechaManual || existente?.fecha_real || fechaHoyISO())
         : (existente?.fecha_real || fechaHoyISO()));
 
+    const fechaTentativaFinal = normalizarFechaManual(etapa.fechaTentativa) || normalizarFechaManual(etapa.fechaPlanificada) || null;
+    const fechaReformaFinal = normalizarFechaManual(etapa.fechaReforma ?? etapa.fechaTentativa ?? etapa.fechaPlanificada) || null;
+    const fechaReforma3Final = normalizarFechaManual(etapa.fechaReforma3) || null;
+
+    console.log(`  [Etapa ${etapaId}] Input: fechaReforma=${etapa.fechaReforma}, fechaTentativa=${etapa.fechaTentativa}`);
+    console.log(`  [Etapa ${etapaId}] Guardando: fechaReforma=${fechaReformaFinal}, fechaTentativa=${fechaTentativaFinal}, fechaReforma3=${fechaReforma3Final}, estado=${estadoFinal}, fechaReal=${fechaRealFinal}`);
+
     etapasEnriquecidas.push({
       etapaId,
       aplica: Boolean(etapa.aplica),
-      fechaTentativa: normalizarFechaManual(etapa.fechaTentativa) || normalizarFechaManual(etapa.fechaPlanificada) || null,
-      fechaReforma: normalizarFechaManual(etapa.fechaReforma ?? etapa.fechaTentativa ?? etapa.fechaPlanificada) || null,
-      fechaReforma3: normalizarFechaManual(etapa.fechaReforma3) || null,
+      fechaTentativa: fechaTentativaFinal,
+      fechaReforma: fechaReformaFinal,
+      fechaReforma3: fechaReforma3Final,
       estadoFinal,
       fechaRealFinal,
       responsableId: responsable.id,

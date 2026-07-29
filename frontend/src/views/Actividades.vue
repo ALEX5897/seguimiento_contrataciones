@@ -1396,11 +1396,12 @@ function fusionarEtapasPreservandoFechas(actuales: any[], recargadas: any[]) {
 
     return {
       ...etapa,
-      fechaTentativa: etapa.fechaTentativa || etapa.fechaPlanificada || etapaActual.fechaTentativa || etapaActual.fechaPlanificada || null,
-      fechaReforma: etapa.fechaReforma || etapaActual.fechaReforma || null,
-      fechaReforma3: etapa.fechaReforma3 || etapaActual.fechaReforma3 || null,
-      fechaPlanificada: etapa.fechaPlanificada || etapa.fechaTentativa || etapaActual.fechaPlanificada || etapaActual.fechaTentativa || null,
-      fechaReal: etapa.fechaReal || etapaActual.fechaReal || null
+      // Usar valores del servidor primero, luego fallback a actual si servidor no tiene valor explícito
+      fechaTentativa: etapa.fechaTentativa !== undefined && etapa.fechaTentativa !== null ? etapa.fechaTentativa : (etapa.fechaPlanificada !== undefined && etapa.fechaPlanificada !== null ? etapa.fechaPlanificada : (etapaActual.fechaTentativa || etapaActual.fechaPlanificada || null)),
+      fechaReforma: etapa.fechaReforma !== undefined && etapa.fechaReforma !== null ? etapa.fechaReforma : (etapaActual.fechaReforma || null),
+      fechaReforma3: etapa.fechaReforma3 !== undefined && etapa.fechaReforma3 !== null ? etapa.fechaReforma3 : (etapaActual.fechaReforma3 || null),
+      fechaPlanificada: etapa.fechaPlanificada !== undefined && etapa.fechaPlanificada !== null ? etapa.fechaPlanificada : (etapa.fechaTentativa !== undefined && etapa.fechaTentativa !== null ? etapa.fechaTentativa : (etapaActual.fechaPlanificada || etapaActual.fechaTentativa || null)),
+      fechaReal: etapa.fechaReal !== undefined && etapa.fechaReal !== null ? etapa.fechaReal : (etapaActual.fechaReal || null)
     };
   });
 }
