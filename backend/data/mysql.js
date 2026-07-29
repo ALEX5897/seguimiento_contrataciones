@@ -2640,7 +2640,7 @@ export async function setSubtareaEtapas(subtareaId, etapas) {
         : (existente?.fecha_real || fechaHoyISO()));
 
     const fechaTentativaFinal = normalizarFechaManual(etapa.fechaTentativa) || normalizarFechaManual(etapa.fechaPlanificada) || null;
-    const fechaReformaFinal = normalizarFechaManual(etapa.fechaReforma ?? etapa.fechaTentativa ?? etapa.fechaPlanificada) || null;
+    const fechaReformaFinal = normalizarFechaManual(etapa.fechaReforma) || null;
     const fechaReforma3Final = normalizarFechaManual(etapa.fechaReforma3) || null;
 
     console.log(`  [Etapa ${etapaId}] Input: fechaReforma=${etapa.fechaReforma}, fechaTentativa=${etapa.fechaTentativa}`);
@@ -2769,7 +2769,7 @@ export async function actualizarEtapaSubtarea(codigoOlympo, etapaId, data = {}) 
       etapaId,
       true,
       data.fechaPlanificada || data.fechaTentativa || null,
-      data.fechaReforma || data.fechaPlanificada || data.fechaTentativa || null,
+      data.fechaReforma || null,
       data.fechaReforma3 || null
     ]
   );
