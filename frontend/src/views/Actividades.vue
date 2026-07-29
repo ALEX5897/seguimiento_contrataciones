@@ -476,7 +476,7 @@
                     v-model="etapa.fechaReforma"
                     type="date"
                     class="estado-select-detalle"
-                    :disabled="estadoGuardado || !editarFechaReforma"
+                    :disabled="Boolean(estadoGuardado) || !editarFechaReforma"
                     @change="onFechaReformaChange(etapa)"
                   />
                 </td>
@@ -485,7 +485,7 @@
                     v-model="etapa.fechaReforma3"
                     type="date"
                     class="estado-select-detalle"
-                    :disabled="estadoGuardado || !editarFechaReforma3"
+                    :disabled="Boolean(estadoGuardado) || !editarFechaReforma3"
                     @change="onFechaReforma3Change(etapa)"
                   />
                 </td>
@@ -495,7 +495,7 @@
                     v-model="etapa.fechaReal"
                     type="date"
                     class="estado-select-detalle"
-                    :disabled="estadoGuardado"
+                    :disabled="Boolean(estadoGuardado)"
                     @change="onFechaCompletadoChange(etapa)"
                   />
                   <span v-else-if="estadoNormalizado(etapa.estado) === 'completado' && etapa.fechaReal">
@@ -508,7 +508,7 @@
                     <select
                       v-model="etapa.estado"
                       :class="['estado-select-detalle', claseEstadoSemaforo(etapa)]"
-                      :disabled="estadoGuardado || !editarEstadoEtapa"
+                      :disabled="Boolean(estadoGuardado) || !editarEstadoEtapa"
                       @change="onEstadoEtapaChange(etapa)"
                     >
                       <option value="pendiente">Pendiente</option>
@@ -1164,13 +1164,6 @@ watch(
     }
   }
 );
-
-// Función auxiliar para validar formato de fecha
-function esFormatoValido(fecha: any): boolean {
-  if (!fecha) return true;
-  if (typeof fecha !== 'string') return false;
-  return /^\d{4}-\d{2}-\d{2}$/.test(fecha);
-}
 
 // Watcher deshabilitado - las fechas ya se normalizan al cargar desde el servidor
 // watch(
@@ -2028,7 +2021,7 @@ function onFechaReforma3Change(etapa: any) {
     }
   }
 
-async function guardarEstadoEtapa(etapa: any) {
+async function guardarEstadoEtapa() {
   if (!actividadSeleccionada.value?.id) return;
   estadoGuardado.value = 'guardando';
   try {
