@@ -70,7 +70,7 @@ router.post('/admin/etapas', async (req, res) => {
 // Función auxiliar para obtener scope con direcciones asignadas
 async function getScopeWithDirecciones(req) {
   const scope = getScopeFromReq(req);
-  if (scope.userId) {
+  if (scope.userId && Number.isInteger(scope.userId)) {
     try {
       const direcciones = await mysql.getDireccionesUsuario(scope.userId);
       scope.direccionesAsignadas = direcciones.map((d) => d.id);
