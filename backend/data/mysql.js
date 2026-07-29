@@ -2639,7 +2639,9 @@ export async function setSubtareaEtapas(subtareaId, etapas) {
         ? (fechaManual || existente?.fecha_real || fechaHoyISO())
         : (existente?.fecha_real || fechaHoyISO()));
 
-    const fechaTentativaFinal = normalizarFechaManual(etapa.fechaTentativa) || normalizarFechaManual(etapa.fechaPlanificada) || null;
+    // Las fechas son independientes. Si no se envía un valor, no se actualiza.
+    // Null o undefined significa "no cambiar este campo"
+    const fechaTentativaFinal = normalizarFechaManual(etapa.fechaTentativa) || null;
     const fechaReformaFinal = normalizarFechaManual(etapa.fechaReforma) || null;
     const fechaReforma3Final = normalizarFechaManual(etapa.fechaReforma3) || null;
 

@@ -1380,10 +1380,6 @@ function getEtapas(actividad: any) {
   }));
 }
 
-function fusionarEtapasPreservandoFechas(_actuales: any[], recargadas: any[]) {
-  // El servidor es la fuente de verdad - simplemente retornar los datos tal cual vienen
-  return recargadas || [];
-}
 
 function getEtapasConFecha(actividad: any) {
   return getEtapas(actividad).filter((e: any) => e?.fechaPlanificada || e?.fechaTentativa);
@@ -1740,7 +1736,7 @@ async function abrirDetalleActividad(actividad: any, actualizarRuta = true) {
   const actividadId = Number(actividad.id);
 
   actividadSeleccionada.value = actividad;
-  etapasActividad.value = getEtapas(actividad);
+  etapasActividad.value = [];
   timelineContraida.value = false;
   etapaSeguimiento.value = null;
   seguimientosEtapa.value = [];
@@ -1770,7 +1766,7 @@ async function abrirDetalleActividad(actividad: any, actualizarRuta = true) {
       ? response.data
       : (response.data?.value || []);
 
-    etapasActividad.value = fusionarEtapasPreservandoFechas(etapasActividad.value, etapasRecargadas);
+    etapasActividad.value = etapasRecargadas;
     sincronizarActividadEnListado(actividadId, etapasActividad.value);
     if (Number(actividadSeleccionada.value?.id) === actividadId) {
       actividadSeleccionada.value = {
@@ -2041,8 +2037,8 @@ async function guardarEstadoEtapa(etapa: any) {
       ? recarga.data
       : (recarga.data?.value || []);
 
-    // Normalizar fechas al cargar desde el servidor
-    etapasActividad.value = fusionarEtapasPreservandoFechas(etapasActividad.value, etapasRecargadas);
+    // El servidor es la fuente de verdad
+    etapasActividad.value = etapasRecargadas;
     const actividadId = Number(actividadSeleccionada.value?.id || 0);
     if (actividadId > 0) {
       sincronizarActividadEnListado(actividadId, etapasActividad.value);

@@ -2,33 +2,48 @@
 > seguimiento-contrataciones-backend@1.1.6 start
 > node server.js
 
-[dotenv@17.3.1] injecting env (14) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
-[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
-[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.3.1] injecting env (14) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
 
 🚀 Servidor ejecutándose en http://0.0.0.0:3000
 🗄️  MySQL conectado en 172.16.1.80 (BD: poa_pac)
 📧 Notificaciones: DESACTIVADAS
 ⏰ Verificaciones automáticas programadas
 
-2026-07-29T20:04:57.082Z - GET /api/subtareas
-2026-07-29T20:04:57.997Z - GET /api/realtime/stream
-2026-07-29T20:04:58.001Z - GET /api/chat-ia/config
-2026-07-29T20:04:58.003Z - GET /api/chat-ia/direcciones
-2026-07-29T20:04:58.014Z - GET /api/subtareas
-2026-07-29T20:04:58.775Z - GET /api/subtareas/225/etapas
+2026-07-29T20:14:21.359Z - GET /api/realtime/stream
+2026-07-29T20:14:23.548Z - GET /api/chat-ia/config
+2026-07-29T20:14:23.557Z - GET /api/realtime/stream
+2026-07-29T20:14:23.847Z - GET /api/chat-ia/direcciones
+2026-07-29T20:14:23.854Z - GET /api/subtareas
+2026-07-29T20:14:24.642Z - GET /api/subtareas/225/etapas
+  [getSubtareaEtapas Etapa 2] Recuperado: fechaReforma=2026-01-01, fechaTentativa=2026-01-31, fechaReforma3=null, estado=pendiente, fechaReal=null
   [getSubtareaEtapas Etapa 6] Recuperado: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
-2026-07-29T20:04:59.229Z - GET /api/subtareas/225/seguimientos-resumen
-2026-07-29T20:04:59.620Z - GET /api/subtareas/225/etapas/3/seguimientos
-2026-07-29T20:04:59.622Z - GET /api/subtareas/225/etapas/1/seguimientos
-2026-07-29T20:04:59.624Z - GET /api/subtareas/225/etapas/4/seguimientos
-2026-07-29T20:04:59.626Z - GET /api/subtareas/225/etapas/7/seguimientos
-2026-07-29T20:05:12.201Z - PUT /api/subtareas/225/etapas
+  [getSubtareaEtapas Etapa 11] Recuperado: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+2026-07-29T20:14:25.044Z - GET /api/subtareas/225/seguimientos-resumen
+2026-07-29T20:14:25.420Z - GET /api/subtareas/225/etapas/3/seguimientos
+2026-07-29T20:14:25.421Z - GET /api/subtareas/225/etapas/1/seguimientos
+2026-07-29T20:14:25.422Z - GET /api/subtareas/225/etapas/4/seguimientos
+2026-07-29T20:14:25.424Z - GET /api/subtareas/225/etapas/7/seguimientos
+2026-07-29T20:14:40.711Z - GET /api/chat-ia/config
+2026-07-29T20:14:40.717Z - GET /api/realtime/stream
+2026-07-29T20:14:41.022Z - GET /api/chat-ia/direcciones
+2026-07-29T20:14:41.024Z - GET /api/subtareas
+2026-07-29T20:14:41.757Z - GET /api/subtareas/225/etapas
+  [getSubtareaEtapas Etapa 2] Recuperado: fechaReforma=2026-01-01, fechaTentativa=2026-01-31, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [getSubtareaEtapas Etapa 6] Recuperado: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [getSubtareaEtapas Etapa 11] Recuperado: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+2026-07-29T20:14:42.211Z - GET /api/subtareas/225/seguimientos-resumen
+2026-07-29T20:14:42.590Z - GET /api/subtareas/225/etapas/3/seguimientos
+2026-07-29T20:14:42.591Z - GET /api/subtareas/225/etapas/1/seguimientos
+2026-07-29T20:14:42.592Z - GET /api/subtareas/225/etapas/4/seguimientos
+2026-07-29T20:14:42.593Z - GET /api/subtareas/225/etapas/7/seguimientos
+2026-07-29T20:14:57.499Z - PUT /api/subtareas/225/etapas
 [setSubtareaEtapas] Iniciando con 59 etapas para subtarea 225
   [Etapa 1] Input: fechaReforma=null, fechaTentativa=2026-01-01
   [Etapa 1] Guardando: fechaReforma=null, fechaTentativa=2026-01-01, fechaReforma3=null, estado=pendiente, fechaReal=null
-  [Etapa 2] Input: fechaReforma=null, fechaTentativa=2026-01-31
-  [Etapa 2] Guardando: fechaReforma=null, fechaTentativa=2026-01-31, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 2] Input: fechaReforma=2026-01-01, fechaTentativa=2026-01-31
+  [Etapa 2] Guardando: fechaReforma=2026-01-01, fechaTentativa=2026-01-31, fechaReforma3=null, estado=pendiente, fechaReal=null
   [Etapa 3] Input: fechaReforma=null, fechaTentativa=2026-03-29
   [Etapa 3] Guardando: fechaReforma=null, fechaTentativa=2026-03-29, fechaReforma3=null, estado=pendiente, fechaReal=null
   [Etapa 4] Input: fechaReforma=null, fechaTentativa=2026-03-29
@@ -45,8 +60,8 @@
   [Etapa 9] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
   [Etapa 10] Input: fechaReforma=null, fechaTentativa=2026-03-28
   [Etapa 10] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
-  [Etapa 11] Input: fechaReforma=2026-07-29, fechaTentativa=2026-03-28
-  [Etapa 11] Guardando: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 11] Input: fechaReforma=2026-01-01, fechaTentativa=2026-03-28
+  [Etapa 11] Guardando: fechaReforma=2026-01-01, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
   [Etapa 12] Input: fechaReforma=null, fechaTentativa=2026-03-28
   [Etapa 12] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
   [Etapa 13] Input: fechaReforma=null, fechaTentativa=2026-03-28
@@ -146,22 +161,21 @@
 [setSubtareaEtapas] Enriquecidas 59 etapas
 [setSubtareaEtapas] Transacción iniciada
 [setSubtareaEtapas] Transacción confirmada. 59 etapas procesadas
+  [getSubtareaEtapas Etapa 2] Recuperado: fechaReforma=2026-01-01, fechaTentativa=2026-01-31, fechaReforma3=null, estado=pendiente, fechaReal=null
   [getSubtareaEtapas Etapa 6] Recuperado: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
-  [getSubtareaEtapas Etapa 11] Recuperado: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [getSubtareaEtapas Etapa 11] Recuperado: fechaReforma=2026-01-01, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
 [setSubtareaEtapas] Final: 59 etapas retornadas
-2026-07-29T20:05:12.683Z - GET /api/subtareas/225/etapas
+2026-07-29T20:14:58.031Z - GET /api/subtareas/225/etapas
+  [getSubtareaEtapas Etapa 2] Recuperado: fechaReforma=2026-01-01, fechaTentativa=2026-01-31, fechaReforma3=null, estado=pendiente, fechaReal=null
   [getSubtareaEtapas Etapa 6] Recuperado: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
-  [getSubtareaEtapas Etapa 11] Recuperado: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
-2026-07-29T20:05:14.310Z - GET /api/subtareas
-2026-07-29T20:05:15.435Z - GET /api/subtareas/225/etapas
+  [getSubtareaEtapas Etapa 11] Recuperado: fechaReforma=2026-01-01, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+2026-07-29T20:14:59.651Z - GET /api/subtareas
+2026-07-29T20:15:00.788Z - GET /api/subtareas/225/etapas
+  [getSubtareaEtapas Etapa 2] Recuperado: fechaReforma=2026-01-01, fechaTentativa=2026-01-31, fechaReforma3=null, estado=pendiente, fechaReal=null
   [getSubtareaEtapas Etapa 6] Recuperado: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
-  [getSubtareaEtapas Etapa 11] Recuperado: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
-2026-07-29T20:05:16.202Z - GET /api/subtareas/225/seguimientos-resumen
-2026-07-29T20:05:16.565Z - GET /api/subtareas/225/etapas/3/seguimientos
-2026-07-29T20:05:16.905Z - GET /api/subtareas/225/etapas/1/seguimientos
-2026-07-29T20:05:16.907Z - GET /api/subtareas/225/etapas/4/seguimientos
-2026-07-29T20:05:16.908Z - GET /api/subtareas/225/etapas/7/seguimientos
-2026-07-29T20:05:53.313Z - GET /api/chat-ia/config
-2026-07-29T20:05:53.319Z - GET /api/realtime/stream
-2026-07-29T20:05:53.625Z - GET /api/chat-ia/direcciones
-2026-07-29T20:05:53.628Z - GET /api/subtareas
+  [getSubtareaEtapas Etapa 11] Recuperado: fechaReforma=2026-01-01, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+2026-07-29T20:15:01.585Z - GET /api/subtareas/225/seguimientos-resumen
+2026-07-29T20:15:01.991Z - GET /api/subtareas/225/etapas/3/seguimientos
+2026-07-29T20:15:02.326Z - GET /api/subtareas/225/etapas/1/seguimientos
+2026-07-29T20:15:02.327Z - GET /api/subtareas/225/etapas/4/seguimientos
+2026-07-29T20:15:02.328Z - GET /api/subtareas/225/etapas/7/seguimientos
