@@ -236,13 +236,6 @@ router.get('/:subtareaRef/etapas', async (req, res) => {
     const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, scope);
     if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
     const etapas = await mysql.getSubtareaEtapas(subtareaId);
-
-    // DEBUG: Verificar que diasRetraso está en la respuesta
-    if (etapas && etapas.length > 0) {
-      console.log(`[RESPUESTA GET ETAPAS] Etapa 1 tiene diasRetraso: ${etapas[0].diasRetraso}`);
-      console.log(`[RESPUESTA GET ETAPAS] Claves Etapa 1: ${Object.keys(etapas[0]).join(', ')}`);
-    }
-
     res.json(etapas);
   } catch (error) {
     console.error(`Error en GET /api/subtareas/${req.params.subtareaRef}/etapas:`, error);

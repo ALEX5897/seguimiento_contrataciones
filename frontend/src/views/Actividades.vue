@@ -1767,12 +1767,6 @@ async function abrirDetalleActividad(actividad: any, actualizarRuta = true) {
       ? response.data
       : (response.data?.value || []);
 
-    // DEBUG: Verificar qué recibe el frontend
-    if (etapasRecargadas.length > 0) {
-      console.log('[Frontend] Etapa 1 recibida:', JSON.stringify(etapasRecargadas[0], null, 2));
-      console.log('[Frontend] Etapa 1 diasRetraso:', etapasRecargadas[0].diasRetraso);
-    }
-
     etapasActividad.value = etapasRecargadas;
     sincronizarActividadEnListado(actividadId, etapasActividad.value);
     if (Number(actividadSeleccionada.value?.id) === actividadId) {
