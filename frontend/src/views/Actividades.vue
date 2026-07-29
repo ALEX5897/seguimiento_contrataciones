@@ -447,8 +447,8 @@
 
           </div>
 
-          <div v-if="etapasConFecha.length" class="tabla-etapas-wrap">
-          <table class="tabla-etapas" v-memo="[etapasConFecha]">
+          <div v-if="etapasConFecha.length" class="tabla-etapas-wrap" :class="{ 'tabla-guardando': estadoGuardado }">
+          <table class="tabla-etapas">
             <thead>
               <tr>
                 <th>#</th>
@@ -3413,6 +3413,12 @@ h1 {
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   background: #ffffff;
+  transition: opacity 0.1s ease;
+}
+
+.tabla-etapas-wrap.tabla-guardando {
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 .resumen-detalle {
