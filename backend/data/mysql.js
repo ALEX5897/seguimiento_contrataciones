@@ -2577,12 +2577,21 @@ export async function getSubtareaEtapas(subtareaId) {
     // Solo si está completado y hay fechaReforma
     item.diasRetraso = null;
     if (estadoNormalizado === 'completado' && fechaReal && fechaReforma) {
-      const realDate = new Date(fechaReal);
-      const reformaDate = new Date(fechaReforma);
+      // Parsear fechas YYYY-MM-DD manualmente para evitar problemas de timezone
+      const parseYYYYMMDD = (dateStr) => {
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+          return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        }
+        return new Date(dateStr);
+      };
+
+      const realDate = parseYYYYMMDD(fechaReal);
+      const reformaDate = parseYYYYMMDD(fechaReforma);
       const diffTime = realDate - reformaDate;
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       item.diasRetraso = Math.max(0, diffDays); // No negativos
-      console.log(`  [RETRASO CALCULADO] Etapa ${item.etapaId}: fechaReal=${fechaReal}, fechaReforma=${fechaReforma}, diasRetraso=${item.diasRetraso}`);
+      console.log(`  [RETRASO CALCULADO] Etapa ${item.etapaId}: fechaReal=${fechaReal}, fechaReforma=${fechaReforma}, diasRetraso=${item.diasRetraso} (diff=${diffDays})`);
     } else if (estadoNormalizado === 'completado') {
       console.log(`  [NO CALCULO] Etapa ${item.etapaId}: estado=completado pero fechaReal=${fechaReal}, fechaReforma=${fechaReforma}`);
     }
