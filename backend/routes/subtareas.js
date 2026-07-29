@@ -232,7 +232,8 @@ router.post('/', async (req, res) => {
 // GET /api/subtareas/:subtareaRef/etapas - Compatibilidad con /api/actividades (id o codigo)
 router.get('/:subtareaRef/etapas', async (req, res) => {
   try {
-    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, getScopeFromReq(req));
+    const scope = await getScopeWithDirecciones(req);
+    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, scope);
     if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
     const etapas = await mysql.getSubtareaEtapas(subtareaId);
     res.json(etapas);
@@ -245,7 +246,8 @@ router.get('/:subtareaRef/etapas', async (req, res) => {
 // PUT /api/subtareas/:subtareaRef/etapas - Compatibilidad con /api/actividades (id o codigo)
 router.put('/:subtareaRef/etapas', async (req, res) => {
   try {
-    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, getScopeFromReq(req));
+    const scope = await getScopeWithDirecciones(req);
+    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, scope);
     if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
     const { etapas } = req.body;
     const resultado = await mysql.setSubtareaEtapas(subtareaId, etapas || []);
@@ -259,7 +261,8 @@ router.put('/:subtareaRef/etapas', async (req, res) => {
 // GET /api/subtareas/:subtareaRef/etapas/:etapaId/seguimientos - Compatibilidad con /api/actividades
 router.get('/:subtareaRef/etapas/:etapaId/seguimientos', async (req, res) => {
   try {
-    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, getScopeFromReq(req));
+    const scope = await getScopeWithDirecciones(req);
+    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, scope);
     if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
     const etapaId = parseInt(req.params.etapaId, 10);
     const dias = parseInt(req.query.dias, 10) || 30;
@@ -274,7 +277,8 @@ router.get('/:subtareaRef/etapas/:etapaId/seguimientos', async (req, res) => {
 // GET /api/subtareas/:subtareaRef/seguimientos-resumen - Conteos y alertas por etapa
 router.get('/:subtareaRef/seguimientos-resumen', async (req, res) => {
   try {
-    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, getScopeFromReq(req));
+    const scope = await getScopeWithDirecciones(req);
+    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, scope);
     if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
     const dias = parseInt(req.query.dias, 10) || 3650;
     const resumen = await mysql.getSeguimientosResumenPorSubtarea(subtareaId, dias);
@@ -288,7 +292,8 @@ router.get('/:subtareaRef/seguimientos-resumen', async (req, res) => {
 // POST /api/subtareas/:subtareaRef/etapas/:etapaId/seguimientos - Compatibilidad con /api/actividades
 router.post('/:subtareaRef/etapas/:etapaId/seguimientos', async (req, res) => {
   try {
-    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, getScopeFromReq(req));
+    const scope = await getScopeWithDirecciones(req);
+    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, scope);
     if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
     const etapaId = parseInt(req.params.etapaId, 10);
     const { comentario, tieneAlerta, fecha, responsableId, responsableNombre, responsable } = req.body;
@@ -318,7 +323,8 @@ router.post('/:subtareaRef/etapas/:etapaId/seguimientos', async (req, res) => {
 // PUT /api/subtareas/:subtareaRef/etapas/:etapaId/seguimientos/:seguimientoId - Compatibilidad con /api/actividades
 router.put('/:subtareaRef/etapas/:etapaId/seguimientos/:seguimientoId', async (req, res) => {
   try {
-    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, getScopeFromReq(req));
+    const scope = await getScopeWithDirecciones(req);
+    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, scope);
     if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
     const etapaId = parseInt(req.params.etapaId, 10);
     const seguimientoId = parseInt(req.params.seguimientoId, 10);
@@ -346,7 +352,8 @@ router.put('/:subtareaRef/etapas/:etapaId/seguimientos/:seguimientoId', async (r
 // DELETE /api/subtareas/:subtareaRef/etapas/:etapaId/seguimientos/:seguimientoId - Compatibilidad con /api/actividades
 router.delete('/:subtareaRef/etapas/:etapaId/seguimientos/:seguimientoId', async (req, res) => {
   try {
-    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, getScopeFromReq(req));
+    const scope = await getScopeWithDirecciones(req);
+    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, scope);
     if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
     const etapaId = parseInt(req.params.etapaId, 10);
     const seguimientoId = parseInt(req.params.seguimientoId, 10);
@@ -363,7 +370,8 @@ router.delete('/:subtareaRef/etapas/:etapaId/seguimientos/:seguimientoId', async
 // PUT /api/subtareas/:subtareaRef/etapas/:etapaId - Actualizar etapa específica (id o codigo)
 router.put('/:subtareaRef/etapas/:etapaId', async (req, res) => {
   try {
-    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, getScopeFromReq(req));
+    const scope = await getScopeWithDirecciones(req);
+    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, scope);
     if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
     const etapaId = parseInt(req.params.etapaId, 10);
 
@@ -393,8 +401,12 @@ router.put('/:subtareaRef/etapas/:etapaId', async (req, res) => {
 // PUT /api/subtareas/:subtareaRef - Actualizar subtarea (id o codigo)
 router.put('/:subtareaRef', async (req, res) => {
   try {
+    const scope = await getScopeWithDirecciones(req);
+    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, scope);
+    if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
+
     const subtareaActualizada = await mysql.updateSubtarea(req.params.subtareaRef, req.body);
-    
+
     if (!subtareaActualizada) {
       return res.status(404).json({ error: 'Subtarea no encontrada' });
     }
@@ -409,7 +421,8 @@ router.put('/:subtareaRef', async (req, res) => {
 // GET /api/subtareas/:subtareaRef - Obtener subtarea con detalle completo (id o codigo)
 router.get('/:subtareaRef', async (req, res) => {
   try {
-    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, getScopeFromReq(req));
+    const scope = await getScopeWithDirecciones(req);
+    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, scope);
     if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
     const subtarea = await mysql.getSubtareaById(subtareaId);
     if (!subtarea) return res.status(404).json({ error: 'Subtarea no encontrada' });
@@ -424,6 +437,10 @@ router.get('/:subtareaRef', async (req, res) => {
 // DELETE /api/subtareas/:subtareaRef - Eliminar subtarea (id o codigo)
 router.delete('/:subtareaRef', async (req, res) => {
   try {
+    const scope = await getScopeWithDirecciones(req);
+    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, scope);
+    if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
+
     await mysql.deleteSubtarea(req.params.subtareaRef);
     res.json({ message: 'Subtarea eliminada' });
   } catch (error) {
@@ -435,8 +452,9 @@ router.delete('/:subtareaRef', async (req, res) => {
 // GET /api/subtareas/:subtareaRef/resumen - Resumen de progreso de subtarea (id o codigo)
 router.get('/:subtareaRef/resumen', async (req, res) => {
   try {
-    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, getScopeFromReq(req));
-    const subtarea = subtareaId ? await mysql.getSubtareaByIdByScope(subtareaId, getScopeFromReq(req)) : null;
+    const scope = await getScopeWithDirecciones(req);
+    const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, scope);
+    const subtarea = subtareaId ? await mysql.getSubtareaByIdByScope(subtareaId, scope) : null;
     
     if (!subtarea) {
       return res.status(404).json({ error: 'Subtarea no encontrada' });
