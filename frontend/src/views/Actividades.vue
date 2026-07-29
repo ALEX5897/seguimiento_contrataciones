@@ -1903,23 +1903,23 @@ function onEstadoEtapaChange(etapa: any) {
   if (etapa.estado === 'pendiente') {
     etapa.fechaReal = null;
   }
-  guardarEstadoEtapa(etapa);
+  guardarEstadoEtapa();
 }
 
 function onFechaCompletadoChange(etapa: any) {
   if (!permiteEditarFechaCompletado) return;
   if (estadoNormalizado(etapa?.estado) !== 'completado') return;
-  guardarEstadoEtapa(etapa);
+  guardarEstadoEtapa();
 }
 
 function onFechaReformaChange(etapa: any) {
   etapa.fechaReforma = normalizarFechaInput(etapa?.fechaReforma);
-  guardarEstadoEtapa(etapa);
+  guardarEstadoEtapa();
 }
 
 function onFechaReforma3Change(etapa: any) {
   etapa.fechaReforma3 = normalizarFechaInput(etapa?.fechaReforma3);
-  guardarEstadoEtapa(etapa);
+  guardarEstadoEtapa();
 }
 
   function normalizarSeguimientos(payload: any): any[] {
