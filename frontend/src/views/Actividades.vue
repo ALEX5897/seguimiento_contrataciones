@@ -17,6 +17,7 @@
         <span class="filter-chip" v-if="filtroCuatrimestre">Cuatrimestre: {{ filtroCuatrimestre }}</span>
         <span class="filter-chip" v-if="filtroMonto">Monto: {{ filtroMonto }}</span>
         <span class="filter-chip riesgo-active" v-if="filtroRiesgo === 'riesgo'">⚠️ Solo en riesgo</span>
+        <span class="filter-chip adjudicados-active" v-if="filtroAdjudicados === 'adjudicados'">✓ Solo adjudicados</span>
         <button v-if="hayFiltrosActivos" class="btn-clear-filter" @click="limpiarFiltrosActividades">
           Restablecer filtros
         </button>
@@ -77,6 +78,11 @@
           <select v-model="filtroRiesgo" class="combo-filtro">
             <option value="">Todos los procesos</option>
             <option value="riesgo">⚠️ Solo en riesgo</option>
+          </select>
+
+          <select v-model="filtroAdjudicados" class="combo-filtro">
+            <option value="">Todos los procesos</option>
+            <option value="adjudicados">✓ Solo adjudicados</option>
           </select>
 
           <select v-model="ordenPresupuesto" class="combo-filtro">
@@ -705,7 +711,7 @@ const router = useRouter();
 const auth = useAuthStore();
 const cargando = ref(true);
 const actividades = ref<any[]>([]);
-const mostrarFiltros = ref(false);
+const mostrarFiltros = ref(true);
 const busquedaActividades = ref('');
 const filtroDireccion = ref('');
 const filtroResponsable = ref('');
@@ -714,6 +720,7 @@ const filtroTipoContratacion = ref('');
 const filtroCuatrimestre = ref('');
 const filtroMonto = ref('');
 const filtroRiesgo = ref('');
+const filtroAdjudicados = ref('');
 const ordenPresupuesto = ref('presupuesto-desc');
 const actividadesVisiblesBase = computed(() =>
   actividades.value.filter((actividad: any) => esProcesoVisible(actividad))
@@ -778,6 +785,7 @@ const hayFiltrosActivos = computed(() =>
     || filtroCuatrimestre.value
     || filtroMonto.value
     || filtroRiesgo.value
+    || filtroAdjudicados.value
   )
 );
 const actividadesActivas = computed(() => {
@@ -835,6 +843,17 @@ const actividadesActivas = computed(() => {
 
   if (filtroRiesgo.value === 'riesgo') {
     items = items.filter((a: any) => normalizarProcesoEnRiesgo(a));
+  }
+
+  if (filtroAdjudicados.value === 'adjudicados') {
+    items = items.filter((a: any) => {
+      const etapas = Array.isArray(a?.seguimientoEtapas) ? a.seguimientoEtapas : [];
+      return etapas.some((etapa: any) => {
+        const nombreNorm = String(etapa?.etapaNombre || '').toLowerCase().trim();
+        const estado = String(etapa?.estado || '').toLowerCase();
+        return nombreNorm.includes('adjudicado') && estado === 'completado';
+      });
+    });
   }
 
   if (ordenPresupuesto.value === 'presupuesto-desc') {
@@ -1199,6 +1218,7 @@ function limpiarFiltrosActividades() {
   filtroCuatrimestre.value = '';
   filtroMonto.value = '';
   filtroRiesgo.value = '';
+  filtroAdjudicados.value = '';
   ordenPresupuesto.value = 'todos';
 }
 
@@ -2400,6 +2420,16 @@ async function onToggleProcesoDesierto() {
   font-weight: 800;
   padding: 0.24rem 0.62rem;
   box-shadow: 0 1px 4px rgba(239, 68, 68, 0.3);
+}
+
+.filter-chip.adjudicados-active {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  border-color: #6ee7b7;
+  color: #065f46;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.24rem 0.62rem;
+  box-shadow: 0 1px 4px rgba(16, 185, 129, 0.3);
 }
 
 .btn-clear-filter {
