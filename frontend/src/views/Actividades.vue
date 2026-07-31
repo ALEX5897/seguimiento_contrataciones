@@ -849,9 +849,9 @@ const actividadesActivas = computed(() => {
     items = items.filter((a: any) => {
       const etapas = Array.isArray(a?.seguimientoEtapas) ? a.seguimientoEtapas : [];
       return etapas.some((etapa: any) => {
-        const nombreNorm = String(etapa?.etapaNombre || '').toLowerCase().trim();
+        const nombreNorm = String(etapa?.etapaNombre || etapa?.nombre || '').toLowerCase().trim();
         const estado = String(etapa?.estado || '').toLowerCase();
-        return nombreNorm.includes('adjudicado') && estado === 'completado';
+        return (nombreNorm.includes('adjudicado') || nombreNorm.includes('adjudicacion')) && estado === 'completado';
       });
     });
   }
