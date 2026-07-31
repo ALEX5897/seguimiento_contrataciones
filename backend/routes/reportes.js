@@ -730,6 +730,7 @@ const CAMPOS_DISPONIBLES = [
   { key: 'atrasadas',               label: 'Atrasadas',               tipo: 'numero',   grupo: 'Seguimiento' },
   { key: 'vencenHoy',               label: 'Vencen hoy',             tipo: 'numero',   grupo: 'Seguimiento' },
   { key: 'proximaEtapa',            label: 'Próxima etapa',           tipo: 'text',     grupo: 'Seguimiento' },
+  { key: 'etapasClaveCompletadas',  label: 'Adjudicación/Contrato',   tipo: 'text',     grupo: 'Seguimiento' },
 ];
 
 const WHITELIST_KEYS = new Set(CAMPOS_DISPONIBLES.map((c) => c.key));
@@ -756,6 +757,29 @@ function formatFecha(value) {
   return `${dd}/${mm}/${d.getFullYear()}`;
 }
 
+// Obtiene información sobre etapas clave completadas (adjudicado, contrato)
+function obtenerEtapasClaveCompletadas(subtarea) {
+  const etapas = Array.isArray(subtarea?.seguimientoEtapas) ? [...subtarea.seguimientoEtapas] : [];
+  const etapasInfo = [];
+
+  // Nombres de etapas clave que buscamos
+  const nombresClaveNormalizados = ['adjudicado', 'contrato'];
+
+  etapas.forEach((etapa) => {
+    const nombreNorm = String(etapa?.etapaNombre || '').toLowerCase().trim();
+    const estado = normalizarEstado(etapa?.estado);
+
+    // Si la etapa es una de las clave Y está completada
+    if (nombresClaveNormalizados.some(nombre => nombreNorm.includes(nombre)) && estado === 'completado') {
+      const fechaReal = formatDate(etapa?.fechaReal) || 'N/A';
+      const fechaPlan = formatDate(etapa?.fechaPlanificada) || 'N/A';
+      etapasInfo.push(`${etapa.etapaNombre}: Completado ${fechaReal} (Programado: ${fechaPlan})`);
+    }
+  });
+
+  return etapasInfo.length > 0 ? etapasInfo.join(' | ') : '';
+}
+
 // Construye proceso enriquecido para exportación (combina subtarea + resumen)
 function enriquecerProceso(subtarea) {
   const hoy = new Date();
@@ -771,6 +795,7 @@ function enriquecerProceso(subtarea) {
     fechaFin:               formatFecha(subtarea.fechaFin),
     procesoEnRiesgo:        Boolean(subtarea.procesoEnRiesgo),
     observaciones:          String(subtarea.observaciones || ''),
+    etapasClaveCompletadas: obtenerEtapasClaveCompletadas(subtarea),
   };
 }
 
