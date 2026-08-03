@@ -732,6 +732,7 @@ const CAMPOS_DISPONIBLES = [
   { key: 'proximaEtapa',            label: 'Próxima etapa',           tipo: 'text',     grupo: 'Seguimiento' },
   { key: 'adjudicacionCompletada',  label: 'Adjudicación',            tipo: 'text',     grupo: 'Seguimiento' },
   { key: 'contratoCompletado',      label: 'Contrato',                tipo: 'text',     grupo: 'Seguimiento' },
+  { key: 'ultimaActualizacion',     label: 'Última actualización',     tipo: 'texto',    grupo: 'Seguimiento' },
 ];
 
 const WHITELIST_KEYS = new Set(CAMPOS_DISPONIBLES.map((c) => c.key));
@@ -794,6 +795,48 @@ function obtenerContratoCompletado(subtarea) {
   return '';
 }
 
+// Obtiene la última actualización del proceso
+function obtenerUltimaActualizacion(subtarea) {
+  let ultimaFecha = null;
+  let ultimaAccion = '';
+
+  // Revisar updated_at del proceso
+  if (subtarea?.updatedAt) {
+    const fecha = new Date(subtarea.updatedAt);
+    if (fecha > (ultimaFecha || new Date(0))) {
+      ultimaFecha = fecha;
+      ultimaAccion = 'Actualización del proceso';
+    }
+  }
+
+  // Revisar cambios en etapas de seguimiento
+  const etapas = Array.isArray(subtarea?.seguimientoEtapas) ? subtarea.seguimientoEtapas : [];
+  etapas.forEach((etapa) => {
+    const fechaEtapa = etapa?.updatedAt || etapa?.createdAt;
+    if (fechaEtapa) {
+      const fecha = new Date(fechaEtapa);
+      if (fecha > (ultimaFecha || new Date(0))) {
+        ultimaFecha = fecha;
+        const nombreEtapa = etapa?.etapaNombre || '';
+        const estado = etapa?.estado || 'pendiente';
+        ultimaAccion = `Cambio en "${nombreEtapa}" a estado ${estado}`;
+      }
+    }
+  });
+
+  if (ultimaFecha) {
+    const dd = String(ultimaFecha.getDate()).padStart(2, '0');
+    const mm = String(ultimaFecha.getMonth() + 1).padStart(2, '0');
+    const yyyy = ultimaFecha.getFullYear();
+    const hh = String(ultimaFecha.getHours()).padStart(2, '0');
+    const min = String(ultimaFecha.getMinutes()).padStart(2, '0');
+
+    return `${dd}/${mm}/${yyyy} ${hh}:${min} - ${ultimaAccion}`;
+  }
+
+  return 'Sin cambios registrados';
+}
+
 // Construye proceso enriquecido para exportación (combina subtarea + resumen)
 function enriquecerProceso(subtarea) {
   const hoy = new Date();
@@ -811,6 +854,7 @@ function enriquecerProceso(subtarea) {
     observaciones:          String(subtarea.observaciones || ''),
     adjudicacionCompletada: obtenerAdjudicacionCompletada(subtarea),
     contratoCompletado:     obtenerContratoCompletado(subtarea),
+    ultimaActualizacion:    obtenerUltimaActualizacion(subtarea),
   };
 }
 
