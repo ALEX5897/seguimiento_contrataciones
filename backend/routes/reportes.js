@@ -237,7 +237,8 @@ function calcularResumenProceso(subtarea, hoy) {
       observaciones: String(etapa?.observaciones || ''),
       diasAtraso,
       esAtrasada,
-      esVenceHoy
+      esVenceHoy,
+      fase: String(etapa?.clasificacion || 'sin_clasificar')
     };
   });
 
