@@ -1070,13 +1070,12 @@ router.post('/generar', async (req, res) => {
     if (incluirVerificables && verificablesConFase && verificablesConFase.fases.length > 0) {
       // DOS FILAS DE ENCABEZADO cuando hay verificables
 
-      // Fila 1: Nombres de fases (merged cells)
-      const faseRow = ws.getRow(1);
+      // Fila 1: Nombres de fases (merged cells) - usando ws.getCell() directamente
       let colIdx = 1;
 
       // Columnas de campos principales (vacías en primera fila)
       metaCampos.forEach(() => {
-        const cell = faseRow.getCell(colIdx);
+        const cell = ws.getCell(1, colIdx);
         cell.value = '';
         cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_BG } };
@@ -1092,9 +1091,9 @@ router.post('/generar', async (req, res) => {
 
         console.log(`Fase: ${fase.nombre}, Key: ${fase.key}, Color: ${faseColor.header}`);
 
-        // Aplicar estilos a TODAS las celdas del rango
+        // Aplicar estilos a TODAS las celdas del rango ANTES del merge
         for (let i = startCol; i <= endCol; i++) {
-          const cell = faseRow.getCell(i);
+          const cell = ws.getCell(1, i);
           cell.value = i === startCol ? fase.nombre : '';
           cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 12 };
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.header } };
@@ -1109,14 +1108,13 @@ router.post('/generar', async (req, res) => {
 
         colIdx = endCol + 1;
       });
-      faseRow.height = 28;
+      ws.getRow(1).height = 28;
 
-      // Fila 2: Nombres de campos y verificables
-      const headerRow = ws.getRow(2);
+      // Fila 2: Nombres de campos y verificables - usando ws.getCell() directamente
       colIdx = 1;
 
       metaCampos.forEach((meta) => {
-        const cell = headerRow.getCell(colIdx);
+        const cell = ws.getCell(2, colIdx);
         cell.value = meta.label;
         cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_BG } };
@@ -1128,7 +1126,7 @@ router.post('/generar', async (req, res) => {
       verificablesConFase.fases.forEach(fase => {
         const faseColor = coloresPorFase[fase.key] || coloresPorFase['preparatoria'];
         fase.verificables.forEach(verif => {
-          const cell = headerRow.getCell(colIdx);
+          const cell = ws.getCell(2, colIdx);
           cell.value = verif.nombre;
           cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.header } };
@@ -1137,7 +1135,7 @@ router.post('/generar', async (req, res) => {
           colIdx++;
         });
       });
-      headerRow.height = 22;
+      ws.getRow(2).height = 22;
 
       ws.views = [{ state: 'frozen', ySplit: 2 }];
       headerRowNum = 2;
