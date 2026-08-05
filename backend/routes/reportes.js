@@ -1059,15 +1059,10 @@ router.post('/generar', async (req, res) => {
 
     let headerRowNum = 1;
 
-    // Definir ws.columns PERO sin encabezados automáticos cuando hay verificables
-    // (los crearemos manualmente)
-    ws.columns = todasColumnas.map((meta, i) => ({
-      key: meta.key,
-      width: maxWidths[i]
-    }));
-
     // Crear encabezados
     if (incluirVerificables && verificablesConFase && verificablesConFase.fases.length > 0) {
+      // NO definir ws.columns automáticamente para evitar conflictos
+      // Crear encabezados manualmente primero
       // DOS FILAS DE ENCABEZADO cuando hay verificables
 
       // Fila 1: Nombres de fases (merged cells) - usando ws.getCell() directamente
@@ -1132,6 +1127,12 @@ router.post('/generar', async (req, res) => {
         });
       });
       ws.getRow(2).height = 22;
+
+      // DESPUÉS de crear encabezados, definir ws.columns para que ExcelJS mapee los datos
+      ws.columns = todasColumnas.map((meta, i) => ({
+        key: meta.key,
+        width: maxWidths[i]
+      }));
 
       ws.views = [{ state: 'frozen', ySplit: 2 }];
       headerRowNum = 2;
