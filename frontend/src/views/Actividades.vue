@@ -2496,11 +2496,11 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 
 .dashboard-toolbar {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.25rem;
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-start;
-  padding: 0.4rem 0.6rem;
+  padding: 0.08rem 0.25rem;
   background: #ffffff;
   border-radius: 6px;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
@@ -2510,7 +2510,7 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 .toolbar-search-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
   flex: 1 0 auto;
   justify-content: flex-start;
 }
@@ -2533,7 +2533,7 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 
 .dashboard-toolbar-filtros {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.25rem;
   flex-wrap: wrap;
   justify-content: flex-start;
   align-items: center;
