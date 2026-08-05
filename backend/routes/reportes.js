@@ -1107,9 +1107,9 @@ router.post('/generar', async (req, res) => {
 
       // Secciones por fase
       const faseLabels = {
-        'preparatoria': 'SAFE Preparatorio',
-        'precontractual': 'SAFE Precontractual',
-        'contractual': 'SAFE Contractual',
+        'preparatoria': 'FACE Preparatorio',
+        'precontractual': 'FACE Precontractual',
+        'contractual': 'FACE Contractual',
         'sin_clasificar': 'Verificables sin clasificar'
       };
 
