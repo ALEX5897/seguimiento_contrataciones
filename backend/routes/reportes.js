@@ -1057,14 +1057,14 @@ router.post('/generar', async (req, res) => {
 
     const maxWidths = todasColumnas.map((m) => Math.max(m.label.length + 4, m.width || getDefaultWidth(m.tipo)));
 
-    // SIEMPRE definir ws.columns para que ExcelJS sepa mapear las claves
+    let headerRowNum = 1;
+
+    // Definir ws.columns PERO sin encabezados automáticos cuando hay verificables
+    // (los crearemos manualmente)
     ws.columns = todasColumnas.map((meta, i) => ({
-      header: meta.label,
       key: meta.key,
       width: maxWidths[i]
     }));
-
-    let headerRowNum = 1;
 
     // Crear encabezados
     if (incluirVerificables && verificablesConFase && verificablesConFase.fases.length > 0) {
@@ -1136,7 +1136,13 @@ router.post('/generar', async (req, res) => {
       ws.views = [{ state: 'frozen', ySplit: 2 }];
       headerRowNum = 2;
     } else {
-      // UNA FILA DE ENCABEZADO (modo normal)
+      // UNA FILA DE ENCABEZADO (modo normal) - usar headers automáticos
+      ws.columns = todasColumnas.map((meta, i) => ({
+        header: meta.label,
+        key: meta.key,
+        width: maxWidths[i]
+      }));
+
       const headerRow = ws.getRow(1);
       headerRow.eachCell((cell) => {
         cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
