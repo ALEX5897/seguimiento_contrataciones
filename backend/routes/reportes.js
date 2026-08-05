@@ -1023,10 +1023,12 @@ router.post('/generar', async (req, res) => {
 
     const maxWidths = todasColumnas.map((m) => Math.max(m.label.length + 4, m.width || getDefaultWidth(m.tipo)));
 
-    // Configurar ancho de columnas
-    todasColumnas.forEach((meta, i) => {
-      ws.getColumn(i + 1).width = maxWidths[i];
-    });
+    // SIEMPRE definir ws.columns para que ExcelJS sepa mapear las claves
+    ws.columns = todasColumnas.map((meta, i) => ({
+      header: meta.label,
+      key: meta.key,
+      width: maxWidths[i]
+    }));
 
     let headerRowNum = 1;
 
@@ -1098,12 +1100,6 @@ router.post('/generar', async (req, res) => {
       headerRowNum = 2;
     } else {
       // UNA FILA DE ENCABEZADO (modo normal)
-      ws.columns = todasColumnas.map((meta, i) => ({
-        header: meta.label,
-        key: meta.key,
-        width: maxWidths[i]
-      }));
-
       const headerRow = ws.getRow(1);
       headerRow.eachCell((cell) => {
         cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
@@ -1119,12 +1115,12 @@ router.post('/generar', async (req, res) => {
     // Agregar filas de datos
     filas.forEach((fila, rowIdx) => {
       const rowData = {};
-      todasColumnas.forEach((meta) => {
+      todasColumnas.forEach((meta, colIdx) => {
         const raw = extractCampoValue(fila, meta.key);
         rowData[meta.key] = formatCellValue(raw, meta.tipo);
         const strLen = String(raw || '').length;
-        if (strLen + 2 > maxWidths.length > todasColumnas.indexOf(meta) && strLen + 2 > maxWidths[todasColumnas.indexOf(meta)]) {
-          maxWidths[todasColumnas.indexOf(meta)] = Math.min(strLen + 2, 60);
+        if (strLen + 2 > maxWidths[colIdx]) {
+          maxWidths[colIdx] = Math.min(strLen + 2, 60);
         }
       });
 
