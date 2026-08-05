@@ -98,6 +98,14 @@
                 <small>1=Tarde, 0=A tiempo (solo pendientes)</small>
               </div>
             </label>
+            <label class="option-toggle" :class="{ active: bloqueDiasVerificables }">
+              <input type="checkbox" v-model="bloqueDiasVerificables" />
+              <span class="toggle-track"><span class="toggle-thumb" /></span>
+              <div>
+                <strong>Días tarde por verificables</strong>
+                <small>Número de días de retraso</small>
+              </div>
+            </label>
           </div>
         </section>
 
@@ -179,6 +187,7 @@ const bloqueInformacionGeneral = ref(false);
 const bloqueEtapasTarde     = ref(false);
 const bloqueDiasTarde       = ref(false);
 const bloqueVerificablesTarde = ref(false);
+const bloqueDiasVerificables = ref(false);
 
 const genCamposSeleccionados = ref<string[]>([
   'codigoOlympo', 'nombre', 'direccionNombre', 'responsableNombre',
@@ -254,7 +263,8 @@ async function generarExcel() {
       informacionGeneral: bloqueInformacionGeneral.value,
       etapasTarde: bloqueEtapasTarde.value,
       diasTarde: bloqueDiasTarde.value,
-      verificablesTarde: bloqueVerificablesTarde.value
+      verificablesTarde: bloqueVerificablesTarde.value,
+      diasVerificables: bloqueDiasVerificables.value
     };
     const { blob, filename } = await reportesService.generarReporte(
       areas,
