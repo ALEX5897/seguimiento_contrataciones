@@ -872,39 +872,47 @@ const COLS_VERIFICABLES = [
 
 // Expande un proceso en sus verificables
 function construirVerificablesConFase(procesos) {
-  // Obtener todos los verificables del catálogo
   const faseOrder = ['preparatoria', 'precontractual', 'contractual', 'sin_clasificar'];
-  const fasesMap = new Map();
 
-  faseOrder.forEach(fase => {
-    fasesMap.set(fase, new Map());
-  });
+  // Recopilar verificables únicos por ID, mapeando SOLO la primera aparición
+  const verificablesMap = new Map(); // key: etapaId, value: { id, nombre, orden, fase }
 
-  // Iterar sobre procesos y recopilar verificables
   procesos.forEach(proceso => {
     const etapasDetalle = proceso.etapasDetalle || [];
     etapasDetalle.forEach(etapa => {
-      const fase = etapa.fase || 'sin_clasificar'; // Asumir fase si no está disponible
-      if (!fasesMap.has(fase)) {
-        fasesMap.set(fase, new Map());
-      }
-      const verifMap = fasesMap.get(fase);
-      if (!verifMap.has(etapa.etapaId)) {
-        verifMap.set(etapa.etapaId, {
+      if (!verificablesMap.has(etapa.etapaId)) {
+        const fase = etapa.fase || 'sin_clasificar';
+        verificablesMap.set(etapa.etapaId, {
           id: etapa.etapaId,
           nombre: etapa.etapaNombre,
-          orden: etapa.orden
+          orden: etapa.orden,
+          fase: fase
         });
       }
     });
   });
 
+  console.log(`DEBUG construirVerificablesConFase: Total verificables únicos = ${verificablesMap.size}`);
+
+  // Agrupar verificables únicos por fase
+  const fasesMap = new Map();
+  faseOrder.forEach(fase => {
+    fasesMap.set(fase, []);
+  });
+
+  verificablesMap.forEach(verif => {
+    const fase = verif.fase;
+    if (fasesMap.has(fase)) {
+      fasesMap.get(fase).push(verif);
+    }
+  });
+
   // Convertir a estructura de fases ordenadas
   const fases = [];
   faseOrder.forEach(faseKey => {
-    const verifMap = fasesMap.get(faseKey);
-    if (verifMap && verifMap.size > 0) {
-      const verificables = Array.from(verifMap.values()).sort((a, b) => a.orden - b.orden);
+    const verifArray = fasesMap.get(faseKey) || [];
+    if (verifArray.length > 0) {
+      const verificables = verifArray.sort((a, b) => a.orden - b.orden);
       const nombreFase = faseKey === 'preparatoria' ? 'Etapas preparatorias'
                        : faseKey === 'precontractual' ? 'Etapas precontractuales'
                        : faseKey === 'contractual' ? 'Etapas contractuales'
@@ -985,24 +993,29 @@ router.post('/generar', async (req, res) => {
     });
 
     // Preparar columnas y datos según si incluye verificables
-    let todasColumnas = metaCampos;
+    let todasColumnas = [...metaCampos];  // ← Crear COPIA, no referencia
     let verificablesConFase = null;
     let filas = procesosBase;
 
     if (incluirVerificables) {
-      // Obtener verificables agrupados por fase
+      // Obtener verificables agrupados por fase (deduplicados por ID)
       verificablesConFase = construirVerificablesConFase(procesosBase);
 
-      // Agregar columnas dinámicas para cada verificable
+      // Agregar columnas dinámicas SOLO para verificables únicos de verificablesConFase.fases
+      const verifSet = new Set(); // Evitar duplicados
       verificablesConFase.fases.forEach(fase => {
         fase.verificables.forEach(verif => {
-          todasColumnas.push({
-            key: `verif_${verif.id}`,
-            label: verif.nombre,
-            tipo: 'numero',
-            width: 12,
-            fase: fase.nombre
-          });
+          const key = `verif_${verif.id}`;
+          if (!verifSet.has(key)) {
+            verifSet.add(key);
+            todasColumnas.push({
+              key: key,
+              label: verif.nombre,
+              tipo: 'numero',
+              width: 12,
+              fase: fase.key
+            });
+          }
         });
       });
 
@@ -1065,7 +1078,7 @@ router.post('/generar', async (req, res) => {
       // Crear encabezados manualmente primero
       // DOS FILAS DE ENCABEZADO cuando hay verificables
 
-      // Fila 1: Nombres de fases (merged cells) - usando ws.getCell() directamente
+      // Fila 1: Asignar colores de fase a TODOS los verificables (no solo los nombrados)
       let colIdx = 1;
 
       // Columnas de campos principales (vacías en primera fila)
@@ -1078,26 +1091,19 @@ router.post('/generar', async (req, res) => {
         colIdx++;
       });
 
-      // Agregar fases con colores diferenciados (sin merge para evitar problemas de ExcelJS)
-      verificablesConFase.fases.forEach(fase => {
-        const startCol = colIdx;
-        const endCol = colIdx + fase.verificables.length - 1;
-        const faseColor = coloresPorFase[fase.key] || coloresPorFase['preparatoria'];
+      // Para cada verificable en todasColumnas, asignar color de fase
+      todasColumnas.slice(metaCampos.length).forEach((meta) => {
+        // Obtener la fase del verificable
+        const faseKey = meta.fase || (faseColorMap.get(parseInt(meta.key.replace('verif_', ''))) || 'sin_clasificar');
+        const faseColor = coloresPorFase[faseKey] || { header: '808080', lightBg: 'E0E0E0' };
 
-        console.log(`Fase: ${fase.nombre}, Key: ${fase.key}, Color: ${faseColor.header}`);
-
-        // Llenar TODAS las celdas del rango con el color (sin merge)
-        for (let i = startCol; i <= endCol; i++) {
-          const cell = ws.getCell(1, i);
-          // Solo la primera celda tiene el valor, las demás vacías
-          cell.value = i === startCol ? fase.nombre : '';
-          cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 12 };
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.header } };
-          cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-          cell.border = { bottom: { style: 'thick', color: { argb: faseColor.header } } };
-        }
-
-        colIdx = endCol + 1;
+        const cell = ws.getCell(1, colIdx);
+        cell.value = '';
+        cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.header } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+        cell.border = { bottom: { style: 'medium', color: { argb: faseColor.header } } };
+        colIdx++;
       });
       ws.getRow(1).height = 28;
 
