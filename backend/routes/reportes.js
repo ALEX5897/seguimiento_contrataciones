@@ -1003,6 +1003,11 @@ router.post('/generar', async (req, res) => {
       await agregarHojaMatrizEtapas(wb, procesosBase, bloquesMatriz);
     }
 
+    // ── Agregar hoja de matriz de verificables tarde ─────────────────────────
+    if (bloquesMatriz.verificablesTarde && !incluirVerificables && procesosBase.length > 0) {
+      await agregarHojaVerificablesTarde(wb, procesosBase, bloquesMatriz);
+    }
+
     // ── Hoja Info ──────────────────────────────────────────────────────────
     const wsMeta = wb.addWorksheet('Info');
     wsMeta.columns = [{ width: 28 }, { width: 48 }];
@@ -2292,6 +2297,175 @@ async function agregarHojaMatrizEtapas(wb, procesos, bloquesMatriz = {}) {
 
   } catch (error) {
     console.error('Error al construir matriz de etapas:', error);
+  }
+}
+
+// ── MATRIZ DE VERIFICABLES TARDE ──────────────────────────────────────────────
+
+function construirMatrizVerificables(procesos) {
+  // Obtener todos los verificables únicos de todos los procesos
+  const verificablesMap = new Map();
+
+  procesos.forEach(proceso => {
+    const etapasDetalle = proceso.etapasDetalle || [];
+    etapasDetalle.forEach(etapa => {
+      if (!verificablesMap.has(etapa.etapaId)) {
+        verificablesMap.set(etapa.etapaId, {
+          id: etapa.etapaId,
+          nombre: etapa.etapaNombre,
+          orden: etapa.orden
+        });
+      }
+    });
+  });
+
+  // Convertir a array ordenado por orden
+  const todosLosVerificables = Array.from(verificablesMap.values()).sort((a, b) => a.orden - b.orden);
+
+  // Crear mapa de verificables por etapaId para búsqueda rápida
+  const mapVerificablesDelProceso = new Map();
+  procesos.forEach(proceso => {
+    const clave = `${proceso.codigoOlympo}::${proceso.nombre}`;
+    const etapasDetalle = proceso.etapasDetalle || [];
+    mapVerificablesDelProceso.set(clave, new Map(
+      etapasDetalle.map(e => [e.etapaId, e])
+    ));
+  });
+
+  // Construir datos para cada proceso
+  const procesosConDatos = procesos.map(proceso => {
+    const clave = `${proceso.codigoOlympo}::${proceso.nombre}`;
+    const verificablesDelProceso = mapVerificablesDelProceso.get(clave) || new Map();
+
+    const datosVerificables = {};
+
+    todosLosVerificables.forEach(verif => {
+      const verificableDelProceso = verificablesDelProceso.get(verif.id);
+
+      if (!verificableDelProceso) {
+        // No está asignado
+        datosVerificables[verif.id] = 'N/A';
+      } else {
+        const estado = verificableDelProceso.estado;
+        const diasAtraso = verificableDelProceso.diasAtraso || 0;
+
+        // PENDIENTE Y CON DÍAS DE RETRASO = 1
+        // A TIEMPO = 0
+        // NO ASIGNADO = N/A
+        if (estado === 'pendiente' && diasAtraso > 0) {
+          datosVerificables[verif.id] = 1;
+        } else {
+          datosVerificables[verif.id] = 0;
+        }
+      }
+    });
+
+    return {
+      codigoOlympo: proceso.codigoOlympo,
+      nombreProceso: proceso.nombre,
+      direccion: proceso.direccionNombre,
+      responsable: proceso.responsableNombre,
+      tipoPlan: proceso.tipoPlan,
+      estadoGeneral: proceso.estadoGeneralLabel,
+      avance: `${proceso.porcentajeAvance}%`,
+      verificablesTarde: datosVerificables
+    };
+  });
+
+  return {
+    todosLosVerificables,
+    procesosConDatos
+  };
+}
+
+// Agregar hoja de verificables tarde al workbook
+async function agregarHojaVerificablesTarde(wb, procesos, bloquesMatriz = {}) {
+  try {
+    const { todosLosVerificables, procesosConDatos } = construirMatrizVerificables(procesos);
+
+    if (!wb._worksheets || !wb._worksheets.find(ws => ws.name === 'Verificables Tarde')) {
+      const ws = wb.addWorksheet('Verificables Tarde');
+
+      const COLOR_TITULO_BLOQUE = '1E40AF';
+      const COLOR_HEADER_PROCESO = '0F2F55';
+      const COLOR_HEADER_VERIFICABLE = '1E3A8A';
+
+      let filaActual = 1;
+
+      // Título
+      const titleRow = ws.getRow(filaActual);
+      titleRow.getCell(1).value = '⏱️ VERIFICABLES TARDE (1=Tarde, 0=A Tiempo, N/A=No Asignado)';
+      titleRow.getCell(1).font = { bold: true, size: 11, color: { argb: 'FFFFFF' } };
+      titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_TITULO_BLOQUE } };
+      titleRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
+      titleRow.height = 20;
+      filaActual++;
+
+      // Encabezado: Verificable + Procesos
+      const headerRow = ws.getRow(filaActual);
+      const headerCell = headerRow.getCell(1);
+      headerCell.value = 'Verificable';
+      headerCell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 10 };
+      headerCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_VERIFICABLE } };
+      headerCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+
+      procesosConDatos.forEach((proceso, procIdx) => {
+        const cell = headerRow.getCell(procIdx + 2);
+        cell.value = proceso.codigoOlympo;
+        cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 10 };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_PROCESO } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      });
+      headerRow.height = 20;
+      filaActual++;
+
+      // Datos: una fila por cada verificable
+      todosLosVerificables.forEach((verificable, verifIdx) => {
+        const dataRow = ws.getRow(filaActual);
+
+        // Primera columna: nombre del verificable
+        const nameCell = dataRow.getCell(1);
+        nameCell.value = verificable.nombre;
+        nameCell.font = { bold: true, size: 9, color: { argb: '1E40AF' } };
+        nameCell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+        nameCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F0F4FF' } };
+
+        // Datos de cada proceso
+        procesosConDatos.forEach((proceso, procIdx) => {
+          const cell = dataRow.getCell(procIdx + 2);
+          const valor = proceso.verificablesTarde[verificable.id];
+
+          cell.value = valor;
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+          // Estilos según tipo de valor
+          if (valor === 1) {
+            // Tarde (rojo)
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E5' } };
+            cell.font = { bold: true, color: { argb: 'D32F2F' } };
+          } else if (valor === 0) {
+            // A tiempo (verde)
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E8F5E9' } };
+            cell.font = { bold: true, color: { argb: '2E7D32' } };
+          } else {
+            // N/A (gris)
+            cell.font = { color: { argb: '9CA3AF' } };
+          }
+        });
+
+        dataRow.height = 18;
+        filaActual++;
+      });
+
+      // Ajustar ancho de columnas
+      ws.getColumn(1).width = 28;
+      for (let i = 0; i < procesosConDatos.length; i++) {
+        ws.getColumn(i + 2).width = 14;
+      }
+    }
+
+  } catch (error) {
+    console.error('Error al construir matriz de verificables tarde:', error);
   }
 }
 

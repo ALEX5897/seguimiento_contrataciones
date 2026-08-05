@@ -87,6 +87,18 @@
               </div>
             </label>
           </div>
+
+          <div class="bloques-section" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+            <strong style="display: block; margin-bottom: 8px;">Matriz de verificables</strong>
+            <label class="option-toggle" :class="{ active: bloqueVerificablesTarde }">
+              <input type="checkbox" v-model="bloqueVerificablesTarde" />
+              <span class="toggle-track"><span class="toggle-thumb" /></span>
+              <div>
+                <strong>Verificables tarde</strong>
+                <small>1=Tarde, 0=A tiempo (solo pendientes)</small>
+              </div>
+            </label>
+          </div>
         </section>
 
         <button
@@ -166,6 +178,7 @@ const incluirVerificables   = ref(false);
 const bloqueInformacionGeneral = ref(false);
 const bloqueEtapasTarde     = ref(false);
 const bloqueDiasTarde       = ref(false);
+const bloqueVerificablesTarde = ref(false);
 
 const genCamposSeleccionados = ref<string[]>([
   'codigoOlympo', 'nombre', 'direccionNombre', 'responsableNombre',
@@ -240,7 +253,8 @@ async function generarExcel() {
     const bloquesMatriz = {
       informacionGeneral: bloqueInformacionGeneral.value,
       etapasTarde: bloqueEtapasTarde.value,
-      diasTarde: bloqueDiasTarde.value
+      diasTarde: bloqueDiasTarde.value,
+      verificablesTarde: bloqueVerificablesTarde.value
     };
     const { blob, filename } = await reportesService.generarReporte(
       areas,
