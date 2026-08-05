@@ -1128,11 +1128,11 @@ router.post('/generar', async (req, res) => {
       });
       ws.getRow(2).height = 22;
 
-      // DESPUÉS de crear encabezados, definir ws.columns para que ExcelJS mapee los datos
-      ws.columns = todasColumnas.map((meta, i) => ({
-        key: meta.key,
-        width: maxWidths[i]
-      }));
+      // NO definir ws.columns automáticamente - agregar datos manualmente por columna
+      // Ajustar ancho de columnas directamente
+      todasColumnas.forEach((meta, i) => {
+        ws.getColumn(i + 1).width = maxWidths[i];
+      });
 
       ws.views = [{ state: 'frozen', ySplit: 2 }];
       headerRowNum = 2;
@@ -1157,51 +1157,101 @@ router.post('/generar', async (req, res) => {
     }
 
     // Agregar filas de datos
-    filas.forEach((fila, rowIdx) => {
-      const rowData = {};
-      todasColumnas.forEach((meta, colIdx) => {
-        const raw = extractCampoValue(fila, meta.key);
-        rowData[meta.key] = formatCellValue(raw, meta.tipo);
-        const strLen = String(raw || '').length;
-        if (strLen + 2 > maxWidths[colIdx]) {
-          maxWidths[colIdx] = Math.min(strLen + 2, 60);
-        }
-      });
+    if (incluirVerificables && verificablesConFase && verificablesConFase.fases.length > 0) {
+      // MODO CON VERIFICABLES: agregar datos manualmente (sin ws.addRow)
+      filas.forEach((fila, rowIdx) => {
+        const rowNum = headerRowNum + 1 + rowIdx;
+        const row = ws.getRow(rowNum);
+        row.height = 18;
 
-      const dataRow = ws.addRow(rowData);
-      dataRow.height = 18;
+        todasColumnas.forEach((meta, colIdx) => {
+          const cell = row.getCell(colIdx + 1);
+          const raw = extractCampoValue(fila, meta.key);
+          const formatted = formatCellValue(raw, meta.tipo);
 
-      if (rowIdx % 2 === 1) {
-        dataRow.eachCell({ includeEmpty: true }, (cell) => {
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_ALT_BG } };
-        });
-      }
+          cell.value = formatted;
 
-      todasColumnas.forEach((meta, colIdx) => {
-        const cell = dataRow.getCell(colIdx + 1);
-        const raw = extractCampoValue(fila, meta.key);
-        applyColumnFormat(cell, meta.tipo, raw);
-
-        if (meta.tipo === 'moneda') {
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_MONEDA_BG } };
-        } else if (meta.key && meta.key.startsWith('verif_')) {
-          // Aplicar color de fondo según la fase del verificable
-          const verifId = parseInt(meta.key.replace('verif_', ''));
-          const faseKey = faseColorMap.get(verifId);
-          const faseColor = faseKey ? coloresPorFase[faseKey] : null;
-
-          if (faseColor && rowIdx % 2 === 0) {
-            // Usar un color más claro en filas alternas
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.lightBg } };
+          const strLen = String(raw || '').length;
+          if (strLen + 2 > maxWidths[colIdx]) {
+            maxWidths[colIdx] = Math.min(strLen + 2, 60);
           }
+
+          // Aplicar formato según tipo de columna
+          applyColumnFormat(cell, meta.tipo, raw);
+
+          // Colores alternos y específicos
+          if (rowIdx % 2 === 1) {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_ALT_BG } };
+          }
+
+          if (meta.tipo === 'moneda') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_MONEDA_BG } };
+          } else if (meta.key && meta.key.startsWith('verif_')) {
+            // Aplicar color de fondo según la fase del verificable
+            const verifId = parseInt(meta.key.replace('verif_', ''));
+            const faseKey = faseColorMap.get(verifId);
+            const faseColor = faseKey ? coloresPorFase[faseKey] : null;
+
+            if (faseColor && rowIdx % 2 === 0) {
+              // Usar un color más claro en filas alternas
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.lightBg } };
+            }
+          }
+
+          cell.alignment = { vertical: 'middle', horizontal: getAlign(meta.tipo) };
+          cell.border = { bottom: { style: 'thin', color: { argb: 'E2E8F0' } } };
+        });
+      });
+    } else {
+      // MODO NORMAL: usar ws.addRow() con encabezados automáticos
+      filas.forEach((fila, rowIdx) => {
+        const rowData = {};
+        todasColumnas.forEach((meta) => {
+          const raw = extractCampoValue(fila, meta.key);
+          rowData[meta.key] = formatCellValue(raw, meta.tipo);
+          const strLen = String(raw || '').length;
+          const colIdx = todasColumnas.findIndex(m => m.key === meta.key);
+          if (strLen + 2 > maxWidths[colIdx]) {
+            maxWidths[colIdx] = Math.min(strLen + 2, 60);
+          }
+        });
+
+        const dataRow = ws.addRow(rowData);
+        dataRow.height = 18;
+
+        if (rowIdx % 2 === 1) {
+          dataRow.eachCell({ includeEmpty: true }, (cell) => {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_ALT_BG } };
+          });
         }
 
-        cell.alignment = { vertical: 'middle', horizontal: getAlign(meta.tipo) };
-        cell.border = { bottom: { style: 'thin', color: { argb: 'E2E8F0' } } };
-      });
-    });
+        todasColumnas.forEach((meta, colIdx) => {
+          const cell = dataRow.getCell(colIdx + 1);
+          const raw = extractCampoValue(fila, meta.key);
+          applyColumnFormat(cell, meta.tipo, raw);
 
-    ws.columns.forEach((col, i) => { col.width = maxWidths[i] + 1; });
+          if (meta.tipo === 'moneda') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_MONEDA_BG } };
+          }
+
+          cell.alignment = { vertical: 'middle', horizontal: getAlign(meta.tipo) };
+          cell.border = { bottom: { style: 'thin', color: { argb: 'E2E8F0' } } };
+        });
+      });
+    }
+
+    // Actualizar anchos de columnas
+    if (incluirVerificables && verificablesConFase && verificablesConFase.fases.length > 0) {
+      // Modo manual: actualizar anchos directamente en getColumn
+      todasColumnas.forEach((meta, i) => {
+        ws.getColumn(i + 1).width = maxWidths[i] + 1;
+      });
+    } else {
+      // Modo ws.columns: actualizar desde el array de columnas
+      ws.columns.forEach((col, i) => {
+        col.width = maxWidths[i] + 1;
+      });
+    }
 
     ws.autoFilter = {
       from: { row: headerRowNum, column: 1 },
