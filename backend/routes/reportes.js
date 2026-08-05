@@ -1013,9 +1013,26 @@ router.post('/generar', async (req, res) => {
 
     const COLOR_HEADER_BG  = '0F2F55';
     const COLOR_HEADER_FG  = 'FFFFFF';
-    const COLOR_VERIF_BG   = '0F5132'; // verde oscuro para columnas de verificables
     const COLOR_MONEDA_BG  = 'EEF4FF';
     const COLOR_ALT_BG     = 'F8FAFC';
+
+    // Colores por fase
+    const coloresPorFase = {
+      'preparatoria': { header: '1E3A8A', lightBg: 'DBEAFE' },      // Azul
+      'precontractual': { header: '065F46', lightBg: 'DCFCE7' },    // Verde
+      'contractual': { header: '7C2D12', lightBg: 'FEEDDE' }        // Naranja
+    };
+
+    // Mapa de fase por key
+    const faseColorMap = new Map();
+    if (verificablesConFase) {
+      verificablesConFase.fases.forEach(fase => {
+        const faseKey = fase.key;
+        fase.verificables.forEach(verif => {
+          faseColorMap.set(verif.id, faseKey);
+        });
+      });
+    }
 
     const ws = wb.addWorksheet('Reporte', {
       views: [{ state: 'frozen', ySplit: 1 }]
@@ -1050,16 +1067,18 @@ router.post('/generar', async (req, res) => {
         colIdx++;
       });
 
-      // Agregar fases con merged cells
+      // Agregar fases con merged cells y colores diferenciados
       verificablesConFase.fases.forEach(fase => {
         const startCol = colIdx;
         const endCol = colIdx + fase.verificables.length - 1;
+        const faseColor = coloresPorFase[fase.key] || coloresPorFase['preparatoria'];
 
         const cell = faseRow.getCell(startCol);
         cell.value = fase.nombre;
-        cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_VERIF_BG } };
+        cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 11 };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.header } };
         cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+        cell.border = { bottom: { style: 'medium', color: { argb: faseColor.header } } };
 
         if (startCol < endCol) {
           ws.mergeCells(1, startCol, 1, endCol);
@@ -1067,7 +1086,7 @@ router.post('/generar', async (req, res) => {
 
         colIdx = endCol + 1;
       });
-      faseRow.height = 22;
+      faseRow.height = 24;
 
       // Fila 2: Nombres de campos y verificables
       const headerRow = ws.getRow(2);
@@ -1084,13 +1103,14 @@ router.post('/generar', async (req, res) => {
       });
 
       verificablesConFase.fases.forEach(fase => {
+        const faseColor = coloresPorFase[fase.key] || coloresPorFase['preparatoria'];
         fase.verificables.forEach(verif => {
           const cell = headerRow.getCell(colIdx);
           cell.value = verif.nombre;
           cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_VERIF_BG } };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.header } };
           cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-          cell.border = { bottom: { style: 'medium', color: { argb: '198754' } } };
+          cell.border = { bottom: { style: 'medium', color: { argb: faseColor.header } } };
           colIdx++;
         });
       });
@@ -1140,6 +1160,16 @@ router.post('/generar', async (req, res) => {
 
         if (meta.tipo === 'moneda') {
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_MONEDA_BG } };
+        } else if (meta.key && meta.key.startsWith('verif_')) {
+          // Aplicar color de fondo según la fase del verificable
+          const verifId = parseInt(meta.key.replace('verif_', ''));
+          const faseKey = faseColorMap.get(verifId);
+          const faseColor = faseKey ? coloresPorFase[faseKey] : null;
+
+          if (faseColor && rowIdx % 2 === 0) {
+            // Usar un color más claro en filas alternas
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.lightBg } };
+          }
         }
 
         cell.alignment = { vertical: 'middle', horizontal: getAlign(meta.tipo) };
