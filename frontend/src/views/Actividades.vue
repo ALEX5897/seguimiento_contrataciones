@@ -71,6 +71,20 @@
           <small class="kpi-foot">Presupuesto fuera de Plan</small>
         </article>
 
+        <article class="kpi-card">
+          <div class="kpi-header">
+            <i class="ri-file-list-line kpi-icon"></i>
+            <span class="kpi-title">Total de procesos</span>
+          </div>
+          <div class="kpi-donut-row">
+            <strong class="kpi-value">{{ kpisProcesos.totalProcesos }}</strong>
+            <div class="kpi-mini-donut" :style="{ '--value': `${kpisProcesos.porcentajeCumplimiento}%`, '--kpi-color': colorCumplimiento }">
+              <span :style="{ color: colorCumplimiento }">{{ kpisProcesos.porcentajeCumplimiento }}%</span>
+            </div>
+          </div>
+          <small class="kpi-foot">Total de procesos y cumplimiento general</small>
+        </article>
+
         <article class="kpi-card" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('pac') }" @click="toggleFiltroKpi('pac')" style="cursor: pointer;">
           <div class="kpi-header">
             <i class="ri-book-line kpi-icon"></i>
@@ -87,20 +101,6 @@
           </div>
           <div class="kpi-value">{{ procesosNoPAC }}</div>
           <small class="kpi-foot">Procesos fuera de Plan</small>
-        </article>
-
-        <article class="kpi-card">
-          <div class="kpi-header">
-            <i class="ri-file-list-line kpi-icon"></i>
-            <span class="kpi-title">Total de procesos</span>
-          </div>
-          <div class="kpi-donut-row">
-            <strong class="kpi-value">{{ kpisProcesos.totalProcesos }}</strong>
-            <div class="kpi-mini-donut" :style="{ '--value': `${kpisProcesos.porcentajeCumplimiento}%`, '--kpi-color': colorCumplimiento }">
-              <span :style="{ color: colorCumplimiento }">{{ kpisProcesos.porcentajeCumplimiento }}%</span>
-            </div>
-          </div>
-          <small class="kpi-foot">Total de procesos y cumplimiento general</small>
         </article>
 
         <article class="kpi-card" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('completos') }" @click="toggleFiltroKpi('completos')" style="cursor: pointer;">
