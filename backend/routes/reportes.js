@@ -870,6 +870,55 @@ const COLS_VERIFICABLES = [
 ];
 
 // Expande un proceso en sus verificables
+function construirVerificablesConFase(procesos) {
+  // Obtener todos los verificables del catálogo
+  const faseOrder = ['preparatoria', 'precontractual', 'contractual', 'sin_clasificar'];
+  const fasesMap = new Map();
+
+  faseOrder.forEach(fase => {
+    fasesMap.set(fase, new Map());
+  });
+
+  // Iterar sobre procesos y recopilar verificables
+  procesos.forEach(proceso => {
+    const etapasDetalle = proceso.etapasDetalle || [];
+    etapasDetalle.forEach(etapa => {
+      const fase = etapa.fase || 'sin_clasificar'; // Asumir fase si no está disponible
+      if (!fasesMap.has(fase)) {
+        fasesMap.set(fase, new Map());
+      }
+      const verifMap = fasesMap.get(fase);
+      if (!verifMap.has(etapa.etapaId)) {
+        verifMap.set(etapa.etapaId, {
+          id: etapa.etapaId,
+          nombre: etapa.etapaNombre,
+          orden: etapa.orden
+        });
+      }
+    });
+  });
+
+  // Convertir a estructura de fases ordenadas
+  const fases = [];
+  faseOrder.forEach(faseKey => {
+    const verifMap = fasesMap.get(faseKey);
+    if (verifMap && verifMap.size > 0) {
+      const verificables = Array.from(verifMap.values()).sort((a, b) => a.orden - b.orden);
+      const nombreFase = faseKey === 'preparatoria' ? 'Etapas preparatorias'
+                       : faseKey === 'precontractual' ? 'Etapas precontractuales'
+                       : faseKey === 'contractual' ? 'Etapas contractuales'
+                       : 'Etapas sin clasificar';
+      fases.push({
+        key: faseKey,
+        nombre: nombreFase,
+        verificables
+      });
+    }
+  });
+
+  return { fases };
+}
+
 function expandirEnVerificables(proceso) {
   const etapas = proceso.etapasDetalle || [];
   if (etapas.length === 0) {
@@ -903,7 +952,6 @@ router.post('/generar', async (req, res) => {
     }
 
     const metaCampos = camposValidados.map((k) => CAMPOS_DISPONIBLES.find((c) => c.key === k));
-    const todasColumnas = incluirVerificables ? [...metaCampos, ...COLS_VERIFICABLES] : metaCampos;
 
     // Obtener datos respetando scope del usuario
     const subtareas = await mysql.getAllSubtareasByScope(scope);
@@ -919,10 +967,44 @@ router.post('/generar', async (req, res) => {
       );
     }
 
-    // Expandir en verificables si aplica
-    const filas = incluirVerificables
-      ? procesosBase.flatMap(expandirEnVerificables)
-      : procesosBase;
+    // Preparar columnas y datos según si incluye verificables
+    let todasColumnas = metaCampos;
+    let verificablesConFase = null;
+    let filas = procesosBase;
+
+    if (incluirVerificables) {
+      // Obtener verificables agrupados por fase
+      verificablesConFase = construirVerificablesConFase(procesosBase);
+
+      // Agregar columnas dinámicas para cada verificable
+      verificablesConFase.fases.forEach(fase => {
+        fase.verificables.forEach(verif => {
+          todasColumnas.push({
+            key: `verif_${verif.id}`,
+            label: verif.nombre,
+            tipo: 'numero',
+            width: 12,
+            fase: fase.nombre
+          });
+        });
+      });
+
+      // Enriquecer procesos con datos de verificables
+      filas = procesosBase.map(proceso => {
+        const datosProceso = { ...proceso };
+        verificablesConFase.fases.forEach(fase => {
+          fase.verificables.forEach(verif => {
+            const etapa = (proceso.etapasDetalle || []).find(e => e.etapaId === verif.id);
+            if (!etapa) {
+              datosProceso[`verif_${verif.id}`] = 'N/A';
+            } else {
+              datosProceso[`verif_${verif.id}`] = (etapa.estado === 'pendiente' && etapa.diasAtraso > 0) ? 1 : 0;
+            }
+          });
+        });
+        return datosProceso;
+      });
+    }
 
     // ── Generar Excel con ExcelJS ──────────────────────────────────────────
     const wb = new ExcelJS.Workbook();
@@ -941,31 +1023,109 @@ router.post('/generar', async (req, res) => {
 
     const maxWidths = todasColumnas.map((m) => Math.max(m.label.length + 4, m.width || getDefaultWidth(m.tipo)));
 
-    ws.columns = todasColumnas.map((meta, i) => ({
-      header: meta.label,
-      key: meta.key,
-      width: maxWidths[i]
-    }));
-
-    // Estilo encabezados
-    const headerRow = ws.getRow(1);
-    headerRow.eachCell((cell, colIdx) => {
-      const isVerif = incluirVerificables && colIdx > metaCampos.length;
-      cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: isVerif ? COLOR_VERIF_BG : COLOR_HEADER_BG } };
-      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-      cell.border = { bottom: { style: 'medium', color: { argb: isVerif ? '198754' : '2F6EB0' } } };
+    // Configurar ancho de columnas
+    todasColumnas.forEach((meta, i) => {
+      ws.getColumn(i + 1).width = maxWidths[i];
     });
-    headerRow.height = 22;
 
-    // Filas de datos
+    let headerRowNum = 1;
+
+    // Crear encabezados
+    if (incluirVerificables && verificablesConFase && verificablesConFase.fases.length > 0) {
+      // DOS FILAS DE ENCABEZADO cuando hay verificables
+
+      // Fila 1: Nombres de fases (merged cells)
+      const faseRow = ws.getRow(1);
+      let colIdx = 1;
+
+      // Columnas de campos principales (vacías en primera fila)
+      metaCampos.forEach(() => {
+        const cell = faseRow.getCell(colIdx);
+        cell.value = '';
+        cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_BG } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        colIdx++;
+      });
+
+      // Agregar fases con merged cells
+      verificablesConFase.fases.forEach(fase => {
+        const startCol = colIdx;
+        const endCol = colIdx + fase.verificables.length - 1;
+
+        const cell = faseRow.getCell(startCol);
+        cell.value = fase.nombre;
+        cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_VERIF_BG } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+
+        if (startCol < endCol) {
+          ws.mergeCells(1, startCol, 1, endCol);
+        }
+
+        colIdx = endCol + 1;
+      });
+      faseRow.height = 22;
+
+      // Fila 2: Nombres de campos y verificables
+      const headerRow = ws.getRow(2);
+      colIdx = 1;
+
+      metaCampos.forEach((meta) => {
+        const cell = headerRow.getCell(colIdx);
+        cell.value = meta.label;
+        cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_BG } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+        cell.border = { bottom: { style: 'medium', color: { argb: '2F6EB0' } } };
+        colIdx++;
+      });
+
+      verificablesConFase.fases.forEach(fase => {
+        fase.verificables.forEach(verif => {
+          const cell = headerRow.getCell(colIdx);
+          cell.value = verif.nombre;
+          cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_VERIF_BG } };
+          cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+          cell.border = { bottom: { style: 'medium', color: { argb: '198754' } } };
+          colIdx++;
+        });
+      });
+      headerRow.height = 22;
+
+      ws.views = [{ state: 'frozen', ySplit: 2 }];
+      headerRowNum = 2;
+    } else {
+      // UNA FILA DE ENCABEZADO (modo normal)
+      ws.columns = todasColumnas.map((meta, i) => ({
+        header: meta.label,
+        key: meta.key,
+        width: maxWidths[i]
+      }));
+
+      const headerRow = ws.getRow(1);
+      headerRow.eachCell((cell) => {
+        cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_BG } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+        cell.border = { bottom: { style: 'medium', color: { argb: '2F6EB0' } } };
+      });
+      headerRow.height = 22;
+
+      ws.views = [{ state: 'frozen', ySplit: 1 }];
+    }
+
+    // Agregar filas de datos
     filas.forEach((fila, rowIdx) => {
       const rowData = {};
-      todasColumnas.forEach((meta, colIdx) => {
+      todasColumnas.forEach((meta) => {
         const raw = extractCampoValue(fila, meta.key);
         rowData[meta.key] = formatCellValue(raw, meta.tipo);
         const strLen = String(raw || '').length;
-        if (strLen + 2 > maxWidths[colIdx]) maxWidths[colIdx] = Math.min(strLen + 2, 60);
+        if (strLen + 2 > maxWidths.length > todasColumnas.indexOf(meta) && strLen + 2 > maxWidths[todasColumnas.indexOf(meta)]) {
+          maxWidths[todasColumnas.indexOf(meta)] = Math.min(strLen + 2, 60);
+        }
       });
 
       const dataRow = ws.addRow(rowData);
@@ -979,7 +1139,8 @@ router.post('/generar', async (req, res) => {
 
       todasColumnas.forEach((meta, colIdx) => {
         const cell = dataRow.getCell(colIdx + 1);
-        applyColumnFormat(cell, meta.tipo, fila[meta.key]);
+        const raw = extractCampoValue(fila, meta.key);
+        applyColumnFormat(cell, meta.tipo, raw);
 
         if (meta.tipo === 'moneda') {
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_MONEDA_BG } };
@@ -993,27 +1154,17 @@ router.post('/generar', async (req, res) => {
     ws.columns.forEach((col, i) => { col.width = maxWidths[i] + 1; });
 
     ws.autoFilter = {
-      from: { row: 1, column: 1 },
-      to: { row: filas.length + 1, column: todasColumnas.length }
+      from: { row: headerRowNum, column: 1 },
+      to: { row: filas.length + headerRowNum, column: todasColumnas.length }
     };
 
-    // ── Agregar hoja de matriz de etapas por días de retraso ────────────────
-    const tieneAlgunBloque = bloquesMatriz.informacionGeneral || bloquesMatriz.etapasTarde || bloquesMatriz.diasTarde;
-    if (tieneAlgunBloque && !incluirVerificables && procesosBase.length > 0) {
-      await agregarHojaMatrizEtapas(wb, procesosBase, bloquesMatriz);
-    }
-
-    // ── Agregar hoja de matriz de verificables tarde ─────────────────────────
-    if (bloquesMatriz.verificablesTarde && !incluirVerificables && procesosBase.length > 0) {
-      await agregarHojaVerificablesTarde(wb, procesosBase, bloquesMatriz);
-    }
 
     // ── Hoja Info ──────────────────────────────────────────────────────────
     const wsMeta = wb.addWorksheet('Info');
     wsMeta.columns = [{ width: 28 }, { width: 48 }];
     [
       ['Reporte generado el', new Date().toLocaleString('es-EC')],
-      ['Modo', incluirVerificables ? 'Por verificable (una fila por etapa)' : 'Por proceso'],
+      ['Modo', incluirVerificables ? 'Con verificables por columna' : 'Por proceso'],
       ['Áreas incluidas', areas === 'ALL' ? 'Todas' : (Array.isArray(areas) ? areas.join(', ') : areas)],
       ['Total filas', filas.length],
       ['Campos exportados', metaCampos.map((m) => m.label).join(', ')],
