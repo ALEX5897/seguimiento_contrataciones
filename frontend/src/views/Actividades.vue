@@ -2357,18 +2357,18 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 }
 
 .kpi-value-monto {
-  font-size: 1.3rem;
+  font-size: 0.9rem;
   font-weight: 800;
   color: #1e293b;
-  margin: 0.35rem 0;
+  margin: 0.15rem 0;
   word-break: break-word;
 }
 
 .kpi-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.35rem;
+  gap: 0.3rem;
+  margin-bottom: 0.15rem;
 }
 
 .kpi-icon {
@@ -2617,7 +2617,7 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 }
 
 .professional-kpi-grid {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(9, minmax(0, 1fr));
   align-items: stretch;
 }
 
@@ -2628,8 +2628,8 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 .kpi-card {
   background: #ffffff;
   border: 1px solid #d9e2ea;
-  border-radius: 14px;
-  padding: 0.6rem 0.7rem;
+  border-radius: 8px;
+  padding: 0.4rem 0.45rem;
   min-height: auto;
   display: flex;
   flex-direction: column;
@@ -2724,11 +2724,11 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 }
 
 .kpi-foot {
-  margin-top: 0.25rem;
+  margin-top: 0.1rem;
   color: #64748b;
-  font-size: 0.68rem;
+  font-size: 0.55rem;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1;
 }
 
 .kpi-mini-donut,
@@ -2788,26 +2788,26 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 .kpi-label {
   margin: 0;
   color: #64748b;
-  font-size: 0.72rem;
+  font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 
 .kpi-value {
-  margin: 0.3rem 0 0;
+  margin: 0.15rem 0 0;
   color: #020617;
-  font-size: 1.6rem;
+  font-size: 1.1rem;
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1;
 }
 
 .kpi-icon {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.1rem;
+  height: 1.1rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: 6px;
   background: #f1f5f9;
   color: #64748b;
 }
