@@ -2358,9 +2358,11 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 .kpi-header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 0.418rem;
-  margin-bottom: 0.209rem;
+  margin-bottom: 0.5rem;
+  align-self: flex-end;
+  width: auto;
 }
 
 .kpi-icon {
@@ -2619,16 +2621,17 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 
 .kpi-card {
   background: #ffffff;
-  border: 1px solid #d9e2ea;
+  border: none;
+  border-top: 4px solid #d9e2ea;
   border-radius: 8px;
-  padding: 0.441rem 0.4935rem;
+  padding: 1rem 0.7rem;
   min-height: 140px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
   text-align: center;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
   position: relative;
   overflow: visible;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
@@ -2700,103 +2703,92 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 }
 
 .kpi-total-procesos {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  border: 2px solid #f59e0b;
-  box-shadow: 0 10px 28px rgba(245, 158, 11, 0.15);
+  border-top-color: #f59e0b;
 }
 
 .kpi-total-procesos .kpi-icon {
-  background: #fbbf24;
-  color: #ffffff;
-}
-
-.kpi-monto-total {
-  background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
-  border: 2px solid #6366f1;
-}
-
-.kpi-monto-total .kpi-icon {
-  background: #818cf8;
-  color: #ffffff;
-}
-
-.kpi-monto-pac {
-  background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%);
-  border: 2px solid #16a34a;
-}
-
-.kpi-monto-pac .kpi-icon {
-  background: #22c55e;
-  color: #ffffff;
-}
-
-.kpi-monto-nopac {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-  border: 2px solid #dc2626;
-}
-
-.kpi-monto-nopac .kpi-icon {
-  background: #ef4444;
-  color: #ffffff;
-}
-
-.kpi-procesos-pac {
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-  border: 2px solid #2563eb;
-}
-
-.kpi-procesos-pac .kpi-icon {
-  background: #3b82f6;
-  color: #ffffff;
-}
-
-.kpi-procesos-nopac {
-  background: linear-gradient(135deg, #fca5a5 0%, #f87171 100%);
-  border: 2px solid #b91c1c;
-}
-
-.kpi-procesos-nopac .kpi-icon {
-  background: #dc2626;
-  color: #ffffff;
-}
-
-.kpi-procesos-completos {
-  background: linear-gradient(135deg, #dcfce7 0%, #c6f6d5 100%);
-  border: 2px solid #059669;
-}
-
-.kpi-procesos-completos .kpi-icon {
-  background: #10b981;
-  color: #ffffff;
-}
-
-.kpi-procesos-retrasadas {
-  background: linear-gradient(135deg, #fed7aa 0%, #fbbd23 100%);
-  border: 2px solid #d97706;
-}
-
-.kpi-procesos-retrasadas .kpi-icon {
   background: #f59e0b;
   color: #ffffff;
 }
 
-.kpi-procesos-riesgo {
-  background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
-  border: 2px solid #991b1b;
+.kpi-monto-total {
+  border-top-color: #6366f1;
 }
 
-.kpi-procesos-riesgo .kpi-icon {
+.kpi-monto-total .kpi-icon {
+  background: #6366f1;
+  color: #ffffff;
+}
+
+.kpi-monto-pac {
+  border-top-color: #16a34a;
+}
+
+.kpi-monto-pac .kpi-icon {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.kpi-monto-nopac {
+  border-top-color: #dc2626;
+}
+
+.kpi-monto-nopac .kpi-icon {
   background: #dc2626;
   color: #ffffff;
 }
 
+.kpi-procesos-pac {
+  border-top-color: #2563eb;
+}
+
+.kpi-procesos-pac .kpi-icon {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.kpi-procesos-nopac {
+  border-top-color: #991b1b;
+}
+
+.kpi-procesos-nopac .kpi-icon {
+  background: #991b1b;
+  color: #ffffff;
+}
+
+.kpi-procesos-completos {
+  border-top-color: #059669;
+}
+
+.kpi-procesos-completos .kpi-icon {
+  background: #059669;
+  color: #ffffff;
+}
+
+.kpi-procesos-retrasadas {
+  border-top-color: #d97706;
+}
+
+.kpi-procesos-retrasadas .kpi-icon {
+  background: #d97706;
+  color: #ffffff;
+}
+
+.kpi-procesos-riesgo {
+  border-top-color: #991b1b;
+}
+
+.kpi-procesos-riesgo .kpi-icon {
+  background: #991b1b;
+  color: #ffffff;
+}
+
 .kpi-procesos-desierto {
-  background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
-  border: 2px solid #6b7280;
+  border-top-color: #6b7280;
 }
 
 .kpi-procesos-desierto .kpi-icon {
-  background: #9ca3af;
+  background: #6b7280;
   color: #ffffff;
 }
 
