@@ -1090,24 +1090,21 @@ router.post('/generar', async (req, res) => {
         const endCol = colIdx + fase.verificables.length - 1;
         const faseColor = coloresPorFase[fase.key] || coloresPorFase['preparatoria'];
 
-        // Merge primero
-        if (startCol < endCol) {
-          ws.mergeCells(1, startCol, 1, endCol);
+        console.log(`Fase: ${fase.nombre}, Key: ${fase.key}, Color: ${faseColor.header}`);
+
+        // Aplicar estilos a TODAS las celdas del rango
+        for (let i = startCol; i <= endCol; i++) {
+          const cell = faseRow.getCell(i);
+          cell.value = i === startCol ? fase.nombre : '';
+          cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 12 };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.header } };
+          cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+          cell.border = { bottom: { style: 'thick', color: { argb: faseColor.header } } };
         }
 
-        // Aplicar estilos DESPUÉS del merge
-        const cell = faseRow.getCell(startCol);
-        cell.value = fase.nombre;
-        cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 12 };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.header } };
-        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-        cell.border = { bottom: { style: 'thick', color: { argb: faseColor.header } } };
-
-        // También aplicar estilos a las celdas merged
-        for (let i = startCol; i <= endCol; i++) {
-          const mergedCell = faseRow.getCell(i);
-          mergedCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.header } };
-          mergedCell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 12 };
+        // Merge después de aplicar estilos
+        if (startCol < endCol) {
+          ws.mergeCells(1, startCol, 1, endCol);
         }
 
         colIdx = endCol + 1;
