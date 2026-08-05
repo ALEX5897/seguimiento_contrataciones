@@ -2119,7 +2119,7 @@ async function construirMatrizEtapas(procesos) {
   };
 }
 
-// Agregar nueva hoja de matriz de etapas al workbook (una sola hoja, bloques verticales)
+// Agregar nueva hoja de matriz de etapas al workbook (una sola hoja, etapas en filas, procesos en columnas)
 async function agregarHojaMatrizEtapas(wb, procesos) {
   try {
     const { todasLasEtapas, procesosConDatos } = await construirMatrizEtapas(procesos);
@@ -2127,7 +2127,8 @@ async function agregarHojaMatrizEtapas(wb, procesos) {
     const ws = wb.addWorksheet('Etapas por retraso');
 
     const COLOR_TITULO_BLOQUE = '1E40AF'; // azul oscuro
-    const COLOR_HEADER_ETAPAS = '0F2F55'; // azul más oscuro
+    const COLOR_HEADER_PROCESO = '0F2F55'; // azul más oscuro
+    const COLOR_HEADER_ETAPA = '1E3A8A'; // azul medio
 
     let filaActual = 1;
 
@@ -2151,7 +2152,7 @@ async function agregarHojaMatrizEtapas(wb, procesos) {
         const cell = headerRow.getCell(idx + 1);
         cell.value = header;
         cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 10 };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_ETAPAS } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_PROCESO } };
         cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
       });
       headerRow.height = 18;
@@ -2181,215 +2182,107 @@ async function agregarHojaMatrizEtapas(wb, procesos) {
       filaActual++; // Espacio
     }
 
-    // ════════════════════════════════════════════════════════════════════════════
-    // BLOQUE 2: ETAPAS TARDE (1=Tarde, 0=A Tiempo, N/A=No Asignada)
-    // ════════════════════════════════════════════════════════════════════════════
-    {
+    // Función auxiliar para crear bloque de etapas
+    const crearBloqueEtapas = (nombreBloque, tipoBloque) => {
       const titleRow = ws.getRow(filaActual);
-      titleRow.getCell(1).value = '⚠️ ETAPAS TARDE (1=Tarde, 0=A Tiempo, N/A=No Asignada)';
+      titleRow.getCell(1).value = nombreBloque;
       titleRow.getCell(1).font = { bold: true, size: 11, color: { argb: 'FFFFFF' } };
       titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_TITULO_BLOQUE } };
       titleRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
       titleRow.height = 20;
       filaActual++;
 
-      // Encabezados con nombres de etapas
+      // Encabezado: Etapa + Procesos (Código)
       const headerRow = ws.getRow(filaActual);
-      headerRow.getCell(1).value = 'Código Olimpo';
-      headerRow.getCell(2).value = 'Nombre Proceso';
-      todasLasEtapas.forEach((etapa, idx) => {
-        const cell = headerRow.getCell(idx + 3);
-        cell.value = etapa.nombre;
+      const headerCell = headerRow.getCell(1);
+      headerCell.value = 'Verificable';
+      headerCell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 10 };
+      headerCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_ETAPA } };
+      headerCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+
+      procesosConDatos.forEach((proceso, procIdx) => {
+        const cell = headerRow.getCell(procIdx + 2);
+        cell.value = proceso.codigoOlympo;
         cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 10 };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_ETAPAS } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_PROCESO } };
         cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
       });
-      headerRow.getCell(1).font = { bold: true, color: { argb: 'FFFFFF' }, size: 10 };
-      headerRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_ETAPAS } };
-      headerRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
-      headerRow.getCell(2).font = { bold: true, color: { argb: 'FFFFFF' }, size: 10 };
-      headerRow.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_ETAPAS } };
-      headerRow.getCell(2).alignment = { vertical: 'middle', horizontal: 'center' };
-      headerRow.height = 18;
+      headerRow.height = 20;
       filaActual++;
 
-      // Datos
-      procesosConDatos.forEach((proceso, idx) => {
+      // Datos: una fila por cada etapa
+      todasLasEtapas.forEach((etapa, etapaIdx) => {
         const dataRow = ws.getRow(filaActual);
-        dataRow.getCell(1).value = proceso.codigoOlympo;
-        dataRow.getCell(2).value = proceso.nombreProceso;
 
-        todasLasEtapas.forEach((etapa, etapaIdx) => {
-          const valor = proceso.etapasEtapasTarde[etapa.id];
-          const cell = dataRow.getCell(etapaIdx + 3);
+        // Primera columna: nombre de la etapa
+        const nameCell = dataRow.getCell(1);
+        nameCell.value = etapa.nombre;
+        nameCell.font = { bold: true, size: 9, color: { argb: '1E40AF' } };
+        nameCell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+        nameCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F0F4FF' } };
+
+        // Datos de cada proceso
+        procesosConDatos.forEach((proceso, procIdx) => {
+          const cell = dataRow.getCell(procIdx + 2);
+          let valor = '';
+
+          if (tipoBloque === 'tarde') {
+            valor = proceso.etapasEtapasTarde[etapa.id];
+          } else if (tipoBloque === 'dias') {
+            valor = proceso.etapasDiasTarde[etapa.id];
+          } else if (tipoBloque === 'vencer') {
+            valor = proceso.etapasProximosAVencer[etapa.id];
+          }
+
           cell.value = valor;
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
 
+          // Estilos según tipo de valor
           if (valor === 1) {
+            // Tarde (rojo)
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E5' } };
             cell.font = { bold: true, color: { argb: 'D32F2F' } };
           } else if (valor === 0) {
+            // A tiempo (verde)
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E8F5E9' } };
             cell.font = { bold: true, color: { argb: '2E7D32' } };
+          } else if (typeof valor === 'number' && valor > 0) {
+            // Números (amarillo/naranja)
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3E0' } };
+            cell.font = { bold: true, color: { argb: 'E65100' } };
           } else {
+            // N/A (gris)
             cell.font = { color: { argb: '9CA3AF' } };
           }
-
-          cell.alignment = { vertical: 'middle', horizontal: 'center' };
         });
 
-        if (idx % 2 === 1) {
-          dataRow.eachCell({ includeEmpty: true }, (cell) => {
-            if (!cell.fill || !cell.fill.fgColor?.argb || cell.fill.fgColor.argb === '00000000') {
-              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8FAFC' } };
-            }
-          });
-        }
-        dataRow.height = 16;
+        dataRow.height = 18;
         filaActual++;
       });
 
-      filaActual++;
-    }
+      filaActual++; // Espacio entre bloques
+    };
+
+    // ════════════════════════════════════════════════════════════════════════════
+    // BLOQUE 2: ETAPAS TARDE
+    // ════════════════════════════════════════════════════════════════════════════
+    crearBloqueEtapas('⚠️ ETAPAS TARDE (1=Tarde, 0=A Tiempo, N/A=No Asignada)', 'tarde');
 
     // ════════════════════════════════════════════════════════════════════════════
     // BLOQUE 3: DÍAS DE RETRASO
     // ════════════════════════════════════════════════════════════════════════════
-    {
-      const titleRow = ws.getRow(filaActual);
-      titleRow.getCell(1).value = '📅 DÍAS DE RETRASO';
-      titleRow.getCell(1).font = { bold: true, size: 11, color: { argb: 'FFFFFF' } };
-      titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_TITULO_BLOQUE } };
-      titleRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
-      titleRow.height = 20;
-      filaActual++;
-
-      // Encabezados
-      const headerRow = ws.getRow(filaActual);
-      headerRow.getCell(1).value = 'Código Olimpo';
-      headerRow.getCell(2).value = 'Nombre Proceso';
-      todasLasEtapas.forEach((etapa, idx) => {
-        const cell = headerRow.getCell(idx + 3);
-        cell.value = etapa.nombre;
-        cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 10 };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_ETAPAS } };
-        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-      });
-      headerRow.getCell(1).font = { bold: true, color: { argb: 'FFFFFF' }, size: 10 };
-      headerRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_ETAPAS } };
-      headerRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
-      headerRow.getCell(2).font = { bold: true, color: { argb: 'FFFFFF' }, size: 10 };
-      headerRow.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_ETAPAS } };
-      headerRow.getCell(2).alignment = { vertical: 'middle', horizontal: 'center' };
-      headerRow.height = 18;
-      filaActual++;
-
-      // Datos
-      procesosConDatos.forEach((proceso, idx) => {
-        const dataRow = ws.getRow(filaActual);
-        dataRow.getCell(1).value = proceso.codigoOlympo;
-        dataRow.getCell(2).value = proceso.nombreProceso;
-
-        todasLasEtapas.forEach((etapa, etapaIdx) => {
-          const valor = proceso.etapasDiasTarde[etapa.id];
-          const cell = dataRow.getCell(etapaIdx + 3);
-          cell.value = valor;
-
-          if (typeof valor === 'number' && valor > 0) {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E5' } };
-            cell.font = { bold: true, color: { argb: 'D32F2F' } };
-          } else {
-            cell.font = { color: { argb: '9CA3AF' } };
-          }
-
-          cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        });
-
-        if (idx % 2 === 1) {
-          dataRow.eachCell({ includeEmpty: true }, (cell) => {
-            if (!cell.fill || !cell.fill.fgColor?.argb || cell.fill.fgColor.argb === '00000000') {
-              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8FAFC' } };
-            }
-          });
-        }
-        dataRow.height = 16;
-        filaActual++;
-      });
-
-      filaActual++;
-    }
+    crearBloqueEtapas('📅 DÍAS DE RETRASO', 'dias');
 
     // ════════════════════════════════════════════════════════════════════════════
-    // BLOQUE 4: PRÓXIMOS A VENCER (1-5 días)
+    // BLOQUE 4: PRÓXIMOS A VENCER
     // ════════════════════════════════════════════════════════════════════════════
-    {
-      const titleRow = ws.getRow(filaActual);
-      titleRow.getCell(1).value = '⏰ PRÓXIMOS A VENCER (Días para vencer en rango 1-5)';
-      titleRow.getCell(1).font = { bold: true, size: 11, color: { argb: 'FFFFFF' } };
-      titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_TITULO_BLOQUE } };
-      titleRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'left' };
-      titleRow.height = 20;
-      filaActual++;
-
-      // Encabezados
-      const headerRow = ws.getRow(filaActual);
-      headerRow.getCell(1).value = 'Código Olimpo';
-      headerRow.getCell(2).value = 'Nombre Proceso';
-      todasLasEtapas.forEach((etapa, idx) => {
-        const cell = headerRow.getCell(idx + 3);
-        cell.value = etapa.nombre;
-        cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 10 };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_ETAPAS } };
-        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-      });
-      headerRow.getCell(1).font = { bold: true, color: { argb: 'FFFFFF' }, size: 10 };
-      headerRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_ETAPAS } };
-      headerRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
-      headerRow.getCell(2).font = { bold: true, color: { argb: 'FFFFFF' }, size: 10 };
-      headerRow.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_ETAPAS } };
-      headerRow.getCell(2).alignment = { vertical: 'middle', horizontal: 'center' };
-      headerRow.height = 18;
-      filaActual++;
-
-      // Datos
-      procesosConDatos.forEach((proceso, idx) => {
-        const dataRow = ws.getRow(filaActual);
-        dataRow.getCell(1).value = proceso.codigoOlympo;
-        dataRow.getCell(2).value = proceso.nombreProceso;
-
-        todasLasEtapas.forEach((etapa, etapaIdx) => {
-          const valor = proceso.etapasProximosAVencer[etapa.id];
-          const cell = dataRow.getCell(etapaIdx + 3);
-          cell.value = valor;
-
-          if (typeof valor === 'number' && valor > 0 && valor <= 5) {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3E0' } };
-            cell.font = { bold: true, color: { argb: 'E65100' } };
-          } else {
-            cell.font = { color: { argb: '9CA3AF' } };
-          }
-
-          cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        });
-
-        if (idx % 2 === 1) {
-          dataRow.eachCell({ includeEmpty: true }, (cell) => {
-            if (!cell.fill || !cell.fill.fgColor?.argb || cell.fill.fgColor.argb === '00000000') {
-              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8FAFC' } };
-            }
-          });
-        }
-        dataRow.height = 16;
-        filaActual++;
-      });
-    }
+    crearBloqueEtapas('⏰ PRÓXIMOS A VENCER (Días para vencer en rango 1-5)', 'vencer');
 
     // Ajustar ancho de columnas
-    ws.getColumn(1).width = 16; // Código Olimpo
-    ws.getColumn(2).width = 40; // Nombre proceso
+    ws.getColumn(1).width = 28; // Nombre de etapa/Verificable
 
-    for (let i = 0; i < todasLasEtapas.length; i++) {
-      const ancho = Math.min(20, Math.max(12, todasLasEtapas[i]?.nombre.length + 2 || 14));
-      ws.getColumn(i + 3).width = ancho;
+    for (let i = 0; i < procesosConDatos.length; i++) {
+      ws.getColumn(i + 2).width = 14; // Código de cada proceso
     }
 
   } catch (error) {
