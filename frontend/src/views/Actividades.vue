@@ -176,20 +176,16 @@
 
         <div class="actividad-header">
           <h2>{{ actividad.nombre }}</h2>
-          <div class="actividad-tags">
-            <span class="badge">{{ actividad.tipoPlan }}</span>
-            <span class="badge numero-badge">#{{ index + 1 }}</span>
-          </div>
         </div>
 
         <div class="actividad-meta-chips">
-          <span class="actividad-meta-chip neutral">{{ obtenerTipoContratacionCabecera(actividad) }}</span>
-          <span class="actividad-meta-chip success">{{ obtenerPacNoPacCabecera(actividad) }}</span>
+          <span class="actividad-meta-chip pac-nopac">{{ obtenerPacNoPacCabecera(actividad) }}</span>
           <span class="actividad-meta-chip quarter">Cuatrimestre {{ obtenerCuatrimestreTexto(actividad) }}</span>
           <span v-if="procesoActivoSinPresupuesto(actividad)" class="actividad-meta-chip warning-budget">Sin presupuesto</span>
         </div>
 
         <div class="actividad-info">
+          <p><strong>Tipo de contrato:</strong> {{ obtenerTipoContratacionCabecera(actividad) }}</p>
           <p><strong>Dirección:</strong> {{ obtenerDireccion(actividad) }}</p>
           <p><strong>Responsable:</strong> {{ obtenerResponsable(actividad) }}</p>
           <p><strong>Cuatrimestre:</strong> {{ obtenerCuatrimestreTexto(actividad) }}</p>
@@ -3255,6 +3251,13 @@ h1 {
   background: #ecfdf3;
   border-color: #86efac;
   color: #166534;
+}
+
+.actividad-meta-chip.pac-nopac {
+  background: #dcfce7;
+  border-color: #22c55e;
+  color: #15803d;
+  font-weight: 700;
 }
 
 .actividad-meta-chip.quarter {
