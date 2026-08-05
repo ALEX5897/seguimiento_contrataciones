@@ -44,6 +44,15 @@
     <div v-if="!cargando" class="resumen-general-container">
       <h3 class="resumen-general-titulo">Resumen General</h3>
       <section class="kpi-grid professional-kpi-grid actividades-resumen-grid">
+        <article class="kpi-card kpi-total-procesos">
+          <div class="kpi-header">
+            <i class="ri-checkbox-circle-line kpi-icon"></i>
+            <span class="kpi-title">Total de procesos</span>
+          </div>
+          <div class="kpi-value">{{ kpisProcesos.totalProcesos }}</div>
+          <small class="kpi-foot">Procesos activos</small>
+        </article>
+
         <article class="kpi-card">
           <div class="kpi-header">
             <i class="ri-money-dollar-circle-line kpi-icon"></i>
@@ -69,20 +78,6 @@
           </div>
           <div class="kpi-value-monto">{{ formatearMontoCabecera(montoNoPAC) }}</div>
           <small class="kpi-foot">Presupuesto fuera de Plan</small>
-        </article>
-
-        <article class="kpi-card">
-          <div class="kpi-header">
-            <i class="ri-file-list-line kpi-icon"></i>
-            <span class="kpi-title">Total de procesos</span>
-          </div>
-          <div class="kpi-donut-row">
-            <strong class="kpi-value">{{ kpisProcesos.totalProcesos }}</strong>
-            <div class="kpi-mini-donut" :style="{ '--value': `${kpisProcesos.porcentajeCumplimiento}%`, '--kpi-color': colorCumplimiento }">
-              <span :style="{ color: colorCumplimiento }">{{ kpisProcesos.porcentajeCumplimiento }}%</span>
-            </div>
-          </div>
-          <small class="kpi-foot">Total de procesos y cumplimiento general</small>
         </article>
 
         <article class="kpi-card" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('pac') }" @click="toggleFiltroKpi('pac')" style="cursor: pointer;">
@@ -2697,6 +2692,17 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
   border-color: #1e40af;
   box-shadow: 0 0 0 2px #1e40af, 0 10px 28px rgba(30, 64, 175, 0.15) !important;
   transform: scale(1.02);
+}
+
+.kpi-total-procesos {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
+  box-shadow: 0 10px 28px rgba(245, 158, 11, 0.15);
+}
+
+.kpi-total-procesos .kpi-icon {
+  background: #fbbf24;
+  color: #ffffff;
 }
 
 .kpi-head {
