@@ -1050,7 +1050,8 @@ router.post('/generar', async (req, res) => {
     const coloresPorFase = {
       'preparatoria': { header: '1E3A8A', lightBg: 'DBEAFE' },      // Azul
       'precontractual': { header: '065F46', lightBg: 'DCFCE7' },    // Verde
-      'contractual': { header: '7C2D12', lightBg: 'FEEDDE' }        // Naranja
+      'contractual': { header: '7C2D12', lightBg: 'FEEDDE' },       // Naranja
+      'sin_clasificar': { header: '7C3AED', lightBg: 'EDE9FE' }     // Púrpura
     };
 
     // Mapa de fase por key
