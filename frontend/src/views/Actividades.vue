@@ -1,13 +1,6 @@
 <template>
   <div class="actividades-view">
-    <div class="actividades-btn-filtros" v-if="!cargando">
-      <button class="btn-toggle-filtros" @click="mostrarFiltros = !mostrarFiltros">
-        <i :class="mostrarFiltros ? 'ri-filter-line' : 'ri-filter-3-line'"></i>
-        {{ mostrarFiltros ? 'Ocultar filtros' : 'Mostrar filtros' }}
-      </button>
-    </div>
-
-    <section class="context-summary" v-if="!cargando" v-show="mostrarFiltros">
+    <section class="context-summary" v-if="!cargando">
       <div class="filter-chips">
         <span class="filter-chip primary" v-if="busquedaActividades">Búsqueda: {{ busquedaActividades }}</span>
         <span class="filter-chip direccion-active" v-if="filtroDireccion">📂 {{ filtroDireccion }}</span>
@@ -30,7 +23,7 @@
           </div>
         </div>
 
-        <div class="dashboard-toolbar-filtros" v-show="mostrarFiltros">
+        <div class="dashboard-toolbar-filtros">
           <select v-model="filtroDireccion" class="combo-filtro">
             <option value="">Todas las direcciones</option>
             <option v-for="direccion in direccionesDisponibles" :key="direccion" :value="direccion">{{ direccion }}</option>
@@ -670,7 +663,6 @@ const router = useRouter();
 const auth = useAuthStore();
 const cargando = ref(true);
 const actividades = ref<any[]>([]);
-const mostrarFiltros = ref(true);
 const busquedaActividades = ref('');
 const filtroDireccion = ref('');
 const filtroTipoContratacion = ref('');
