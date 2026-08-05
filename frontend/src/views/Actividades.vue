@@ -71,7 +71,7 @@
           <small class="kpi-foot">Presupuesto fuera de Plan</small>
         </article>
 
-        <article class="kpi-card" :class="{ 'kpi-card-active': filtroKpiActivo === 'pac' }" @click="filtroKpiActivo = filtroKpiActivo === 'pac' ? '' : 'pac'" style="cursor: pointer;">
+        <article class="kpi-card" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('pac') }" @click="toggleFiltroKpi('pac')" style="cursor: pointer;">
           <div class="kpi-header">
             <i class="ri-book-line kpi-icon"></i>
             <span class="kpi-title">Procesos PAC</span>
@@ -80,7 +80,7 @@
           <small class="kpi-foot">Procesos en Plan Anual</small>
         </article>
 
-        <article class="kpi-card" :class="{ 'kpi-card-active': filtroKpiActivo === 'noPac' }" @click="filtroKpiActivo = filtroKpiActivo === 'noPac' ? '' : 'noPac'" style="cursor: pointer;">
+        <article class="kpi-card" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('noPac') }" @click="toggleFiltroKpi('noPac')" style="cursor: pointer;">
           <div class="kpi-header">
             <i class="ri-error-warning-line kpi-icon"></i>
             <span class="kpi-title">Procesos NO PAC</span>
@@ -103,7 +103,7 @@
           <small class="kpi-foot">Total de procesos y cumplimiento general</small>
         </article>
 
-        <article class="kpi-card" :class="{ 'kpi-card-active': filtroKpiActivo === 'completos' }" @click="filtroKpiActivo = filtroKpiActivo === 'completos' ? '' : 'completos'" style="cursor: pointer;">
+        <article class="kpi-card" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('completos') }" @click="toggleFiltroKpi('completos')" style="cursor: pointer;">
           <div class="kpi-header">
             <i class="ri-check-circle-line kpi-icon"></i>
             <span class="kpi-title">Procesos completos</span>
@@ -117,7 +117,7 @@
           <small class="kpi-foot">Procesos completos: {{ kpisProcesos.actividadesCompletadas }} de {{ kpisProcesos.totalProcesos }}</small>
         </article>
 
-        <article class="kpi-card" :class="{ 'kpi-card-active': filtroKpiActivo === 'retrasadas' }" @click="filtroKpiActivo = filtroKpiActivo === 'retrasadas' ? '' : 'retrasadas'" style="cursor: pointer;">
+        <article class="kpi-card" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('retrasadas') }" @click="toggleFiltroKpi('retrasadas')" style="cursor: pointer;">
           <div class="kpi-header">
             <i class="ri-time-line kpi-icon"></i>
             <span class="kpi-title">Procesos con etapas retrasadas</span>
@@ -131,7 +131,7 @@
           <small class="kpi-foot">Procesos que tienen etapas fuera de fecha</small>
         </article>
 
-        <article class="kpi-card" :class="{ 'kpi-card-active': filtroKpiActivo === 'riesgo' }" @click="filtroKpiActivo = filtroKpiActivo === 'riesgo' ? '' : 'riesgo'" style="cursor: pointer;">
+        <article class="kpi-card" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('riesgo') }" @click="toggleFiltroKpi('riesgo')" style="cursor: pointer;">
           <div class="kpi-header">
             <i class="ri-alert-fill kpi-icon"></i>
             <span class="kpi-title">Procesos en riesgo</span>
@@ -145,7 +145,7 @@
           <small class="kpi-foot">Procesos marcados con riesgo</small>
         </article>
 
-        <article class="kpi-card" :class="{ 'kpi-card-active': filtroKpiActivo === 'desierto' }" @click="filtroKpiActivo = filtroKpiActivo === 'desierto' ? '' : 'desierto'" style="cursor: pointer;">
+        <article class="kpi-card" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('desierto') }" @click="toggleFiltroKpi('desierto')" style="cursor: pointer;">
           <div class="kpi-header">
             <i class="ri-forbid-line kpi-icon"></i>
             <span class="kpi-title">Procesos desiertos</span>
@@ -159,7 +159,7 @@
           <small class="kpi-foot">Procesos con estado desierto</small>
         </article>
 
-        <article class="kpi-card" :class="{ 'kpi-card-active': filtroKpiActivo === 'desfinanciado' }" @click="filtroKpiActivo = filtroKpiActivo === 'desfinanciado' ? '' : 'desfinanciado'" style="cursor: pointer;">
+        <article class="kpi-card" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('desfinanciado') }" @click="toggleFiltroKpi('desfinanciado')" style="cursor: pointer;">
           <div class="kpi-header">
             <i class="ri-wallet-2-line kpi-icon"></i>
             <span class="kpi-title">Procesos desfinanciados</span>
@@ -667,7 +667,7 @@ const busquedaActividades = ref('');
 const filtroDireccion = ref('');
 const filtroTipoContratacion = ref('');
 const ordenPresupuesto = ref('presupuesto-desc');
-const filtroKpiActivo = ref('');
+const filtrosKpiActivos = ref<string[]>([]);
 const catalogoEtapas = ref<Record<number, any>>({});
 const acordeoneAbiertos = ref({
   preparatoria: false,
@@ -734,7 +734,7 @@ const hayFiltrosActivos = computed(() =>
     busquedaActividades.value
     || filtroDireccion.value
     || filtroTipoContratacion.value
-    || filtroKpiActivo.value
+    || filtrosKpiActivos.value.length > 0
   )
 );
 const actividadesActivas = computed(() => {
@@ -759,28 +759,29 @@ const actividadesActivas = computed(() => {
     );
   }
 
-  if (filtroKpiActivo.value) {
-    if (filtroKpiActivo.value === 'pac') {
-      items = items.filter((a: any) => {
-        const tipo = String(a?.pacNoPac || a?.pac_no_pac || a?.tipoPlan || '').toUpperCase();
-        return tipo === 'PAC';
+  if (filtrosKpiActivos.value.length > 0) {
+    items = items.filter((a: any) => {
+      return filtrosKpiActivos.value.every((filtro: string) => {
+        if (filtro === 'pac') {
+          const tipo = String(a?.pacNoPac || a?.pac_no_pac || a?.tipoPlan || '').toUpperCase();
+          return tipo === 'PAC';
+        } else if (filtro === 'noPac') {
+          const tipo = String(a?.pacNoPac || a?.pac_no_pac || a?.tipoPlan || '').toUpperCase();
+          return tipo === 'NO PAC';
+        } else if (filtro === 'completos') {
+          return tareasCompletadas(a) === totalTareas(a) && totalTareas(a) > 0;
+        } else if (filtro === 'retrasadas') {
+          return tareasConRetraso(a) > 0;
+        } else if (filtro === 'riesgo') {
+          return normalizarProcesoEnRiesgo(a);
+        } else if (filtro === 'desierto') {
+          return obtenerEstadoProcesoValor(a) === 2;
+        } else if (filtro === 'desfinanciado') {
+          return procesoActivoSinPresupuesto(a);
+        }
+        return true;
       });
-    } else if (filtroKpiActivo.value === 'noPac') {
-      items = items.filter((a: any) => {
-        const tipo = String(a?.pacNoPac || a?.pac_no_pac || a?.tipoPlan || '').toUpperCase();
-        return tipo === 'NO PAC';
-      });
-    } else if (filtroKpiActivo.value === 'completos') {
-      items = items.filter((a: any) => tareasCompletadas(a) === totalTareas(a) && totalTareas(a) > 0);
-    } else if (filtroKpiActivo.value === 'retrasadas') {
-      items = items.filter((a: any) => tareasConRetraso(a) > 0);
-    } else if (filtroKpiActivo.value === 'riesgo') {
-      items = items.filter((a: any) => normalizarProcesoEnRiesgo(a));
-    } else if (filtroKpiActivo.value === 'desierto') {
-      items = items.filter((a: any) => obtenerEstadoProcesoValor(a) === 2);
-    } else if (filtroKpiActivo.value === 'desfinanciado') {
-      items = items.filter((a: any) => procesoActivoSinPresupuesto(a));
-    }
+    });
   }
 
   if (ordenPresupuesto.value === 'presupuesto-desc') {
@@ -1231,7 +1232,25 @@ function limpiarFiltrosActividades() {
   busquedaActividades.value = '';
   filtroDireccion.value = '';
   filtroTipoContratacion.value = '';
-  filtroKpiActivo.value = '';
+  filtrosKpiActivos.value = [];
+}
+
+function toggleFiltroKpi(filtro: string) {
+  // Si el filtro ya está activo, lo removemos
+  if (filtrosKpiActivos.value.includes(filtro)) {
+    filtrosKpiActivos.value = filtrosKpiActivos.value.filter(f => f !== filtro);
+    return;
+  }
+
+  // Lógica de exclusión: PAC y NO PAC no pueden estar activos simultáneamente
+  if (filtro === 'pac') {
+    filtrosKpiActivos.value = filtrosKpiActivos.value.filter(f => f !== 'noPac');
+  } else if (filtro === 'noPac') {
+    filtrosKpiActivos.value = filtrosKpiActivos.value.filter(f => f !== 'pac');
+  }
+
+  // Agregar el nuevo filtro
+  filtrosKpiActivos.value.push(filtro);
 }
 
 function obtenerDireccion(actividad: any) {
