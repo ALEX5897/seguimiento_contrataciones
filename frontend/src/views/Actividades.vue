@@ -180,7 +180,6 @@
 
         <div class="actividad-meta-chips">
           <span class="actividad-meta-chip pac-nopac">{{ obtenerPacNoPacCabecera(actividad) }}</span>
-          <span class="actividad-meta-chip quarter">Cuatrimestre {{ obtenerCuatrimestreTexto(actividad) }}</span>
           <span v-if="procesoActivoSinPresupuesto(actividad)" class="actividad-meta-chip warning-budget">Sin presupuesto</span>
         </div>
 
