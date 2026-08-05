@@ -2496,7 +2496,7 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 
 .dashboard-toolbar {
   display: flex;
-  gap: 0.35rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-start;
@@ -2510,30 +2510,30 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 .toolbar-search-actions {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.5rem;
   flex: 1 0 auto;
   justify-content: flex-start;
 }
 
 .buscador-container {
   position: relative;
-  min-width: 140px;
-  width: clamp(140px, 20vw, 200px);
+  min-width: 240px;
+  width: clamp(240px, 30vw, 380px);
   flex: 0 1 auto;
 }
 
 .buscador-icon {
   position: absolute;
-  left: 0.45rem;
+  left: 0.85rem;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 0.65rem;
+  font-size: 1rem;
   color: #94a3b8;
 }
 
 .dashboard-toolbar-filtros {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
   justify-content: flex-start;
   align-items: center;
@@ -2543,72 +2543,71 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 
 .combo-filtro {
   border: none;
-  border-top: 2px solid #3b82f6;
+  border-top: 3px solid #3b82f6;
   background: #ffffff;
   color: #1e3a8a;
-  font-size: 0.65rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  border-radius: 4px;
-  padding: 0.25rem 0.4rem;
+  border-radius: 6px;
+  padding: 0.55rem 0.75rem;
   height: auto;
-  line-height: 1.2;
+  line-height: 1.4;
   text-align: left;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
 }
 .combo-filtro:focus {
   outline: none;
   border-top-color: #2563eb;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
 
 .dashboard-toolbar-filtros .combo-filtro {
   border-top-color: #6366f1;
   color: #1e293b;
-  width: clamp(90px, 12vw, 120px);
+  width: clamp(140px, 15vw, 180px);
   max-width: 100%;
 }
 .dashboard-toolbar-filtros .combo-filtro:hover {
   border-top-color: #4f46e5;
-  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.1);
-  transform: translateY(-0.5px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+  transform: translateY(-1px);
 }
 .dashboard-toolbar-filtros select.combo-filtro {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
   text-align: left;
-  padding-right: 1rem;
+  padding-right: 1.8rem;
   text-align-last: left;
   background-image:
     linear-gradient(45deg, transparent 50%, #6366f1 50%),
     linear-gradient(135deg, #6366f1 50%, transparent 50%);
-  background-position: calc(100% - 0.35rem) calc(50%), calc(100% - 0.15rem) calc(50%);
-  background-size: 0.25rem 0.25rem, 0.25rem 0.25rem;
+  background-position: calc(100% - 0.6rem) calc(50%), calc(100% - 0.3rem) calc(50%);
+  background-size: 0.4rem 0.4rem, 0.4rem 0.4rem;
   background-repeat: no-repeat;
   background-color: unset;
 }
 
 .dashboard-toolbar-filtros select.combo-filtro option {
   text-align: left;
-  padding: 0.3rem;
+  padding: 0.5rem;
 }
 
 .dashboard-buscador-container .buscador-input.combo-filtro {
   background: #ffffff;
   border-top-color: #2563eb;
   color: #0f172a;
-  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.06);
-  padding-left: 1.4rem;
-  padding-right: 0.4rem;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.1);
+  padding-left: 2.4rem;
+  padding-right: 0.85rem;
   width: 100%;
-  font-size: 0.65rem;
+  font-size: 0.85rem;
 }
 .dashboard-buscador-container .buscador-input.combo-filtro::placeholder {
   color: #94a3b8;
   font-weight: 500;
-  font-size: 0.65rem;
 }
 .dashboard-buscador-container .buscador-input.combo-filtro:focus::placeholder {
   color: transparent;
