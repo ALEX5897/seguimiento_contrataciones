@@ -11,13 +11,7 @@
       <div class="filter-chips">
         <span class="filter-chip primary" v-if="busquedaActividades">Búsqueda: {{ busquedaActividades }}</span>
         <span class="filter-chip direccion-active" v-if="filtroDireccion">📂 {{ filtroDireccion }}</span>
-        <span class="filter-chip" v-if="filtroResponsable">👤 {{ filtroResponsable }}</span>
-        <span class="filter-chip" v-if="filtroPacNoPac">Plan: {{ filtroPacNoPac }}</span>
         <span class="filter-chip" v-if="filtroTipoContratacionLabel">Contratación: {{ filtroTipoContratacionLabel }}</span>
-        <span class="filter-chip" v-if="filtroCuatrimestre">Cuatrimestre: {{ filtroCuatrimestre }}</span>
-        <span class="filter-chip" v-if="filtroMonto">Monto: {{ filtroMonto }}</span>
-        <span class="filter-chip riesgo-active" v-if="filtroRiesgo === 'riesgo'">⚠️ Solo en riesgo</span>
-        <span class="filter-chip adjudicados-active" v-if="filtroAdjudicados === 'adjudicados'">✓ Solo adjudicados</span>
         <button v-if="hayFiltrosActivos" class="btn-clear-filter" @click="limpiarFiltrosActividades">
           Restablecer filtros
         </button>
@@ -42,17 +36,6 @@
             <option v-for="direccion in direccionesDisponibles" :key="direccion" :value="direccion">{{ direccion }}</option>
           </select>
 
-          <select v-model="filtroResponsable" class="combo-filtro">
-            <option value="">Todos los responsables</option>
-            <option v-for="responsable in responsablesDisponibles" :key="responsable" :value="responsable">{{ responsable }}</option>
-          </select>
-
-          <select v-model="filtroPacNoPac" class="combo-filtro">
-            <option value="">PAC y NO PAC</option>
-            <option value="PAC">PAC</option>
-            <option value="NO PAC">NO PAC</option>
-          </select>
-
           <select v-model="filtroTipoContratacion" class="combo-filtro">
             <option value="">Todos los tipos de contratación</option>
             <option
@@ -60,35 +43,6 @@
               :key="tipo.value"
               :value="tipo.value"
             >{{ tipo.label }}</option>
-          </select>
-
-          <select v-model="filtroCuatrimestre" class="combo-filtro">
-            <option value="">Todos los cuatrimestres</option>
-            <option value="1">Cuatrimestre 1</option>
-            <option value="2">Cuatrimestre 2</option>
-            <option value="3">Cuatrimestre 3</option>
-            <option value="4">Cuatrimestre 4</option>
-          </select>
-
-          <select v-model="filtroMonto" class="combo-filtro">
-            <option value="">Todos los montos</option>
-            <option v-for="monto in montosDisponibles" :key="monto" :value="monto">{{ monto }}</option>
-          </select>
-
-          <select v-model="filtroRiesgo" class="combo-filtro">
-            <option value="">Todos los procesos</option>
-            <option value="riesgo">⚠️ Solo en riesgo</option>
-          </select>
-
-          <select v-model="filtroAdjudicados" class="combo-filtro">
-            <option value="">Todos los procesos</option>
-            <option value="adjudicados">✓ Solo adjudicados</option>
-          </select>
-
-          <select v-model="ordenPresupuesto" class="combo-filtro">
-            <option value="todos">Ordenar por...</option>
-            <option value="presupuesto-desc">Presupuesto: mayor a menor</option>
-            <option value="presupuesto-asc">Presupuesto: menor a mayor</option>
           </select>
         </div>
       </div>
@@ -719,13 +673,7 @@ const actividades = ref<any[]>([]);
 const mostrarFiltros = ref(true);
 const busquedaActividades = ref('');
 const filtroDireccion = ref('');
-const filtroResponsable = ref('');
-const filtroPacNoPac = ref('');
 const filtroTipoContratacion = ref('');
-const filtroCuatrimestre = ref('');
-const filtroMonto = ref('');
-const filtroRiesgo = ref('');
-const filtroAdjudicados = ref('');
 const ordenPresupuesto = ref('presupuesto-desc');
 const catalogoEtapas = ref<Record<number, any>>({});
 const acordeoneAbiertos = ref({
@@ -792,13 +740,7 @@ const hayFiltrosActivos = computed(() =>
   Boolean(
     busquedaActividades.value
     || filtroDireccion.value
-    || filtroResponsable.value
-    || filtroPacNoPac.value
     || filtroTipoContratacion.value
-    || filtroCuatrimestre.value
-    || filtroMonto.value
-    || filtroRiesgo.value
-    || filtroAdjudicados.value
   )
 );
 const actividadesActivas = computed(() => {
@@ -817,56 +759,10 @@ const actividadesActivas = computed(() => {
     items = items.filter((a: any) => obtenerDireccion(a) === filtroDireccion.value);
   }
 
-  if (filtroResponsable.value) {
-    items = items.filter((a: any) => obtenerResponsable(a) === filtroResponsable.value);
-  }
-
-  if (filtroPacNoPac.value) {
-    items = items.filter((a: any) => {
-      const tipo = String(a?.pacNoPac || a?.pac_no_pac || a?.tipoPlan || '').toUpperCase();
-      return tipo === filtroPacNoPac.value;
-    });
-  }
-
   if (filtroTipoContratacion.value) {
     items = items.filter((a: any) =>
       normalizarTextoBusqueda(obtenerTipoContratacionCabecera(a)) === filtroTipoContratacion.value
     );
-  }
-
-  if (filtroCuatrimestre.value) {
-    items = items.filter((a: any) => String(obtenerCuatrimestreOrden(a)) === filtroCuatrimestre.value);
-  }
-
-  if (filtroMonto.value) {
-    const rangos = [
-      { label: '0-1,000', min: 0, max: 1000 },
-      { label: '1,001-5,000', min: 1001, max: 5000 },
-      { label: '5,001-10,000', min: 5001, max: 10000 },
-      { label: '10,001+', min: 10001, max: Infinity }
-    ];
-    const rango = rangos.find(r => r.label === filtroMonto.value);
-    if (rango) {
-      items = items.filter((a: any) => {
-        const monto = obtenerPresupuesto(a);
-        return monto >= rango.min && monto <= rango.max;
-      });
-    }
-  }
-
-  if (filtroRiesgo.value === 'riesgo') {
-    items = items.filter((a: any) => normalizarProcesoEnRiesgo(a));
-  }
-
-  if (filtroAdjudicados.value === 'adjudicados') {
-    items = items.filter((a: any) => {
-      const etapas = Array.isArray(a?.seguimientoEtapas) ? a.seguimientoEtapas : [];
-      return etapas.some((etapa: any) => {
-        const nombreNorm = String(etapa?.etapaNombre || etapa?.nombre || '').toLowerCase().trim();
-        const estado = String(etapa?.estado || '').toLowerCase();
-        return (nombreNorm.includes('adjudicado') || nombreNorm.includes('adjudicacion')) && estado === 'completado';
-      });
-    });
   }
 
   if (ordenPresupuesto.value === 'presupuesto-desc') {
@@ -1316,14 +1212,7 @@ watch(
 function limpiarFiltrosActividades() {
   busquedaActividades.value = '';
   filtroDireccion.value = '';
-  filtroResponsable.value = '';
-  filtroPacNoPac.value = '';
   filtroTipoContratacion.value = '';
-  filtroCuatrimestre.value = '';
-  filtroMonto.value = '';
-  filtroRiesgo.value = '';
-  filtroAdjudicados.value = '';
-  ordenPresupuesto.value = 'todos';
 }
 
 function obtenerDireccion(actividad: any) {
