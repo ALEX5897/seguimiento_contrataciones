@@ -58,7 +58,7 @@
           <small class="kpi-foot">Cumplimiento general</small>
         </article>
 
-        <article class="kpi-card">
+        <article class="kpi-card kpi-monto-total">
           <div class="kpi-header">
             <i class="ri-money-dollar-circle-line kpi-icon"></i>
             <span class="kpi-title">Monto Total</span>
@@ -67,72 +67,72 @@
           <small class="kpi-foot">Presupuesto total asignado</small>
         </article>
 
-        <article class="kpi-card">
+        <article class="kpi-card kpi-monto-pac">
           <div class="kpi-header">
-            <i class="ri-check-double-line kpi-icon"></i>
+            <i class="ri-wallet-3-line kpi-icon"></i>
             <span class="kpi-title">Monto PAC</span>
           </div>
           <div class="kpi-value-monto">{{ formatearMontoCabecera(montoPAC) }}</div>
           <small class="kpi-foot">Presupuesto en Plan Anual</small>
         </article>
 
-        <article class="kpi-card">
+        <article class="kpi-card kpi-monto-nopac">
           <div class="kpi-header">
-            <i class="ri-alert-line kpi-icon"></i>
+            <i class="ri-wallet-line kpi-icon"></i>
             <span class="kpi-title">Monto NO PAC</span>
           </div>
           <div class="kpi-value-monto">{{ formatearMontoCabecera(montoNoPAC) }}</div>
           <small class="kpi-foot">Presupuesto fuera de Plan</small>
         </article>
 
-        <article class="kpi-card" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('pac') }" @click="toggleFiltroKpi('pac')" style="cursor: pointer;">
+        <article class="kpi-card kpi-procesos-pac" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('pac') }" @click="toggleFiltroKpi('pac')" style="cursor: pointer;">
           <div class="kpi-header">
-            <i class="ri-book-line kpi-icon"></i>
+            <i class="ri-book-check-line kpi-icon"></i>
             <span class="kpi-title">Procesos PAC</span>
           </div>
           <div class="kpi-value">{{ procesosPAC }}</div>
           <small class="kpi-foot">Procesos en Plan Anual</small>
         </article>
 
-        <article class="kpi-card" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('noPac') }" @click="toggleFiltroKpi('noPac')" style="cursor: pointer;">
+        <article class="kpi-card kpi-procesos-nopac" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('noPac') }" @click="toggleFiltroKpi('noPac')" style="cursor: pointer;">
           <div class="kpi-header">
-            <i class="ri-error-warning-line kpi-icon"></i>
+            <i class="ri-alert-circle-line kpi-icon"></i>
             <span class="kpi-title">Procesos NO PAC</span>
           </div>
           <div class="kpi-value">{{ procesosNoPAC }}</div>
           <small class="kpi-foot">Procesos fuera de Plan</small>
         </article>
 
-        <article class="kpi-card" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('completos') }" @click="toggleFiltroKpi('completos')" style="cursor: pointer;">
+        <article class="kpi-card kpi-procesos-completos" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('completos') }" @click="toggleFiltroKpi('completos')" style="cursor: pointer;">
           <div class="kpi-header">
-            <i class="ri-check-circle-line kpi-icon"></i>
+            <i class="ri-checkbox-multiple-line kpi-icon"></i>
             <span class="kpi-title">Procesos completos</span>
           </div>
           <div class="kpi-value">{{ kpisProcesos.actividadesCompletadas }}</div>
           <small class="kpi-foot">Procesos completos: {{ kpisProcesos.actividadesCompletadas }} de {{ kpisProcesos.totalProcesos }}</small>
         </article>
 
-        <article class="kpi-card" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('retrasadas') }" @click="toggleFiltroKpi('retrasadas')" style="cursor: pointer;">
+        <article class="kpi-card kpi-procesos-retrasadas" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('retrasadas') }" @click="toggleFiltroKpi('retrasadas')" style="cursor: pointer;">
           <div class="kpi-header">
-            <i class="ri-time-line kpi-icon"></i>
+            <i class="ri-time-fill kpi-icon"></i>
             <span class="kpi-title">Procesos con etapas retrasadas</span>
           </div>
           <div class="kpi-value">{{ kpisProcesos.atrasadas }}</div>
           <small class="kpi-foot">Procesos que tienen etapas fuera de fecha</small>
         </article>
 
-        <article class="kpi-card" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('riesgo') }" @click="toggleFiltroKpi('riesgo')" style="cursor: pointer;">
+        <article class="kpi-card kpi-procesos-riesgo" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('riesgo') }" @click="toggleFiltroKpi('riesgo')" style="cursor: pointer;">
           <div class="kpi-header">
-            <i class="ri-alert-fill kpi-icon"></i>
+            <i class="ri-error-warning-fill kpi-icon"></i>
             <span class="kpi-title">Procesos en riesgo</span>
           </div>
           <div class="kpi-value">{{ procesosRiesgoKpi.length }}</div>
           <small class="kpi-foot">Procesos marcados con riesgo</small>
         </article>
 
-        <article class="kpi-card" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('desierto') }" @click="toggleFiltroKpi('desierto')" style="cursor: pointer;">
+        <article class="kpi-card kpi-procesos-desierto" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('desierto') }" @click="toggleFiltroKpi('desierto')" style="cursor: pointer;">
           <div class="kpi-header">
-            <i class="ri-forbid-line kpi-icon"></i>
+            <i class="ri-shield-line kpi-icon"></i>
             <span class="kpi-title">Procesos desiertos</span>
           </div>
           <div class="kpi-value">{{ procesosDesiertosKpi.length }}</div>
@@ -2707,6 +2707,96 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 
 .kpi-total-procesos .kpi-icon {
   background: #fbbf24;
+  color: #ffffff;
+}
+
+.kpi-monto-total {
+  background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+  border: 2px solid #6366f1;
+}
+
+.kpi-monto-total .kpi-icon {
+  background: #818cf8;
+  color: #ffffff;
+}
+
+.kpi-monto-pac {
+  background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%);
+  border: 2px solid #16a34a;
+}
+
+.kpi-monto-pac .kpi-icon {
+  background: #22c55e;
+  color: #ffffff;
+}
+
+.kpi-monto-nopac {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 2px solid #dc2626;
+}
+
+.kpi-monto-nopac .kpi-icon {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.kpi-procesos-pac {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 2px solid #2563eb;
+}
+
+.kpi-procesos-pac .kpi-icon {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.kpi-procesos-nopac {
+  background: linear-gradient(135deg, #fca5a5 0%, #f87171 100%);
+  border: 2px solid #b91c1c;
+}
+
+.kpi-procesos-nopac .kpi-icon {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.kpi-procesos-completos {
+  background: linear-gradient(135deg, #dcfce7 0%, #c6f6d5 100%);
+  border: 2px solid #059669;
+}
+
+.kpi-procesos-completos .kpi-icon {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.kpi-procesos-retrasadas {
+  background: linear-gradient(135deg, #fed7aa 0%, #fbbd23 100%);
+  border: 2px solid #d97706;
+}
+
+.kpi-procesos-retrasadas .kpi-icon {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.kpi-procesos-riesgo {
+  background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+  border: 2px solid #991b1b;
+}
+
+.kpi-procesos-riesgo .kpi-icon {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.kpi-procesos-desierto {
+  background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+  border: 2px solid #6b7280;
+}
+
+.kpi-procesos-desierto .kpi-icon {
+  background: #9ca3af;
   color: #ffffff;
 }
 
