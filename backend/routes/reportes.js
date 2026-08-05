@@ -1207,6 +1207,11 @@ function getAlign(tipo) {
 }
 
 function formatCellValue(raw, tipo) {
+  // Si es 'N/A', mantenerlo tal cual
+  if (raw === 'N/A' || raw === 'n/a') {
+    return raw;
+  }
+
   if (tipo === 'moneda' || tipo === 'numero') {
     const n = Number(raw);
     return Number.isFinite(n) ? n : 0;
