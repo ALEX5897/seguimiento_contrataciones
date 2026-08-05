@@ -1457,6 +1457,184 @@ router.post('/generar', async (req, res) => {
       };
     }
 
+    // ── Hoja de Próximos a Vencer por Verificables ──────────────────────────
+    if (incluirVerificables && bloquesMatriz.proximosAVencer && verificablesConFase && verificablesConFase.fases.length > 0) {
+      const ws3 = wb.addWorksheet('Próximos a Vencer');
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0); // Normalizar a medianoche para comparación de días
+
+      // Fila 1: Encabezados de sección con colores por fase
+      let colIdx = 1;
+
+      // Sección: Información general (campos principales)
+      const infoGeneralEnd = metaCampos.length;
+      if (infoGeneralEnd > 0) {
+        const cell1 = ws3.getCell(1, 1);
+        cell1.value = 'Información general';
+        cell1.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 11 };
+        cell1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_BG } };
+        cell1.alignment = { vertical: 'middle', horizontal: 'center' };
+
+        if (infoGeneralEnd > 1) {
+          ws3.mergeCells(1, 1, 1, infoGeneralEnd);
+        }
+
+        for (let i = 1; i < infoGeneralEnd; i++) {
+          const cell = ws3.getCell(1, i);
+          cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 11 };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_BG } };
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        }
+        colIdx = infoGeneralEnd + 1;
+      }
+
+      // Secciones por fase
+      const faseLabels = {
+        'preparatoria': 'FACE Preparatorio',
+        'precontractual': 'FACE Precontractual',
+        'contractual': 'FACE Contractual',
+        'sin_clasificar': 'Verificables sin clasificar'
+      };
+
+      verificablesConFase.fases.forEach(fase => {
+        const faseColor = coloresPorFase[fase.key] || coloresPorFase['preparatoria'];
+        const verifCount = fase.verificables.length;
+        const faseEnd = colIdx + verifCount - 1;
+
+        const cell = ws3.getCell(1, colIdx);
+        cell.value = faseLabels[fase.key] || fase.key;
+        cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 11 };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.header } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+        cell.border = { bottom: { style: 'medium', color: { argb: faseColor.header } } };
+
+        if (verifCount > 1) {
+          ws3.mergeCells(1, colIdx, 1, faseEnd);
+        }
+
+        for (let i = colIdx; i <= faseEnd; i++) {
+          const cell = ws3.getCell(1, i);
+          cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 11 };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.header } };
+          cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+          cell.border = { bottom: { style: 'medium', color: { argb: faseColor.header } } };
+        }
+
+        colIdx = faseEnd + 1;
+      });
+      ws3.getRow(1).height = 28;
+
+      // Fila 2: Nombres de campos y verificables
+      colIdx = 1;
+
+      metaCampos.forEach((meta) => {
+        const cell = ws3.getCell(2, colIdx);
+        cell.value = meta.label;
+        cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_BG } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+        cell.border = { bottom: { style: 'medium', color: { argb: '2F6EB0' } } };
+        colIdx++;
+      });
+
+      verificablesConFase.fases.forEach(fase => {
+        const faseColor = coloresPorFase[fase.key] || coloresPorFase['preparatoria'];
+        fase.verificables.forEach(verif => {
+          const cell = ws3.getCell(2, colIdx);
+          cell.value = verif.nombre;
+          cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.header } };
+          cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+          cell.border = { bottom: { style: 'medium', color: { argb: faseColor.header } } };
+          colIdx++;
+        });
+      });
+      ws3.getRow(2).height = 22;
+
+      // Ajustar ancho de columnas
+      todasColumnas.forEach((meta, i) => {
+        ws3.getColumn(i + 1).width = maxWidths[i] + 1;
+      });
+
+      ws3.views = [{ state: 'frozen', ySplit: 2 }];
+
+      // Agregar datos: días para vencer
+      filas.forEach((fila, rowIdx) => {
+        const rowNum = 3 + rowIdx;
+        const row = ws3.getRow(rowNum);
+        row.height = 18;
+
+        todasColumnas.forEach((meta, colIdx) => {
+          const cell = row.getCell(colIdx + 1);
+          const raw = extractCampoValue(fila, meta.key);
+
+          if (meta.key.startsWith('verif_')) {
+            // Para verificables, calcular días para vencer
+            const verifId = parseInt(meta.key.replace('verif_', ''));
+            const etapa = (fila.etapasDetalle || []).find(e => e.etapaId === verifId);
+
+            if (!etapa || !etapa.fechaPlanificada || etapa.estado !== 'pendiente') {
+              cell.value = '';
+            } else {
+              // Parsear fechaPlanificada
+              let fechaPlan = null;
+              if (typeof etapa.fechaPlanificada === 'string') {
+                fechaPlan = new Date(etapa.fechaPlanificada);
+              } else if (etapa.fechaPlanificada instanceof Date) {
+                fechaPlan = new Date(etapa.fechaPlanificada);
+              }
+
+              if (fechaPlan) {
+                fechaPlan.setHours(0, 0, 0, 0); // Normalizar
+                const diasParaVencer = Math.ceil((fechaPlan - hoje) / (1000 * 60 * 60 * 24));
+
+                // Solo mostrar si está en rango 1-5 días
+                if (diasParaVencer >= 1 && diasParaVencer <= 5) {
+                  cell.value = diasParaVencer;
+                } else {
+                  cell.value = '';
+                }
+              } else {
+                cell.value = '';
+              }
+            }
+          } else {
+            // Para campos principales, copiar el mismo valor
+            cell.value = formatCellValue(raw, meta.tipo);
+          }
+
+          // Aplicar formato según tipo de columna
+          applyColumnFormat(cell, meta.tipo, raw);
+
+          // Colores alternos
+          if (rowIdx % 2 === 1) {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_ALT_BG } };
+          }
+
+          if (meta.tipo === 'moneda') {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_MONEDA_BG } };
+          } else if (meta.key && meta.key.startsWith('verif_')) {
+            // Aplicar color de fondo según la fase del verificable
+            const verifId = parseInt(meta.key.replace('verif_', ''));
+            const faseKey = faseColorMap.get(verifId);
+            const faseColor = faseKey ? coloresPorFase[faseKey] : null;
+
+            if (faseColor && rowIdx % 2 === 0) {
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.lightBg } };
+            }
+          }
+
+          cell.alignment = { vertical: 'middle', horizontal: getAlign(meta.tipo) };
+          cell.border = { bottom: { style: 'thin', color: { argb: 'E2E8F0' } } };
+        });
+      });
+
+      ws3.autoFilter = {
+        from: { row: 2, column: 1 },
+        to: { row: filas.length + 2, column: todasColumnas.length }
+      };
+    }
+
     // ── Hoja Info ──────────────────────────────────────────────────────────
     const wsMeta = wb.addWorksheet('Info');
     wsMeta.columns = [{ width: 28 }, { width: 48 }];
