@@ -1558,9 +1558,34 @@ router.post('/generar', async (req, res) => {
 
       ws3.views = [{ state: 'frozen', ySplit: 2 }];
 
-      // Agregar datos: días para vencer
-      filas.forEach((fila, rowIdx) => {
-        const rowNum = 3 + rowIdx;
+      // Función auxiliar para verificar si una fila tiene verificables próximos a vencer
+      const tieneProximosAVencer = (fila) => {
+        return verificablesConFase.fases.some(fase => {
+          return fase.verificables.some(verif => {
+            const etapa = (fila.etapasDetalle || []).find(e => e.etapaId === verif.id);
+            if (!etapa || !etapa.fechaPlanificada || etapa.estado !== 'pendiente') return false;
+
+            let fechaPlan = null;
+            if (typeof etapa.fechaPlanificada === 'string') {
+              fechaPlan = new Date(etapa.fechaPlanificada);
+            } else if (etapa.fechaPlanificada instanceof Date) {
+              fechaPlan = new Date(etapa.fechaPlanificada);
+            }
+
+            if (!fechaPlan) return false;
+            fechaPlan.setHours(0, 0, 0, 0);
+            const diasParaVencer = Math.ceil((fechaPlan - hoje) / (1000 * 60 * 60 * 24));
+            return diasParaVencer >= 1 && diasParaVencer <= 5;
+          });
+        });
+      };
+
+      // Filtrar filas que tengan al menos un verificable próximo a vencer
+      const filasConProximos = filas.filter(tieneProximosAVencer);
+
+      // Agregar datos: días para vencer (solo filas con próximos a vencer)
+      filasConProximos.forEach((fila, filteredRowIdx) => {
+        const rowNum = 3 + filteredRowIdx;
         const row = ws3.getRow(rowNum);
         row.height = 18;
 
@@ -1607,7 +1632,7 @@ router.post('/generar', async (req, res) => {
           applyColumnFormat(cell, meta.tipo, raw);
 
           // Colores alternos
-          if (rowIdx % 2 === 1) {
+          if (filteredRowIdx % 2 === 1) {
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_ALT_BG } };
           }
 
@@ -1619,7 +1644,7 @@ router.post('/generar', async (req, res) => {
             const faseKey = faseColorMap.get(verifId);
             const faseColor = faseKey ? coloresPorFase[faseKey] : null;
 
-            if (faseColor && rowIdx % 2 === 0) {
+            if (faseColor && filteredRowIdx % 2 === 0) {
               cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.lightBg } };
             }
           }
@@ -1631,7 +1656,7 @@ router.post('/generar', async (req, res) => {
 
       ws3.autoFilter = {
         from: { row: 2, column: 1 },
-        to: { row: filas.length + 2, column: todasColumnas.length }
+        to: { row: filasConProximos.length + 2, column: todasColumnas.length }
       };
     }
 
