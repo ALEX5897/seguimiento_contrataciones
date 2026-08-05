@@ -968,6 +968,22 @@ router.post('/generar', async (req, res) => {
       );
     }
 
+    // Obtener catálogo de etapas para mapear clasificaciones
+    const etapasCatalogo = await mysql.getEtapasCatalogo();
+    const catalogoMap = new Map(etapasCatalogo.map(e => [Number(e.id), String(e.clasificacion || 'sin_clasificar')]));
+
+    // Enriquecer etapasDetalle con clasificación del catálogo
+    procesosBase = procesosBase.map(proceso => {
+      const etapasEnriquecidas = (proceso.etapasDetalle || []).map(etapa => ({
+        ...etapa,
+        fase: catalogoMap.get(Number(etapa.etapaId)) || 'sin_clasificar'
+      }));
+      return {
+        ...proceso,
+        etapasDetalle: etapasEnriquecidas
+      };
+    });
+
     // Preparar columnas y datos según si incluye verificables
     let todasColumnas = metaCampos;
     let verificablesConFase = null;
