@@ -1083,7 +1083,7 @@ router.post('/generar', async (req, res) => {
         colIdx++;
       });
 
-      // Agregar fases con merged cells y colores diferenciados
+      // Agregar fases con colores diferenciados (sin merge para evitar problemas de ExcelJS)
       verificablesConFase.fases.forEach(fase => {
         const startCol = colIdx;
         const endCol = colIdx + fase.verificables.length - 1;
@@ -1091,19 +1091,15 @@ router.post('/generar', async (req, res) => {
 
         console.log(`Fase: ${fase.nombre}, Key: ${fase.key}, Color: ${faseColor.header}`);
 
-        // Aplicar estilos a TODAS las celdas del rango ANTES del merge
+        // Llenar TODAS las celdas del rango con el color (sin merge)
         for (let i = startCol; i <= endCol; i++) {
           const cell = ws.getCell(1, i);
+          // Solo la primera celda tiene el valor, las demás vacías
           cell.value = i === startCol ? fase.nombre : '';
           cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 12 };
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.header } };
           cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
           cell.border = { bottom: { style: 'thick', color: { argb: faseColor.header } } };
-        }
-
-        // Merge después de aplicar estilos
-        if (startCol < endCol) {
-          ws.mergeCells(1, startCol, 1, endCol);
         }
 
         colIdx = endCol + 1;
