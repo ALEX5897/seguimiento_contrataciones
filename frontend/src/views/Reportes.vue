@@ -60,14 +60,33 @@
               <small>Una fila por verificable con todas sus fechas</small>
             </div>
           </label>
-          <label class="option-toggle" :class="{ active: incluirMatrizEtapas }">
-            <input type="checkbox" v-model="incluirMatrizEtapas" />
-            <span class="toggle-track"><span class="toggle-thumb" /></span>
-            <div>
-              <strong>Matriz de etapas por retraso</strong>
-              <small>Matriz de etapas con días de atraso por fase</small>
-            </div>
-          </label>
+          <div class="bloques-section">
+            <strong style="display: block; margin-bottom: 8px;">Matriz de etapas</strong>
+            <label class="option-toggle" :class="{ active: bloqueInformacionGeneral }">
+              <input type="checkbox" v-model="bloqueInformacionGeneral" />
+              <span class="toggle-track"><span class="toggle-thumb" /></span>
+              <div>
+                <strong>Información general</strong>
+                <small>Datos principales de procesos</small>
+              </div>
+            </label>
+            <label class="option-toggle" :class="{ active: bloqueEtapasTarde }">
+              <input type="checkbox" v-model="bloqueEtapasTarde" />
+              <span class="toggle-track"><span class="toggle-thumb" /></span>
+              <div>
+                <strong>Etapas tarde</strong>
+                <small>1=Tarde, 0=A tiempo (solo pendientes)</small>
+              </div>
+            </label>
+            <label class="option-toggle" :class="{ active: bloqueDiasTarde }">
+              <input type="checkbox" v-model="bloqueDiasTarde" />
+              <span class="toggle-track"><span class="toggle-thumb" /></span>
+              <div>
+                <strong>Días tarde por etapas</strong>
+                <small>Número de días de retraso</small>
+              </div>
+            </label>
+          </div>
         </section>
 
         <button
@@ -144,7 +163,9 @@ const areasDisponibles  = ref<string[]>([]);
 const genTodasAreas         = ref(true);
 const genAreasSeleccionadas = ref<string[]>([]);
 const incluirVerificables   = ref(false);
-const incluirMatrizEtapas   = ref(false);
+const bloqueInformacionGeneral = ref(false);
+const bloqueEtapasTarde     = ref(false);
+const bloqueDiasTarde       = ref(false);
 
 const genCamposSeleccionados = ref<string[]>([
   'codigoOlympo', 'nombre', 'direccionNombre', 'responsableNombre',
@@ -216,11 +237,16 @@ async function generarExcel() {
   generando.value = true;
   errorGen.value = '';
   try {
+    const bloquesMatriz = {
+      informacionGeneral: bloqueInformacionGeneral.value,
+      etapasTarde: bloqueEtapasTarde.value,
+      diasTarde: bloqueDiasTarde.value
+    };
     const { blob, filename } = await reportesService.generarReporte(
       areas,
       genCamposSeleccionados.value,
       incluirVerificables.value,
-      incluirMatrizEtapas.value
+      bloquesMatriz
     );
     descargarBlob(blob, filename);
   } catch (err: any) {

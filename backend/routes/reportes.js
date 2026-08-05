@@ -891,7 +891,7 @@ function expandirEnVerificables(proceso) {
 router.post('/generar', async (req, res) => {
   try {
     const scope = getScopeFromReq(req);
-    const { areas = 'ALL', campos = [], incluirVerificables = false, incluirMatrizEtapas = false } = req.body || {};
+    const { areas = 'ALL', campos = [], incluirVerificables = false, bloquesMatriz = {} } = req.body || {};
 
     // Validar campos contra whitelist
     const camposValidados = Array.isArray(campos)
@@ -998,8 +998,9 @@ router.post('/generar', async (req, res) => {
     };
 
     // ── Agregar hoja de matriz de etapas por días de retraso ────────────────
-    if (incluirMatrizEtapas && !incluirVerificables && procesosBase.length > 0) {
-      await agregarHojaMatrizEtapas(wb, procesosBase);
+    const tieneAlgunBloque = bloquesMatriz.informacionGeneral || bloquesMatriz.etapasTarde || bloquesMatriz.diasTarde;
+    if (tieneAlgunBloque && !incluirVerificables && procesosBase.length > 0) {
+      await agregarHojaMatrizEtapas(wb, procesosBase, bloquesMatriz);
     }
 
     // ── Hoja Info ──────────────────────────────────────────────────────────
@@ -2120,11 +2121,16 @@ async function construirMatrizEtapas(procesos) {
 }
 
 // Agregar nueva hoja de matriz de etapas al workbook (una sola hoja, etapas en filas, procesos en columnas)
-async function agregarHojaMatrizEtapas(wb, procesos) {
+async function agregarHojaMatrizEtapas(wb, procesos, bloquesMatriz = {}) {
   try {
     const { todasLasEtapas, procesosConDatos } = await construirMatrizEtapas(procesos);
 
     const ws = wb.addWorksheet('Etapas por retraso');
+
+    // Extraer qué bloques incluir (todos por defecto si no se especifica)
+    const incluirInfoGeneral = bloquesMatriz.informacionGeneral !== false;
+    const incluirEtapasTarde = bloquesMatriz.etapasTarde !== false;
+    const incluirDiasTarde = bloquesMatriz.diasTarde !== false;
 
     const COLOR_TITULO_BLOQUE = '1E40AF'; // azul oscuro
     const COLOR_HEADER_PROCESO = '0F2F55'; // azul más oscuro
@@ -2135,7 +2141,7 @@ async function agregarHojaMatrizEtapas(wb, procesos) {
     // ════════════════════════════════════════════════════════════════════════════
     // BLOQUE 1: INFORMACIÓN GENERAL
     // ════════════════════════════════════════════════════════════════════════════
-    {
+    if (incluirInfoGeneral) {
       // Título del bloque
       const titleRow = ws.getRow(filaActual);
       titleRow.getCell(1).value = '📋 INFORMACIÓN GENERAL';
@@ -2266,17 +2272,16 @@ async function agregarHojaMatrizEtapas(wb, procesos) {
     // ════════════════════════════════════════════════════════════════════════════
     // BLOQUE 2: ETAPAS TARDE
     // ════════════════════════════════════════════════════════════════════════════
-    crearBloqueEtapas('⚠️ ETAPAS TARDE (1=Tarde, 0=A Tiempo, N/A=No Asignada)', 'tarde');
+    if (incluirEtapasTarde) {
+      crearBloqueEtapas('⚠️ ETAPAS TARDE (1=Tarde, 0=A Tiempo, N/A=No Asignada)', 'tarde');
+    }
 
     // ════════════════════════════════════════════════════════════════════════════
     // BLOQUE 3: DÍAS DE RETRASO
     // ════════════════════════════════════════════════════════════════════════════
-    crearBloqueEtapas('📅 DÍAS DE RETRASO', 'dias');
-
-    // ════════════════════════════════════════════════════════════════════════════
-    // BLOQUE 4: PRÓXIMOS A VENCER
-    // ════════════════════════════════════════════════════════════════════════════
-    crearBloqueEtapas('⏰ PRÓXIMOS A VENCER (Días para vencer en rango 1-5)', 'vencer');
+    if (incluirDiasTarde) {
+      crearBloqueEtapas('📅 DÍAS DE RETRASO', 'dias');
+    }
 
     // Ajustar ancho de columnas
     ws.getColumn(1).width = 28; // Nombre de etapa/Verificable
