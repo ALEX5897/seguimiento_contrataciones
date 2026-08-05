@@ -138,15 +138,6 @@
           <div class="kpi-value">{{ procesosDesiertosKpi.length }}</div>
           <small class="kpi-foot">Procesos con estado desierto</small>
         </article>
-
-        <article class="kpi-card" :class="{ 'kpi-card-active': filtrosKpiActivos.includes('desfinanciado') }" @click="toggleFiltroKpi('desfinanciado')" style="cursor: pointer;">
-          <div class="kpi-header">
-            <i class="ri-wallet-2-line kpi-icon"></i>
-            <span class="kpi-title">Procesos desfinanciados</span>
-          </div>
-          <div class="kpi-value">{{ procesosDesfinanciadosKpi.length }}</div>
-          <small class="kpi-foot">Presupuesto 0 o no asignado</small>
-        </article>
       </section>
     </div>
 
@@ -2618,7 +2609,7 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 }
 
 .professional-kpi-grid {
-  grid-template-columns: repeat(9, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: stretch;
 }
 
@@ -2631,11 +2622,11 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
   border: 1px solid #d9e2ea;
   border-radius: 8px;
   padding: 0.441rem 0.4935rem;
-  min-height: auto;
+  min-height: 140px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   text-align: center;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
   position: relative;
