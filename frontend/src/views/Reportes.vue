@@ -106,6 +106,14 @@
                 <small>Número de días de retraso</small>
               </div>
             </label>
+            <label class="option-toggle" :class="{ active: bloqueProximosAVencer }">
+              <input type="checkbox" v-model="bloqueProximosAVencer" />
+              <span class="toggle-track"><span class="toggle-thumb" /></span>
+              <div>
+                <strong>Próximos a vencer</strong>
+                <small>Días para vencer (rango 1-5)</small>
+              </div>
+            </label>
           </div>
         </section>
 
@@ -188,6 +196,7 @@ const bloqueEtapasTarde     = ref(false);
 const bloqueDiasTarde       = ref(false);
 const bloqueVerificablesTarde = ref(false);
 const bloqueDiasVerificables = ref(false);
+const bloqueProximosAVencer = ref(false);
 
 const genCamposSeleccionados = ref<string[]>([
   'codigoOlympo', 'nombre', 'direccionNombre', 'responsableNombre',
@@ -264,7 +273,8 @@ async function generarExcel() {
       etapasTarde: bloqueEtapasTarde.value,
       diasTarde: bloqueDiasTarde.value,
       verificablesTarde: bloqueVerificablesTarde.value,
-      diasVerificables: bloqueDiasVerificables.value
+      diasVerificables: bloqueDiasVerificables.value,
+      proximosAVencer: bloqueProximosAVencer.value
     };
     const { blob, filename } = await reportesService.generarReporte(
       areas,
