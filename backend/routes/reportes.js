@@ -1079,32 +1079,66 @@ router.post('/generar', async (req, res) => {
       // Crear encabezados manualmente primero
       // DOS FILAS DE ENCABEZADO cuando hay verificables
 
-      // Fila 1: Asignar colores de fase a TODOS los verificables (no solo los nombrados)
+      // Fila 1: Encabezados de sección con colores por fase
       let colIdx = 1;
 
-      // Columnas de campos principales (vacías en primera fila)
-      metaCampos.forEach(() => {
-        const cell = ws.getCell(1, colIdx);
-        cell.value = '';
-        cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_BG } };
-        cell.alignment = { vertical: 'middle', horizontal: 'center' };
-        colIdx++;
-      });
+      // Sección: Información general (campos principales)
+      const infoGeneralEnd = metaCampos.length;
+      if (infoGeneralEnd > 0) {
+        const cell1 = ws.getCell(1, 1);
+        cell1.value = 'Información general';
+        cell1.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 11 };
+        cell1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_BG } };
+        cell1.alignment = { vertical: 'middle', horizontal: 'center' };
 
-      // Para cada verificable en todasColumnas, asignar color de fase
-      todasColumnas.slice(metaCampos.length).forEach((meta) => {
-        // Obtener la fase del verificable
-        const faseKey = meta.fase || (faseColorMap.get(parseInt(meta.key.replace('verif_', ''))) || 'sin_clasificar');
-        const faseColor = coloresPorFase[faseKey] || { header: '808080', lightBg: 'E0E0E0' };
+        if (infoGeneralEnd > 1) {
+          ws.mergeCells(1, 1, 1, infoGeneralEnd);
+        }
+
+        // Aplicar estilo a las demás celdas de la sección
+        for (let i = 1; i < infoGeneralEnd; i++) {
+          const cell = ws.getCell(1, i);
+          cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 11 };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_BG } };
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        }
+        colIdx = infoGeneralEnd + 1;
+      }
+
+      // Secciones por fase
+      const faseLabels = {
+        'preparatoria': 'SAFE Preparatorio',
+        'precontractual': 'SAFE Precontractual',
+        'contractual': 'SAFE Contractual',
+        'sin_clasificar': 'Verificables sin clasificar'
+      };
+
+      verificablesConFase.fases.forEach(fase => {
+        const faseColor = coloresPorFase[fase.key] || coloresPorFase['preparatoria'];
+        const verifCount = fase.verificables.length;
+        const faseEnd = colIdx + verifCount - 1;
 
         const cell = ws.getCell(1, colIdx);
-        cell.value = '';
-        cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 10 };
+        cell.value = faseLabels[fase.key] || fase.key;
+        cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 11 };
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.header } };
         cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
         cell.border = { bottom: { style: 'medium', color: { argb: faseColor.header } } };
-        colIdx++;
+
+        if (verifCount > 1) {
+          ws.mergeCells(1, colIdx, 1, faseEnd);
+        }
+
+        // Aplicar estilo a las demás celdas de la sección
+        for (let i = colIdx; i <= faseEnd; i++) {
+          const cell = ws.getCell(1, i);
+          cell.font = { bold: true, color: { argb: COLOR_HEADER_FG }, size: 11 };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: faseColor.header } };
+          cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+          cell.border = { bottom: { style: 'medium', color: { argb: faseColor.header } } };
+        }
+
+        colIdx = faseEnd + 1;
       });
       ws.getRow(1).height = 28;
 
