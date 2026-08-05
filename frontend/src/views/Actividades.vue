@@ -49,8 +49,13 @@
             <i class="ri-checkbox-circle-line kpi-icon"></i>
             <span class="kpi-title">Total de procesos</span>
           </div>
-          <div class="kpi-value">{{ kpisProcesos.totalProcesos }}</div>
-          <small class="kpi-foot">Procesos activos</small>
+          <div class="kpi-donut-row">
+            <strong class="kpi-value">{{ kpisProcesos.totalProcesos }}</strong>
+            <div class="kpi-mini-donut" :style="{ '--value': `${kpisProcesos.porcentajeCumplimiento}%`, '--kpi-color': colorCumplimiento }">
+              <span :style="{ color: colorCumplimiento }">{{ kpisProcesos.porcentajeCumplimiento }}%</span>
+            </div>
+          </div>
+          <small class="kpi-foot">Cumplimiento general</small>
         </article>
 
         <article class="kpi-card">
