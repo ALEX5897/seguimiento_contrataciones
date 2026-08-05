@@ -1,90 +1,116 @@
 <template>
   <div class="catalogos-view">
     <div class="header">
-      <h1>Catálogos: Direcciones y Responsables</h1>
-      <p>Administra los catálogos maestros del sistema</p>
+      <h1>Catálogos Maestros</h1>
+      <p>Administra los catálogos del sistema</p>
+    </div>
+
+    <div class="tabs-container">
+      <button
+        v-for="tab in tabs"
+        :key="tab.id"
+        :class="['tab', { active: tabActiva === tab.id }]"
+        @click="tabActiva = tab.id"
+      >
+        {{ tab.label }}
+      </button>
     </div>
 
     <div v-if="mensaje" class="mensaje">{{ mensaje }}</div>
 
-    <section class="card">
-      <h2>Direcciones</h2>
-      <form class="inline-form" @submit.prevent="crearDireccion">
-        <input v-model="nuevaDireccion" placeholder="Nueva dirección" required />
-        <button type="submit" :disabled="guardando">Agregar dirección</button>
-      </form>
+    <!-- TAB: Direcciones y Responsables -->
+    <div v-if="tabActiva === 'direcciones-responsables'" class="tab-content">
+      <section class="card">
+        <h2>Direcciones</h2>
+        <form class="inline-form" @submit.prevent="crearDireccion">
+          <input v-model="nuevaDireccion" placeholder="Nueva dirección" required />
+          <button type="submit" :disabled="guardando">Agregar dirección</button>
+        </form>
 
-      <table class="tabla">
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Activo</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="d in direcciones" :key="d.id">
-            <td><input v-model="d.nombre" /></td>
-            <td><input type="checkbox" v-model="d.activo" /></td>
-            <td class="acciones">
-              <button type="button" class="btn-guardar" @click="guardarDireccion(d)" :disabled="guardando">Guardar</button>
-              <button type="button" class="btn-eliminar" @click="eliminarDireccion(d)" :disabled="guardando">Eliminar</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Activo</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="d in direcciones" :key="d.id">
+              <td><input v-model="d.nombre" /></td>
+              <td><input type="checkbox" v-model="d.activo" /></td>
+              <td class="acciones">
+                <button type="button" class="btn-guardar" @click="guardarDireccion(d)" :disabled="guardando">Guardar</button>
+                <button type="button" class="btn-eliminar" @click="eliminarDireccion(d)" :disabled="guardando">Eliminar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
 
-    <section class="card">
-      <h2>Responsables</h2>
-      <form class="grid-form" @submit.prevent="crearResponsable">
-        <input v-model="nuevoResponsable.nombre" placeholder="Nombre" required />
-        <input v-model="nuevoResponsable.email" placeholder="Correo (opcional)" />
-        <select v-model.number="nuevoResponsable.direccionId">
-          <option :value="null">Sin dirección</option>
-          <option v-for="d in direcciones" :key="d.id" :value="d.id">{{ d.nombre }}</option>
-        </select>
-        <button type="submit" :disabled="guardando">Agregar responsable</button>
-      </form>
+      <section class="card">
+        <h2>Responsables</h2>
+        <form class="grid-form" @submit.prevent="crearResponsable">
+          <input v-model="nuevoResponsable.nombre" placeholder="Nombre" required />
+          <input v-model="nuevoResponsable.email" placeholder="Correo (opcional)" />
+          <select v-model.number="nuevoResponsable.direccionId">
+            <option :value="null">Sin dirección</option>
+            <option v-for="d in direcciones" :key="d.id" :value="d.id">{{ d.nombre }}</option>
+          </select>
+          <button type="submit" :disabled="guardando">Agregar responsable</button>
+        </form>
 
-      <table class="tabla">
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Correo</th>
-            <th>Dirección</th>
-            <th>Activo</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="r in responsables" :key="r.id">
-            <td><input v-model="r.nombre" /></td>
-            <td><input v-model="r.email" /></td>
-            <td>
-              <select v-model.number="r.direccionId">
-                <option :value="null">Sin dirección</option>
-                <option v-for="d in direcciones" :key="d.id" :value="d.id">{{ d.nombre }}</option>
-              </select>
-            </td>
-            <td><input type="checkbox" v-model="r.activo" /></td>
-            <td class="acciones">
-              <button type="button" class="btn-guardar" @click="guardarResponsable(r)" :disabled="guardando">Guardar</button>
-              <button type="button" class="btn-eliminar" @click="eliminarResponsable(r)" :disabled="guardando">Eliminar</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Correo</th>
+              <th>Dirección</th>
+              <th>Activo</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="r in responsables" :key="r.id">
+              <td><input v-model="r.nombre" /></td>
+              <td><input v-model="r.email" /></td>
+              <td>
+                <select v-model.number="r.direccionId">
+                  <option :value="null">Sin dirección</option>
+                  <option v-for="d in direcciones" :key="d.id" :value="d.id">{{ d.nombre }}</option>
+                </select>
+              </td>
+              <td><input type="checkbox" v-model="r.activo" /></td>
+              <td class="acciones">
+                <button type="button" class="btn-guardar" @click="guardarResponsable(r)" :disabled="guardando">Guardar</button>
+                <button type="button" class="btn-eliminar" @click="eliminarResponsable(r)" :disabled="guardando">Eliminar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+
+    <!-- TAB: Catálogo de Etapas -->
+    <div v-if="tabActiva === 'catalogo-etapas'" class="tab-content">
+      <AdminCatalogoEtapas />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import api from '../services/api';
+import AdminCatalogoEtapas from './AdminCatalogoEtapas.vue';
 
 const guardando = ref(false);
 const mensaje = ref('');
+const tabActiva = ref('direcciones-responsables');
+
+const tabs = [
+  { id: 'direcciones-responsables', label: '📋 Direcciones y Responsables' },
+  { id: 'catalogo-etapas', label: '📊 Catálogo de Etapas' }
+];
 
 const direcciones = ref<any[]>([]);
 const responsables = ref<any[]>([]);
@@ -240,6 +266,52 @@ onMounted(cargarCatalogos);
 .header p {
   margin: 0.2rem 0 0;
   color: #64748b;
+}
+
+.tabs-container {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+  background: #fff;
+  padding: 0 1rem;
+  border-radius: 8px 8px 0 0;
+  margin-bottom: 0.5rem;
+}
+
+.tab {
+  background: none;
+  border: none;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #64748b;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: #0f172a;
+}
+
+.tab.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+}
+
+.tab-content {
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .card {

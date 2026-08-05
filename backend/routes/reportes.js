@@ -891,7 +891,7 @@ function expandirEnVerificables(proceso) {
 router.post('/generar', async (req, res) => {
   try {
     const scope = getScopeFromReq(req);
-    const { areas = 'ALL', campos = [], incluirVerificables = false } = req.body || {};
+    const { areas = 'ALL', campos = [], incluirVerificables = false, incluirMatrizEtapas = false } = req.body || {};
 
     // Validar campos contra whitelist
     const camposValidados = Array.isArray(campos)
@@ -996,6 +996,11 @@ router.post('/generar', async (req, res) => {
       from: { row: 1, column: 1 },
       to: { row: filas.length + 1, column: todasColumnas.length }
     };
+
+    // ── Agregar hoja de matriz de etapas por días de retraso ────────────────
+    if (incluirMatrizEtapas && !incluirVerificables && procesosBase.length > 0) {
+      await agregarHojaMatrizEtapas(wb, procesosBase);
+    }
 
     // ── Hoja Info ──────────────────────────────────────────────────────────
     const wsMeta = wb.addWorksheet('Info');
@@ -2019,6 +2024,249 @@ router.post('/generar-informe-ultimos-comentarios-todos', async (req, res) => {
     }
   }
 });
+
+// ── MATRIZ DE ETAPAS POR DÍAS DE RETRASO ──────────────────────────────────────
+
+async function construirMatrizEtapas(procesos) {
+  // Obtener todas las etapas del catálogo ordenadas por fase
+  const todasLasEtapas = await mysql.getEtapasCatalogo();
+  const ordenFases = ['preparatoria', 'precontractual', 'contractual', 'sin_clasificar'];
+
+  // Agrupar etapas por clasificación (fase)
+  const etapasPorFase = {};
+  ordenFases.forEach(fase => {
+    etapasPorFase[fase] = todasLasEtapas.filter(e => e.clasificacion === fase);
+  });
+
+  // Crear mapa de etapas por ID para búsqueda rápida
+  const mapEtapasDelProceso = new Map();
+  procesos.forEach(proceso => {
+    const clave = `${proceso.codigoOlympo}::${proceso.nombre}`;
+    const etapasDetalle = proceso.etapasDetalle || [];
+    mapEtapasDelProceso.set(clave, new Map(
+      etapasDetalle.map(e => [e.etapaId, e])
+    ));
+  });
+
+  // Construir datos para cada bloque
+  const procesosConDatos = procesos.map(proceso => {
+    const clave = `${proceso.codigoOlympo}::${proceso.nombre}`;
+    const etapasDelProceso = mapEtapasDelProceso.get(clave) || new Map();
+
+    const datosBloque = {
+      codigoOlympo: proceso.codigoOlympo,
+      nombreProceso: proceso.nombre,
+      direccion: proceso.direccionNombre || '',
+      responsable: proceso.responsableNombre || '',
+      tipoPlan: proceso.tipoPlan || '',
+      estadoGeneral: proceso.estadoGeneralLabel || '',
+      avance: `${proceso.porcentajeAvance}%`,
+      etapasEtapasTarde: {},
+      etapasDiasTarde: {},
+      etapasProximosAVencer: {}
+    };
+
+    // Procesar cada etapa del catálogo
+    todasLasEtapas.forEach(etapaCatalogo => {
+      const etapaDelProceso = etapasDelProceso.get(etapaCatalogo.id);
+      const etapaId = etapaCatalogo.id;
+
+      if (!etapaDelProceso) {
+        // Etapa no asignada
+        datosBloque.etapasEtapasTarde[etapaId] = 'N/A';
+        datosBloque.etapasDiasTarde[etapaId] = 'N/A';
+        datosBloque.etapasProximosAVencer[etapaId] = 'N/A';
+      } else {
+        // Etapa está en el proceso
+        const estado = normalizarEstado(etapaDelProceso.estado);
+        const esPendiente = estado === 'pendiente';
+        const diasAtraso = Number(etapaDelProceso.diasAtraso) || 0;
+
+        // Bloque: Etapas Tarde (1 = tarde, 0 = a tiempo, N/A = no asignada)
+        if (esPendiente && diasAtraso > 0) {
+          datosBloque.etapasEtapasTarde[etapaId] = 1;
+        } else if (esPendiente) {
+          datosBloque.etapasEtapasTarde[etapaId] = 0;
+        } else {
+          datosBloque.etapasEtapasTarde[etapaId] = 0;
+        }
+
+        // Bloque: Días Tarde (solo número si está tarde, N/A si no)
+        if (esPendiente && diasAtraso > 0) {
+          datosBloque.etapasDiasTarde[etapaId] = diasAtraso;
+        } else {
+          datosBloque.etapasDiasTarde[etapaId] = 'N/A';
+        }
+
+        // Bloque: Próximos a Vencer (solo si está entre 1-5 días antes de vencer y pendiente)
+        if (esPendiente && diasAtraso < 0 && diasAtraso >= -5) {
+          // diasAtraso es negativo: -1 a -5 significa 1 a 5 días para vencer
+          datosBloque.etapasProximosAVencer[etapaId] = Math.abs(diasAtraso);
+        } else {
+          datosBloque.etapasProximosAVencer[etapaId] = 'N/A';
+        }
+      }
+    });
+
+    return datosBloque;
+  });
+
+  return {
+    etapasPorFase,
+    todasLasEtapas,
+    procesosConDatos,
+    ordenFases
+  };
+}
+
+// Agregar nueva hoja de matriz de etapas al workbook con 4 bloques
+async function agregarHojaMatrizEtapas(wb, procesos) {
+  try {
+    const { etapasPorFase, todasLasEtapas, procesosConDatos, ordenFases } = await construirMatrizEtapas(procesos);
+
+    const ws = wb.addWorksheet('Etapas por retraso', {
+      views: [{ state: 'frozen', ySplit: 1 }]
+    });
+
+    const COLOR_HEADER_BLOQUE = '1E3A8A'; // azul oscuro
+    const COLOR_HEADER_FIJO = '0F2F55'; // azul más oscuro
+
+    let filaActual = 1;
+
+    // Función auxiliar para crear un bloque
+    const crearBloque = (nombreBloque, tipoBloque) => {
+      const inicioBloque = filaActual;
+
+      // Encabezado del bloque
+      const encabezadoRow = ws.getRow(filaActual);
+      const encabezadoCell = encabezadoRow.getCell(1);
+      encabezadoCell.value = nombreBloque;
+      encabezadoCell.font = { bold: true, size: 12, color: { argb: 'FFFFFF' } };
+      encabezadoCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_BLOQUE } };
+      encabezadoCell.alignment = { vertical: 'middle', horizontal: 'left' };
+      encabezadoRow.height = 24;
+      filaActual++;
+
+      // Fila de encabezados de columnas
+      const encabezadosBloque = ['Código Olimpo', 'Nombre proceso'];
+      if (tipoBloque === 'informacion') {
+        encabezadosBloque.push('Dirección', 'Responsable', 'Tipo plan', 'Estado', 'Avance');
+      } else {
+        // Agregar nombres de etapas
+        todasLasEtapas.forEach(etapa => {
+          encabezadosBloque.push(etapa.nombre);
+        });
+      }
+
+      const headerRow = ws.getRow(filaActual);
+      encabezadosBloque.forEach((header, idx) => {
+        const cell = headerRow.getCell(idx + 1);
+        cell.value = header;
+        cell.font = { bold: true, size: 10, color: { argb: 'FFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR_HEADER_FIJO } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+        cell.border = { bottom: { style: 'thin', color: { argb: 'FFFFFF' } } };
+      });
+      headerRow.height = 22;
+      filaActual++;
+
+      // Datos del bloque
+      procesosConDatos.forEach((proceso, rowIdx) => {
+        const dataRow = ws.getRow(filaActual);
+        dataRow.getCell(1).value = proceso.codigoOlympo;
+        dataRow.getCell(2).value = proceso.nombreProceso;
+
+        if (tipoBloque === 'informacion') {
+          dataRow.getCell(3).value = proceso.direccion;
+          dataRow.getCell(4).value = proceso.responsable;
+          dataRow.getCell(5).value = proceso.tipoPlan;
+          dataRow.getCell(6).value = proceso.estadoGeneral;
+          dataRow.getCell(7).value = proceso.avance;
+        } else {
+          // Agregar datos de etapas
+          todasLasEtapas.forEach((etapa, etapaIdx) => {
+            const colIdx = etapaIdx + 3;
+            let valor = '';
+
+            if (tipoBloque === 'tarde') {
+              valor = proceso.etapasEtapasTarde[etapa.id];
+            } else if (tipoBloque === 'dias') {
+              valor = proceso.etapasDiasTarde[etapa.id];
+            } else if (tipoBloque === 'vencer') {
+              valor = proceso.etapasProximosAVencer[etapa.id];
+            }
+
+            const cell = dataRow.getCell(colIdx);
+            cell.value = valor;
+
+            // Estilos según tipo de valor
+            if (valor === 1) {
+              // Tarde (rojo)
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E5' } };
+              cell.font = { bold: true, color: { argb: 'D32F2F' } };
+            } else if (valor === 0) {
+              // A tiempo (verde)
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E8F5E9' } };
+              cell.font = { bold: true, color: { argb: '2E7D32' } };
+            } else if (typeof valor === 'number' && valor > 0) {
+              // Números (amarillo para días)
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3E0' } };
+              cell.font = { bold: true, color: { argb: 'E65100' } };
+            } else {
+              // N/A (gris)
+              cell.font = { color: { argb: '9CA3AF' } };
+            }
+
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            cell.border = { bottom: { style: 'thin', color: { argb: 'E2E8F0' } } };
+          });
+        }
+
+        // Estilo de filas
+        if (rowIdx % 2 === 1) {
+          dataRow.eachCell({ includeEmpty: true }, (cell) => {
+            if (cell.value !== undefined && cell.value !== null) {
+              const bgActual = cell.fill?.fgColor?.argb;
+              if (!bgActual || bgActual === '00000000') {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8FAFC' } };
+              }
+            }
+          });
+        }
+
+        // Alineación de columnas fijas
+        dataRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+        dataRow.getCell(2).alignment = { vertical: 'middle', horizontal: 'left' };
+
+        dataRow.height = 18;
+        filaActual++;
+      });
+
+      // Espacio entre bloques
+      filaActual++;
+      return filaActual;
+    };
+
+    // Crear los 4 bloques
+    crearBloque('📋 Información General', 'informacion');
+    crearBloque('⚠️ Etapas Tarde (1=Tarde, 0=A Tiempo, N/A=No Asignada)', 'tarde');
+    crearBloque('📅 Días de Retraso', 'dias');
+    crearBloque('⏰ Próximos a Vencer (días)', 'vencer');
+
+    // Ajustar ancho de columnas
+    ws.columns = ws.columns || [];
+    ws.columns[0] = { width: 16 }; // Código Olimpo
+    ws.columns[1] = { width: 40 }; // Nombre proceso
+
+    for (let i = 2; i < todasLasEtapas.length + 3; i++) {
+      ws.columns[i] = { width: Math.min(18, Math.max(10, todasLasEtapas[i - 3]?.nombre.length || 14)) };
+    }
+
+  } catch (error) {
+    console.error('Error al construir matriz de etapas:', error);
+    // No bloquear la generación de otros reportes si falla esta hoja
+  }
+}
 
 export default router;
 

@@ -1,0 +1,13 @@
+id,clave,nombre,ruta,activo,orden,created_at,updated_at
+1,dashboard,Dashboard,/,1,10,Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador),Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador)
+2,actividades,Procesos,/actividades,1,20,Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador),Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador)
+3,reportes,Reportes,/reportes,1,30,Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador),Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador)
+4,admin_actividades,Admin Procesos,/admin/actividades,1,40,Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador),Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador)
+5,admin_versiones,Admin Versiones,/admin/versiones,1,50,Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador),Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador)
+6,admin_usuarios,Admin Usuarios,/admin/usuarios,1,60,Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador),Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador)
+7,admin_catalogos,Admin Catálogos,/admin/catalogos,1,70,Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador),Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador)
+8,admin_permisos,Admin Permisos,/admin/permisos,1,80,Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador),Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador)
+337,admin_auditoria,Admin Auditoría,/admin/auditoria,1,90,Fri Mar 27 2026 16:27:07 GMT-0500 (hora de Ecuador),Fri Mar 27 2026 16:27:07 GMT-0500 (hora de Ecuador)
+1658,notificaciones,Notificaciones,/notificaciones,1,35,Wed Apr 08 2026 14:56:33 GMT-0500 (hora de Ecuador),Wed Apr 08 2026 14:56:33 GMT-0500 (hora de Ecuador)
+2624,chat_ia,Chat IA,/chat-ia,1,36,Tue Apr 14 2026 21:38:17 GMT-0500 (hora de Ecuador),Tue Apr 14 2026 21:38:17 GMT-0500 (hora de Ecuador)
+8179,informes,Informes Gerenciales,/informes,1,31,Wed Apr 29 2026 19:39:56 GMT-0500 (hora de Ecuador),Wed Apr 29 2026 19:39:56 GMT-0500 (hora de Ecuador)

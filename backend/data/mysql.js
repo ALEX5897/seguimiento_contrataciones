@@ -2541,7 +2541,7 @@ export async function getSubtareaEtapas(subtareaId) {
      JOIN subtareas s ON s.id = se.subtarea_id
      JOIN etapas_pac ep ON se.etapa_id = ep.id
      LEFT JOIN seguimiento_etapas sg ON sg.subtarea_id = se.subtarea_id AND sg.etapa_id = se.etapa_id
-     WHERE se.subtarea_id = ?
+     WHERE se.subtarea_id = ? AND se.aplica = 1
      ORDER BY ep.orden`,
     [subtareaId]
   );
@@ -3245,6 +3245,187 @@ export async function getCambiosReforma() {
 
 export async function deleteVersion() {
   return;
+}
+
+// ========== CATÁLOGO DE ETAPAS ==========
+
+export async function getEtapasCatalogo() {
+  const rows = await query(
+    `SELECT id, nombre, clasificacion, orden, descripcion, created_at, updated_at
+     FROM etapas_catalogo
+     ORDER BY FIELD(clasificacion, 'preparatoria', 'precontractual', 'contractual', 'sin_clasificar'), orden, nombre`
+  );
+  return rows.map(toCamelRow);
+}
+
+export async function getEtapasCatalogoByClasificacion(clasificacion) {
+  const rows = await query(
+    `SELECT id, nombre, clasificacion, orden, descripcion, created_at, updated_at
+     FROM etapas_catalogo
+     WHERE clasificacion = ?
+     ORDER BY orden, nombre`,
+    [clasificacion]
+  );
+  return rows.map(toCamelRow);
+}
+
+export async function getEtapaCatalogo(id) {
+  const rows = await query(
+    `SELECT id, nombre, clasificacion, orden, descripcion, created_at, updated_at
+     FROM etapas_catalogo
+     WHERE id = ?
+     LIMIT 1`,
+    [id]
+  );
+  return rows.length > 0 ? toCamelRow(rows[0]) : null;
+}
+
+export async function updateEtapaCatalogo(id, data = {}) {
+  const sets = [];
+  const values = [];
+
+  if (data.clasificacion !== undefined) {
+    const clasificacion = String(data.clasificacion || '').trim();
+    if (!['preparatoria', 'precontractual', 'contractual', 'sin_clasificar'].includes(clasificacion)) {
+      throw new Error('Clasificación inválida');
+    }
+    sets.push('clasificacion = ?');
+    values.push(clasificacion);
+  }
+
+  if (data.orden !== undefined) {
+    const orden = data.orden ? parseInt(data.orden) : null;
+    sets.push('orden = ?');
+    values.push(orden);
+  }
+
+  if (data.descripcion !== undefined) {
+    const descripcion = data.descripcion ? String(data.descripcion).trim() : null;
+    sets.push('descripcion = ?');
+    values.push(descripcion);
+  }
+
+  if (!sets.length) {
+    return getEtapaCatalogo(id);
+  }
+
+  sets.push('updated_at = NOW()');
+  values.push(id);
+
+  await query(`UPDATE etapas_catalogo SET ${sets.join(', ')} WHERE id = ?`, values);
+  return getEtapaCatalogo(id);
+}
+
+export async function updateEtapasCatalogoMultiple(etapas) {
+  let actualizadas = 0;
+
+  for (const etapa of etapas) {
+    const { id, clasificacion, orden, descripcion } = etapa;
+    if (!id) continue;
+
+    try {
+      await updateEtapaCatalogo(id, { clasificacion, orden, descripcion });
+      actualizadas++;
+    } catch (error) {
+      console.error(`Error al actualizar etapa ${id}:`, error.message);
+    }
+  }
+
+  return actualizadas;
+}
+
+export async function getEtapasCatalogoResumen() {
+  const rows = await query(
+    `SELECT
+      clasificacion,
+      COUNT(*) as cantidad,
+      COUNT(CASE WHEN descripcion IS NOT NULL AND descripcion != '' THEN 1 END) as conDescripcion
+     FROM etapas_catalogo
+     GROUP BY clasificacion
+     ORDER BY FIELD(clasificacion, 'preparatoria', 'precontractual', 'contractual', 'sin_clasificar')`
+  );
+
+  const resumen = {
+    totalEtapas: 0,
+    porClasificacion: {},
+    clasificadas: 0,
+    sinClasificar: 0
+  };
+
+  for (const row of rows) {
+    const item = toCamelRow(row);
+    resumen.porClasificacion[item.clasificacion] = {
+      cantidad: item.cantidad,
+      conDescripcion: item.conDescripcion
+    };
+    resumen.totalEtapas += item.cantidad;
+
+    if (item.clasificacion !== 'sin_clasificar') {
+      resumen.clasificadas += item.cantidad;
+    } else {
+      resumen.sinClasificar += item.cantidad;
+    }
+  }
+
+  return resumen;
+}
+
+export async function createEtapaCatalogo(data = {}) {
+  const nombre = String(data.nombre || '').trim();
+  if (!nombre) throw new Error('El nombre de la etapa es requerido');
+
+  const clasificacion = String(data.clasificacion || 'sin_clasificar').trim().toLowerCase();
+  const clasificacionesValidas = ['preparatoria', 'precontractual', 'contractual', 'sin_clasificar'];
+  if (!clasificacionesValidas.includes(clasificacion)) {
+    throw new Error(`Clasificación inválida: "${data.clasificacion}". Debe ser: ${clasificacionesValidas.join(', ')}`);
+  }
+
+  // Verificar si la etapa ya existe en etapas_pac
+  const existentes = await query('SELECT id FROM etapas_pac WHERE nombre = ?', [nombre]);
+  if (existentes.length > 0) {
+    throw new Error(`Ya existe una etapa con el nombre "${nombre}"`);
+  }
+
+  // Obtener el próximo ID disponible
+  const maxIdResult = await query('SELECT MAX(id) as maxId FROM etapas_pac LIMIT 1');
+  const nextId = (maxIdResult[0]?.maxId || 0) + 1;
+
+  // Obtener el próximo orden disponible (orden en etapas_pac no puede ser null)
+  const maxOrdenResult = await query('SELECT MAX(orden) as maxOrden FROM etapas_pac LIMIT 1');
+  const defaultOrden = (maxOrdenResult[0]?.maxOrden || 0) + 1;
+  const orden = data.orden !== undefined && data.orden !== null ? parseInt(data.orden, 10) : defaultOrden;
+
+  const descripcion = data.descripcion ? String(data.descripcion).trim() : null;
+
+  try {
+    // 1. Crear primero en etapas_pac (tabla principal)
+    await query(
+      `INSERT INTO etapas_pac (id, nombre, orden, es_personalizada)
+       VALUES (?, ?, ?, ?)`,
+      [nextId, nombre, orden, 1]
+    );
+
+    // 2. Crear en etapas_catalogo (tabla de clasificación)
+    await query(
+      `INSERT INTO etapas_catalogo (id, nombre, clasificacion, orden, descripcion)
+       VALUES (?, ?, ?, ?, ?)`,
+      [nextId, nombre, clasificacion, orden, descripcion]
+    );
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      throw new Error(`Ya existe una etapa con el nombre "${nombre}"`);
+    }
+    throw error;
+  }
+
+  return getEtapaCatalogo(nextId);
+}
+
+export async function deleteEtapaCatalogo(id) {
+  // Eliminar de etapas_pac eliminará automáticamente de etapas_catalogo
+  // por la clave foránea con ON DELETE CASCADE
+  const result = await query('DELETE FROM etapas_pac WHERE id = ?', [id]);
+  return result.affectedRows > 0;
 }
 
 export const getAllActividades = getAllSubtareas;

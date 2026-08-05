@@ -402,27 +402,6 @@
           Cargando etapas...
         </div>
         <template v-else>
-        
-        <!-- Formulario para agregar nueva etapa -->
-        <div class="nueva-etapa-form">
-          <h3>➕ Agregar Nueva Etapa</h3>
-          <div class="form-fila">
-            <input 
-              v-model="nuevaEtapaNombre"
-              type="text" 
-              placeholder="Nombre de la nueva etapa"
-              class="input-nueva-etapa"
-              @keyup.enter="agregarNuevaEtapa"
-            />
-            <button 
-              class="btn-agregar-etapa" 
-              @click="agregarNuevaEtapa"
-              :disabled="!nuevaEtapaNombre.trim()"
-            >
-              ➕ Agregar
-            </button>
-          </div>
-        </div>
 
         <div class="etapas-toolbar">
           <input
@@ -441,7 +420,25 @@
           <div v-if="etapasFiltradas.length === 0" class="sin-etapas-encontradas">
             No hay etapas que coincidan con la búsqueda.
           </div>
-          <div v-for="etapa in etapasFiltradas" :key="etapa.etapaId" class="etapa-item">
+
+          <!-- Acordeones por clasificación -->
+          <div v-for="(clasificacion, index) in ['preparatoria', 'precontractual', 'contractual', 'sin_clasificar']" :key="clasificacion" class="etapas-accordion">
+            <button
+              class="accordion-header"
+              :class="{ active: acordeoneAbiertos[clasificacion as keyof typeof acordeoneAbiertos] }"
+              @click="acordeoneAbiertos[clasificacion as keyof typeof acordeoneAbiertos] = !acordeoneAbiertos[clasificacion as keyof typeof acordeoneAbiertos]"
+            >
+              <span class="accordion-icon">{{ acordeoneAbiertos[clasificacion as keyof typeof acordeoneAbiertos] ? '▼' : '▶' }}</span>
+              <span class="accordion-label">
+                {{ clasificacion === 'preparatoria' ? '🔵 Preparatoria' : clasificacion === 'precontractual' ? '🟢 Precontractual' : clasificacion === 'contractual' ? '🔴 Contractual' : '⚪ Sin Clasificar' }}
+              </span>
+              <span class="accordion-count">({{ etapasAgrupadas[clasificacion].length }})</span>
+            </button>
+            <div v-show="acordeoneAbiertos[clasificacion as keyof typeof acordeoneAbiertos]" class="accordion-content">
+              <div v-if="etapasAgrupadas[clasificacion].length === 0" class="sin-etapas-categoria">
+                No hay etapas en esta categoría
+              </div>
+              <div v-for="etapa in etapasAgrupadas[clasificacion]" :key="etapa.etapaId" class="etapa-item">
             <div class="etapa-checkbox">
               <label>
 
@@ -529,6 +526,8 @@
                 <span class="seguimiento-count">{{ obtenerConteoSeguimientosEtapa(etapa) }}</span>
               </button>
               <span v-if="etapaEstaGuardando(etapa)" class="etapa-guardando">Guardando...</span>
+            </div>
+          </div>
             </div>
           </div>
         </div>
@@ -870,10 +869,16 @@ const ordenarPor = ref('id-asc');
 const actividadSeleccionada = ref<Actividad | null>(null);
 const actividadVista = ref<Actividad | null>(null);
 const etapasDisponibles = ref<Etapa[]>([]);
+const catalogoEtapas = ref<Record<number, any>>({});
+const acordeoneAbiertos = ref({
+  preparatoria: false,
+  precontractual: false,
+  contractual: false,
+  sin_clasificar: false
+});
 const responsables = ref<Responsable[]>([]);
 const direccionesCatalogo = ref<DireccionCatalogo[]>([]);
 const errorCargaCatalogos = ref('');
-const nuevaEtapaNombre = ref('');
 const busquedaEtapas = ref('');
 
 // Pestañas del modal
@@ -1017,6 +1022,26 @@ const etapasFiltradas = computed(() => {
   return etapasDisponibles.value.filter((etapa) =>
     normalizarBusquedaEtapas(String(etapa.etapaNombre || '')).includes(q)
   );
+});
+
+const etapasAgrupadas = computed(() => {
+  const grupos: Record<string, any[]> = {
+    preparatoria: [],
+    precontractual: [],
+    contractual: [],
+    sin_clasificar: []
+  };
+
+  etapasFiltradas.value.forEach((etapa: any) => {
+    const clasificacion = catalogoEtapas.value[etapa.etapaId]?.clasificacion || 'sin_clasificar';
+    if (grupos[clasificacion]) {
+      grupos[clasificacion].push(etapa);
+    } else {
+      grupos.sin_clasificar.push(etapa);
+    }
+  });
+
+  return grupos;
 });
 
 // Métodos
@@ -1495,11 +1520,29 @@ async function abrirSelectorEtapas(actividad: Actividad) {
   cargandoSelectorEtapas.value = true;
 
   try {
+    // 0. Cargar catálogo de etapas con clasificaciones
+    console.log('📚 Cargando catálogo de etapas...');
+    try {
+      const catalogoResponse = await api.get('/catalogos/etapas');
+      const catalogoData = Array.isArray(catalogoResponse.data)
+        ? catalogoResponse.data
+        : (catalogoResponse.data.value || []);
+      catalogoEtapas.value = Object.fromEntries(
+        catalogoData.map((e: any) => [e.id, { clasificacion: e.clasificacion, descripcion: e.descripcion }])
+      );
+      console.log('✅ Catálogo cargado:', Object.keys(catalogoEtapas.value).length, 'etapas');
+    } catch (catalogoErr: any) {
+      console.error('❌ Error cargando catálogo:', catalogoErr.message);
+      catalogoEtapas.value = {};
+    }
+
     // 1. Cargar TODAS las etapas disponibles del catálogo
+    console.log('📋 Cargando etapas disponibles...');
     const todasEtapasResponse = await api.get('/subtareas/admin/etapas-disponibles');
-    const todasEtapas = Array.isArray(todasEtapasResponse.data) 
-      ? todasEtapasResponse.data 
+    const todasEtapas = Array.isArray(todasEtapasResponse.data)
+      ? todasEtapasResponse.data
       : (todasEtapasResponse.data.value || []);
+    console.log('✅ Etapas disponibles cargadas:', todasEtapas.length, 'etapas');
     
     // 2. Cargar las asignaciones específicas de esta actividad
     let etapasAsignadas = [];
@@ -1564,13 +1607,17 @@ async function abrirSelectorEtapas(actividad: Actividad) {
       };
     });
 
-    console.log('Etapas cargadas:', JSON.stringify(etapasDisponibles.value, null, 2));
-    void cargarConteosSeguimientosEtapas();
+    console.log('✅ Etapas procesadas:', etapasDisponibles.value.length, 'etapas');
+
+    // Los conteos se cargan bajo demanda cuando el usuario abre seguimientos
+    // (no hacer 67 requests al abrir el modal)
   } catch (error: any) {
-    console.error('Error al cargar etapas:', error);
+    console.error('❌ Error al cargar etapas:', error);
+    console.error('   Detalles:', error.message, error.response?.data);
     mostrarNotificacion('Error al cargar las etapas: ' + obtenerMensajeError(error, 'Desconocido'), 'error');
   } finally {
     cargandoSelectorEtapas.value = false;
+    console.log('🎉 Modal de etapas listo');
   }
 
   
@@ -1581,8 +1628,8 @@ function cerrarSelectorEtapas() {
   cargandoSelectorEtapas.value = false;
   actividadSeleccionada.value = null;
   etapasDisponibles.value = [];
+  catalogoEtapas.value = {};
   conteoSeguimientosEtapas.value = {};
-  nuevaEtapaNombre.value = '';
   busquedaEtapas.value = '';
 }
 
@@ -2324,10 +2371,6 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
         margin-bottom: 1rem;
       }
 
-      .nueva-etapa-form {
-        margin-bottom: 1rem;
-      }
-
       .etapas-toolbar {
         margin-bottom: 0.75rem;
       }
@@ -2362,58 +2405,62 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
       font-size: 1.1rem;
     }
 
-    .nueva-etapa-form {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 1.5rem;
-      border-radius: 8px;
-      margin-bottom: 2rem;
+    .etapas-accordion {
+      margin-bottom: 0.5rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      overflow: hidden;
 
-      h3 {
-        color: white;
-        margin-bottom: 1rem;
+      .accordion-header {
+        width: 100%;
+        padding: 1rem;
+        background: #f8fafc;
+        border: none;
+        text-align: left;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 500;
+        color: #1e293b;
+        transition: background 0.2s;
+
+        &:hover {
+          background: #f1f5f9;
+        }
+
+        &.active {
+          background: #e0e7ff;
+          color: #4f46e5;
+        }
+
+        .accordion-icon {
+          display: inline-block;
+          width: 1.2rem;
+          text-align: center;
+          font-size: 0.8rem;
+        }
+
+        .accordion-label {
+          flex: 1;
+        }
+
+        .accordion-count {
+          font-size: 0.85rem;
+          color: #64748b;
+        }
       }
 
-      .form-fila {
-        display: flex;
-        gap: 0.75rem;
+      .accordion-content {
+        background: white;
+        padding: 0.75rem;
+      }
 
-        .input-nueva-etapa {
-          flex: 1;
-          padding: 0.75rem;
-          border: 2px solid rgba(255, 255, 255, 0.3);
-          border-radius: 6px;
-          font-size: 1rem;
-          background: rgba(255, 255, 255, 0.95);
-
-          &:focus {
-            outline: none;
-            border-color: white;
-            background: white;
-          }
-        }
-
-        .btn-agregar-etapa {
-          padding: 0.75rem 1.5rem;
-          background: white;
-          color: #667eea;
-          border: none;
-          border-radius: 6px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-          white-space: nowrap;
-
-          &:hover:not(:disabled) {
-            background: #f0f0f0;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-          }
-
-          &:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-          }
-        }
+      .sin-etapas-categoria {
+        padding: 1rem;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 0.9rem;
       }
     }
 

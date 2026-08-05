@@ -747,10 +747,10 @@ export const reportesService = {
     return response.data as CampoReporte[];
   },
 
-  async generarReporte(areas: string[] | 'ALL', campos: string[], incluirVerificables = false): Promise<{ blob: Blob; filename: string }> {
+  async generarReporte(areas: string[] | 'ALL', campos: string[], incluirVerificables = false, incluirMatrizEtapas = false): Promise<{ blob: Blob; filename: string }> {
     let response;
     try {
-      response = await api.post('/reportes/generar', { areas, campos, incluirVerificables }, { responseType: 'blob' });
+      response = await api.post('/reportes/generar', { areas, campos, incluirVerificables, incluirMatrizEtapas }, { responseType: 'blob' });
     } catch (err: any) {
       // Si el servidor devuelve un error JSON pero responseType es blob, lo parseamos manualmente
       const data = err?.response?.data;

@@ -331,55 +331,13 @@
 
     <div v-if="actividadSeleccionada" class="modal-overlay" @click.self="cerrarDetalleActividad">
       <div class="modal-content modal-detalle-actividad" @click.stop>
+        <!-- ENCABEZADO -->
         <div class="modal-header">
           <div class="modal-header-content">
             <h2>{{ actividadSeleccionada.nombre }}</h2>
-            <div class="seguimiento-contexto-header">
-              <span class="seguimiento-contexto-chip neutral">
-                Contratación: {{ obtenerTipoContratacionCabecera(actividadSeleccionada) }}
-              </span>
-              <span class="seguimiento-contexto-chip success">
-                {{ obtenerPacNoPacCabecera(actividadSeleccionada) }}
-              </span>
-              <span class="seguimiento-contexto-chip quarter">
-                Cuatrimestre {{ obtenerCuatrimestreTexto(actividadSeleccionada) }}
-              </span>
-              <span class="seguimiento-contexto-chip amount">
-                {{ formatearMontoCabecera(obtenerPresupuesto(actividadSeleccionada)) }}
-              </span>
-              <span
-                v-if="procesoActivoSinPresupuesto(actividadSeleccionada)"
-                class="seguimiento-contexto-chip budget-warning"
-              >
-                Sin presupuesto
-              </span>
-              <span v-if="resumenCabeceraActividad" class="seguimiento-contexto-chip last-activity">
-                {{ resumenCabeceraActividad.ultimaNombre }} · {{ resumenCabeceraActividad.ultimaFecha }}
-              </span>
-            </div>
           </div>
           <div class="modal-header-status">
-            <span v-if="estadoGuardado === 'guardando'" class="estado-badge guardando">
-              ⏳ Guardando...
-            </span>
-            <span v-else-if="estadoGuardado === 'guardado'" class="estado-badge guardado">
-              ✓ Guardado
-            </span>
-          </div>
-          <button type="button" class="btn-close" @click="cerrarDetalleActividad">✕</button>
-        </div>
-
-        <div class="modal-body modal-detalle-body" :class="{ 'timeline-expandida': !timelineContraida }">
-          <div class="detalle-superior">
-          <div class="detalle-resumen-row">
-            <div class="resumen-detalle">
-              <span><strong>Total:</strong> {{ totalTareas(actividadSeleccionada) }}</span>
-              <span><strong>Completas:</strong> {{ tareasCompletadas(actividadSeleccionada) }}</span>
-              <span><strong>Con retraso:</strong> {{ tareasConRetraso(actividadSeleccionada) }}</span>
-              <span :class="claseAvance(actividadSeleccionada)"><strong>Avance:</strong> {{ porcentajeAvance(actividadSeleccionada) }}%</span>
-            </div>
-
-            <div class="riesgo-proceso-tools">
+            <div class="riesgo-proceso-tools-header">
               <label class="riesgo-proceso-simple">
                 <input
                   v-model="procesoEnRiesgo"
@@ -401,8 +359,6 @@
               </label>
 
               <template v-if="procesoEnRiesgo">
-              
-
                 <button
                   type="button"
                   class="btn-riesgo-detalle"
@@ -413,9 +369,54 @@
                 </button>
               </template>
             </div>
+            <span v-if="estadoGuardado === 'guardando'" class="estado-badge guardando">
+              ⏳ Guardando...
+            </span>
+            <span v-else-if="estadoGuardado === 'guardado'" class="estado-badge guardado">
+              ✓ Guardado
+            </span>
           </div>
+          <button type="button" class="btn-close" @click="cerrarDetalleActividad">✕</button>
+        </div>
 
-          <div v-if="procesoEnRiesgo && mostrarPanelRiesgo" class="riesgo-proceso-panel">
+        <!-- INFORMACIÓN -->
+        <div class="modal-informacion">
+          <div class="seguimiento-contexto-header">
+            <span class="seguimiento-contexto-chip neutral">
+              Contratación: {{ obtenerTipoContratacionCabecera(actividadSeleccionada) }}
+            </span>
+            <span class="seguimiento-contexto-chip success">
+              {{ obtenerPacNoPacCabecera(actividadSeleccionada) }}
+            </span>
+            <span class="seguimiento-contexto-chip quarter">
+              Cuatrimestre {{ obtenerCuatrimestreTexto(actividadSeleccionada) }}
+            </span>
+            <span class="seguimiento-contexto-chip amount">
+              {{ formatearMontoCabecera(obtenerPresupuesto(actividadSeleccionada)) }}
+            </span>
+            <span
+              v-if="procesoActivoSinPresupuesto(actividadSeleccionada)"
+              class="seguimiento-contexto-chip budget-warning"
+            >
+              Sin presupuesto
+            </span>
+            <span v-if="resumenCabeceraActividad" class="seguimiento-contexto-chip last-activity">
+              {{ resumenCabeceraActividad.ultimaNombre }} · {{ resumenCabeceraActividad.ultimaFecha }}
+            </span>
+          </div>
+          <div class="avance-general-card">
+            <div class="tarjeta-icono-avance">📊</div>
+            <div class="tarjeta-info-avance">
+              <div class="tarjeta-label-avance">Avance General</div>
+              <div class="tarjeta-valor-avance">{{ porcentajeAvanceGeneral }}%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CUERPO -->
+        <div class="modal-body modal-detalle-body" :class="{ 'timeline-expandida': !timelineContraida }">
+          <div class="detalle-superior">
+            <div v-if="procesoEnRiesgo && mostrarPanelRiesgo" class="riesgo-proceso-panel">
             <div v-if="mensajeRiesgoProceso" :class="['seguimiento-msg', `seguimiento-msg-${mensajeRiesgoProceso.tipo}`]">
               {{ mensajeRiesgoProceso.texto }}
             </div>
@@ -450,156 +451,160 @@
               </div>
             </div>
           </div>
-
           </div>
 
-          <div v-if="etapasConFecha.length" class="tabla-etapas-wrap">
-          <table class="tabla-etapas">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Etapa</th>
-                <th>Fecha límite</th>
-                <th v-if="verFechaReforma">Fecha reforma</th>
-                <th v-if="verFechaReforma3">Fecha reforma 3</th>
-                <th v-if="verFechaCompleto">Fecha de completo</th>
-                <th v-if="verEstadoEtapa">Estado</th>
-                <th>Retraso</th>
-                <th>Seguimiento</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="(etapa, index) in etapasConFecha"
-                :key="etapa.id || etapa.etapaId"
-                :class="{ 'fila-etapa-destacada': esEtapaResaltada(etapa) }"
-              >
-                <td><span class="etapa-numero-badge">{{ index + 1 }}</span></td>
-                <td>{{ etapa.etapaNombre || etapa.nombre }}</td>
-                <td>{{ formatearFecha(etapa.fechaTentativa) }}</td>
-                <td v-if="verFechaReforma">
-                  <input
-                    v-model="etapa.fechaReforma"
-                    type="date"
-                    class="estado-select-detalle"
-                    :disabled="Boolean(estadoGuardado) || !editarFechaReforma"
-                    @change="onFechaReformaChange(etapa)"
-                  />
-                </td>
-                <td v-if="verFechaReforma3">
-                  <input
-                    v-model="etapa.fechaReforma3"
-                    type="date"
-                    class="estado-select-detalle"
-                    :disabled="Boolean(estadoGuardado) || !editarFechaReforma3"
-                    @change="onFechaReforma3Change(etapa)"
-                  />
-                </td>
-                <td v-if="verFechaCompleto">
-                  <input
-                    v-if="estadoNormalizado(etapa.estado) === 'completado' && permiteEditarFechaCompletado && editarFechaCompleto"
-                    v-model="etapa.fechaReal"
-                    type="date"
-                    class="estado-select-detalle"
-                    :disabled="Boolean(estadoGuardado)"
-                    @change="onFechaCompletadoChange(etapa)"
-                  />
-                  <span v-else-if="estadoNormalizado(etapa.estado) === 'completado' && etapa.fechaReal">
-                    {{ formatearFecha(etapa.fechaReal) }}
-                  </span>
-                  <span v-else>-</span>
-                </td>
-                <td v-if="verEstadoEtapa">
-                  <div class="estado-editor">
-                    <select
-                      v-model="etapa.estado"
-                      :class="['estado-select-detalle', claseEstadoSemaforo(etapa)]"
-                      :disabled="Boolean(estadoGuardado) || !editarEstadoEtapa"
-                      @change="onEstadoEtapaChange(etapa)"
-                    >
-                      <option value="pendiente">Pendiente</option>
-                      <option value="completado">Completo</option>
-                    </select>
-                    <span v-if="guardandoEstadoEtapaId === (etapa.id || etapa.etapaId)" class="estado-saving">Guardando...</span>
-                  </div>
-                </td>
-                <td>
-                  <span
-                    v-if="estadoNormalizado(etapa.estado) === 'completado' && etapa.fechaReal && (etapa.fechaReforma || etapa.fechaTentativa)"
-                    :class="['cumplimiento-chip', diasRetrasoCompletado(etapa) === 0 ? 'a-tiempo' : 'con-retraso']"
-                  >
-                    {{ diasRetrasoCompletado(etapa) === 0 ? '✅ A tiempo' : `⚠️ ${diasRetrasoCompletado(etapa)} días tarde` }}
-                  </span>
-                  <span v-else-if="esEtapaAtrasada(etapa, actividadSeleccionada)" class="retraso-chip">⏰ {{ diasRetraso(etapa, actividadSeleccionada) }} días atrasada</span>
-                  <span v-else>-</span>
-                </td>
-                <td>
-                  <div class="seguimiento-cell">
-                    <button
-                      type="button"
-                      class="btn-seguimiento btn-seguimiento-icono"
-                      @click="seleccionarEtapaSeguimiento(etapa)"
-                      :title="`Observaciones de ${etapa.etapaNombre || etapa.nombre}`"
-                    >
-                      <svg class="icono-mensaje" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M21 12a8.5 8.5 0 0 1-8.5 8.5c-1.3 0-2.6-.3-3.8-.9L4 21l1.4-4.2A8.5 8.5 0 1 1 21 12Z" />
-                        <path d="M8.5 11.5h7" />
-                        <path d="M8.5 14.5h4.5" />
-                      </svg>
-                      <span
-                        v-if="mostrarCargaSeguimiento(etapa)"
-                        class="seguimiento-loading-dot"
-                        title="Cargando observaciones"
-                      ></span>
-                      <span
-                        v-if="obtenerIndicadorSeguimiento(etapa) > 0"
-                        :class="['seguimiento-badge', etapaTieneAlertas(etapa) ? 'is-alert' : 'is-amber']"
-                        title="Esta etapa tiene observaciones o alertas"
-                      >{{ obtenerIndicadorSeguimiento(etapa) > 99 ? '99+' : obtenerIndicadorSeguimiento(etapa) }}</span>
-                    </button>
-                    <small class="seguimiento-last-update">{{ obtenerUltimaActualizacionTexto(etapa) }}</small>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          </div>
-
-          <div class="timeline timeline-final timeline-horizontal" v-if="etapasConFecha.length">
-            <div class="timeline-header">
-              <h4>Línea de tiempo</h4>
-              <button type="button" class="btn-toggle-timeline" @click="timelineContraida = !timelineContraida">
-                {{ timelineContraida ? 'Mostrar línea de tiempo' : 'Ocultar línea de tiempo' }}
-              </button>
-            </div>
-
-            <div v-if="timelineContraida" class="timeline-contraida-box">
-              <div class="timeline-contraida-titulo">Línea de tiempo oculta</div>
-              <div class="timeline-contraida-texto">
-                Haz clic en <strong>Mostrar línea de tiempo</strong> para ver la secuencia de etapas.
-              </div>
-            </div>
-
-            <div v-else class="timeline-horizontal-track">
-              <div
-                v-for="(etapa, index) in etapasConFecha"
-                :key="`timeline-${etapa.id || etapa.etapaId || index}`"
-                class="timeline-step-horizontal"
-              >
-                <div v-if="index < etapasConFecha.length - 1" class="timeline-step-line"></div>
-                <div
-                  :class="['timeline-numero-actividad', claseTimelineNumero(etapa)]"
-                  :title="`${etapa.etapaNombre || etapa.nombre} · ${textoLeyendaTimeline(etapa)}`"
+          <!-- Tabla única con todas las etapas -->
+          <div v-if="etapasConFecha.length" class="etapas-tabla-container">
+            <table class="tabla-etapas-unica">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Fase</th>
+                  <th>Etapa</th>
+                  <th>Fecha límite</th>
+                  <th v-if="verFechaReforma">Fecha reforma</th>
+                  <th v-if="verFechaReforma3">Fecha reforma 3</th>
+                  <th v-if="verFechaCompleto">Fecha de completo</th>
+                  <th v-if="verEstadoEtapa">Estado</th>
+                  <th>Retraso</th>
+                  <th>Seguimiento</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(etapa, index) in etapasConFecha"
+                  :key="etapa.id || etapa.etapaId"
+                  :class="['fila-etapa', `fila-${obtenerClasificacionEtapa(etapa)}`, { 'fila-etapa-destacada': esEtapaResaltada(etapa) }]"
                 >
-                  {{ index + 1 }}
+                  <td><span class="etapa-numero-badge">{{ index + 1 }}</span></td>
+                  <td><span class="etapa-fase-badge" :class="`fase-${obtenerClasificacionEtapa(etapa)}`">{{ obtenerEtiquetaClasificacion(etapa) }}</span></td>
+                  <td>{{ etapa.etapaNombre || etapa.nombre }}</td>
+                  <td>{{ formatearFecha(etapa.fechaTentativa) }}</td>
+                  <td v-if="verFechaReforma">
+                    <input
+                      v-model="etapa.fechaReforma"
+                      type="date"
+                      class="estado-select-detalle"
+                      :disabled="Boolean(estadoGuardado) || !editarFechaReforma"
+                      @change="onFechaReformaChange(etapa)"
+                    />
+                  </td>
+                  <td v-if="verFechaReforma3">
+                    <input
+                      v-model="etapa.fechaReforma3"
+                      type="date"
+                      class="estado-select-detalle"
+                      :disabled="Boolean(estadoGuardado) || !editarFechaReforma3"
+                      @change="onFechaReforma3Change(etapa)"
+                    />
+                  </td>
+                  <td v-if="verFechaCompleto">
+                    <input
+                      v-if="estadoNormalizado(etapa.estado) === 'completado' && permiteEditarFechaCompletado && editarFechaCompleto"
+                      v-model="etapa.fechaReal"
+                      type="date"
+                      class="estado-select-detalle"
+                      :disabled="Boolean(estadoGuardado)"
+                      @change="onFechaCompletadoChange(etapa)"
+                    />
+                    <span v-else-if="estadoNormalizado(etapa.estado) === 'completado' && etapa.fechaReal">
+                      {{ formatearFecha(etapa.fechaReal) }}
+                    </span>
+                    <span v-else>-</span>
+                  </td>
+                  <td v-if="verEstadoEtapa">
+                    <div class="estado-editor">
+                      <select
+                        v-model="etapa.estado"
+                        :class="['estado-select-detalle', claseEstadoSemaforo(etapa)]"
+                        :disabled="Boolean(estadoGuardado) || !editarEstadoEtapa"
+                        @change="onEstadoEtapaChange(etapa)"
+                      >
+                        <option value="pendiente">Pendiente</option>
+                        <option value="completado">Completo</option>
+                      </select>
+                      <span v-if="guardandoEstadoEtapaId === (etapa.id || etapa.etapaId)" class="estado-saving">Guardando...</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span
+                      v-if="estadoNormalizado(etapa.estado) === 'completado' && etapa.fechaReal && (etapa.fechaReforma || etapa.fechaTentativa)"
+                      :class="['cumplimiento-chip', diasRetrasoCompletado(etapa) === 0 ? 'a-tiempo' : 'con-retraso']"
+                    >
+                      {{ diasRetrasoCompletado(etapa) === 0 ? '✅ A tiempo' : `⚠️ ${diasRetrasoCompletado(etapa)} días tarde` }}
+                    </span>
+                    <span v-else-if="esEtapaAtrasada(etapa, actividadSeleccionada)" class="retraso-chip">⏰ {{ diasRetraso(etapa, actividadSeleccionada) }} días atrasada</span>
+                    <span v-else>-</span>
+                  </td>
+                  <td>
+                    <div class="seguimiento-cell">
+                      <button
+                        type="button"
+                        class="btn-seguimiento btn-seguimiento-icono"
+                        @click="seleccionarEtapaSeguimiento(etapa)"
+                        :title="`Observaciones de ${etapa.etapaNombre || etapa.nombre}`"
+                      >
+                        <svg class="icono-mensaje" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M21 12a8.5 8.5 0 0 1-8.5 8.5c-1.3 0-2.6-.3-3.8-.9L4 21l1.4-4.2A8.5 8.5 0 1 1 21 12Z" />
+                          <path d="M8.5 11.5h7" />
+                          <path d="M8.5 14.5h4.5" />
+                        </svg>
+                        <span
+                          v-if="mostrarCargaSeguimiento(etapa)"
+                          class="seguimiento-loading-dot"
+                          title="Cargando observaciones"
+                        ></span>
+                        <span
+                          v-if="obtenerIndicadorSeguimiento(etapa) > 0"
+                          :class="['seguimiento-badge', etapaTieneAlertas(etapa) ? 'is-alert' : 'is-amber']"
+                          title="Esta etapa tiene observaciones o alertas"
+                        >{{ obtenerIndicadorSeguimiento(etapa) > 99 ? '99+' : obtenerIndicadorSeguimiento(etapa) }}</span>
+                      </button>
+                      <small class="seguimiento-last-update">{{ obtenerUltimaActualizacionTexto(etapa) }}</small>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+        <!-- PIE -->
+        <div v-if="etapasConFecha.length" class="modal-pie">
+          <div class="etapas-tarde-apartado">
+            <h4 class="etapas-tarde-titulo">Etapas retrasadas</h4>
+            <div class="etapas-tarde-grid">
+              <div class="tarjeta-fase-compacta preparatoria">
+                <div class="tarjeta-icono-compacta">🔵</div>
+                <div class="tarjeta-info-compacta">
+                  <div class="tarjeta-nombre-compacta">Preparatoria</div>
+                  <div class="tarjeta-contador">{{ etapasRetrasadasPorClasificacion.preparatoria }} de {{ totalEtapasPorClasificacion.preparatoria }}</div>
                 </div>
-                <small v-if="esEtapaAtrasada(etapa, actividadSeleccionada)" class="timeline-step-delay">
-                  {{ diasRetraso(etapa, actividadSeleccionada) }}d
-                </small>
+              </div>
+              <div class="tarjeta-fase-compacta precontractual">
+                <div class="tarjeta-icono-compacta">🟢</div>
+                <div class="tarjeta-info-compacta">
+                  <div class="tarjeta-nombre-compacta">Precontractual</div>
+                  <div class="tarjeta-contador">{{ etapasRetrasadasPorClasificacion.precontractual }} de {{ totalEtapasPorClasificacion.precontractual }}</div>
+                </div>
+              </div>
+              <div class="tarjeta-fase-compacta contractual">
+                <div class="tarjeta-icono-compacta">🔴</div>
+                <div class="tarjeta-info-compacta">
+                  <div class="tarjeta-nombre-compacta">Contractual</div>
+                  <div class="tarjeta-contador">{{ etapasRetrasadasPorClasificacion.contractual }} de {{ totalEtapasPorClasificacion.contractual }}</div>
+                </div>
+              </div>
+              <div class="tarjeta-fase-compacta sin-clasificar">
+                <div class="tarjeta-icono-compacta">⚪</div>
+                <div class="tarjeta-info-compacta">
+                  <div class="tarjeta-nombre-compacta">Sin Clasificar</div>
+                  <div class="tarjeta-contador">{{ etapasRetrasadasPorClasificacion.sin_clasificar }} de {{ totalEtapasPorClasificacion.sin_clasificar }}</div>
+                </div>
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -722,6 +727,14 @@ const filtroMonto = ref('');
 const filtroRiesgo = ref('');
 const filtroAdjudicados = ref('');
 const ordenPresupuesto = ref('presupuesto-desc');
+const catalogoEtapas = ref<Record<number, any>>({});
+const acordeoneAbiertos = ref({
+  preparatoria: false,
+  precontractual: false,
+  contractual: false,
+  sin_clasificar: false
+});
+
 const actividadesVisiblesBase = computed(() =>
   actividades.value.filter((actividad: any) => esProcesoVisible(actividad))
 );
@@ -1099,6 +1112,38 @@ const etapasConFecha = computed(() =>
     })
 );
 
+const etapasAgrupadasPorClasificacion = computed(() => {
+  const grupos: Record<string, any[]> = {
+    preparatoria: [],
+    precontractual: [],
+    contractual: [],
+    sin_clasificar: []
+  };
+
+  const sinClasificarIds: number[] = [];
+
+  etapasConFecha.value.forEach((etapa: any) => {
+    const etapaId = etapa.etapaId || etapa.id;
+    const clasificacion = catalogoEtapas.value[etapaId]?.clasificacion || 'sin_clasificar';
+
+    if (!catalogoEtapas.value[etapaId]) {
+      sinClasificarIds.push(etapaId);
+    }
+
+    if (grupos[clasificacion]) {
+      grupos[clasificacion].push(etapa);
+    } else {
+      grupos.sin_clasificar.push(etapa);
+    }
+  });
+
+  console.log('📊 Etapas agrupadas:', Object.entries(grupos).map(([k, v]) => `${k}: ${v.length}`).join(', '));
+  if (sinClasificarIds.length > 0) {
+    console.log('⚠️ Etapas sin clasificación (IDs):', sinClasificarIds.join(', '));
+  }
+  return grupos;
+});
+
 const resumenCabeceraActividad = computed(() => {
   const etapas = etapasConFecha.value;
   if (!etapas.length) return null;
@@ -1111,10 +1156,69 @@ const resumenCabeceraActividad = computed(() => {
   };
 });
 
+const etapasRetrasadasPorClasificacion = computed(() => {
+  const conteos = {
+    preparatoria: 0,
+    precontractual: 0,
+    contractual: 0,
+    sin_clasificar: 0
+  };
+
+  etapasConFecha.value.forEach((etapa: any) => {
+    if (esEtapaAtrasada(etapa, actividadSeleccionada.value)) {
+      const clasificacion = obtenerClasificacionEtapa(etapa);
+      conteos[clasificacion as keyof typeof conteos]++;
+    }
+  });
+
+  return conteos;
+});
+
+const totalEtapasPorClasificacion = computed(() => {
+  const conteos = {
+    preparatoria: 0,
+    precontractual: 0,
+    contractual: 0,
+    sin_clasificar: 0
+  };
+
+  etapasConFecha.value.forEach((etapa: any) => {
+    const clasificacion = obtenerClasificacionEtapa(etapa);
+    conteos[clasificacion as keyof typeof conteos]++;
+  });
+
+  return conteos;
+});
+
+const porcentajeAvanceGeneral = computed(() => {
+  const total = etapasConFecha.value.length;
+  if (total === 0) return 0;
+  const completadas = etapasConFecha.value.filter((etapa: any) =>
+    estadoNormalizado(etapa.estado) === 'completado'
+  ).length;
+  return Math.round((completadas / total) * 100);
+});
+
 onMounted(async () => {
   window.addEventListener('keydown', manejarEscapeModales);
   window.addEventListener('app:data-change', manejarCambioTiempoReal as EventListener);
   try {
+    // Cargar catálogo de etapas con clasificaciones
+    try {
+      const catalogoResponse = await api.get('/catalogos/etapas');
+      const catalogoData = Array.isArray(catalogoResponse.data)
+        ? catalogoResponse.data
+        : (catalogoResponse.data.value || []);
+      catalogoEtapas.value = Object.fromEntries(
+        catalogoData.map((e: any) => [e.id, { clasificacion: e.clasificacion, descripcion: e.descripcion }])
+      );
+      console.log('📚 Catálogo cargado:', Object.keys(catalogoEtapas.value).length, 'etapas');
+      console.log('   IDs en catálogo:', Object.keys(catalogoEtapas.value).slice(0, 10).join(', '));
+    } catch (err) {
+      console.warn('⚠️ No se pudo cargar el catálogo de etapas');
+      catalogoEtapas.value = {};
+    }
+
     actividades.value = await actividadesService.getAll();
     await procesarActividadDesdeRuta();
   } catch (error: any) {
@@ -1535,8 +1639,6 @@ function totalTareas(actividad: any) {
 }
 
 function esEtapaAtrasada(etapa: any, actividad?: any) {
-  if (actividad && !procesoCuentaEnReportesYAtrasos(actividad)) return false;
-
   const estado = estadoNormalizado(etapa?.estado);
   if (estado === 'completado') return false;
 
@@ -1548,8 +1650,6 @@ function esEtapaAtrasada(etapa: any, actividad?: any) {
 }
 
 function diasRetraso(etapa: any, actividad?: any) {
-  if (actividad && !procesoCuentaEnReportesYAtrasos(actividad)) return 0;
-
   const fechaObj = parseFechaComparable(etapa?.fechaPlanificada || etapa?.fechaTentativa);
   const hoy = parseFechaComparable(obtenerFechaHoyGuayaquil());
   if (!fechaObj || !hoy) return 0;
@@ -1785,6 +1885,10 @@ async function abrirDetalleActividad(actividad: any, actualizarRuta = true) {
       : (response.data?.value || []);
 
     etapasActividad.value = etapasRecargadas;
+    console.log('📝 Etapas cargadas para actividad', actividadId, ':', etapasRecargadas.length, 'etapas');
+    if (etapasRecargadas.length > 0) {
+      console.log('   IDs de etapas:', etapasRecargadas.map((e: any) => e.etapaId || e.id).slice(0, 5).join(', '));
+    }
     sincronizarActividadEnListado(actividadId, etapasActividad.value);
     if (Number(actividadSeleccionada.value?.id) === actividadId) {
       actividadSeleccionada.value = {
@@ -2292,6 +2396,22 @@ async function onToggleRiesgoProceso() {
 
 async function onToggleProcesoDesierto() {
   await guardarEstadoProceso(procesoDesierto.value ? 2 : 1);
+}
+
+function obtenerClasificacionEtapa(etapa: any): string {
+  const etapaId = etapa.etapaId || etapa.id;
+  return catalogoEtapas.value[etapaId]?.clasificacion || 'sin_clasificar';
+}
+
+function obtenerEtiquetaClasificacion(etapa: any): string {
+  const clasificacion = obtenerClasificacionEtapa(etapa);
+  const etiquetas: Record<string, string> = {
+    preparatoria: '🔵 Preparatoria',
+    precontractual: '🟢 Precontractual',
+    contractual: '🔴 Contractual',
+    sin_clasificar: '⚪ Sin Clasificar'
+  };
+  return etiquetas[clasificacion] || '⚪ Sin Clasificar';
 }
 </script>
 
@@ -3215,13 +3335,14 @@ h1 {
 }
 
 .modal-content {
-  width: min(1160px, 97vw);
+  width: clamp(500px, 90vw, 1400px);
   max-height: 95vh;
-  overflow: auto;
   background: #fff;
   border-radius: 14px;
   border: 1px solid #d9e2ea;
   box-shadow: 0 24px 56px rgba(15, 23, 42, 0.18);
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
@@ -3247,24 +3368,29 @@ h1 {
 
 .seguimiento-contexto-header {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
+  flex-wrap: nowrap;
+  gap: 0.6rem;
+  overflow-x: auto;
+  align-items: center;
+  padding: 0.3rem 0;
 }
 
 .seguimiento-contexto-chip {
   position: relative;
   display: inline-flex;
   align-items: center;
-  min-height: 2.6rem;
-  padding: 0.42rem 0.78rem 0.42rem 2.85rem;
-  border-radius: 12px;
+  min-height: 2rem;
+  padding: 0.35rem 0.75rem 0.35rem 2.5rem;
+  border-radius: 10px;
   border: 1px solid #d7dee8;
   background: #f8fafc;
   color: #334155;
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.2;
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .seguimiento-contexto-chip::before {
@@ -3391,7 +3517,12 @@ h1 {
 }
 
 .modal-body {
-  padding: 1rem 1.2rem 1.2rem;
+  padding: 0.5rem 1.2rem 1rem;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .modal-detalle-actividad {
@@ -3471,22 +3602,23 @@ h1 {
 .riesgo-proceso-tools {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 0.45rem;
+  justify-content: flex-start;
+  gap: 0.6rem;
+  flex-wrap: nowrap;
 }
 
 .riesgo-proceso-simple {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  font-weight: 700;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 0.9rem;
   color: #9a3412;
   white-space: nowrap;
   border: 1px solid #fcd34d;
   background: #fffbeb;
   border-radius: 999px;
-  padding: 0.5rem 0.8rem;
+  padding: 0.35rem 0.7rem;
 }
 
 .riesgo-proceso-simple.desierto {
@@ -3531,10 +3663,11 @@ h1 {
   border: 1px solid #86efac;
   background: #ecfdf3;
   color: #166534;
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.18s ease;
-  padding: 0.5rem 0.8rem;
+  padding: 0.35rem 0.7rem;
 }
 
 .btn-riesgo-icon:hover,
@@ -3820,6 +3953,70 @@ h1 {
 
 .fila-etapa-destacada td {
   border-bottom-color: #bfdbfe;
+}
+
+.etapas-accordion-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.etapas-accordion {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+
+  .accordion-header {
+    width: 100%;
+    padding: 1rem;
+    background: #f8fafc;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 500;
+    color: #1e293b;
+    transition: background 0.2s;
+
+    &:hover {
+      background: #f1f5f9;
+    }
+
+    &.active {
+      background: #e0e7ff;
+      color: #4f46e5;
+    }
+
+    .accordion-icon {
+      display: inline-block;
+      width: 1.2rem;
+      text-align: center;
+      font-size: 0.8rem;
+    }
+
+    .accordion-label {
+      flex: 1;
+    }
+
+    .accordion-count {
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+  }
+
+  .accordion-content {
+    background: white;
+    padding: 0.75rem;
+  }
+
+  .sin-etapas-categoria {
+    padding: 1rem;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.9rem;
+  }
 }
 
 .estado-editor {
@@ -4335,6 +4532,75 @@ h1 {
   gap: 0.5rem;
   margin-left: auto;
   min-height: 32px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.riesgo-proceso-tools-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
+}
+
+/* Secciones del Modal */
+.modal-informacion {
+  padding: 0.9rem 1.2rem;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.avance-general-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  background: linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%);
+  border: 1px solid #e9d5ff;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(139, 92, 246, 0.08);
+}
+
+.tarjeta-icono-avance {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.tarjeta-info-avance {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.tarjeta-label-avance {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+
+.tarjeta-valor-avance {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #8b5cf6;
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.modal-pie {
+  padding: 0.5rem 1.2rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
+  max-height: 120px;
+  overflow-y: auto;
 }
 
 .estado-badge {
@@ -4360,4 +4626,200 @@ h1 {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
 }
+
+/* Apartado de etapas tarde */
+.etapas-tarde-apartado {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin-top: 0;
+}
+
+.etapas-tarde-titulo {
+  margin: 0 0 0.4rem 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+
+.etapas-tarde-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0.4rem;
+}
+
+.tarjeta-fase-compacta {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  border-left: 3px solid;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s ease;
+}
+
+.tarjeta-fase-compacta:hover {
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.1);
+}
+
+.tarjeta-fase-compacta.preparatoria {
+  border-left-color: #3b82f6;
+}
+
+.tarjeta-fase-compacta.precontractual {
+  border-left-color: #10b981;
+}
+
+.tarjeta-fase-compacta.contractual {
+  border-left-color: #ef4444;
+}
+
+.tarjeta-fase-compacta.sin-clasificar {
+  border-left-color: #94a3b8;
+}
+
+.tarjeta-fase-compacta.avance-general {
+  border-left-color: #8b5cf6;
+  background: linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%);
+}
+
+.tarjeta-icono-compacta {
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.tarjeta-info-compacta {
+  flex: 1;
+  min-width: 0;
+}
+
+.tarjeta-nombre-compacta {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 0.15rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tarjeta-contador {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.tarjeta-porcentaje {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #8b5cf6;
+  white-space: nowrap;
+}
+
+/* Tabla única de etapas */
+.etapas-tabla-container {
+  background: #ffffff;
+  border: 1px solid #d9e2ea;
+  border-radius: 10px;
+  padding: 0.75rem;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  margin-bottom: 0.75rem;
+  overflow-x: auto;
+}
+
+.tabla-etapas-unica {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  table-layout: auto;
+}
+
+.tabla-etapas-unica thead {
+  background: #f8fafc;
+  border-bottom: 2px solid #d9e2ea;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tabla-etapas-unica th {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.tabla-etapas-unica tbody tr {
+  border-bottom: 1px solid #e2e8f0;
+  transition: background-color 0.15s ease;
+}
+
+.tabla-etapas-unica tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.tabla-etapas-unica tbody tr.fila-preparatoria {
+  border-left: 4px solid #3b82f6;
+}
+
+.tabla-etapas-unica tbody tr.fila-precontractual {
+  border-left: 4px solid #10b981;
+}
+
+.tabla-etapas-unica tbody tr.fila-contractual {
+  border-left: 4px solid #ef4444;
+}
+
+.tabla-etapas-unica tbody tr.fila-sin-clasificar {
+  border-left: 4px solid #94a3b8;
+}
+
+.tabla-etapas-unica td {
+  padding: 0.75rem;
+  vertical-align: middle;
+}
+
+.etapa-fase-badge {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.etapa-fase-badge.fase-preparatoria {
+  background: #dbeafe;
+  color: #0c4a6e;
+}
+
+.etapa-fase-badge.fase-precontractual {
+  background: #dcfce7;
+  color: #14532d;
+}
+
+.etapa-fase-badge.fase-contractual {
+  background: #fee2e2;
+  color: #7f1d1d;
+}
+
+.etapa-fase-badge.fase-sin-clasificar {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.fila-etapa-destacada {
+  background-color: #fef3c7 !important;
+}
+
 </style>

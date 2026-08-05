@@ -60,6 +60,14 @@
               <small>Una fila por verificable con todas sus fechas</small>
             </div>
           </label>
+          <label class="option-toggle" :class="{ active: incluirMatrizEtapas }">
+            <input type="checkbox" v-model="incluirMatrizEtapas" />
+            <span class="toggle-track"><span class="toggle-thumb" /></span>
+            <div>
+              <strong>Matriz de etapas por retraso</strong>
+              <small>Matriz de etapas con días de atraso por fase</small>
+            </div>
+          </label>
         </section>
 
         <button
@@ -136,6 +144,7 @@ const areasDisponibles  = ref<string[]>([]);
 const genTodasAreas         = ref(true);
 const genAreasSeleccionadas = ref<string[]>([]);
 const incluirVerificables   = ref(false);
+const incluirMatrizEtapas   = ref(false);
 
 const genCamposSeleccionados = ref<string[]>([
   'codigoOlympo', 'nombre', 'direccionNombre', 'responsableNombre',
@@ -210,7 +219,8 @@ async function generarExcel() {
     const { blob, filename } = await reportesService.generarReporte(
       areas,
       genCamposSeleccionados.value,
-      incluirVerificables.value
+      incluirVerificables.value,
+      incluirMatrizEtapas.value
     );
     descargarBlob(blob, filename);
   } catch (err: any) {
