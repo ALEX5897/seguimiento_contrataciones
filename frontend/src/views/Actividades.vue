@@ -2357,22 +2357,23 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 }
 
 .kpi-value-monto {
-  font-size: 0.945rem;
+  font-size: 0.99rem;
   font-weight: 800;
   color: #1e293b;
-  margin: 0.1575rem 0;
+  margin: 0.165rem 0;
   word-break: break-word;
 }
 
 .kpi-header {
   display: flex;
   align-items: center;
-  gap: 0.315rem;
-  margin-bottom: 0.1575rem;
+  justify-content: center;
+  gap: 0.33rem;
+  margin-bottom: 0.165rem;
 }
 
 .kpi-icon {
-  font-size: 1.365rem;
+  font-size: 1.43rem;
   opacity: 0.8;
 }
 
@@ -2629,10 +2630,13 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
   background: #ffffff;
   border: 1px solid #d9e2ea;
   border-radius: 8px;
-  padding: 0.42rem 0.47rem;
+  padding: 0.441rem 0.4935rem;
   min-height: auto;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
   position: relative;
   overflow: visible;
@@ -2724,9 +2728,9 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 }
 
 .kpi-foot {
-  margin-top: 0.105rem;
+  margin-top: 0.11rem;
   color: #64748b;
-  font-size: 0.5775rem;
+  font-size: 0.606rem;
   font-weight: 700;
   line-height: 1;
 }
@@ -2788,22 +2792,22 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 .kpi-label {
   margin: 0;
   color: #64748b;
-  font-size: 0.63rem;
+  font-size: 0.66rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 
 .kpi-value {
-  margin: 0.1575rem 0 0;
+  margin: 0.165rem 0 0;
   color: #020617;
-  font-size: 1.155rem;
+  font-size: 1.21rem;
   font-weight: 800;
   line-height: 1;
 }
 
 .kpi-icon {
-  width: 1.155rem;
-  height: 1.155rem;
+  width: 1.21rem;
+  height: 1.21rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
