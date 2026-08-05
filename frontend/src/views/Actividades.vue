@@ -108,12 +108,7 @@
             <i class="ri-check-circle-line kpi-icon"></i>
             <span class="kpi-title">Procesos completos</span>
           </div>
-          <div class="kpi-donut-row">
-            <strong class="kpi-value">{{ kpisProcesos.actividadesCompletadas }}</strong>
-            <div class="kpi-mini-donut" :style="{ '--value': `${kpisProcesos.porcentajeCumplimiento}%`, '--kpi-color': colorCumplimiento }">
-              <span :style="{ color: colorCumplimiento }">{{ kpisProcesos.porcentajeCumplimiento }}%</span>
-            </div>
-          </div>
+          <div class="kpi-value">{{ kpisProcesos.actividadesCompletadas }}</div>
           <small class="kpi-foot">Procesos completos: {{ kpisProcesos.actividadesCompletadas }} de {{ kpisProcesos.totalProcesos }}</small>
         </article>
 
@@ -122,12 +117,7 @@
             <i class="ri-time-line kpi-icon"></i>
             <span class="kpi-title">Procesos con etapas retrasadas</span>
           </div>
-          <div class="kpi-donut-row">
-            <strong class="kpi-value">{{ kpisProcesos.atrasadas }}</strong>
-            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeAtrasoProcesos}%`, '--kpi-color': colorAtraso }">
-              <span :style="{ color: colorAtraso }">{{ porcentajeAtrasoProcesos }}%</span>
-            </div>
-          </div>
+          <div class="kpi-value">{{ kpisProcesos.atrasadas }}</div>
           <small class="kpi-foot">Procesos que tienen etapas fuera de fecha</small>
         </article>
 
@@ -136,12 +126,7 @@
             <i class="ri-alert-fill kpi-icon"></i>
             <span class="kpi-title">Procesos en riesgo</span>
           </div>
-          <div class="kpi-donut-row">
-            <strong class="kpi-value">{{ procesosRiesgoKpi.length }}</strong>
-            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProcesosRiesgo}%`, '--kpi-color': colorProcesosRiesgo }">
-              <span :style="{ color: colorProcesosRiesgo }">{{ porcentajeProcesosRiesgo }}%</span>
-            </div>
-          </div>
+          <div class="kpi-value">{{ procesosRiesgoKpi.length }}</div>
           <small class="kpi-foot">Procesos marcados con riesgo</small>
         </article>
 
@@ -150,12 +135,7 @@
             <i class="ri-forbid-line kpi-icon"></i>
             <span class="kpi-title">Procesos desiertos</span>
           </div>
-          <div class="kpi-donut-row">
-            <strong class="kpi-value">{{ procesosDesiertosKpi.length }}</strong>
-            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProcesosDesiertos}%`, '--kpi-color': colorProcesosDesiertos }">
-              <span :style="{ color: colorProcesosDesiertos }">{{ porcentajeProcesosDesiertos }}%</span>
-            </div>
-          </div>
+          <div class="kpi-value">{{ procesosDesiertosKpi.length }}</div>
           <small class="kpi-foot">Procesos con estado desierto</small>
         </article>
 
@@ -164,12 +144,7 @@
             <i class="ri-wallet-2-line kpi-icon"></i>
             <span class="kpi-title">Procesos desfinanciados</span>
           </div>
-          <div class="kpi-donut-row">
-            <strong class="kpi-value">{{ procesosDesfinanciadosKpi.length }}</strong>
-            <div class="kpi-mini-donut" :style="{ '--value': `${porcentajeProcesosDesfinanciados}%`, '--kpi-color': colorProcesosDesfinanciados }">
-              <span :style="{ color: colorProcesosDesfinanciados }">{{ porcentajeProcesosDesfinanciados }}%</span>
-            </div>
-          </div>
+          <div class="kpi-value">{{ procesosDesfinanciadosKpi.length }}</div>
           <small class="kpi-foot">Presupuesto 0 o no asignado</small>
         </article>
       </section>
