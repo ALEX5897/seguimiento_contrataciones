@@ -2496,110 +2496,118 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 
 .dashboard-toolbar {
   display: flex;
-  gap: 0.3rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding: 1.25rem 1rem;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  margin-bottom: 1.5rem;
 }
 
 .toolbar-search-actions {
   display: flex;
   align-items: center;
-  gap: 0.32rem;
-  flex: 0 0 auto;
-  justify-content: center;
+  gap: 0.5rem;
+  flex: 1 0 auto;
+  justify-content: flex-start;
 }
 
 .buscador-container {
   position: relative;
-  min-width: 170px;
-  width: clamp(170px, 20vw, 230px);
+  min-width: 240px;
+  width: clamp(240px, 30vw, 380px);
   flex: 0 1 auto;
 }
 
 .buscador-icon {
   position: absolute;
-  left: 0.65rem;
+  left: 0.85rem;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 0.78rem;
+  font-size: 1rem;
   color: #94a3b8;
 }
 
 .dashboard-toolbar-filtros {
   display: flex;
-  gap: 0.26rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
 }
 
 .combo-filtro {
-  border: 1px solid #d9e2ea;
-  background: linear-gradient(180deg, #ffffff, #f8fbff);
-  color: #475569;
-  font-size: 0.71rem;
-  font-weight: 700;
-  border-radius: 8px;
-  padding: 0.2rem 0.48rem;
-  height: 1.72rem;
-  line-height: 1.15;
-  text-align: center;
+  border: none;
+  border-top: 3px solid #3b82f6;
+  background: #ffffff;
+  color: #1e3a8a;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 0.55rem 0.75rem;
+  height: auto;
+  line-height: 1.4;
+  text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
 }
 .combo-filtro:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-  background: #ffffff;
+  border-top-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
 
 .dashboard-toolbar-filtros .combo-filtro {
-  border-color: #bfdbfe;
-  color: #1e3a8a;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
-  width: clamp(120px, 11vw, 148px);
+  border-top-color: #6366f1;
+  color: #1e293b;
+  width: clamp(140px, 15vw, 180px);
   max-width: 100%;
 }
 .dashboard-toolbar-filtros .combo-filtro:hover {
-  border-color: #93c5fd;
-  background: linear-gradient(180deg, #ffffff, #eff6ff);
+  border-top-color: #4f46e5;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+  transform: translateY(-1px);
 }
 .dashboard-toolbar-filtros select.combo-filtro {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
   text-align: left;
-  padding-right: 1.28rem;
+  padding-right: 1.8rem;
   text-align-last: left;
   background-image:
-    linear-gradient(45deg, transparent 50%, #3b82f6 50%),
-    linear-gradient(135deg, #3b82f6 50%, transparent 50%);
-  background-position: calc(100% - 13px) calc(50% - 2px), calc(100% - 8px) calc(50% - 2px);
-  background-size: 5px 5px, 5px 5px;
+    linear-gradient(45deg, transparent 50%, #6366f1 50%),
+    linear-gradient(135deg, #6366f1 50%, transparent 50%);
+  background-position: calc(100% - 0.6rem) calc(50%), calc(100% - 0.3rem) calc(50%);
+  background-size: 0.4rem 0.4rem, 0.4rem 0.4rem;
   background-repeat: no-repeat;
   background-color: unset;
 }
 
 .dashboard-toolbar-filtros select.combo-filtro option {
   text-align: left;
+  padding: 0.5rem;
 }
 
 .dashboard-buscador-container .buscador-input.combo-filtro {
-  background: linear-gradient(180deg, #ffffff, #eff6ff);
-  border-color: #93c5fd;
+  background: #ffffff;
+  border-top-color: #2563eb;
   color: #0f172a;
-  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.08);
-  padding-left: 1.85rem;
-  padding-right: 0.62rem;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.1);
+  padding-left: 2.4rem;
+  padding-right: 0.85rem;
   width: 100%;
+  font-size: 0.85rem;
 }
 .dashboard-buscador-container .buscador-input.combo-filtro::placeholder {
-  color: #64748b;
-  font-weight: 600;
+  color: #94a3b8;
+  font-weight: 500;
 }
 .dashboard-buscador-container .buscador-input.combo-filtro:focus::placeholder {
   color: transparent;
