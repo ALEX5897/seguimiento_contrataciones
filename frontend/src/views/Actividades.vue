@@ -2629,8 +2629,8 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
   background: #ffffff;
   border: 1px solid #d9e2ea;
   border-radius: 14px;
-  padding: 0.8rem 0.9rem;
-  min-height: 128px;
+  padding: 0.6rem 0.7rem;
+  min-height: auto;
   display: flex;
   flex-direction: column;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
@@ -2724,9 +2724,9 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 }
 
 .kpi-foot {
-  margin-top: 0.3rem;
+  margin-top: 0.25rem;
   color: #64748b;
-  font-size: 0.73rem;
+  font-size: 0.68rem;
   font-weight: 700;
   line-height: 1.2;
 }
@@ -2788,22 +2788,22 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 .kpi-label {
   margin: 0;
   color: #64748b;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 
 .kpi-value {
-  margin: 0.45rem 0 0;
+  margin: 0.3rem 0 0;
   color: #020617;
-  font-size: 2rem;
+  font-size: 1.6rem;
   font-weight: 800;
   line-height: 1.1;
 }
 
 .kpi-icon {
-  width: 2rem;
-  height: 2rem;
+  width: 1.5rem;
+  height: 1.5rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
