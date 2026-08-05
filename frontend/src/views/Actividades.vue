@@ -71,7 +71,7 @@
           <small class="kpi-foot">Presupuesto fuera de Plan</small>
         </article>
 
-        <article class="kpi-card">
+        <article class="kpi-card" :class="{ 'kpi-card-active': filtroKpiActivo === 'pac' }" @click="filtroKpiActivo = filtroKpiActivo === 'pac' ? '' : 'pac'" style="cursor: pointer;">
           <div class="kpi-header">
             <i class="ri-book-line kpi-icon"></i>
             <span class="kpi-title">Procesos PAC</span>
@@ -80,7 +80,7 @@
           <small class="kpi-foot">Procesos en Plan Anual</small>
         </article>
 
-        <article class="kpi-card">
+        <article class="kpi-card" :class="{ 'kpi-card-active': filtroKpiActivo === 'noPac' }" @click="filtroKpiActivo = filtroKpiActivo === 'noPac' ? '' : 'noPac'" style="cursor: pointer;">
           <div class="kpi-header">
             <i class="ri-error-warning-line kpi-icon"></i>
             <span class="kpi-title">Procesos NO PAC</span>
@@ -103,7 +103,7 @@
           <small class="kpi-foot">Total de procesos y cumplimiento general</small>
         </article>
 
-        <article class="kpi-card">
+        <article class="kpi-card" :class="{ 'kpi-card-active': filtroKpiActivo === 'completos' }" @click="filtroKpiActivo = filtroKpiActivo === 'completos' ? '' : 'completos'" style="cursor: pointer;">
           <div class="kpi-header">
             <i class="ri-check-circle-line kpi-icon"></i>
             <span class="kpi-title">Procesos completos</span>
@@ -117,7 +117,7 @@
           <small class="kpi-foot">Procesos completos: {{ kpisProcesos.actividadesCompletadas }} de {{ kpisProcesos.totalProcesos }}</small>
         </article>
 
-        <article class="kpi-card">
+        <article class="kpi-card" :class="{ 'kpi-card-active': filtroKpiActivo === 'retrasadas' }" @click="filtroKpiActivo = filtroKpiActivo === 'retrasadas' ? '' : 'retrasadas'" style="cursor: pointer;">
           <div class="kpi-header">
             <i class="ri-time-line kpi-icon"></i>
             <span class="kpi-title">Procesos con etapas retrasadas</span>
@@ -131,7 +131,7 @@
           <small class="kpi-foot">Procesos que tienen etapas fuera de fecha</small>
         </article>
 
-        <article class="kpi-card">
+        <article class="kpi-card" :class="{ 'kpi-card-active': filtroKpiActivo === 'riesgo' }" @click="filtroKpiActivo = filtroKpiActivo === 'riesgo' ? '' : 'riesgo'" style="cursor: pointer;">
           <div class="kpi-header">
             <i class="ri-alert-fill kpi-icon"></i>
             <span class="kpi-title">Procesos en riesgo</span>
@@ -145,7 +145,7 @@
           <small class="kpi-foot">Procesos marcados con riesgo</small>
         </article>
 
-        <article class="kpi-card">
+        <article class="kpi-card" :class="{ 'kpi-card-active': filtroKpiActivo === 'desierto' }" @click="filtroKpiActivo = filtroKpiActivo === 'desierto' ? '' : 'desierto'" style="cursor: pointer;">
           <div class="kpi-header">
             <i class="ri-forbid-line kpi-icon"></i>
             <span class="kpi-title">Procesos desiertos</span>
@@ -159,7 +159,7 @@
           <small class="kpi-foot">Procesos con estado desierto</small>
         </article>
 
-        <article class="kpi-card">
+        <article class="kpi-card" :class="{ 'kpi-card-active': filtroKpiActivo === 'desfinanciado' }" @click="filtroKpiActivo = filtroKpiActivo === 'desfinanciado' ? '' : 'desfinanciado'" style="cursor: pointer;">
           <div class="kpi-header">
             <i class="ri-wallet-2-line kpi-icon"></i>
             <span class="kpi-title">Procesos desfinanciados</span>
@@ -667,6 +667,7 @@ const busquedaActividades = ref('');
 const filtroDireccion = ref('');
 const filtroTipoContratacion = ref('');
 const ordenPresupuesto = ref('presupuesto-desc');
+const filtroKpiActivo = ref('');
 const catalogoEtapas = ref<Record<number, any>>({});
 const acordeoneAbiertos = ref({
   preparatoria: false,
@@ -733,6 +734,7 @@ const hayFiltrosActivos = computed(() =>
     busquedaActividades.value
     || filtroDireccion.value
     || filtroTipoContratacion.value
+    || filtroKpiActivo.value
   )
 );
 const actividadesActivas = computed(() => {
@@ -755,6 +757,30 @@ const actividadesActivas = computed(() => {
     items = items.filter((a: any) =>
       normalizarTextoBusqueda(obtenerTipoContratacionCabecera(a)) === filtroTipoContratacion.value
     );
+  }
+
+  if (filtroKpiActivo.value) {
+    if (filtroKpiActivo.value === 'pac') {
+      items = items.filter((a: any) => {
+        const tipo = String(a?.pacNoPac || a?.pac_no_pac || a?.tipoPlan || '').toUpperCase();
+        return tipo === 'PAC';
+      });
+    } else if (filtroKpiActivo.value === 'noPac') {
+      items = items.filter((a: any) => {
+        const tipo = String(a?.pacNoPac || a?.pac_no_pac || a?.tipoPlan || '').toUpperCase();
+        return tipo === 'NO PAC';
+      });
+    } else if (filtroKpiActivo.value === 'completos') {
+      items = items.filter((a: any) => tareasCompletadas(a) === totalTareas(a) && totalTareas(a) > 0);
+    } else if (filtroKpiActivo.value === 'retrasadas') {
+      items = items.filter((a: any) => tareasConRetraso(a) > 0);
+    } else if (filtroKpiActivo.value === 'riesgo') {
+      items = items.filter((a: any) => normalizarProcesoEnRiesgo(a));
+    } else if (filtroKpiActivo.value === 'desierto') {
+      items = items.filter((a: any) => obtenerEstadoProcesoValor(a) === 2);
+    } else if (filtroKpiActivo.value === 'desfinanciado') {
+      items = items.filter((a: any) => procesoActivoSinPresupuesto(a));
+    }
   }
 
   if (ordenPresupuesto.value === 'presupuesto-desc') {
@@ -1205,6 +1231,7 @@ function limpiarFiltrosActividades() {
   busquedaActividades.value = '';
   filtroDireccion.value = '';
   filtroTipoContratacion.value = '';
+  filtroKpiActivo.value = '';
 }
 
 function obtenerDireccion(actividad: any) {
@@ -2674,6 +2701,13 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 
 .kpi-card.warning {
   box-shadow: inset 4px 0 0 #f59e0b, 0 10px 28px rgba(15, 23, 42, 0.05);
+}
+
+.kpi-card-active {
+  background: #f0f4ff;
+  border-color: #1e40af;
+  box-shadow: 0 0 0 2px #1e40af, 0 10px 28px rgba(30, 64, 175, 0.15) !important;
+  transform: scale(1.02);
 }
 
 .kpi-head {
