@@ -2602,8 +2602,12 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
   box-shadow: 0 2px 6px rgba(37, 99, 235, 0.1);
   padding-left: 2.4rem;
   padding-right: 0.85rem;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
   width: 100%;
   font-size: 0.85rem;
+  height: auto;
+  line-height: 1;
 }
 .dashboard-buscador-container .buscador-input.combo-filtro::placeholder {
   color: #94a3b8;
