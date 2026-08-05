@@ -2253,13 +2253,13 @@ async function agregarHojaMatrizEtapas(wb, procesos) {
     crearBloque('📅 Días de Retraso', 'dias');
     crearBloque('⏰ Próximos a Vencer (días)', 'vencer');
 
-    // Ajustar ancho de columnas
-    ws.columns = ws.columns || [];
-    ws.columns[0] = { width: 16 }; // Código Olimpo
-    ws.columns[1] = { width: 40 }; // Nombre proceso
+    // Ajustar ancho de columnas usando getColumn
+    ws.getColumn(1).width = 16; // Código Olimpo
+    ws.getColumn(2).width = 40; // Nombre proceso
 
-    for (let i = 2; i < todasLasEtapas.length + 3; i++) {
-      ws.columns[i] = { width: Math.min(18, Math.max(10, todasLasEtapas[i - 3]?.nombre.length || 14)) };
+    for (let i = 0; i < todasLasEtapas.length; i++) {
+      const ancho = Math.min(18, Math.max(10, todasLasEtapas[i]?.nombre.length || 14));
+      ws.getColumn(i + 3).width = ancho;
     }
 
   } catch (error) {
