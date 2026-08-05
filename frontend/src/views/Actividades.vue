@@ -2357,22 +2357,22 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 }
 
 .kpi-value-monto {
-  font-size: 0.9rem;
+  font-size: 0.945rem;
   font-weight: 800;
   color: #1e293b;
-  margin: 0.15rem 0;
+  margin: 0.1575rem 0;
   word-break: break-word;
 }
 
 .kpi-header {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  margin-bottom: 0.15rem;
+  gap: 0.315rem;
+  margin-bottom: 0.1575rem;
 }
 
 .kpi-icon {
-  font-size: 1.3rem;
+  font-size: 1.365rem;
   opacity: 0.8;
 }
 
@@ -2629,7 +2629,7 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
   background: #ffffff;
   border: 1px solid #d9e2ea;
   border-radius: 8px;
-  padding: 0.4rem 0.45rem;
+  padding: 0.42rem 0.47rem;
   min-height: auto;
   display: flex;
   flex-direction: column;
@@ -2724,9 +2724,9 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 }
 
 .kpi-foot {
-  margin-top: 0.1rem;
+  margin-top: 0.105rem;
   color: #64748b;
-  font-size: 0.55rem;
+  font-size: 0.5775rem;
   font-weight: 700;
   line-height: 1;
 }
@@ -2788,22 +2788,22 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 .kpi-label {
   margin: 0;
   color: #64748b;
-  font-size: 0.6rem;
+  font-size: 0.63rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 
 .kpi-value {
-  margin: 0.15rem 0 0;
+  margin: 0.1575rem 0 0;
   color: #020617;
-  font-size: 1.1rem;
+  font-size: 1.155rem;
   font-weight: 800;
   line-height: 1;
 }
 
 .kpi-icon {
-  width: 1.1rem;
-  height: 1.1rem;
+  width: 1.155rem;
+  height: 1.155rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
