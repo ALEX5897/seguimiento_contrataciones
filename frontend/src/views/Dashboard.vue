@@ -13,31 +13,6 @@
       </div>
     </div>
 
-    <!-- FILTROS -->
-    <section class="filtros-section">
-      <div class="filtros-toolbar">
-        <select v-model="filtroDireccion" class="combo-filtro" @change="cargarDashboard">
-          <option value="">Todas las direcciones</option>
-          <option v-for="dir in direccionesDisponibles" :key="dir" :value="dir">{{ dir }}</option>
-        </select>
-        <select v-model="filtroProcedimiento" class="combo-filtro" @change="cargarDashboard">
-          <option value="">Todos los procedimientos</option>
-          <option v-for="proc in procedimientosDisponibles" :key="proc" :value="proc">{{ proc }}</option>
-        </select>
-        <select v-model="filtroCuatrimestre" class="combo-filtro" @change="cargarDashboard">
-          <option value="">Todos los cuatrimestres</option>
-          <option value="1">Cuatrimestre 1</option>
-          <option value="2">Cuatrimestre 2</option>
-          <option value="3">Cuatrimestre 3</option>
-          <option value="4">Cuatrimestre 4</option>
-        </select>
-        <button v-if="hayFiltros" class="btn-reset" @click="resetearFiltros">
-          <i class="ri-refresh-line"></i>
-          Restablecer
-        </button>
-      </div>
-    </section>
-
     <!-- LOADING -->
     <div v-if="cargando" class="loading-state">
       <div class="spinner"></div>
