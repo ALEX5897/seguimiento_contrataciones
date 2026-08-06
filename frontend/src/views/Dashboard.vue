@@ -177,7 +177,7 @@
           <section class="chart-container">
             <h3>Distribución por Tipo de Contrato y Fase</h3>
             <div class="chart-wrapper">
-              <div ref="chartProcedimientosYFasePAC" class="chart" style="height: 320px;"></div>
+              <div ref="chartProcedimientosYFasePAC" class="chart" style="height: 280px;"></div>
             </div>
           </section>
         </div>
@@ -728,32 +728,38 @@ function renderStackedBarChart(ref: any, data: any) {
       }
     },
     legend: {
-      data: ['Fase Preparatoria', 'Precontractual', 'Contractual', 'TOTAL'],
-      top: 8,
+      data: ['Prep.', 'Precontractual', 'Contractual', 'TOTAL'],
+      top: 5,
       left: 'center',
-      textStyle: { fontSize: 11 },
-      itemGap: 15
+      textStyle: { fontSize: 10 },
+      itemGap: 12
     },
     grid: {
-      left: 150,
-      right: 60,
-      top: 45,
-      bottom: 20,
+      left: 140,
+      right: 50,
+      top: 35,
+      bottom: 15,
       containLabel: false
     },
     xAxis: {
       type: 'value',
       boundaryGap: [0, 0.01],
-      axisLabel: { fontSize: 10 }
+      axisLabel: { fontSize: 9 },
+      splitLine: { show: false }
     },
     yAxis: {
       type: 'category',
-      data: tiposContrato.map((t: string) => t.length > 28 ? t.substring(0, 25) + '...' : t),
-      axisLabel: { fontSize: 10 }
+      data: tiposContrato.map((t: string) => {
+        if (t.length > 20) {
+          return t.substring(0, 17) + '...';
+        }
+        return t;
+      }),
+      axisLabel: { fontSize: 9 }
     },
     series: [
       {
-        name: 'Fase Preparatoria',
+        name: 'Prep.',
         type: 'bar',
         stack: 'total',
         data: preparatoriaData,
@@ -761,7 +767,7 @@ function renderStackedBarChart(ref: any, data: any) {
           show: true,
           position: 'inside',
           formatter: (params: any) => params.value > 0 ? params.value : '',
-          fontSize: 9,
+          fontSize: 8,
           color: '#fff'
         },
         itemStyle: { color: '#3b82f6' }
@@ -775,7 +781,7 @@ function renderStackedBarChart(ref: any, data: any) {
           show: true,
           position: 'inside',
           formatter: (params: any) => params.value > 0 ? params.value : '',
-          fontSize: 9,
+          fontSize: 8,
           color: '#fff'
         },
         itemStyle: { color: '#10b981' }
@@ -789,7 +795,7 @@ function renderStackedBarChart(ref: any, data: any) {
           show: true,
           position: 'inside',
           formatter: (params: any) => params.value > 0 ? params.value : '',
-          fontSize: 9,
+          fontSize: 8,
           color: '#fff'
         },
         itemStyle: { color: '#dc2626' }
@@ -802,7 +808,7 @@ function renderStackedBarChart(ref: any, data: any) {
           show: true,
           position: 'right',
           formatter: (params: any) => params.value > 0 ? params.value : '',
-          fontSize: 9,
+          fontSize: 8,
           fontWeight: 'bold',
           color: '#374151'
         },
