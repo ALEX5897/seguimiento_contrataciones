@@ -814,6 +814,14 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
         type: 'category',
         data: totalData.map((val: number) => val.toString().padStart(3)),
         position: 'right',
+        name: 'TOTAL',
+        nameLocation: 'top',
+        nameTextStyle: {
+          fontSize: 12,
+          color: '#1f2937',
+          fontWeight: 'bold',
+          padding: [0, 0, 10, 0]
+        },
         axisLabel: { fontSize: 11, color: '#1f2937', fontWeight: 'bold', fontFamily: 'monospace', margin: 8 },
         gridIndex: 0
       }
