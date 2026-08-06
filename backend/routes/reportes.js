@@ -3328,6 +3328,7 @@ router.get('/dashboard/pac', async (req, res) => {
         procesosConContratoCompletado,
         montoEnEjecucion
       },
+      procesos: procesosParaAvanceEnriquecidos,
       procesosPorEstado,
       presupuestoPorEstado,
       procesosPorFase,

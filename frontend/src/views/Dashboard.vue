@@ -357,24 +357,15 @@ const procesosFaseSeleccionada = computed(() => {
   if (!faseSeleccionada.value || !tipoPlanSeleccionado.value) return [];
 
   const datos = tipoPlanSeleccionado.value === 'PAC' ? datosPAC.value : datosNoPAC.value;
-  if (!datos) return [];
+  if (!datos || !datos.procesos) return [];
 
-  // Obtener todos los procesos que están en la fase seleccionada
-  const procesosActuales = tipoPlanSeleccionado.value === 'PAC' ?
-    datosPAC.value?.procesos || [] :
-    datosNoPAC.value?.procesos || [];
-
-  return procesosActuales.filter((p: any) => {
+  return datos.procesos.filter((p: any) => {
     const etapas = p.etapasDetalle || [];
-    const etapasEnriquecidas = etapas.map((e: any) => ({
-      ...e,
-      fase: e.fase || 'sin_clasificar'
-    }));
 
     // Aplicar la misma lógica de fase que en el backend
     const fases = ['preparatoria', 'precontractual', 'contractual'];
     for (const fase of fases) {
-      const etapasFase = etapasEnriquecidas.filter((e: any) => e.fase === fase);
+      const etapasFase = etapas.filter((e: any) => e.fase === fase);
       const hayPendiente = etapasFase.some((e: any) =>
         e.estado === 'pendiente' || e.estado === 'en_proceso'
       );
@@ -386,7 +377,7 @@ const procesosFaseSeleccionada = computed(() => {
 
     // Si nada está pendiente y es fase contractual
     if (faseSeleccionada.value === 'contractual') {
-      const tienePendiente = etapasEnriquecidas.some((e: any) =>
+      const tienePendiente = etapas.some((e: any) =>
         e.estado === 'pendiente' || e.estado === 'en_proceso'
       );
       return !tienePendiente;
