@@ -3169,6 +3169,22 @@ router.get('/dashboard/pac', async (req, res) => {
       .map((subtarea) => calcularResumenProceso(subtarea, hoy, true));
     const procesosParaAvance = filtrarProcesos(procesosParaAvanceBase, filtros);
 
+    // Obtener catálogo de etapas para enriquecer con clasificación
+    const etapasCatalogo = await mysql.getEtapasCatalogo();
+    const catalogoMap = new Map(etapasCatalogo.map(e => [Number(e.id), String(e.clasificacion || 'sin_clasificar')]));
+
+    // Enriquecer etapas con clasificación del catálogo
+    const procesosParaAvanceEnriquecidos = procesosParaAvance.map(proceso => {
+      const etapasEnriquecidas = (proceso.etapasDetalle || []).map(etapa => ({
+        ...etapa,
+        fase: catalogoMap.get(Number(etapa.etapaId)) || 'sin_clasificar'
+      }));
+      return {
+        ...proceso,
+        etapasDetalle: etapasEnriquecidas
+      };
+    });
+
     // KPIs principales
     const totalProcesos = procesos.length;
     const presupuestoTotal = procesos.reduce((sum, p) => sum + (p.presupuesto || 0), 0);
@@ -3225,7 +3241,7 @@ router.get('/dashboard/pac', async (req, res) => {
     const montoEnEjecucion = presupuestoPorEstado.en_ejecucion || 0;
 
     // Procesos con etapa de contrato completada
-    const procesosConContratoCompletado = procesosParaAvance.filter(p => {
+    const procesosConContratoCompletado = procesosParaAvanceEnriquecidos.filter(p => {
       const etapasDetalle = p.etapasDetalle || [];
       return etapasDetalle.some(etapa => {
         const nombreEtapaNorm = (etapa.etapaNombre || '').toLowerCase().trim();
@@ -3241,7 +3257,7 @@ router.get('/dashboard/pac', async (req, res) => {
       contractual: 0
     };
 
-    procesosParaAvance.forEach(p => {
+    procesosParaAvanceEnriquecidos.forEach(p => {
       const fase = obtenerFaseProceso(p.etapasDetalle || []);
       if (procesosPorFase.hasOwnProperty(fase)) {
         procesosPorFase[fase]++;
@@ -3249,7 +3265,7 @@ router.get('/dashboard/pac', async (req, res) => {
     });
 
     // Índices de eficiencia - Procesos activos con presupuesto, contando TODAS las etapas
-    const procesosActivosCPresupuesto = procesosParaAvance.filter(p => obtenerEstadoProceso(p) === 1);
+    const procesosActivosCPresupuesto = procesosParaAvanceEnriquecidos.filter(p => obtenerEstadoProceso(p) === 1);
     const totalEtapas = procesosActivosCPresupuesto.reduce((sum, p) => sum + (p.totalEtapas || 0), 0);
     const etapasCompletadas = procesosActivosCPresupuesto.reduce((sum, p) => sum + (p.completadas || 0), 0);
     const etapasActivas = procesosActivosCPresupuesto.reduce((sum, p) => sum + (p.enProceso || 0), 0);
