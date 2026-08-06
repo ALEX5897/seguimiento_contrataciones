@@ -1617,8 +1617,8 @@ function resetearFiltros() {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
-  margin-bottom: 2rem;
-  padding: 1.5rem;
+  margin: 0.5rem 2rem 1rem 2rem;
+  padding: 1rem;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-radius: 8px;
   border-top: 3px solid #2563eb;
