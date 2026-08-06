@@ -173,9 +173,9 @@
             </div>
           </section>
 
-          <!-- Gráfico Procedimientos y Fases PAC -->
+          <!-- Gráfico Tipo de Contrato y Fases PAC -->
           <section class="chart-container">
-            <h3>Distribución por Procedimiento y Fase</h3>
+            <h3>Distribución por Tipo de Contrato y Fase</h3>
             <div class="chart-wrapper">
               <div ref="chartProcedimientosYFasePAC" class="chart" style="height: 400px;"></div>
             </div>
@@ -586,13 +586,13 @@ function renderizarGraficos() {
     datosNoPAC.value.velocimetro.meta
   );
 
-  // Gráficos de Procedimientos y Fases por tipo (PAC y NO PAC separados)
-  if (datosPAC.value?.procesosPorProcedimientoYFase) {
-    renderStackedBarChart(chartProcedimientosYFasePAC, datosPAC.value.procesosPorProcedimientoYFase);
+  // Gráficos de Tipo de Contrato y Fases por tipo (PAC y NO PAC separados)
+  if (datosPAC.value?.procesosPorTipoContratoYFasePAC) {
+    renderStackedBarChart(chartProcedimientosYFasePAC, datosPAC.value.procesosPorTipoContratoYFasePAC);
   }
 
-  if (datosNoPAC.value?.procesosPorProcedimientoYFase) {
-    renderStackedBarChart(chartProcedimientosYFaseNoPAC, datosNoPAC.value.procesosPorProcedimientoYFase);
+  if (datosNoPAC.value?.procesosPorTipoContratoYFaseNoPAC) {
+    renderStackedBarChart(chartProcedimientosYFaseNoPAC, datosNoPAC.value.procesosPorTipoContratoYFaseNoPAC);
   }
 }
 
