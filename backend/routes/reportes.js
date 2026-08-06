@@ -3430,6 +3430,53 @@ router.get('/dashboard/pac', async (req, res) => {
       }
     });
 
+    // Nivel de cumplimiento por dirección (3 indicadores: completados, sin retrasos, en ejecución)
+    const nivelCumplimientoPorDireccion = {};
+    procesosParaAvanceEnriquecidos.forEach(p => {
+      const direccion = (p.direccionNombre || 'No especificada').trim();
+
+      if (!nivelCumplimientoPorDireccion[direccion]) {
+        nivelCumplimientoPorDireccion[direccion] = {
+          total: 0,
+          completados: 0,
+          sinRetrasos: 0,
+          enEjecucion: 0,
+          porcentajeCompletados: 0,
+          porcentajeSinRetrasos: 0,
+          porcentajeEnEjecucion: 0
+        };
+      }
+
+      nivelCumplimientoPorDireccion[direccion].total++;
+
+      // Procesos completados: todos en fase contractual
+      const fase = obtenerFaseProceso(p.etapasDetalle || []);
+      if (fase === 'contractual') {
+        nivelCumplimientoPorDireccion[direccion].completados++;
+      }
+
+      // Procesos sin retrasos: ninguna etapa pendiente con retraso
+      const tieneRetraso = (p.etapasDetalle || []).some(
+        etapa => etapa.estado === 'pendiente' && (etapa.diasAtraso || 0) > 0
+      );
+      if (!tieneRetraso) {
+        nivelCumplimientoPorDireccion[direccion].sinRetrasos++;
+      }
+
+      // Procesos en ejecución: etapas en proceso o preparatoria/precontractual
+      if (fase === 'preparatoria' || fase === 'precontractual') {
+        nivelCumplimientoPorDireccion[direccion].enEjecucion++;
+      }
+    });
+
+    // Calcular porcentajes
+    Object.keys(nivelCumplimientoPorDireccion).forEach(direccion => {
+      const item = nivelCumplimientoPorDireccion[direccion];
+      item.porcentajeCompletados = item.total > 0 ? Math.round((item.completados / item.total) * 100) : 0;
+      item.porcentajeSinRetrasos = item.total > 0 ? Math.round((item.sinRetrasos / item.total) * 100) : 0;
+      item.porcentajeEnEjecucion = item.total > 0 ? Math.round((item.enEjecucion / item.total) * 100) : 0;
+    });
+
     res.json({
       fechaGeneracion: new Date().toISOString(),
       filtros,
@@ -3468,7 +3515,8 @@ router.get('/dashboard/pac', async (req, res) => {
         etapasAtrasadas
       },
       procesosConRetrasosPorDireccion,
-      procesosConRetrasosPorDireccionCombinado
+      procesosConRetrasosPorDireccionCombinado,
+      nivelCumplimientoPorDireccion
     });
   } catch (error) {
     console.error('Error en GET /api/reportes/dashboard/pac:', error);

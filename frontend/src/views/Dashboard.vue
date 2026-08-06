@@ -321,9 +321,47 @@
         </div>
       </section>
 
+      <!-- NIVEL DE CUMPLIMIENTO POR DIRECCIÓN -->
+      <section class="cumplimiento-section"
+        v-if="Object.keys(nivelCumplimientoCombinado).length > 0">
+        <h2>11. NIVEL DE CUMPLIMIENTO POR DIRECCIÓN</h2>
+
+        <div class="cumplimiento-tabla-wrapper">
+          <table class="cumplimiento-tabla">
+            <thead>
+              <tr>
+                <th>Dirección</th>
+                <th>Total Procesos</th>
+                <th>% Completados</th>
+                <th>% Sin Retrasos</th>
+                <th>% En Ejecución</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(datos, direccion) in nivelCumplimientoCombinado" :key="direccion">
+                <td class="direccion-cell">{{ direccion }}</td>
+                <td class="total-cell">{{ datos.total }}</td>
+                <td class="porcentaje-cell">
+                  <span class="porcentaje-badge completados">{{ datos.porcentajeCompletados }}%</span>
+                  <span class="porcentaje-detail">({{ datos.completados }})</span>
+                </td>
+                <td class="porcentaje-cell">
+                  <span class="porcentaje-badge sinretrasos">{{ datos.porcentajeSinRetrasos }}%</span>
+                  <span class="porcentaje-detail">({{ datos.sinRetrasos }})</span>
+                </td>
+                <td class="porcentaje-cell">
+                  <span class="porcentaje-badge enejecucion">{{ datos.porcentajeEnEjecucion }}%</span>
+                  <span class="porcentaje-detail">({{ datos.enEjecucion }})</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <!-- RESUMEN GENERAL -->
       <section class="resumen-general-section">
-        <h2>9. RESUMEN GENERAL</h2>
+        <h2>12. RESUMEN GENERAL</h2>
         <div class="resumen-general-grid">
           <div class="resumen-item">
             <div class="item-icon">📊</div>
@@ -501,6 +539,58 @@ const procesosRetrasadosCombinados = computed(() => {
       });
     });
   }
+
+  return combinado;
+});
+
+const nivelCumplimientoCombinado = computed(() => {
+  if (!datosPAC.value || !datosNoPAC.value) return {};
+
+  const combinado: { [key: string]: any } = {};
+
+  // Agregar datos PAC
+  if (datosPAC.value.nivelCumplimientoPorDireccion) {
+    Object.entries(datosPAC.value.nivelCumplimientoPorDireccion).forEach(([dir, datos]: [string, any]) => {
+      if (!combinado[dir]) {
+        combinado[dir] = {
+          total: 0,
+          completados: 0,
+          sinRetrasos: 0,
+          enEjecucion: 0
+        };
+      }
+      combinado[dir].total += datos.total;
+      combinado[dir].completados += datos.completados;
+      combinado[dir].sinRetrasos += datos.sinRetrasos;
+      combinado[dir].enEjecucion += datos.enEjecucion;
+    });
+  }
+
+  // Agregar datos NO PAC
+  if (datosNoPAC.value.nivelCumplimientoPorDireccion) {
+    Object.entries(datosNoPAC.value.nivelCumplimientoPorDireccion).forEach(([dir, datos]: [string, any]) => {
+      if (!combinado[dir]) {
+        combinado[dir] = {
+          total: 0,
+          completados: 0,
+          sinRetrasos: 0,
+          enEjecucion: 0
+        };
+      }
+      combinado[dir].total += datos.total;
+      combinado[dir].completados += datos.completados;
+      combinado[dir].sinRetrasos += datos.sinRetrasos;
+      combinado[dir].enEjecucion += datos.enEjecucion;
+    });
+  }
+
+  // Calcular porcentajes
+  Object.keys(combinado).forEach(dir => {
+    const item = combinado[dir];
+    item.porcentajeCompletados = item.total > 0 ? Math.round((item.completados / item.total) * 100) : 0;
+    item.porcentajeSinRetrasos = item.total > 0 ? Math.round((item.sinRetrasos / item.total) * 100) : 0;
+    item.porcentajeEnEjecucion = item.total > 0 ? Math.round((item.enEjecucion / item.total) * 100) : 0;
+  });
 
   return combinado;
 });
@@ -1931,6 +2021,111 @@ function resetearFiltros() {
   font-weight: 600;
   border-radius: 6px;
   padding: 0.75rem 1rem;
+}
+
+/* NIVEL DE CUMPLIMIENTO */
+.cumplimiento-section {
+  margin: 2rem auto;
+  max-width: 1200px;
+  padding: 0 1rem;
+}
+
+.cumplimiento-section h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f3a70;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 3px solid #059669;
+}
+
+.cumplimiento-tabla-wrapper {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: auto;
+}
+
+.cumplimiento-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+
+.cumplimiento-tabla thead {
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.cumplimiento-tabla th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+}
+
+.cumplimiento-tabla tbody tr {
+  border-bottom: 1px solid #e2e8f0;
+  transition: background-color 0.2s ease;
+}
+
+.cumplimiento-tabla tbody tr:hover {
+  background: #f0fdf4;
+}
+
+.cumplimiento-tabla td {
+  padding: 1rem;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.cumplimiento-tabla .direccion-cell {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.cumplimiento-tabla .total-cell {
+  font-weight: 700;
+  color: #1f3a70;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.cumplimiento-tabla .porcentaje-cell {
+  text-align: center;
+}
+
+.porcentaje-badge {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-right: 0.5rem;
+}
+
+.porcentaje-badge.completados {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.porcentaje-badge.sinretrasos {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.porcentaje-badge.enejecucion {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.porcentaje-detail {
+  display: block;
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-top: 0.25rem;
 }
 
 /* RESUMEN GENERAL */
