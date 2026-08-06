@@ -3469,8 +3469,13 @@ router.get('/dashboard/pac', async (req, res) => {
         nivelCumplimientoPorDireccion[direccion].conRetrasos++;
       }
 
-      // Procesos en ejecución: etapas en proceso o preparatoria/precontractual
-      if (fase === 'preparatoria' || fase === 'precontractual') {
+      // Procesos en ejecución: etapa de contrato completada
+      const tieneContratoCompletado = (p.etapasDetalle || []).some(etapa => {
+        const nombreEtapaNorm = (etapa.etapaNombre || '').toLowerCase().trim();
+        return (nombreEtapaNorm.includes('contrato') || nombreEtapaNorm.includes('contratacion')) &&
+               etapa.estado === 'completado';
+      });
+      if (tieneContratoCompletado) {
         nivelCumplimientoPorDireccion[direccion].enEjecucion++;
       }
     });
