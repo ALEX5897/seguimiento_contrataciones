@@ -335,6 +335,7 @@
                 <th>% Completados</th>
                 <th>% Sin Retrasos</th>
                 <th>% En Ejecución</th>
+                <th>% Con Retrasos</th>
               </tr>
             </thead>
             <tbody>
@@ -352,6 +353,10 @@
                 <td class="porcentaje-cell">
                   <span class="porcentaje-badge enejecucion">{{ datos.porcentajeEnEjecucion }}%</span>
                   <span class="porcentaje-detail">({{ datos.enEjecucion }})</span>
+                </td>
+                <td class="porcentaje-cell">
+                  <span class="porcentaje-badge conretrasos">{{ datos.porcentajeConRetrasos }}%</span>
+                  <span class="porcentaje-detail">({{ datos.conRetrasos }})</span>
                 </td>
               </tr>
             </tbody>
@@ -556,13 +561,15 @@ const nivelCumplimientoCombinado = computed(() => {
           total: 0,
           completados: 0,
           sinRetrasos: 0,
-          enEjecucion: 0
+          enEjecucion: 0,
+          conRetrasos: 0
         };
       }
       combinado[dir].total += datos.total;
       combinado[dir].completados += datos.completados;
       combinado[dir].sinRetrasos += datos.sinRetrasos;
       combinado[dir].enEjecucion += datos.enEjecucion;
+      combinado[dir].conRetrasos += datos.conRetrasos;
     });
   }
 
@@ -574,13 +581,15 @@ const nivelCumplimientoCombinado = computed(() => {
           total: 0,
           completados: 0,
           sinRetrasos: 0,
-          enEjecucion: 0
+          enEjecucion: 0,
+          conRetrasos: 0
         };
       }
       combinado[dir].total += datos.total;
       combinado[dir].completados += datos.completados;
       combinado[dir].sinRetrasos += datos.sinRetrasos;
       combinado[dir].enEjecucion += datos.enEjecucion;
+      combinado[dir].conRetrasos += datos.conRetrasos;
     });
   }
 
@@ -590,6 +599,7 @@ const nivelCumplimientoCombinado = computed(() => {
     item.porcentajeCompletados = item.total > 0 ? Math.round((item.completados / item.total) * 100) : 0;
     item.porcentajeSinRetrasos = item.total > 0 ? Math.round((item.sinRetrasos / item.total) * 100) : 0;
     item.porcentajeEnEjecucion = item.total > 0 ? Math.round((item.enEjecucion / item.total) * 100) : 0;
+    item.porcentajeConRetrasos = item.total > 0 ? Math.round((item.conRetrasos / item.total) * 100) : 0;
   });
 
   return combinado;
@@ -2119,6 +2129,11 @@ function resetearFiltros() {
 .porcentaje-badge.enejecucion {
   background: #fef3c7;
   color: #92400e;
+}
+
+.porcentaje-badge.conretrasos {
+  background: #fecaca;
+  color: #991b1b;
 }
 
 .porcentaje-detail {

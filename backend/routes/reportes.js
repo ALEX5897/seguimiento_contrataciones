@@ -3430,7 +3430,7 @@ router.get('/dashboard/pac', async (req, res) => {
       }
     });
 
-    // Nivel de cumplimiento por dirección (3 indicadores: completados, sin retrasos, en ejecución)
+    // Nivel de cumplimiento por dirección (4 indicadores: completados, sin retrasos, en ejecución, con retrasos)
     const nivelCumplimientoPorDireccion = {};
     procesosParaAvanceEnriquecidos.forEach(p => {
       const direccion = (p.direccionNombre || 'No especificada').trim();
@@ -3441,9 +3441,11 @@ router.get('/dashboard/pac', async (req, res) => {
           completados: 0,
           sinRetrasos: 0,
           enEjecucion: 0,
+          conRetrasos: 0,
           porcentajeCompletados: 0,
           porcentajeSinRetrasos: 0,
-          porcentajeEnEjecucion: 0
+          porcentajeEnEjecucion: 0,
+          porcentajeConRetrasos: 0
         };
       }
 
@@ -3455,12 +3457,16 @@ router.get('/dashboard/pac', async (req, res) => {
         nivelCumplimientoPorDireccion[direccion].completados++;
       }
 
-      // Procesos sin retrasos: ninguna etapa pendiente con retraso
+      // Procesos con retrasos: al menos una etapa pendiente con retraso
       const tieneRetraso = (p.etapasDetalle || []).some(
         etapa => etapa.estado === 'pendiente' && (etapa.diasAtraso || 0) > 0
       );
+
+      // Procesos sin retrasos: ninguna etapa pendiente con retraso
       if (!tieneRetraso) {
         nivelCumplimientoPorDireccion[direccion].sinRetrasos++;
+      } else {
+        nivelCumplimientoPorDireccion[direccion].conRetrasos++;
       }
 
       // Procesos en ejecución: etapas en proceso o preparatoria/precontractual
@@ -3475,6 +3481,7 @@ router.get('/dashboard/pac', async (req, res) => {
       item.porcentajeCompletados = item.total > 0 ? Math.round((item.completados / item.total) * 100) : 0;
       item.porcentajeSinRetrasos = item.total > 0 ? Math.round((item.sinRetrasos / item.total) * 100) : 0;
       item.porcentajeEnEjecucion = item.total > 0 ? Math.round((item.enEjecucion / item.total) * 100) : 0;
+      item.porcentajeConRetrasos = item.total > 0 ? Math.round((item.conRetrasos / item.total) * 100) : 0;
     });
 
     res.json({
