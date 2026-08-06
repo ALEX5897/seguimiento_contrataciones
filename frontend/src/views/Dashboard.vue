@@ -815,12 +815,12 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
         data: totalData.map((val: number) => val.toString().padStart(3)),
         position: 'right',
         name: 'TOTAL',
-        nameLocation: 'top',
+        nameLocation: 'start',
+        nameGap: 5,
         nameTextStyle: {
           fontSize: 12,
           color: '#1f2937',
-          fontWeight: 'bold',
-          padding: [0, 0, 10, 0]
+          fontWeight: 'bold'
         },
         axisLabel: { fontSize: 11, color: '#1f2937', fontWeight: 'bold', fontFamily: 'monospace', margin: 8 },
         gridIndex: 0
