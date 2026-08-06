@@ -815,7 +815,7 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
         data: totalData.map((val: number) => val.toString().padStart(3)),
         position: 'right',
         name: 'TOTAL',
-        nameLocation: 'start',
+        nameLocation: 'end',
         nameGap: 5,
         nameTextStyle: {
           fontSize: 12,
