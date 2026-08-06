@@ -128,6 +128,14 @@
             </div>
           </section>
 
+          <!-- Gráfico Tipo de Contrato y Fases PAC -->
+          <section class="chart-container">
+            <h3>Distribución por Tipo de Contrato y Fase</h3>
+            <div class="chart-wrapper chart-tipo-contrato">
+              <div ref="chartProcedimientosYFasePAC" class="chart"></div>
+            </div>
+          </section>
+
           <section class="chart-container">
             <h3>Distribución del Presupuesto</h3>
             <div class="chart-wrapper">
@@ -170,14 +178,6 @@
                 <span class="label">Desierto</span>
                 <span class="valor">{{ datosPAC.procesosPorEstado.desierto }}</span>
               </div>
-            </div>
-          </section>
-
-          <!-- Gráfico Tipo de Contrato y Fases PAC -->
-          <section class="chart-container">
-            <h3>Distribución por Tipo de Contrato y Fase</h3>
-            <div class="chart-wrapper chart-tipo-contrato">
-              <div ref="chartProcedimientosYFasePAC" class="chart"></div>
             </div>
           </section>
         </div>
@@ -235,6 +235,14 @@
             </div>
           </section>
 
+          <!-- Gráfico Procedimientos y Fases NO PAC -->
+          <section class="chart-container">
+            <h3>Distribución por Procedimiento y Fase</h3>
+            <div class="chart-wrapper chart-tipo-contrato">
+              <div ref="chartProcedimientosYFaseNoPAC" class="chart"></div>
+            </div>
+          </section>
+
           <section class="chart-container">
             <h3>Distribución del Presupuesto</h3>
             <div class="chart-wrapper">
@@ -277,14 +285,6 @@
                 <span class="label">Desierto</span>
                 <span class="valor">{{ datosNoPAC.procesosPorEstado.desierto }}</span>
               </div>
-            </div>
-          </section>
-
-          <!-- Gráfico Procedimientos y Fases NO PAC -->
-          <section class="chart-container">
-            <h3>Distribución por Procedimiento y Fase</h3>
-            <div class="chart-wrapper chart-tipo-contrato">
-              <div ref="chartProcedimientosYFaseNoPAC" class="chart"></div>
             </div>
           </section>
         </div>
