@@ -363,8 +363,8 @@ watch(isMobile, (mobile) => {
 
 :root {
   --sidebar-width: 204px;
-  --sidebar-bg-top: #0b1122;
-  --sidebar-bg-bottom: #0b1122;
+  --sidebar-bg-top: #1f3a70;
+  --sidebar-bg-bottom: #1f3a70;
   --accent-blue: #3b82f6;
   --accent-cyan: #0ea5e9;
   --surface-border: #e1e8f2;
@@ -613,13 +613,13 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.6rem 1.05rem;
+  padding: 1rem 1.5rem;
   position: sticky;
   top: 0;
   z-index: 20;
   backdrop-filter: blur(4px);
-  border-bottom: 1px solid var(--surface-border);
-  background: linear-gradient(100deg, var(--surface-bg-top) 0%, var(--surface-bg-mid) 55%, var(--surface-bg-bottom) 100%);
+  border-bottom: 1px solid rgba(148, 186, 224, 0.28);
+  background: #1f3a70;
 }
 
 .navbar-left {
@@ -632,10 +632,10 @@ body {
 .menu-trigger {
   width: 32px;
   height: 32px;
-  border: 1px solid #c7d8ee;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 10px;
-  color: var(--text-main);
-  background: #ffffff;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
   display: grid;
   place-items: center;
   font-size: 0.95rem;
@@ -644,8 +644,8 @@ body {
 }
 
 .menu-trigger:hover {
-  border-color: #a9c3e5;
-  background: #edf4ff;
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .navbar-title-block {
@@ -660,7 +660,7 @@ body {
 
 .workspace-navbar h2 {
   margin: 0;
-  color: var(--text-main);
+  color: #ffffff;
   font-size: 1.01rem;
   font-weight: 700;
   white-space: nowrap;
@@ -673,9 +673,9 @@ body {
   width: 24px;
   height: 24px;
   border-radius: 8px;
-  border: 1px solid #dbe7f5;
-  background: linear-gradient(180deg, #ffffff, #eef4ff);
-  color: #1f4f83;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
   font-size: 0.9rem;
 }
 
@@ -689,16 +689,16 @@ body {
   height: 34px;
   min-width: 180px;
   border-radius: 999px;
-  border: 1px solid #d4e1f2;
-  background: linear-gradient(180deg, #ffffff, #eef4ff);
-  color: #194a7e;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.32rem;
   text-align: left;
   padding: 0 0.7rem;
-  box-shadow: 0 4px 10px rgba(30, 74, 126, 0.12);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .navbar-date-circle i {

@@ -103,10 +103,10 @@
             </div>
 
             <div class="kpi-card-btn">
-              <div class="kpi-icon">⚙️</div>
+              <div class="kpi-icon">📋</div>
               <div class="kpi-content">
-                <div class="kpi-label">En Ejecución</div>
-                <div class="kpi-detalle">{{ datosPAC.kpisPrincipales.procesosEnEjecucion }} procesos</div>
+                <div class="kpi-label">Con Contrato</div>
+                <div class="kpi-detalle">{{ datosPAC.kpisPrincipales.procesosConContratoCompletado }} procesos</div>
               </div>
             </div>
 
@@ -202,10 +202,10 @@
             </div>
 
             <div class="kpi-card-btn">
-              <div class="kpi-icon">⚡</div>
+              <div class="kpi-icon">📋</div>
               <div class="kpi-content">
-                <div class="kpi-label">En Ejecución</div>
-                <div class="kpi-detalle">{{ datosNoPAC.kpisPrincipales.procesosEnEjecucion }} procesos</div>
+                <div class="kpi-label">Con Contrato</div>
+                <div class="kpi-detalle">{{ datosNoPAC.kpisPrincipales.procesosConContratoCompletado }} procesos</div>
               </div>
             </div>
 

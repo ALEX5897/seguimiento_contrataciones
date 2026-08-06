@@ -183,8 +183,11 @@ function getFiltros(query = {}) {
   };
 }
 
-function calcularResumenProceso(subtarea, hoy) {
-  const etapas = Array.isArray(subtarea?.seguimientoEtapas) ? [...subtarea.seguimientoEtapas] : [];
+function calcularResumenProceso(subtarea, hoy, usarTodasEtapas = false) {
+  // Para avance general, usar TODAS las etapas. Para otros cálculos, usar solo las que aplican
+  const etapas = Array.isArray(usarTodasEtapas ? subtarea?.etapas : subtarea?.seguimientoEtapas)
+    ? [...(usarTodasEtapas ? subtarea.etapas : subtarea.seguimientoEtapas)]
+    : [];
   etapas.sort((a, b) => Number(a?.orden || 0) - Number(b?.orden || 0));
 
   let completadas = 0;
@@ -3136,11 +3139,17 @@ router.get('/dashboard/pac', async (req, res) => {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
-    // Procesos base
+    // Procesos base (solo con presupuesto)
     const procesosBase = subtareas
       .filter((subtarea) => procesoCuentaEnReporte(subtarea))
-      .map((subtarea) => calcularResumenProceso(subtarea, hoy));
+      .map((subtarea) => calcularResumenProceso(subtarea, hoy, false));
     const procesos = filtrarProcesos(procesosBase, filtros);
+
+    // Para avance general, calcular con TODAS las etapas
+    const procesosParaAvanceBase = subtareas
+      .filter((subtarea) => procesoCuentaEnReporte(subtarea))
+      .map((subtarea) => calcularResumenProceso(subtarea, hoy, true));
+    const procesosParaAvance = filtrarProcesos(procesosParaAvanceBase, filtros);
 
     // KPIs principales
     const totalProcesos = procesos.length;
@@ -3193,19 +3202,31 @@ router.get('/dashboard/pac', async (req, res) => {
       procesosPorProcedimiento[proc].monto += p.presupuesto || 0;
     });
 
-    // Índices de eficiencia
-    const totalEtapas = procesos.reduce((sum, p) => sum + (p.totalEtapas || 0), 0);
-    const etapasCompletadas = procesos.reduce((sum, p) => sum + (p.completadas || 0), 0);
-    const etapasActivas = procesos.reduce((sum, p) => sum + (p.enProceso || 0), 0);
-    const etapasAtrasadas = procesos.reduce((sum, p) => sum + (p.atrasadas || 0), 0);
+    // Montos en ejecución vs presupuestado
+    const procesosEnEjecucion = procesosPorEstado.en_ejecucion || 0;
+    const montoEnEjecucion = presupuestoPorEstado.en_ejecucion || 0;
+
+    // Procesos con etapa de contrato completada
+    const procesosConContratoCompletado = procesosParaAvance.filter(p => {
+      const etapasDetalle = p.etapasDetalle || [];
+      return etapasDetalle.some(etapa => {
+        const nombreEtapaNorm = (etapa.etapaNombre || '').toLowerCase().trim();
+        return (nombreEtapaNorm.includes('contrato') || nombreEtapaNorm.includes('contratacion')) &&
+               etapa.estado === 'completado';
+      });
+    }).length;
+
+    // Índices de eficiencia - Procesos activos con presupuesto, contando TODAS las etapas
+    const procesosActivosCPresupuesto = procesosParaAvance.filter(p => obtenerEstadoProceso(p) === 1);
+    const totalEtapas = procesosActivosCPresupuesto.reduce((sum, p) => sum + (p.totalEtapas || 0), 0);
+    const etapasCompletadas = procesosActivosCPresupuesto.reduce((sum, p) => sum + (p.completadas || 0), 0);
+    const etapasActivas = procesosActivosCPresupuesto.reduce((sum, p) => sum + (p.enProceso || 0), 0);
+    const etapasAtrasadas = procesosActivosCPresupuesto.reduce((sum, p) => sum + (p.atrasadas || 0), 0);
 
     const indiceEjecucion = totalEtapas > 0 ? Math.round((etapasCompletadas / totalEtapas) * 100) : 0;
     const indiceActivos = totalEtapas > 0 ? Math.round((etapasActivas / totalEtapas) * 100) : 0;
     const indiceProblemas = totalEtapas > 0 ? Math.round((etapasAtrasadas / totalEtapas) * 100) : 0;
 
-    // Montos en ejecución vs presupuestado
-    const procesosEnEjecucion = procesosPorEstado.en_ejecucion || 0;
-    const montoEnEjecucion = presupuestoPorEstado.en_ejecucion || 0;
     const indiceEjecucionMonto = presupuestoPAC > 0 ? Math.round((montoEnEjecucion / presupuestoPAC) * 100) : 0;
 
     // Velocímetro - Avance del PAC
@@ -3256,6 +3277,7 @@ router.get('/dashboard/pac', async (req, res) => {
         presupuestoPAC,
         presupuestoNoPAC,
         procesosEnEjecucion,
+        procesosConContratoCompletado,
         montoEnEjecucion
       },
       procesosPorEstado,
