@@ -471,7 +471,15 @@ function renderPieChart(ref: any, data: any[], colors: string[]) {
       trigger: 'item',
       formatter: '{b}: {c} ({d}%)'
     },
-    legend: { show: false },
+    legend: {
+      show: true,
+      orient: 'bottom',
+      bottom: 10,
+      textStyle: {
+        fontSize: 12,
+        color: '#475569'
+      }
+    },
     series: [
       {
         type: 'pie',
