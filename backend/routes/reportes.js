@@ -3262,8 +3262,14 @@ router.get('/dashboard/pac', async (req, res) => {
       });
     }).length;
 
-    // Procesos por fase (preparatoria, precontractual, contractual)
+    // Procesos y presupuesto por fase (preparatoria, precontractual, contractual)
     const procesosPorFase = {
+      preparatoria: 0,
+      precontractual: 0,
+      contractual: 0
+    };
+
+    const presupuestoPorFase = {
       preparatoria: 0,
       precontractual: 0,
       contractual: 0
@@ -3273,6 +3279,7 @@ router.get('/dashboard/pac', async (req, res) => {
       const fase = obtenerFaseProceso(p.etapasDetalle || []);
       if (procesosPorFase.hasOwnProperty(fase)) {
         procesosPorFase[fase]++;
+        presupuestoPorFase[fase] += (p.presupuesto || 0);
       }
     });
 
@@ -3344,6 +3351,7 @@ router.get('/dashboard/pac', async (req, res) => {
       procesosPorEstado,
       presupuestoPorEstado,
       procesosPorFase,
+      presupuestoPorFase,
       procesosPorProcedimiento,
       indicesEficiencia: {
         indiceEjecucion,
