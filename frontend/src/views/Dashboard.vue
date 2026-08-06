@@ -135,51 +135,6 @@
               <div ref="chartProcedimientosYFasePAC" class="chart"></div>
             </div>
           </section>
-
-          <section class="chart-container">
-            <h3>Distribución del Presupuesto</h3>
-            <div class="chart-wrapper">
-              <div ref="chartDistribPresupuestoPAC" class="chart"></div>
-            </div>
-          </section>
-
-          <section class="chart-container">
-            <h3>Avance General</h3>
-            <div class="chart-wrapper">
-              <div ref="chartVelociometroPAC" class="chart"></div>
-            </div>
-            <div class="velocimetro-info">
-              <p><strong>Índice de Ejecución:</strong> {{ datosPAC.velocimetro.valor }}%</p>
-              <p><strong>Monto en Ejecución:</strong> {{ formatearMonto(datosPAC.kpisPrincipales.montoEnEjecucion) }}</p>
-            </div>
-          </section>
-
-          <!-- Resumen PAC -->
-          <section class="chart-container">
-            <h3>Resumen</h3>
-            <div class="resumen-small">
-              <div class="resumen-item-small">
-                <span class="label">Preparatoria</span>
-                <span class="valor">{{ datosPAC.procesosPorEstado.preparatoria }}</span>
-              </div>
-              <div class="resumen-item-small">
-                <span class="label">Precontractual</span>
-                <span class="valor">{{ datosPAC.procesosPorEstado.precontractual }}</span>
-              </div>
-              <div class="resumen-item-small">
-                <span class="label">En Ejecución</span>
-                <span class="valor">{{ datosPAC.procesosPorEstado.en_ejecucion }}</span>
-              </div>
-              <div class="resumen-item-small">
-                <span class="label">Suspendido</span>
-                <span class="valor">{{ datosPAC.procesosPorEstado.suspendido }}</span>
-              </div>
-              <div class="resumen-item-small">
-                <span class="label">Desierto</span>
-                <span class="valor">{{ datosPAC.procesosPorEstado.desierto }}</span>
-              </div>
-            </div>
-          </section>
         </div>
 
         <!-- COLUMNA DERECHA: PROCESOS NO PAC -->
@@ -240,51 +195,6 @@
             <h3>Distribución por Procedimiento y Fase</h3>
             <div class="chart-wrapper chart-tipo-contrato">
               <div ref="chartProcedimientosYFaseNoPAC" class="chart"></div>
-            </div>
-          </section>
-
-          <section class="chart-container">
-            <h3>Distribución del Presupuesto</h3>
-            <div class="chart-wrapper">
-              <div ref="chartDistribPresupuestoNoPAC" class="chart"></div>
-            </div>
-          </section>
-
-          <section class="chart-container">
-            <h3>Avance General</h3>
-            <div class="chart-wrapper">
-              <div ref="chartVelociometroNoPAC" class="chart"></div>
-            </div>
-            <div class="velocimetro-info">
-              <p><strong>Índice de Ejecución:</strong> {{ datosNoPAC.velocimetro.valor }}%</p>
-              <p><strong>Monto en Ejecución:</strong> {{ formatearMonto(datosNoPAC.kpisPrincipales.montoEnEjecucion) }}</p>
-            </div>
-          </section>
-
-          <!-- Resumen NO PAC -->
-          <section class="chart-container">
-            <h3>Resumen</h3>
-            <div class="resumen-small">
-              <div class="resumen-item-small">
-                <span class="label">Preparatoria</span>
-                <span class="valor">{{ datosNoPAC.procesosPorEstado.preparatoria }}</span>
-              </div>
-              <div class="resumen-item-small">
-                <span class="label">Precontractual</span>
-                <span class="valor">{{ datosNoPAC.procesosPorEstado.precontractual }}</span>
-              </div>
-              <div class="resumen-item-small">
-                <span class="label">En Ejecución</span>
-                <span class="valor">{{ datosNoPAC.procesosPorEstado.en_ejecucion }}</span>
-              </div>
-              <div class="resumen-item-small">
-                <span class="label">Suspendido</span>
-                <span class="valor">{{ datosNoPAC.procesosPorEstado.suspendido }}</span>
-              </div>
-              <div class="resumen-item-small">
-                <span class="label">Desierto</span>
-                <span class="valor">{{ datosNoPAC.procesosPorEstado.desierto }}</span>
-              </div>
             </div>
           </section>
         </div>
