@@ -367,11 +367,6 @@ const procesosFaseSeleccionada = computed(() => {
 
   console.log(`Fase seleccionada: ${faseSeleccionada.value}, Procesos encontrados: ${procesos.length}, Total: ${datos.procesos.length}`);
   if (procesos.length === 0) {
-    console.log('Fases de todos los procesos:', datos.procesos.map((p: any) => ({
-      nombre: p.nombre,
-      fase: obtenerFaseProceso(p.etapasDetalle || []),
-      etapas: (p.etapasDetalle || []).length
-    })));
   }
 
   return procesos;
