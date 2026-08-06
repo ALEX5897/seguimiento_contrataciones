@@ -3460,11 +3460,13 @@ router.get('/dashboard/pac', async (req, res) => {
         etapa => etapa.estado === 'pendiente' && (etapa.diasAtraso || 0) > 0
       );
 
-      // Procesos sin retrasos: ninguna etapa pendiente con retraso
-      if (!tieneRetraso) {
-        nivelCumplimientoPorDireccion[direccion].sinRetrasos++;
-      } else {
-        nivelCumplimientoPorDireccion[direccion].conRetrasos++;
+      // Procesos sin retrasos: NO completados y sin retrasos
+      if (fase !== 'contractual') {
+        if (!tieneRetraso) {
+          nivelCumplimientoPorDireccion[direccion].sinRetrasos++;
+        } else {
+          nivelCumplimientoPorDireccion[direccion].conRetrasos++;
+        }
       }
     });
 
