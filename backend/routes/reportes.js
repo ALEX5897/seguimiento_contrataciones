@@ -26,6 +26,24 @@ async function lanzarNavegador() {
   }
 }
 
+// Función auxiliar para obtener la fase de un proceso
+function obtenerFaseProceso(etapasDetalle = []) {
+  const fases = ['preparatoria', 'precontractual', 'contractual'];
+
+  for (const fase of fases) {
+    const etapasFase = etapasDetalle.filter(e => e.fase === fase);
+    const hayPendiente = etapasFase.some(e =>
+      e.estado === 'pendiente' || e.estado === 'en_proceso'
+    );
+
+    if (hayPendiente) {
+      return fase;
+    }
+  }
+
+  return 'contractual';
+}
+
 // Reporte personalizado por direcciones y columnas seleccionadas
 router.get('/export/xlsx/personalizado', async (req, res) => {
   try {
@@ -3216,6 +3234,20 @@ router.get('/dashboard/pac', async (req, res) => {
       });
     }).length;
 
+    // Procesos por fase (preparatoria, precontractual, contractual)
+    const procesosPorFase = {
+      preparatoria: 0,
+      precontractual: 0,
+      contractual: 0
+    };
+
+    procesosParaAvance.forEach(p => {
+      const fase = obtenerFaseProceso(p.etapasDetalle || []);
+      if (procesosPorFase.hasOwnProperty(fase)) {
+        procesosPorFase[fase]++;
+      }
+    });
+
     // Índices de eficiencia - Procesos activos con presupuesto, contando TODAS las etapas
     const procesosActivosCPresupuesto = procesosParaAvance.filter(p => obtenerEstadoProceso(p) === 1);
     const totalEtapas = procesosActivosCPresupuesto.reduce((sum, p) => sum + (p.totalEtapas || 0), 0);
@@ -3282,6 +3314,7 @@ router.get('/dashboard/pac', async (req, res) => {
       },
       procesosPorEstado,
       presupuestoPorEstado,
+      procesosPorFase,
       procesosPorProcedimiento,
       indicesEficiencia: {
         indiceEjecucion,

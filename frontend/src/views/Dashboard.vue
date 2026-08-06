@@ -407,13 +407,11 @@ function renderizarGraficos() {
   renderPieChart(
     chartDistribProcesosPAC,
     [
-      { value: datosPAC.value.procesosPorEstado.preparatoria, name: 'Fase Preparatoria' },
-      { value: datosPAC.value.procesosPorEstado.precontractual, name: 'Precontractual' },
-      { value: datosPAC.value.procesosPorEstado.en_ejecucion, name: 'En ejecución' },
-      { value: datosPAC.value.procesosPorEstado.suspendido, name: 'Suspendido' },
-      { value: datosPAC.value.procesosPorEstado.desierto, name: 'Desierto' }
+      { value: datosPAC.value.procesosPorFase.preparatoria, name: 'Fase Preparatoria' },
+      { value: datosPAC.value.procesosPorFase.precontractual, name: 'Fase Precontractual' },
+      { value: datosPAC.value.procesosPorFase.contractual, name: 'Fase Contractual' }
     ],
-    ['#1e40af', '#059669', '#0891b2', '#f59e0b', '#dc2626']
+    ['#3b82f6', '#10b981', '#f59e0b']
   );
 
   renderPieChart(
@@ -438,13 +436,11 @@ function renderizarGraficos() {
   renderPieChart(
     chartDistribProcesosNoPAC,
     [
-      { value: datosNoPAC.value.procesosPorEstado.preparatoria, name: 'Fase Preparatoria' },
-      { value: datosNoPAC.value.procesosPorEstado.precontractual, name: 'Precontractual' },
-      { value: datosNoPAC.value.procesosPorEstado.en_ejecucion, name: 'En ejecución' },
-      { value: datosNoPAC.value.procesosPorEstado.suspendido, name: 'Suspendido' },
-      { value: datosNoPAC.value.procesosPorEstado.desierto, name: 'Desierto' }
+      { value: datosNoPAC.value.procesosPorFase.preparatoria, name: 'Fase Preparatoria' },
+      { value: datosNoPAC.value.procesosPorFase.precontractual, name: 'Fase Precontractual' },
+      { value: datosNoPAC.value.procesosPorFase.contractual, name: 'Fase Contractual' }
     ],
-    ['#1e40af', '#059669', '#0891b2', '#f59e0b', '#dc2626']
+    ['#3b82f6', '#10b981', '#f59e0b']
   );
 
   renderPieChart(
