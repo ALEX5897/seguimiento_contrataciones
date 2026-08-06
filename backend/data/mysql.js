@@ -1014,13 +1014,13 @@ export async function getAllSubtareas() {
   `);
 
   const etapas = await query(`
-    SELECT se.*, ep.nombre AS etapa_nombre, ep.orden, ep.es_personalizada,
+    SELECT se.*, ep.nombre AS etapa_nombre, ep.orden, ep.clasificacion, ep.descripcion,
            sg.estado, sg.fecha_planificada, sg.fecha_real, sg.observaciones,
            sg.responsable AS responsable_nombre
     FROM subtareas_etapas se
-    JOIN etapas_pac ep ON ep.id = se.etapa_id
+    JOIN etapas_catalogo ep ON ep.id = se.etapa_id
     LEFT JOIN seguimiento_etapas sg ON sg.subtarea_id = se.subtarea_id AND sg.etapa_id = se.etapa_id
-    ORDER BY se.subtarea_id, ep.orden
+    ORDER BY se.subtarea_id, COALESCE(ep.orden, 999)
   `);
 
   const bySubtarea = new Map();
