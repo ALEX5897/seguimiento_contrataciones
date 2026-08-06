@@ -395,10 +395,18 @@ const procesosFaseSeleccionada = computed(() => {
   // Filtrar por tipo de contrato si está seleccionado
   if (modalTipo.value === 'tipoContrato' && tipoContratoSeleccionado.value) {
     const tipoFiltro = tipoContratoSeleccionado.value.trim().toLowerCase();
+    console.log('Filtrando por tipo de contrato:', tipoFiltro);
+    console.log('Total de procesos disponibles:', procesos.length);
+
     procesos = procesos.filter((p: any) => {
       const tipoContrato = (p.tipoContratacion || 'No definido').trim().toLowerCase();
       return tipoContrato === tipoFiltro;
     });
+
+    console.log('Procesos encontrados después del filtro:', procesos.length);
+    if (procesos.length === 0) {
+      console.log('Tipos de contrato únicos en los procesos:', [...new Set(datos.procesos.map((p: any) => p.tipoContratacion))]);
+    }
   }
   // Filtrar por fase si está seleccionada
   else if (modalTipo.value === 'fase' && faseSeleccionada.value) {
