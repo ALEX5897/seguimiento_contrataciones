@@ -176,8 +176,8 @@
           <!-- Gráfico Tipo de Contrato y Fases PAC -->
           <section class="chart-container">
             <h3>Distribución por Tipo de Contrato y Fase</h3>
-            <div class="chart-wrapper">
-              <div ref="chartProcedimientosYFasePAC" class="chart" style="height: 280px;"></div>
+            <div class="chart-wrapper chart-tipo-contrato">
+              <div ref="chartProcedimientosYFasePAC" class="chart"></div>
             </div>
           </section>
         </div>
@@ -283,8 +283,8 @@
           <!-- Gráfico Procedimientos y Fases NO PAC -->
           <section class="chart-container">
             <h3>Distribución por Procedimiento y Fase</h3>
-            <div class="chart-wrapper">
-              <div ref="chartProcedimientosYFaseNoPAC" class="chart" style="height: 400px;"></div>
+            <div class="chart-wrapper chart-tipo-contrato">
+              <div ref="chartProcedimientosYFaseNoPAC" class="chart"></div>
             </div>
           </section>
         </div>
@@ -714,13 +714,24 @@ function renderStackedBarChart(ref: any, data: any) {
   const contractualData = tiposContrato.map((t: string) => data[t].contractual || 0);
   const totalData = tiposContrato.map((t: string) => data[t].total || 0);
 
+  // Calcular altura dinámicamente: mínimo 250px, máximo 30px por fila
+  const itemCount = tiposContrato.length;
+  const minHeight = 250;
+  const heightPerItem = 32;
+  const calculatedHeight = Math.max(minHeight, itemCount * heightPerItem);
+  ref.value.style.height = `${calculatedHeight}px`;
+
+  // Calcular ancho necesario para labels (longitud máxima)
+  const maxLabelLength = Math.max(...tiposContrato.map(t => t.length));
+  const estimatedLabelWidth = Math.min(180, Math.max(140, maxLabelLength * 6.5));
+
   const option = {
     color: ['#3b82f6', '#10b981', '#dc2626'],
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
       formatter: (params: any) => {
-        let html = `<div style="font-size:12px">${params[0].axisValue}</div>`;
+        let html = `<div style="font-size:12px;font-weight:600">${params[0].axisValue}</div>`;
         params.forEach((p: any) => {
           html += `<div style="font-size:12px">${p.seriesName}: ${p.value}</div>`;
         });
@@ -731,12 +742,12 @@ function renderStackedBarChart(ref: any, data: any) {
       data: ['Prep.', 'Precontractual', 'Contractual', 'TOTAL'],
       top: 5,
       left: 'center',
-      textStyle: { fontSize: 10 },
-      itemGap: 12
+      textStyle: { fontSize: 11, color: '#475569' },
+      itemGap: 15
     },
     grid: {
-      left: 140,
-      right: 50,
+      left: estimatedLabelWidth,
+      right: 60,
       top: 35,
       bottom: 15,
       containLabel: false
@@ -744,18 +755,19 @@ function renderStackedBarChart(ref: any, data: any) {
     xAxis: {
       type: 'value',
       boundaryGap: [0, 0.01],
-      axisLabel: { fontSize: 9 },
-      splitLine: { show: false }
+      axisLabel: { fontSize: 10, color: '#64748b' },
+      splitLine: { show: true, lineStyle: { color: '#e2e8f0' } }
     },
     yAxis: {
       type: 'category',
       data: tiposContrato.map((t: string) => {
-        if (t.length > 20) {
-          return t.substring(0, 17) + '...';
+        // Mostrar nombre completo en tooltip, truncar solo si es muy largo
+        if (t.length > 25) {
+          return t.substring(0, 22) + '...';
         }
         return t;
       }),
-      axisLabel: { fontSize: 9 }
+      axisLabel: { fontSize: 10, color: '#475569', margin: 8 }
     },
     series: [
       {
@@ -767,8 +779,9 @@ function renderStackedBarChart(ref: any, data: any) {
           show: true,
           position: 'inside',
           formatter: (params: any) => params.value > 0 ? params.value : '',
-          fontSize: 8,
-          color: '#fff'
+          fontSize: 9,
+          color: '#fff',
+          fontWeight: 600
         },
         itemStyle: { color: '#3b82f6' }
       },
@@ -781,8 +794,9 @@ function renderStackedBarChart(ref: any, data: any) {
           show: true,
           position: 'inside',
           formatter: (params: any) => params.value > 0 ? params.value : '',
-          fontSize: 8,
-          color: '#fff'
+          fontSize: 9,
+          color: '#fff',
+          fontWeight: 600
         },
         itemStyle: { color: '#10b981' }
       },
@@ -795,8 +809,9 @@ function renderStackedBarChart(ref: any, data: any) {
           show: true,
           position: 'inside',
           formatter: (params: any) => params.value > 0 ? params.value : '',
-          fontSize: 8,
-          color: '#fff'
+          fontSize: 9,
+          color: '#fff',
+          fontWeight: 600
         },
         itemStyle: { color: '#dc2626' }
       },
@@ -808,9 +823,9 @@ function renderStackedBarChart(ref: any, data: any) {
           show: true,
           position: 'right',
           formatter: (params: any) => params.value > 0 ? params.value : '',
-          fontSize: 8,
+          fontSize: 9,
           fontWeight: 'bold',
-          color: '#374151'
+          color: '#1f2937'
         },
         itemStyle: { color: 'transparent' },
         z: 0
@@ -1131,6 +1146,11 @@ function resetearFiltros() {
   margin-bottom: 1rem;
 }
 
+.chart-wrapper.chart-tipo-contrato {
+  height: auto;
+  min-height: 280px;
+}
+
 .chart {
   width: 100%;
   height: 100%;
@@ -1320,6 +1340,10 @@ function resetearFiltros() {
 @media (max-width: 1024px) {
   .kpis-column {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .chart-wrapper.chart-tipo-contrato {
+    min-height: 320px;
   }
 }
 
