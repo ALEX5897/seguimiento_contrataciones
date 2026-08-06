@@ -359,11 +359,22 @@ const procesosFaseSeleccionada = computed(() => {
   const datos = tipoPlanSeleccionado.value === 'PAC' ? datosPAC.value : datosNoPAC.value;
   if (!datos || !datos.procesos) return [];
 
-  return datos.procesos.filter((p: any) => {
+  const procesos = datos.procesos.filter((p: any) => {
     const etapas = p.etapasDetalle || [];
     const fase = obtenerFaseProceso(etapas);
     return fase === faseSeleccionada.value;
   });
+
+  console.log(`Fase seleccionada: ${faseSeleccionada.value}, Procesos encontrados: ${procesos.length}, Total: ${datos.procesos.length}`);
+  if (procesos.length === 0) {
+    console.log('Fases de todos los procesos:', datos.procesos.map((p: any) => ({
+      nombre: p.nombre,
+      fase: obtenerFaseProceso(p.etapasDetalle || []),
+      etapas: (p.etapasDetalle || []).length
+    })));
+  }
+
+  return procesos;
 });
 
 function abrirModal(fase: string, tipoPlan: string) {
