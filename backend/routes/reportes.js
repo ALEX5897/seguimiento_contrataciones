@@ -3430,7 +3430,7 @@ router.get('/dashboard/pac', async (req, res) => {
       }
     });
 
-    // Nivel de cumplimiento por dirección (4 indicadores: completados, sin retrasos, en ejecución, con retrasos)
+    // Nivel de cumplimiento por dirección (3 indicadores: completados, sin retrasos, con retrasos)
     const nivelCumplimientoPorDireccion = {};
     procesosParaAvanceEnriquecidos.forEach(p => {
       const direccion = (p.direccionNombre || 'No especificada').trim();
@@ -3440,11 +3440,9 @@ router.get('/dashboard/pac', async (req, res) => {
           total: 0,
           completados: 0,
           sinRetrasos: 0,
-          enEjecucion: 0,
           conRetrasos: 0,
           porcentajeCompletados: 0,
           porcentajeSinRetrasos: 0,
-          porcentajeEnEjecucion: 0,
           porcentajeConRetrasos: 0
         };
       }
@@ -3468,16 +3466,6 @@ router.get('/dashboard/pac', async (req, res) => {
       } else {
         nivelCumplimientoPorDireccion[direccion].conRetrasos++;
       }
-
-      // Procesos en ejecución: etapa de contrato completada
-      const tieneContratoCompletado = (p.etapasDetalle || []).some(etapa => {
-        const nombreEtapaNorm = (etapa.etapaNombre || '').toLowerCase().trim();
-        return (nombreEtapaNorm.includes('contrato') || nombreEtapaNorm.includes('contratacion')) &&
-               etapa.estado === 'completado';
-      });
-      if (tieneContratoCompletado) {
-        nivelCumplimientoPorDireccion[direccion].enEjecucion++;
-      }
     });
 
     // Calcular porcentajes
@@ -3485,7 +3473,6 @@ router.get('/dashboard/pac', async (req, res) => {
       const item = nivelCumplimientoPorDireccion[direccion];
       item.porcentajeCompletados = item.total > 0 ? Math.round((item.completados / item.total) * 100) : 0;
       item.porcentajeSinRetrasos = item.total > 0 ? Math.round((item.sinRetrasos / item.total) * 100) : 0;
-      item.porcentajeEnEjecucion = item.total > 0 ? Math.round((item.enEjecucion / item.total) * 100) : 0;
       item.porcentajeConRetrasos = item.total > 0 ? Math.round((item.conRetrasos / item.total) * 100) : 0;
     });
 
