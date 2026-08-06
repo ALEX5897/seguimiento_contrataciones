@@ -3248,6 +3248,27 @@ router.get('/dashboard/pac', async (req, res) => {
       procesosPorProcedimiento[proc].monto += p.presupuesto || 0;
     });
 
+    // Procesos por procedimiento y fase
+    const procesosPorProcedimientoYFase = {};
+    procesosParaAvanceEnriquecidos.forEach(p => {
+      const proc = (p.procedimiento || p.tipoContratacion || 'No definido').trim();
+      const fase = obtenerFaseProceso(p.etapasDetalle || []);
+
+      if (!procesosPorProcedimientoYFase[proc]) {
+        procesosPorProcedimientoYFase[proc] = {
+          preparatoria: 0,
+          precontractual: 0,
+          contractual: 0,
+          total: 0
+        };
+      }
+
+      if (procesosPorProcedimientoYFase[proc].hasOwnProperty(fase)) {
+        procesosPorProcedimientoYFase[proc][fase]++;
+      }
+      procesosPorProcedimientoYFase[proc].total++;
+    });
+
     // Montos en ejecución vs presupuestado
     const procesosEnEjecucion = procesosPorEstado.en_ejecucion || 0;
     const montoEnEjecucion = presupuestoPorEstado.en_ejecucion || 0;
@@ -3353,6 +3374,7 @@ router.get('/dashboard/pac', async (req, res) => {
       procesosPorFase,
       presupuestoPorFase,
       procesosPorProcedimiento,
+      procesosPorProcedimientoYFase,
       indicesEficiencia: {
         indiceEjecucion,
         indiceActivos,

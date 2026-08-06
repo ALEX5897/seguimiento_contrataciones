@@ -174,6 +174,16 @@
           </section>
         </div>
 
+        <!-- GRÁFICO DISTRIBUCIÓN POR PROCEDIMIENTO Y FASE (ANCHO COMPLETO) -->
+        <div class="full-width-section">
+          <section class="chart-container">
+            <h3>Distribución de Procesos por Procedimiento y Fase</h3>
+            <div class="chart-wrapper">
+              <div ref="chartProcedimientosYFase" class="chart" style="height: 400px;"></div>
+            </div>
+          </section>
+        </div>
+
         <!-- COLUMNA DERECHA: PROCESOS NO PAC -->
         <div class="column-nopac">
           <div class="column-header">
@@ -340,6 +350,9 @@ const chartVelociometroPAC = ref<any>(null);
 const chartDistribProcesosNoPAC = ref<any>(null);
 const chartDistribPresupuestoNoPAC = ref<any>(null);
 const chartVelociometroNoPAC = ref<any>(null);
+
+// Chart instances - Procedimientos y Fases
+const chartProcedimientosYFase = ref<any>(null);
 
 // Modal de procesos por fase
 const modalAbierto = ref(false);
@@ -565,6 +578,32 @@ function renderizarGraficos() {
     datosNoPAC.value.velocimetro.valor,
     datosNoPAC.value.velocimetro.meta
   );
+
+  // Gráfico de Procedimientos y Fases (combina PAC + NO PAC)
+  if (datosPAC.value?.procesosPorProcedimientoYFase) {
+    const procedimientosCombinados: any = {};
+
+    // Agregar datos PAC
+    Object.entries(datosPAC.value.procesosPorProcedimientoYFase).forEach(([proc, data]: [string, any]) => {
+      procedimientosCombinados[proc] = { ...data };
+    });
+
+    // Agregar datos NO PAC
+    if (datosNoPAC.value?.procesosPorProcedimientoYFase) {
+      Object.entries(datosNoPAC.value.procesosPorProcedimientoYFase).forEach(([proc, data]: [string, any]) => {
+        if (procedimientosCombinados[proc]) {
+          procedimientosCombinados[proc].preparatoria += data.preparatoria || 0;
+          procedimientosCombinados[proc].precontractual += data.precontractual || 0;
+          procedimientosCombinados[proc].contractual += data.contractual || 0;
+          procedimientosCombinados[proc].total += data.total || 0;
+        } else {
+          procedimientosCombinados[proc] = { ...data };
+        }
+      });
+    }
+
+    renderStackedBarChart(chartProcedimientosYFase, procedimientosCombinados);
+  }
 }
 
 function renderPieChart(ref: any, data: any[], colors: string[], tipoPlan?: string) {
@@ -670,6 +709,55 @@ function renderGaugeChart(ref: any, valor: number, meta: number) {
       }
     ]
   };
+  chart.setOption(option);
+  window.addEventListener('resize', () => chart.resize());
+}
+
+function renderStackedBarChart(ref: any, data: any) {
+  if (!ref.value) return;
+  const chart = echarts.init(ref.value);
+
+  // Preparar datos para gráfico de barras apiladas
+  const procedimientos = Object.keys(data).sort();
+  const seriesData = [
+    { name: 'Preparatoria', data: procedimientos.map((p: string) => data[p].preparatoria || 0) },
+    { name: 'Precontractual', data: procedimientos.map((p: string) => data[p].precontractual || 0) },
+    { name: 'Contractual', data: procedimientos.map((p: string) => data[p].contractual || 0) }
+  ];
+
+  const option = {
+    color: ['#3b82f6', '#10b981', '#f59e0b'],
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' }
+    },
+    legend: {
+      data: ['Preparatoria', 'Precontractual', 'Contractual'],
+      bottom: 10
+    },
+    grid: {
+      left: 200,
+      right: 50,
+      top: 30,
+      bottom: 50,
+      containLabel: true
+    },
+    xAxis: {
+      type: 'value'
+    },
+    yAxis: {
+      type: 'category',
+      data: procedimientos.map((p: string) => p.length > 30 ? p.substring(0, 27) + '...' : p)
+    },
+    series: seriesData.map((s: any) => ({
+      name: s.name,
+      type: 'bar',
+      stack: 'total',
+      data: s.data,
+      label: { show: true, position: 'insideRight', fontSize: 10 }
+    }))
+  };
+
   chart.setOption(option);
   window.addEventListener('resize', () => chart.resize());
 }
@@ -853,6 +941,11 @@ function resetearFiltros() {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
+  margin-top: 2rem;
+}
+
+.full-width-section {
+  width: 100%;
   margin-top: 2rem;
 }
 
