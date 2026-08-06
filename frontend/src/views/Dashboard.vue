@@ -295,12 +295,12 @@
       <p>{{ error }}</p>
     </div>
 
-    <!-- MODAL DE PROCESOS POR FASE -->
+    <!-- MODAL DE PROCESOS POR FASE O TIPO DE CONTRATO -->
     <div v-if="modalAbierto" class="modal-overlay" @click.self="cerrarModal">
       <div class="modal-contenido">
         <div class="modal-header">
           <div class="modal-header-content">
-            <h2>Procesos en Fase {{ nombreFaseSeleccionada }}</h2>
+            <h2>{{ tituloModal }}</h2>
             <p class="modal-header-presupuesto">Presupuesto: {{ formatearMonto(presupuestoFaseSeleccionada) }}</p>
           </div>
           <button class="btn-cerrar" @click="cerrarModal">
@@ -321,7 +321,7 @@
             </div>
           </div>
           <div v-else class="sin-procesos">
-            <p>No hay procesos en esta fase</p>
+            <p>{{ modalTipo === 'tipoContrato' ? 'No hay procesos para este tipo de contrato' : 'No hay procesos en esta fase' }}</p>
           </div>
         </div>
       </div>
@@ -361,10 +361,12 @@ const chartVelociometroNoPAC = ref<any>(null);
 const chartProcedimientosYFasePAC = ref<any>(null);
 const chartProcedimientosYFaseNoPAC = ref<any>(null);
 
-// Modal de procesos por fase
+// Modal de procesos por fase o tipo de contrato
 const modalAbierto = ref(false);
 const faseSeleccionada = ref('');
 const tipoPlanSeleccionado = ref(''); // 'PAC' o 'NO PAC'
+const tipoContratoSeleccionado = ref(''); // Tipo de contrato filtrado
+const modalTipo = ref('fase'); // 'fase' o 'tipoContrato'
 
 const nombreFaseSeleccionada = computed(() => {
   const nombres: { [key: string]: string } = {
@@ -375,17 +377,36 @@ const nombreFaseSeleccionada = computed(() => {
   return nombres[faseSeleccionada.value] || '';
 });
 
+const tituloModal = computed(() => {
+  if (modalTipo.value === 'tipoContrato') {
+    return `Procesos - ${tipoContratoSeleccionado.value}`;
+  }
+  return `Procesos en Fase ${nombreFaseSeleccionada.value}`;
+});
+
 const procesosFaseSeleccionada = computed(() => {
-  if (!faseSeleccionada.value || !tipoPlanSeleccionado.value) return [];
+  if (!tipoPlanSeleccionado.value) return [];
 
   const datos = tipoPlanSeleccionado.value === 'PAC' ? datosPAC.value : datosNoPAC.value;
   if (!datos || !datos.procesos) return [];
 
-  const procesos = datos.procesos.filter((p: any) => {
-    const etapas = p.etapasDetalle || [];
-    const fase = obtenerFaseProceso(etapas);
-    return fase === faseSeleccionada.value;
-  });
+  let procesos = datos.procesos;
+
+  // Filtrar por tipo de contrato si está seleccionado
+  if (modalTipo.value === 'tipoContrato' && tipoContratoSeleccionado.value) {
+    procesos = procesos.filter((p: any) => {
+      const tipoContrato = p.tipoContratacion || 'No definido';
+      return tipoContrato === tipoContratoSeleccionado.value;
+    });
+  }
+  // Filtrar por fase si está seleccionada
+  else if (modalTipo.value === 'fase' && faseSeleccionada.value) {
+    procesos = procesos.filter((p: any) => {
+      const etapas = p.etapasDetalle || [];
+      const fase = obtenerFaseProceso(etapas);
+      return fase === faseSeleccionada.value;
+    });
+  }
 
   return procesos;
 });
@@ -394,16 +415,28 @@ const presupuestoFaseSeleccionada = computed(() => {
   return procesosFaseSeleccionada.value.reduce((sum: number, p: any) => sum + (p.presupuesto || 0), 0);
 });
 
-function abrirModal(fase: string, tipoPlan: string) {
+function abrirModalPorFase(fase: string, tipoPlan: string) {
   faseSeleccionada.value = fase;
   tipoPlanSeleccionado.value = tipoPlan;
+  tipoContratoSeleccionado.value = '';
+  modalTipo.value = 'fase';
+  modalAbierto.value = true;
+}
+
+function abrirModalPorTipoContrato(tipoContrato: string, tipoPlan: string) {
+  tipoContratoSeleccionado.value = tipoContrato;
+  tipoPlanSeleccionado.value = tipoPlan;
+  faseSeleccionada.value = '';
+  modalTipo.value = 'tipoContrato';
   modalAbierto.value = true;
 }
 
 function cerrarModal() {
   modalAbierto.value = false;
   faseSeleccionada.value = '';
+  tipoContratoSeleccionado.value = '';
   tipoPlanSeleccionado.value = '';
+  modalTipo.value = 'fase';
 }
 
 // Función auxiliar para obtener la fase de un proceso (igual que backend)
@@ -588,11 +621,11 @@ function renderizarGraficos() {
 
   // Gráficos de Tipo de Contrato y Fases por tipo (PAC y NO PAC separados)
   if (datosPAC.value?.procesosPorTipoContratoYFasePAC) {
-    renderStackedBarChart(chartProcedimientosYFasePAC, datosPAC.value.procesosPorTipoContratoYFasePAC);
+    renderStackedBarChart(chartProcedimientosYFasePAC, datosPAC.value.procesosPorTipoContratoYFasePAC, 'PAC');
   }
 
   if (datosNoPAC.value?.procesosPorTipoContratoYFaseNoPAC) {
-    renderStackedBarChart(chartProcedimientosYFaseNoPAC, datosNoPAC.value.procesosPorTipoContratoYFaseNoPAC);
+    renderStackedBarChart(chartProcedimientosYFaseNoPAC, datosNoPAC.value.procesosPorTipoContratoYFaseNoPAC, 'NO PAC');
   }
 }
 
@@ -649,7 +682,7 @@ function renderPieChart(ref: any, data: any[], colors: string[], tipoPlan?: stri
       };
       const fase = faseMap[nombreFase];
       if (fase) {
-        abrirModal(fase, tipoPlan);
+        abrirModalPorFase(fase, tipoPlan);
       }
     });
   }
@@ -703,7 +736,7 @@ function renderGaugeChart(ref: any, valor: number, meta: number) {
   window.addEventListener('resize', () => chart.resize());
 }
 
-function renderStackedBarChart(ref: any, data: any) {
+function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
   if (!ref.value || !data) return;
   const chart = echarts.init(ref.value);
 
@@ -834,6 +867,16 @@ function renderStackedBarChart(ref: any, data: any) {
 
   chart.setOption(option);
   window.addEventListener('resize', () => chart.resize());
+
+  // Agregar evento click para abrir modal con procesos filtrados
+  chart.on('click', (params: any) => {
+    if (params.seriesName && params.name) {
+      // params.name es el tipo de contrato (eje Y)
+      // params.seriesName es la fase (Prep., Precontractual, Contractual, TOTAL)
+      const tipoContrato = params.name;
+      abrirModalPorTipoContrato(tipoContrato, tipoPlan);
+    }
+  });
 }
 
 function formatearMonto(monto: number): string {
