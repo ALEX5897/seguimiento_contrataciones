@@ -765,18 +765,18 @@ function renderPieChart(ref: any, data: any[], colors: string[], tipoPlan?: stri
       formatter: '{b}: {c} ({d}%)'
     },
     grid: {
-      bottom: 120
+      bottom: 160
     },
     legend: {
       show: true,
       orient: 'vertical',
-      bottom: 10,
+      bottom: 5,
       left: 'center',
       textStyle: {
         fontSize: 10,
         color: '#475569'
       },
-      itemGap: 8,
+      itemGap: 6,
       formatter: (name: string) => {
         const item = data.find((d: any) => d.name === name);
         if (!item) return name;
@@ -787,8 +787,8 @@ function renderPieChart(ref: any, data: any[], colors: string[], tipoPlan?: stri
     series: [
       {
         type: 'pie',
-        radius: ['35%', '60%'],
-        center: ['50%', '45%'],
+        radius: ['30%', '55%'],
+        center: ['50%', '35%'],
         data: data,
         itemStyle: { borderRadius: 5, borderColor: '#fff', borderWidth: 2 },
         label: { show: false },
