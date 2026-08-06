@@ -837,7 +837,7 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
           color: '#1f2937',
           fontWeight: 'bold'
         },
-        axisLabel: { fontSize: 10, color: '#1f2937', fontWeight: '500', fontFamily: 'monospace', margin: 8 },
+        axisLabel: { fontSize: 13, color: '#1f2937', fontWeight: '600', fontFamily: 'monospace', margin: 8 },
         gridIndex: 0
       }
     ],
