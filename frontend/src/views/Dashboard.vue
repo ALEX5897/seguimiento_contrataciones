@@ -305,7 +305,9 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(datos, direccion) in datosPAC.procesosConRetrasosPorDireccion" :key="direccion">
+              <tr v-for="(datos, direccion) in datosPAC.procesosConRetrasosPorDireccion" :key="direccion"
+                  class="fila-clickeable"
+                  @click="abrirModalPorRetrasos(String(direccion))">
                 <td class="direccion-cell">{{ direccion }}</td>
                 <td class="total-cell">{{ datos.total }}</td>
                 <td class="fase-cell">{{ datos.porFase.preparatoria || 0 }}</td>
@@ -455,7 +457,8 @@ const modalAbierto = ref(false);
 const faseSeleccionada = ref('');
 const tipoPlanSeleccionado = ref(''); // 'PAC' o 'NO PAC'
 const tipoContratoSeleccionado = ref(''); // Tipo de contrato filtrado
-const modalTipo = ref('fase'); // 'fase' o 'tipoContrato'
+const direccionSeleccionada = ref(''); // Dirección filtrada
+const modalTipo = ref('fase'); // 'fase', 'tipoContrato' o 'retrasos'
 
 const nombreFaseSeleccionada = computed(() => {
   const nombres: { [key: string]: string } = {
@@ -469,6 +472,9 @@ const nombreFaseSeleccionada = computed(() => {
 const tituloModal = computed(() => {
   if (modalTipo.value === 'tipoContrato') {
     return `Procesos - ${tipoContratoSeleccionado.value}`;
+  }
+  if (modalTipo.value === 'retrasos') {
+    return `Procesos Retrasados - ${direccionSeleccionada.value}`;
   }
   return `Procesos en Fase ${nombreFaseSeleccionada.value}`;
 });
@@ -487,6 +493,19 @@ const procesosFaseSeleccionada = computed(() => {
     procesos = procesos.filter((p: any) => {
       const tipoContrato = (p.tipoContratacion || 'No definido').trim().toLowerCase();
       return tipoContrato === tipoFiltro;
+    });
+  }
+  // Filtrar por retrasos si está seleccionada dirección
+  else if (modalTipo.value === 'retrasos' && direccionSeleccionada.value) {
+    procesos = procesos.filter((p: any) => {
+      const direccion = (p.direccionNombre || '').trim();
+      if (direccion !== direccionSeleccionada.value) return false;
+
+      // Verificar si tiene al menos una etapa pendiente con retraso
+      const etapasConRetraso = (p.etapasDetalle || []).some(
+        (etapa: any) => etapa.estado === 'pendiente' && (etapa.diasAtraso || 0) > 0
+      );
+      return etapasConRetraso;
     });
   }
   // Filtrar por fase si está seleccionada
@@ -518,6 +537,15 @@ function abrirModalPorTipoContrato(tipoContrato: string, tipoPlan: string) {
   tipoPlanSeleccionado.value = tipoPlan;
   faseSeleccionada.value = '';
   modalTipo.value = 'tipoContrato';
+  modalAbierto.value = true;
+}
+
+function abrirModalPorRetrasos(direccion: string) {
+  direccionSeleccionada.value = direccion;
+  tipoPlanSeleccionado.value = 'PAC';
+  faseSeleccionada.value = '';
+  tipoContratoSeleccionado.value = '';
+  modalTipo.value = 'retrasos';
   modalAbierto.value = true;
 }
 
@@ -1759,8 +1787,16 @@ function resetearFiltros() {
   transition: background-color 0.2s ease;
 }
 
+.retrasos-tabla tbody tr.fila-clickeable {
+  cursor: pointer;
+}
+
 .retrasos-tabla tbody tr:hover {
   background: #f1f5f9;
+}
+
+.retrasos-tabla tbody tr.fila-clickeable:hover {
+  background: #fecaca;
 }
 
 .retrasos-tabla td {
