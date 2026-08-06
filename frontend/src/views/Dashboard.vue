@@ -289,6 +289,68 @@
           </section>
         </div>
       </div>
+
+      <!-- RESUMEN GENERAL -->
+      <section class="resumen-general-section">
+        <h2>9. RESUMEN GENERAL</h2>
+        <div class="resumen-general-grid">
+          <div class="resumen-item">
+            <div class="item-icon">📊</div>
+            <div class="item-content">
+              <span class="item-label">Total de procesos</span>
+              <span class="item-valor">{{ datosPAC.kpisPrincipales.totalProcesos + datosNoPAC.kpisPrincipales.totalProcesos }}</span>
+            </div>
+          </div>
+
+          <div class="resumen-item">
+            <div class="item-icon">💰</div>
+            <div class="item-content">
+              <span class="item-label">Presupuesto total</span>
+              <span class="item-valor">{{ formatearMonto(datosPAC.kpisPrincipales.presupuestoPAC + datosNoPAC.kpisPrincipales.presupuestoNoPAC) }}</span>
+            </div>
+          </div>
+
+          <div class="resumen-item">
+            <div class="item-icon">⚙️</div>
+            <div class="item-content">
+              <span class="item-label">Monto en ejecución</span>
+              <span class="item-valor">{{ formatearMonto((datosPAC.kpisPrincipales.montoEnEjecucion || 0) + (datosNoPAC.kpisPrincipales.montoEnEjecucion || 0)) }}</span>
+            </div>
+          </div>
+
+          <div class="resumen-item">
+            <div class="item-icon">📋</div>
+            <div class="item-content">
+              <span class="item-label">Monto en preparatoria</span>
+              <span class="item-valor">{{ formatearMonto((datosPAC.presupuestoPorEstado?.preparatoria || 0) + (datosNoPAC.presupuestoPorEstado?.preparatoria || 0)) }}</span>
+            </div>
+          </div>
+
+          <div class="resumen-item">
+            <div class="item-icon">📝</div>
+            <div class="item-content">
+              <span class="item-label">Monto precontractual</span>
+              <span class="item-valor">{{ formatearMonto((datosPAC.presupuestoPorEstado?.precontractual || 0) + (datosNoPAC.presupuestoPorEstado?.precontractual || 0)) }}</span>
+            </div>
+          </div>
+
+          <div class="resumen-item">
+            <div class="item-icon">⏸️</div>
+            <div class="item-content">
+              <span class="item-label">Monto suspendido</span>
+              <span class="item-valor">{{ formatearMonto((datosPAC.presupuestoPorEstado?.suspendido || 0) + (datosNoPAC.presupuestoPorEstado?.suspendido || 0)) }}</span>
+            </div>
+          </div>
+
+          <div class="resumen-item">
+            <div class="item-icon">❌</div>
+            <div class="item-content">
+              <span class="item-label">Monto desierto</span>
+              <span class="item-valor">{{ formatearMonto((datosPAC.presupuestoPorEstado?.desierto || 0) + (datosNoPAC.presupuestoPorEstado?.desierto || 0)) }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
     </template>
 
     <div v-else-if="error" class="error-state">
@@ -1619,6 +1681,91 @@ function resetearFiltros() {
 
   .modal-body {
     padding: 1rem;
+  }
+}
+
+/* RESUMEN GENERAL */
+.resumen-general-section {
+  margin: 2rem auto;
+  max-width: 1200px;
+  padding: 0 1rem;
+}
+
+.resumen-general-section h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f3a70;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 3px solid #1f3a70;
+}
+
+.resumen-general-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.resumen-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-left: 4px solid #3b82f6;
+  transition: box-shadow 0.2s ease;
+}
+
+.resumen-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.item-icon {
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+}
+
+.item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.item-label {
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.item-valor {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+@media (max-width: 900px) {
+  .resumen-general-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+
+  .resumen-item {
+    padding: 1rem;
+  }
+
+  .item-icon {
+    font-size: 1.5rem;
+    min-width: 40px;
+  }
+
+  .item-valor {
+    font-size: 1.1rem;
   }
 }
 </style>
