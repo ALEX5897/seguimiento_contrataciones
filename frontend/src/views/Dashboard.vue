@@ -292,7 +292,7 @@
 
       <!-- PROCESOS CON RETRASOS POR DIRECCIÓN -->
       <section class="retrasos-section"
-        v-if="datosPAC.procesosConRetrasosPorDireccionCombinado && Object.keys(datosPAC.procesosConRetrasosPorDireccionCombinado).length > 0">
+        v-if="Object.keys(procesosRetrasadosCombinados).length > 0">
         <h2>10. PROCESOS CON RETRASOS POR DIRECCIÓN</h2>
 
         <div class="retrasos-tabla-wrapper">
@@ -307,7 +307,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(datos, direccion) in datosPAC.procesosConRetrasosPorDireccionCombinado" :key="direccion"
+              <tr v-for="(datos, direccion) in procesosRetrasadosCombinados" :key="direccion"
                   class="fila-clickeable"
                   @click="abrirModalPorRetrasosTodasDirecciones(String(direccion))">
                 <td class="direccion-cell">{{ direccion }}</td>
@@ -469,6 +469,40 @@ const nombreFaseSeleccionada = computed(() => {
     contractual: 'Contractual'
   };
   return nombres[faseSeleccionada.value] || '';
+});
+
+const procesosRetrasadosCombinados = computed(() => {
+  if (!datosPAC.value || !datosNoPAC.value) return {};
+
+  const combinado: { [key: string]: any } = {};
+
+  // Agregar procesos retrasados PAC
+  if (datosPAC.value.procesosConRetrasosPorDireccionCombinado) {
+    Object.entries(datosPAC.value.procesosConRetrasosPorDireccionCombinado).forEach(([dir, datos]: [string, any]) => {
+      if (!combinado[dir]) {
+        combinado[dir] = { total: 0, porFase: {} };
+      }
+      combinado[dir].total += datos.total;
+      Object.entries(datos.porFase).forEach(([fase, count]: [string, any]) => {
+        combinado[dir].porFase[fase] = (combinado[dir].porFase[fase] || 0) + count;
+      });
+    });
+  }
+
+  // Agregar procesos retrasados NO PAC
+  if (datosNoPAC.value.procesosConRetrasosPorDireccionCombinado) {
+    Object.entries(datosNoPAC.value.procesosConRetrasosPorDireccionCombinado).forEach(([dir, datos]: [string, any]) => {
+      if (!combinado[dir]) {
+        combinado[dir] = { total: 0, porFase: {} };
+      }
+      combinado[dir].total += datos.total;
+      Object.entries(datos.porFase).forEach(([fase, count]: [string, any]) => {
+        combinado[dir].porFase[fase] = (combinado[dir].porFase[fase] || 0) + count;
+      });
+    });
+  }
+
+  return combinado;
 });
 
 const tituloModal = computed(() => {
