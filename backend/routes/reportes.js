@@ -3262,7 +3262,8 @@ router.get('/dashboard/pac', async (req, res) => {
             preparatoria: 0,
             precontractual: 0,
             contractual: 0,
-            total: 0
+            total: 0,
+            presupuesto: 0
           };
         }
 
@@ -3270,6 +3271,7 @@ router.get('/dashboard/pac', async (req, res) => {
           procesosPorTipoContratoYFasePAC[tipoContrato][fase]++;
         }
         procesosPorTipoContratoYFasePAC[tipoContrato].total++;
+        procesosPorTipoContratoYFasePAC[tipoContrato].presupuesto += p.presupuesto || 0;
       });
 
     // Procesos por tipo de contrato y fase (NO PAC)
@@ -3285,7 +3287,8 @@ router.get('/dashboard/pac', async (req, res) => {
             preparatoria: 0,
             precontractual: 0,
             contractual: 0,
-            total: 0
+            total: 0,
+            presupuesto: 0
           };
         }
 
@@ -3293,6 +3296,7 @@ router.get('/dashboard/pac', async (req, res) => {
           procesosPorTipoContratoYFaseNoPAC[tipoContrato][fase]++;
         }
         procesosPorTipoContratoYFaseNoPAC[tipoContrato].total++;
+        procesosPorTipoContratoYFaseNoPAC[tipoContrato].presupuesto += p.presupuesto || 0;
       });
 
     // Montos en ejecución vs presupuestado

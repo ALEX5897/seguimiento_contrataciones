@@ -762,6 +762,14 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
   const precontractualData = tiposContrato.map((t: string) => data[t].precontractual || 0);
   const contractualData = tiposContrato.map((t: string) => data[t].contractual || 0);
   const totalData = tiposContrato.map((t: string) => data[t].total || 0);
+  const presupuestoData = tiposContrato.map((t: string) => data[t].presupuesto || 0);
+
+  // Función para formatear montos de forma comprimida
+  const formatearMontoComprimido = (monto: number): string => {
+    if (monto >= 1000000) return (monto / 1000000).toFixed(1) + 'M';
+    if (monto >= 1000) return (monto / 1000).toFixed(0) + 'K';
+    return monto.toString();
+  };
 
   // Calcular ancho necesario para labels según cantidad de items
   const itemCount = tiposContrato.length;
@@ -812,7 +820,11 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
       },
       {
         type: 'category',
-        data: totalData.map((val: number) => val.toString().padStart(3)),
+        data: totalData.map((val: number, idx: number) => {
+          const presupuesto = presupuestoData[idx];
+          const presupuestoFormato = formatearMontoComprimido(presupuesto);
+          return `${val.toString().padStart(3)} / $${presupuestoFormato}`;
+        }),
         position: 'right',
         name: 'TOTAL',
         nameLocation: 'end',
@@ -822,7 +834,7 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
           color: '#1f2937',
           fontWeight: 'bold'
         },
-        axisLabel: { fontSize: 11, color: '#1f2937', fontWeight: 'bold', fontFamily: 'monospace', margin: 8 },
+        axisLabel: { fontSize: 10, color: '#1f2937', fontWeight: '500', fontFamily: 'monospace', margin: 8 },
         gridIndex: 0
       }
     ],
