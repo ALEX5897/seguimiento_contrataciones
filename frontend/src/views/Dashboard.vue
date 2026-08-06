@@ -391,25 +391,32 @@ function cerrarModal() {
 
 // Función auxiliar para obtener la fase de un proceso (igual que backend)
 function obtenerFaseProceso(etapasDetalle: any[] = []): string {
-  const fases = ['preparatoria', 'precontractual', 'contractual'];
+  // Verificar si tiene la etapa "contrato" completada
+  const tieneContratoCompletado = etapasDetalle.some(e => {
+    const nombreNorm = (e.etapaNombre || '').toLowerCase().trim();
+    return (nombreNorm.includes('contrato') || nombreNorm.includes('contratacion')) &&
+           e.estado === 'completado';
+  });
+
+  if (tieneContratoCompletado) {
+    return 'contractual';
+  }
 
   // Filtrar solo etapas con fase válida (ignorar sin_clasificar)
   const etapasValidas = etapasDetalle.filter(e =>
     e.fase && e.fase !== 'sin_clasificar'
   );
 
-  for (const fase of fases) {
-    const etapasFase = etapasValidas.filter(e => e.fase === fase);
-    const hayPendiente = etapasFase.some(e =>
-      e.estado === 'pendiente' || e.estado === 'en_proceso'
-    );
+  // Verificar si tiene precontractuales completadas
+  const tienePrecontractualCompletada = etapasValidas.some(e =>
+    e.fase === 'precontractual' && e.estado === 'completado'
+  );
 
-    if (hayPendiente) {
-      return fase;
-    }
+  if (tienePrecontractualCompletada) {
+    return 'precontractual';
   }
 
-  return 'contractual';
+  return 'preparatoria';
 }
 
 const fechaCorte = computed(() => {
