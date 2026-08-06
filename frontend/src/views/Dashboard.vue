@@ -168,19 +168,19 @@
           </div>
         </section>
 
-        <!-- Gráfico NO PAC - Distribución por Estado -->
-        <section class="chart-container chart-item">
-          <h3>NO PAC - Distribución por Estado</h3>
-          <div class="chart-wrapper">
-            <div ref="chartDistribProcesosNoPAC" class="chart"></div>
-          </div>
-        </section>
-
         <!-- Gráfico PAC - Distribución por Tipo de Contrato y Fase -->
         <section class="chart-container chart-item">
           <h3>PAC - Distribución por Tipo de Contrato y Fase</h3>
           <div class="chart-wrapper chart-tipo-contrato">
             <div ref="chartProcedimientosYFasePAC" class="chart"></div>
+          </div>
+        </section>
+
+        <!-- Gráfico NO PAC - Distribución por Estado -->
+        <section class="chart-container chart-item">
+          <h3>NO PAC - Distribución por Estado</h3>
+          <div class="chart-wrapper">
+            <div ref="chartDistribProcesosNoPAC" class="chart"></div>
           </div>
         </section>
 
