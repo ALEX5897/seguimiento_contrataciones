@@ -512,9 +512,9 @@ function renderizarGraficos() {
   renderPieChart(
     chartDistribProcesosPAC,
     [
-      { value: datosPAC.value.procesosPorFase.preparatoria, name: 'Fase Preparatoria' },
-      { value: datosPAC.value.procesosPorFase.precontractual, name: 'Fase Precontractual' },
-      { value: datosPAC.value.procesosPorFase.contractual, name: 'Fase Contractual' }
+      { value: datosPAC.value.procesosPorFase.preparatoria, name: 'Fase Preparatoria', presupuesto: datosPAC.value.presupuestoPorFase.preparatoria },
+      { value: datosPAC.value.procesosPorFase.precontractual, name: 'Fase Precontractual', presupuesto: datosPAC.value.presupuestoPorFase.precontractual },
+      { value: datosPAC.value.procesosPorFase.contractual, name: 'Fase Contractual', presupuesto: datosPAC.value.presupuestoPorFase.contractual }
     ],
     ['#3b82f6', '#10b981', '#f59e0b'],
     'PAC'
@@ -540,9 +540,9 @@ function renderizarGraficos() {
   renderPieChart(
     chartDistribProcesosNoPAC,
     [
-      { value: datosNoPAC.value.procesosPorFase.preparatoria, name: 'Fase Preparatoria' },
-      { value: datosNoPAC.value.procesosPorFase.precontractual, name: 'Fase Precontractual' },
-      { value: datosNoPAC.value.procesosPorFase.contractual, name: 'Fase Contractual' }
+      { value: datosNoPAC.value.procesosPorFase.preparatoria, name: 'Fase Preparatoria', presupuesto: datosNoPAC.value.presupuestoPorFase.preparatoria },
+      { value: datosNoPAC.value.procesosPorFase.precontractual, name: 'Fase Precontractual', presupuesto: datosNoPAC.value.presupuestoPorFase.precontractual },
+      { value: datosNoPAC.value.procesosPorFase.contractual, name: 'Fase Contractual', presupuesto: datosNoPAC.value.presupuestoPorFase.contractual }
     ],
     ['#3b82f6', '#10b981', '#f59e0b'],
     'NO PAC'
@@ -585,7 +585,9 @@ function renderPieChart(ref: any, data: any[], colors: string[], tipoPlan?: stri
       },
       formatter: (name: string) => {
         const item = data.find((d: any) => d.name === name);
-        return item ? `${name}: ${item.value}` : name;
+        if (!item) return name;
+        const presupuestoTexto = item.presupuesto ? ` - ${formatearMonto(item.presupuesto)}` : '';
+        return `${name}: ${item.value}${presupuestoTexto}`;
       }
     },
     series: [
