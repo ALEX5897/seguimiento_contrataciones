@@ -73,20 +73,57 @@
         </div>
       </section>
 
-      <!-- LAYOUT DOS COLUMNAS: PAC Y NO PAC -->
-      <div class="dashboard-two-columns">
-        <!-- COLUMNA IZQUIERDA: PROCESOS PAC -->
-        <div class="column-pac">
-          <div class="column-header">
-            <i class="ri-check-double-line"></i>
-            <h2>PROCESOS PAC</h2>
+      <!-- SECCIÓN DE KPIs: NO PAC (izquierda) Y PAC (derecha) -->
+      <div class="dashboard-kpis-row">
+        <!-- KPIs NO PAC - IZQUIERDA -->
+        <div class="kpis-section kpis-nopac">
+          <div class="kpis-header">
+            <i class="ri-close-line"></i>
+            <h3>PROCESOS NO PAC</h3>
           </div>
+          <div class="kpis-column">
+            <div class="kpi-card-btn">
+              <div class="kpi-icon">{{ datosNoPAC.kpisPrincipales.totalProcesos }}</div>
+              <div class="kpi-content">
+                <div class="kpi-label">Total Procesos</div>
+                <div class="kpi-detalle">{{ datosNoPAC.kpisPrincipales.totalProcesos }} contratos</div>
+              </div>
+            </div>
 
-          <!-- KPIs PAC -->
-          <section class="kpis-container">
-            <h3 class="kpis-title">Indicadores Clave (KPIs)</h3>
-            <div class="kpis-column">
-              <div class="kpi-card-btn">
+            <div class="kpi-card-btn">
+              <div class="kpi-icon">💵</div>
+              <div class="kpi-content">
+                <div class="kpi-label">Presupuesto</div>
+                <div class="kpi-detalle">{{ formatearMonto(datosNoPAC.kpisPrincipales.presupuestoNoPAC) }}</div>
+              </div>
+            </div>
+
+            <div class="kpi-card-btn">
+              <div class="kpi-icon">⚙️</div>
+              <div class="kpi-content">
+                <div class="kpi-label">En Ejecución</div>
+                <div class="kpi-detalle">{{ datosNoPAC.kpisPrincipales.procesosConContratoCompletado }} procesos</div>
+              </div>
+            </div>
+
+            <div class="kpi-card-btn kpi-avance">
+              <div class="kpi-icon kpi-icon-percentage">{{ avanceNoPAC }}%</div>
+              <div class="kpi-content">
+                <div class="kpi-label">% Avance General</div>
+                <div class="kpi-detalle">Procesos</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPIs PAC - DERECHA -->
+        <div class="kpis-section kpis-pac">
+          <div class="kpis-header">
+            <i class="ri-check-double-line"></i>
+            <h3>PROCESOS PAC</h3>
+          </div>
+          <div class="kpis-column">
+            <div class="kpi-card-btn">
               <div class="kpi-icon">{{ datosPAC.kpisPrincipales.totalProcesos }}</div>
               <div class="kpi-content">
                 <div class="kpi-label">Total Procesos</div>
@@ -117,56 +154,7 @@
                 <div class="kpi-detalle">Procesos</div>
               </div>
             </div>
-            </div>
-          </section>
-
-        </div>
-
-        <!-- COLUMNA DERECHA: PROCESOS NO PAC -->
-        <div class="column-nopac">
-          <div class="column-header">
-            <i class="ri-close-line"></i>
-            <h2>PROCESOS NO PAC</h2>
           </div>
-
-          <!-- KPIs NO PAC -->
-          <section class="kpis-container">
-            <h3 class="kpis-title">Indicadores Clave (KPIs)</h3>
-            <div class="kpis-column">
-              <div class="kpi-card-btn">
-                <div class="kpi-icon">{{ datosNoPAC.kpisPrincipales.totalProcesos }}</div>
-              <div class="kpi-content">
-                <div class="kpi-label">Total Procesos</div>
-                <div class="kpi-detalle">{{ datosNoPAC.kpisPrincipales.totalProcesos }} contratos</div>
-              </div>
-            </div>
-
-            <div class="kpi-card-btn">
-              <div class="kpi-icon">💵</div>
-              <div class="kpi-content">
-                <div class="kpi-label">Presupuesto</div>
-                <div class="kpi-detalle">{{ formatearMonto(datosNoPAC.kpisPrincipales.presupuestoNoPAC) }}</div>
-              </div>
-            </div>
-
-            <div class="kpi-card-btn">
-              <div class="kpi-icon">⚙️</div>
-              <div class="kpi-content">
-                <div class="kpi-label">En Ejecución</div>
-                <div class="kpi-detalle">{{ datosNoPAC.kpisPrincipales.procesosConContratoCompletado }} procesos</div>
-              </div>
-            </div>
-
-            <div class="kpi-card-btn kpi-avance">
-              <div class="kpi-icon kpi-icon-percentage">{{ avanceNoPAC }}%</div>
-              <div class="kpi-content">
-                <div class="kpi-label">% Avance General</div>
-                <div class="kpi-detalle">Procesos</div>
-              </div>
-            </div>
-            </div>
-          </section>
-
         </div>
       </div>
 
@@ -1222,6 +1210,56 @@ function resetearFiltros() {
   border-radius: 8px;
   color: #991b1b;
   text-align: center;
+}
+
+.dashboard-kpis-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.kpis-section {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.kpis-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.kpis-header i {
+  font-size: 1.5rem;
+}
+
+.kpis-nopac .kpis-header {
+  border-bottom-color: #dc2626;
+}
+
+.kpis-nopac .kpis-header i {
+  color: #dc2626;
+}
+
+.kpis-pac .kpis-header {
+  border-bottom-color: #2563eb;
+}
+
+.kpis-pac .kpis-header i {
+  color: #2563eb;
+}
+
+.kpis-header h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
 }
 
 .dashboard-two-columns {
