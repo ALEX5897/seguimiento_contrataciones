@@ -283,7 +283,10 @@
     <div v-if="modalAbierto" class="modal-overlay" @click.self="cerrarModal">
       <div class="modal-contenido">
         <div class="modal-header">
-          <h2>Procesos en Fase {{ nombreFaseSeleccionada }}</h2>
+          <div class="modal-header-content">
+            <h2>Procesos en Fase {{ nombreFaseSeleccionada }}</h2>
+            <p class="modal-header-presupuesto">Presupuesto: {{ formatearMonto(presupuestoFaseSeleccionada) }}</p>
+          </div>
           <button class="btn-cerrar" @click="cerrarModal">
             <i class="ri-close-line"></i>
           </button>
@@ -298,7 +301,6 @@
               <div class="proceso-nombre">{{ proceso.nombre }}</div>
               <div class="proceso-detalles">
                 <span class="presupuesto">💰 {{ formatearMonto(proceso.presupuesto) }}</span>
-                <span class="avance">📊 {{ proceso.porcentajeAvance }}%</span>
               </div>
             </div>
           </div>
@@ -365,11 +367,11 @@ const procesosFaseSeleccionada = computed(() => {
     return fase === faseSeleccionada.value;
   });
 
-  console.log(`Fase seleccionada: ${faseSeleccionada.value}, Procesos encontrados: ${procesos.length}, Total: ${datos.procesos.length}`);
-  if (procesos.length === 0) {
-  }
-
   return procesos;
+});
+
+const presupuestoFaseSeleccionada = computed(() => {
+  return procesosFaseSeleccionada.value.reduce((sum: number, p: any) => sum + (p.presupuesto || 0), 0);
 });
 
 function abrirModal(fase: string, tipoPlan: string) {
@@ -1230,16 +1232,28 @@ function resetearFiltros() {
 .modal-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 1.5rem;
   border-bottom: 2px solid #e2e8f0;
+}
+
+.modal-header-content {
+  flex: 1;
 }
 
 .modal-header h2 {
   font-size: 1.25rem;
   font-weight: 700;
   color: #0f172a;
+  margin: 0 0 0.5rem 0;
+}
+
+.modal-header-presupuesto {
+  font-size: 0.95rem;
+  color: #64748b;
   margin: 0;
+  font-weight: 600;
+  color: #f59e0b;
 }
 
 .btn-cerrar {
