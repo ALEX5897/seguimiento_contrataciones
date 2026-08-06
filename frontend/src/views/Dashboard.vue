@@ -395,18 +395,10 @@ const procesosFaseSeleccionada = computed(() => {
   // Filtrar por tipo de contrato si está seleccionado
   if (modalTipo.value === 'tipoContrato' && tipoContratoSeleccionado.value) {
     const tipoFiltro = tipoContratoSeleccionado.value.trim().toLowerCase();
-    console.log('Filtrando por tipo de contrato:', tipoFiltro);
-    console.log('Total de procesos disponibles:', procesos.length);
-
     procesos = procesos.filter((p: any) => {
       const tipoContrato = (p.tipoContratacion || 'No definido').trim().toLowerCase();
       return tipoContrato === tipoFiltro;
     });
-
-    console.log('Procesos encontrados después del filtro:', procesos.length);
-    if (procesos.length === 0) {
-      console.log('Tipos de contrato únicos en los procesos:', [...new Set(datos.procesos.map((p: any) => p.tipoContratacion))]);
-    }
   }
   // Filtrar por fase si está seleccionada
   else if (modalTipo.value === 'fase' && faseSeleccionada.value) {
@@ -755,6 +747,17 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
   // Validar que hay datos
   if (tiposContrato.length === 0) return;
 
+  // Crear mapa de nombres truncados a nombres completos
+  const truncatedToFull: Record<string, string> = {};
+  const axisData = tiposContrato.map((t: string) => {
+    let displayName = t;
+    if (t.length > 25) {
+      displayName = t.substring(0, 22) + '...';
+    }
+    truncatedToFull[displayName] = t;
+    return displayName;
+  });
+
   const preparatoriaData = tiposContrato.map((t: string) => data[t].preparatoria || 0);
   const precontractualData = tiposContrato.map((t: string) => data[t].precontractual || 0);
   const contractualData = tiposContrato.map((t: string) => data[t].contractual || 0);
@@ -772,7 +775,8 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
       formatter: (params: any) => {
-        let html = `<div style="font-size:13px;font-weight:600">${params[0].axisValue}</div>`;
+        const fullName = truncatedToFull[params[0].axisValue] || params[0].axisValue;
+        let html = `<div style="font-size:13px;font-weight:600">${fullName}</div>`;
         params.forEach((p: any) => {
           html += `<div style="font-size:13px">${p.seriesName}: ${p.value}</div>`;
         });
@@ -801,13 +805,7 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
     },
     yAxis: {
       type: 'category',
-      data: tiposContrato.map((t: string) => {
-        // Mostrar nombre completo en tooltip, truncar solo si es muy largo
-        if (t.length > 25) {
-          return t.substring(0, 22) + '...';
-        }
-        return t;
-      }),
+      data: axisData,
       axisLabel: { fontSize: 11, color: '#475569', margin: 8 }
     },
     series: [
@@ -880,11 +878,10 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
   // Agregar evento click para abrir modal con procesos filtrados
   chart.on('click', (params: any) => {
     if (params.seriesName && params.name) {
-      // params.name es el tipo de contrato (eje Y)
-      // params.seriesName es la fase (Prep., Precontractual, Contractual, TOTAL)
-      const tipoContrato = params.name;
-      console.log('Tipo de Contrato seleccionado:', tipoContrato);
-      console.log('Datos disponibles:', Object.keys(data).slice(0, 5));
+      // params.name es el tipo de contrato (eje Y) - podría estar truncado
+      // Obtener el nombre completo usando el mapa
+      const displayedName = params.name;
+      const tipoContrato = truncatedToFull[displayedName] || displayedName;
       abrirModalPorTipoContrato(tipoContrato, tipoPlan);
     }
   });
