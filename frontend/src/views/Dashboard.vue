@@ -193,74 +193,77 @@
         </section>
       </div>
 
-      <!-- PROCESOS CON RETRASOS POR DIRECCIÓN -->
-      <section class="retrasos-section"
-        v-if="Object.keys(procesosRetrasadosCombinados).length > 0">
-        <h2>10. PROCESOS CON RETRASOS POR DIRECCIÓN</h2>
+      <!-- SECCIÓN KPIs: RETRASOS (izquierda) Y CUMPLIMIENTO (derecha) -->
+      <div class="dashboard-kpis-tables-row">
+        <!-- PROCESOS CON RETRASOS POR DIRECCIÓN - IZQUIERDA -->
+        <section class="retrasos-section"
+          v-if="Object.keys(procesosRetrasadosCombinados).length > 0">
+          <h2>10. PROCESOS CON RETRASOS POR DIRECCIÓN</h2>
 
-        <div class="retrasos-tabla-wrapper">
-          <table class="retrasos-tabla">
-            <thead>
-              <tr>
-                <th>Dirección</th>
-                <th>Total Retrasados</th>
-                <th>Preparatoria</th>
-                <th>Precontractual</th>
-                <th>Contractual</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(datos, direccion) in procesosRetrasadosCombinados" :key="direccion"
-                  class="fila-clickeable"
-                  @click="abrirModalPorRetrasosTodasDirecciones(String(direccion))">
-                <td class="direccion-cell">{{ direccion }}</td>
-                <td class="total-cell">{{ datos.total }}</td>
-                <td class="fase-cell">{{ datos.porFase.preparatoria || 0 }}</td>
-                <td class="fase-cell">{{ datos.porFase.precontractual || 0 }}</td>
-                <td class="fase-cell">{{ datos.porFase.contractual || 0 }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+          <div class="retrasos-tabla-wrapper">
+            <table class="retrasos-tabla">
+              <thead>
+                <tr>
+                  <th>Dirección</th>
+                  <th>Total Retrasados</th>
+                  <th>Preparatoria</th>
+                  <th>Precontractual</th>
+                  <th>Contractual</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(datos, direccion) in procesosRetrasadosCombinados" :key="direccion"
+                    class="fila-clickeable"
+                    @click="abrirModalPorRetrasosTodasDirecciones(String(direccion))">
+                  <td class="direccion-cell">{{ direccion }}</td>
+                  <td class="total-cell">{{ datos.total }}</td>
+                  <td class="fase-cell">{{ datos.porFase.preparatoria || 0 }}</td>
+                  <td class="fase-cell">{{ datos.porFase.precontractual || 0 }}</td>
+                  <td class="fase-cell">{{ datos.porFase.contractual || 0 }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-      <!-- NIVEL DE CUMPLIMIENTO POR DIRECCIÓN -->
-      <section class="cumplimiento-section"
-        v-if="Object.keys(nivelCumplimientoCombinado).length > 0">
-        <h2>11. NIVEL DE CUMPLIMIENTO POR DIRECCIÓN</h2>
+        <!-- NIVEL DE CUMPLIMIENTO POR DIRECCIÓN - DERECHA -->
+        <section class="cumplimiento-section"
+          v-if="Object.keys(nivelCumplimientoCombinado).length > 0">
+          <h2>11. NIVEL DE CUMPLIMIENTO POR DIRECCIÓN</h2>
 
-        <div class="cumplimiento-tabla-wrapper">
-          <table class="cumplimiento-tabla">
-            <thead>
-              <tr>
-                <th>Dirección</th>
-                <th>Total Procesos</th>
-                <th>% Completados</th>
-                <th>% Sin Retrasos</th>
-                <th>% Con Retrasos</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(datos, direccion) in nivelCumplimientoCombinado" :key="direccion">
-                <td class="direccion-cell">{{ direccion }}</td>
-                <td class="total-cell">{{ datos.total }}</td>
-                <td class="porcentaje-cell">
-                  <span class="porcentaje-badge completados">{{ datos.porcentajeCompletados }}%</span>
-                  <span class="porcentaje-detail">({{ datos.completados }})</span>
-                </td>
-                <td class="porcentaje-cell">
-                  <span class="porcentaje-badge sinretrasos">{{ datos.porcentajeSinRetrasos }}%</span>
-                  <span class="porcentaje-detail">({{ datos.sinRetrasos }})</span>
-                </td>
-                <td class="porcentaje-cell">
-                  <span class="porcentaje-badge conretrasos">{{ datos.porcentajeConRetrasos }}%</span>
-                  <span class="porcentaje-detail">({{ datos.conRetrasos }})</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+          <div class="cumplimiento-tabla-wrapper">
+            <table class="cumplimiento-tabla">
+              <thead>
+                <tr>
+                  <th>Dirección</th>
+                  <th>Total Procesos</th>
+                  <th>% Completados</th>
+                  <th>% Sin Retrasos</th>
+                  <th>% Con Retrasos</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(datos, direccion) in nivelCumplimientoCombinado" :key="direccion">
+                  <td class="direccion-cell">{{ direccion }}</td>
+                  <td class="total-cell">{{ datos.total }}</td>
+                  <td class="porcentaje-cell">
+                    <span class="porcentaje-badge completados">{{ datos.porcentajeCompletados }}%</span>
+                    <span class="porcentaje-detail">({{ datos.completados }})</span>
+                  </td>
+                  <td class="porcentaje-cell">
+                    <span class="porcentaje-badge sinretrasos">{{ datos.porcentajeSinRetrasos }}%</span>
+                    <span class="porcentaje-detail">({{ datos.sinRetrasos }})</span>
+                  </td>
+                  <td class="porcentaje-cell">
+                    <span class="porcentaje-badge conretrasos">{{ datos.porcentajeConRetrasos }}%</span>
+                    <span class="porcentaje-detail">({{ datos.conRetrasos }})</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
 
     </template>
 
@@ -1818,11 +1821,19 @@ function resetearFiltros() {
   }
 }
 
+/* CONTENEDOR PARA KPIs DE TABLAS (Retrasos y Cumplimiento) */
+.dashboard-kpis-tables-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
 /* PROCESOS CON RETRASOS */
 .retrasos-section {
-  margin: 2rem auto;
-  max-width: 1200px;
-  padding: 0 1rem;
+  margin: 0;
+  max-width: 100%;
+  padding: 0;
 }
 
 .retrasos-section h2 {
@@ -1938,9 +1949,9 @@ function resetearFiltros() {
 
 /* NIVEL DE CUMPLIMIENTO */
 .cumplimiento-section {
-  margin: 2rem auto;
-  max-width: 1200px;
-  padding: 0 1rem;
+  margin: 0;
+  max-width: 100%;
+  padding: 0;
 }
 
 .cumplimiento-section h2 {
