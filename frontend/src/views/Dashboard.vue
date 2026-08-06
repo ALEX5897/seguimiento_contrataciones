@@ -394,9 +394,10 @@ const procesosFaseSeleccionada = computed(() => {
 
   // Filtrar por tipo de contrato si está seleccionado
   if (modalTipo.value === 'tipoContrato' && tipoContratoSeleccionado.value) {
+    const tipoFiltro = tipoContratoSeleccionado.value.trim().toLowerCase();
     procesos = procesos.filter((p: any) => {
-      const tipoContrato = p.tipoContratacion || 'No definido';
-      return tipoContrato === tipoContratoSeleccionado.value;
+      const tipoContrato = (p.tipoContratacion || 'No definido').trim().toLowerCase();
+      return tipoContrato === tipoFiltro;
     });
   }
   // Filtrar por fase si está seleccionada
@@ -874,6 +875,8 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
       // params.name es el tipo de contrato (eje Y)
       // params.seriesName es la fase (Prep., Precontractual, Contractual, TOTAL)
       const tipoContrato = params.name;
+      console.log('Tipo de Contrato seleccionado:', tipoContrato);
+      console.log('Datos disponibles:', Object.keys(data).slice(0, 5));
       abrirModalPorTipoContrato(tipoContrato, tipoPlan);
     }
   });
