@@ -803,11 +803,21 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
       axisLabel: { fontSize: 11, color: '#64748b' },
       splitLine: { show: true, lineStyle: { color: '#e2e8f0' } }
     },
-    yAxis: {
-      type: 'category',
-      data: axisData,
-      axisLabel: { fontSize: 11, color: '#475569', margin: 8 }
-    },
+    yAxis: [
+      {
+        type: 'category',
+        data: axisData,
+        axisLabel: { fontSize: 11, color: '#475569', margin: 8 },
+        gridIndex: 0
+      },
+      {
+        type: 'category',
+        data: totalData.map((val: number) => val.toString().padStart(3)),
+        position: 'right',
+        axisLabel: { fontSize: 11, color: '#1f2937', fontWeight: 'bold', fontFamily: 'monospace', margin: 8 },
+        gridIndex: 0
+      }
+    ],
     series: [
       {
         name: 'Prep.',
@@ -858,19 +868,6 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
         name: 'TOTAL',
         type: 'bar',
         data: totalData,
-        label: {
-          show: true,
-          position: 'right',
-          formatter: (params: any) => {
-            if (params.value <= 0) return '';
-            return params.value.toString().padStart(3);
-          },
-          fontSize: 11,
-          fontWeight: 'bold',
-          color: '#1f2937',
-          fontFamily: 'monospace',
-          distance: 20
-        },
         itemStyle: { color: 'transparent' },
         z: 0
       }
