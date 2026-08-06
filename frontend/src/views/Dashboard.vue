@@ -46,6 +46,33 @@
 
     <template v-else-if="datosPAC && datosNoPAC">
 
+      <!-- KPIs PRINCIPALES GENERALES -->
+      <section class="kpis-principales">
+        <div class="kpi-card-principal">
+          <div class="kpi-icon-principal">{{ datosPAC.kpisPrincipales.totalProcesos + datosNoPAC.kpisPrincipales.totalProcesos }}</div>
+          <div class="kpi-content-principal">
+            <div class="kpi-label-principal">Total de Procesos</div>
+            <div class="kpi-detalle-principal">{{ datosPAC.kpisPrincipales.totalProcesos + datosNoPAC.kpisPrincipales.totalProcesos }} contratos</div>
+          </div>
+        </div>
+
+        <div class="kpi-card-principal">
+          <div class="kpi-icon-principal">💰</div>
+          <div class="kpi-content-principal">
+            <div class="kpi-label-principal">Presupuesto Total</div>
+            <div class="kpi-detalle-principal">{{ formatearMonto(datosPAC.kpisPrincipales.presupuestoPAC + datosNoPAC.kpisPrincipales.presupuestoNoPAC) }}</div>
+          </div>
+        </div>
+
+        <div class="kpi-card-principal">
+          <div class="kpi-icon-principal">📊</div>
+          <div class="kpi-content-principal">
+            <div class="kpi-label-principal">Avance General</div>
+            <div class="kpi-detalle-principal">{{ avanceGeneral }}%</div>
+          </div>
+        </div>
+      </section>
+
       <!-- LAYOUT DOS COLUMNAS: PAC Y NO PAC -->
       <div class="dashboard-two-columns">
         <!-- COLUMNA IZQUIERDA: PROCESOS PAC -->
@@ -56,8 +83,10 @@
           </div>
 
           <!-- KPIs PAC -->
-          <section class="kpis-column">
-            <div class="kpi-card-btn">
+          <section class="kpis-container">
+            <h3 class="kpis-title">Indicadores Clave (KPIs)</h3>
+            <div class="kpis-column">
+              <div class="kpi-card-btn">
               <div class="kpi-icon">{{ datosPAC.kpisPrincipales.totalProcesos }}</div>
               <div class="kpi-content">
                 <div class="kpi-label">Total Procesos</div>
@@ -79,6 +108,15 @@
                 <div class="kpi-label">En Ejecución</div>
                 <div class="kpi-detalle">{{ datosPAC.kpisPrincipales.procesosEnEjecucion }} procesos</div>
               </div>
+            </div>
+
+            <div class="kpi-card-btn kpi-avance">
+              <div class="kpi-icon kpi-icon-percentage">{{ datosPAC.velocimetro.valor }}%</div>
+              <div class="kpi-content">
+                <div class="kpi-label">% Avance</div>
+                <div class="kpi-detalle">Ejecución</div>
+              </div>
+            </div>
             </div>
           </section>
 
@@ -144,9 +182,11 @@
           </div>
 
           <!-- KPIs NO PAC -->
-          <section class="kpis-column">
-            <div class="kpi-card-btn">
-              <div class="kpi-icon">{{ datosNoPAC.kpisPrincipales.totalProcesos }}</div>
+          <section class="kpis-container">
+            <h3 class="kpis-title">Indicadores Clave (KPIs)</h3>
+            <div class="kpis-column">
+              <div class="kpi-card-btn">
+                <div class="kpi-icon">{{ datosNoPAC.kpisPrincipales.totalProcesos }}</div>
               <div class="kpi-content">
                 <div class="kpi-label">Total Procesos</div>
                 <div class="kpi-detalle">{{ datosNoPAC.kpisPrincipales.totalProcesos }} contratos</div>
@@ -167,6 +207,15 @@
                 <div class="kpi-label">En Ejecución</div>
                 <div class="kpi-detalle">{{ datosNoPAC.kpisPrincipales.procesosEnEjecucion }} procesos</div>
               </div>
+            </div>
+
+            <div class="kpi-card-btn kpi-avance">
+              <div class="kpi-icon kpi-icon-percentage">{{ datosNoPAC.velocimetro.valor }}%</div>
+              <div class="kpi-content">
+                <div class="kpi-label">% Avance</div>
+                <div class="kpi-detalle">Ejecución</div>
+              </div>
+            </div>
             </div>
           </section>
 
@@ -268,6 +317,26 @@ const fechaCorte = computed(() => {
 const hayFiltros = computed(() =>
   filtroDireccion.value || filtroProcedimiento.value || filtroCuatrimestre.value
 );
+
+const avanceGeneral = computed(() => {
+  if (!datosPAC.value || !datosNoPAC.value) return 0;
+
+  const totalEtapasPAC = datosPAC.value.resumenGeneral?.totalEtapas || 0;
+  const etapasCompletadasPAC = datosPAC.value.resumenGeneral?.etapasCompletadas || 0;
+  const totalEtapasNoPAC = datosNoPAC.value.resumenGeneral?.totalEtapas || 0;
+  const etapasCompletadasNoPAC = datosNoPAC.value.resumenGeneral?.etapasCompletadas || 0;
+
+  const totalEtapas = totalEtapasPAC + totalEtapasNoPAC;
+  const etapasCompletadas = etapasCompletadasPAC + etapasCompletadasNoPAC;
+
+  console.log(`PAC: ${etapasCompletadasPAC}/${totalEtapasPAC} = ${totalEtapasPAC > 0 ? Math.round((etapasCompletadasPAC / totalEtapasPAC) * 100) : 0}%`);
+  console.log(`NO PAC: ${etapasCompletadasNoPAC}/${totalEtapasNoPAC} = ${totalEtapasNoPAC > 0 ? Math.round((etapasCompletadasNoPAC / totalEtapasNoPAC) * 100) : 0}%`);
+  console.log(`TOTAL: ${etapasCompletadas}/${totalEtapas} = ${totalEtapas > 0 ? Math.round((etapasCompletadas / totalEtapas) * 100) : 0}%`);
+
+  if (totalEtapas === 0) return 0;
+
+  return Math.round((etapasCompletadas / totalEtapas) * 100);
+});
 
 onMounted(() => {
   cargarDashboard();
@@ -565,56 +634,71 @@ function resetearFiltros() {
   filtroCuatrimestre.value = '';
   cargarDashboard();
 }
+
 </script>
 
 <style scoped>
 .dashboard-pac {
   background: #f8fafc;
   min-height: 100vh;
-  padding: 2rem 1rem;
+  padding: 0;
+  padding-top: 65px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
+
 
 .dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
-  border-radius: 8px;
+  padding: 1rem 2rem;
+  background: #1f3a70;
+  border-radius: 0;
   color: white;
+  position: fixed;
+  top: 0;
+  left: 204px;
+  right: 0;
+  z-index: 1001;
+  box-sizing: border-box;
+  border-right: 1px solid rgba(148, 186, 224, 0.28);
+}
+
+@media (max-width: 900px) {
+  .dashboard-header {
+    left: 0;
+  }
 }
 
 .header-title {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .header-title i {
-  font-size: 2.5rem;
+  font-size: 1.75rem;
 }
 
 .header-title h1 {
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 700;
   margin: 0;
   line-height: 1.2;
 }
 
 .header-title p {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   color: #e0e7ff;
   margin: 0;
-  margin-top: 0.25rem;
+  margin-left: 0.25rem;
 }
 
 .header-date {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.95rem;
+  gap: 0.4rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
@@ -753,7 +837,7 @@ function resetearFiltros() {
 
 .kpis-column {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
 }
 
@@ -931,6 +1015,107 @@ function resetearFiltros() {
   }
 }
 
+.kpis-principales {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 8px;
+  border-top: 3px solid #2563eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.kpi-card-principal {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  border-left: 4px solid #2563eb;
+  align-items: center;
+}
+
+.kpi-icon-principal {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 2rem;
+  font-weight: 700;
+  background: #f0f4ff;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.kpi-content-principal {
+  flex: 1;
+}
+
+.kpi-label-principal {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.kpi-detalle-principal {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.kpis-container {
+  background: white;
+  padding: 1.25rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.kpis-title {
+  margin: 0 0 1rem 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.75rem;
+}
+
+.kpi-avance {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 2px solid #0ea5e9;
+}
+
+.column-nopac .kpi-avance {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 2px solid #ef4444;
+}
+
+.kpi-icon-percentage {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  color: white !important;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.column-nopac .kpi-icon-percentage {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+@media (max-width: 1024px) {
+  .kpis-column {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .dashboard-header {
     flex-direction: column;
@@ -944,6 +1129,10 @@ function resetearFiltros() {
 
   .header-title h1 {
     font-size: 1.25rem;
+  }
+
+  .kpis-principales {
+    grid-template-columns: 1fr;
   }
 
   .kpis-column {
