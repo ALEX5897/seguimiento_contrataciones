@@ -120,21 +120,6 @@
             </div>
           </section>
 
-          <!-- Gráficos PAC -->
-          <section class="chart-container">
-            <h3>Distribución por Estado</h3>
-            <div class="chart-wrapper">
-              <div ref="chartDistribProcesosPAC" class="chart"></div>
-            </div>
-          </section>
-
-          <!-- Gráfico Tipo de Contrato y Fases PAC -->
-          <section class="chart-container">
-            <h3>Distribución por Tipo de Contrato y Fase</h3>
-            <div class="chart-wrapper chart-tipo-contrato">
-              <div ref="chartProcedimientosYFasePAC" class="chart"></div>
-            </div>
-          </section>
         </div>
 
         <!-- COLUMNA DERECHA: PROCESOS NO PAC -->
@@ -182,22 +167,42 @@
             </div>
           </section>
 
-          <!-- Gráficos NO PAC -->
-          <section class="chart-container">
-            <h3>Distribución por Estado</h3>
-            <div class="chart-wrapper">
-              <div ref="chartDistribProcesosNoPAC" class="chart"></div>
-            </div>
-          </section>
-
-          <!-- Gráfico Procedimientos y Fases NO PAC -->
-          <section class="chart-container">
-            <h3>Distribución por Procedimiento y Fase</h3>
-            <div class="chart-wrapper chart-tipo-contrato">
-              <div ref="chartProcedimientosYFaseNoPAC" class="chart"></div>
-            </div>
-          </section>
         </div>
+      </div>
+
+      <!-- GRÁFICOS EN UNA LÍNEA -->
+      <div class="dashboard-charts-row">
+        <!-- Gráfico PAC - Distribución por Estado -->
+        <section class="chart-container chart-item">
+          <h3>PAC - Distribución por Estado</h3>
+          <div class="chart-wrapper">
+            <div ref="chartDistribProcesosPAC" class="chart"></div>
+          </div>
+        </section>
+
+        <!-- Gráfico NO PAC - Distribución por Estado -->
+        <section class="chart-container chart-item">
+          <h3>NO PAC - Distribución por Estado</h3>
+          <div class="chart-wrapper">
+            <div ref="chartDistribProcesosNoPAC" class="chart"></div>
+          </div>
+        </section>
+
+        <!-- Gráfico PAC - Distribución por Tipo de Contrato y Fase -->
+        <section class="chart-container chart-item">
+          <h3>PAC - Distribución por Tipo de Contrato y Fase</h3>
+          <div class="chart-wrapper chart-tipo-contrato">
+            <div ref="chartProcedimientosYFasePAC" class="chart"></div>
+          </div>
+        </section>
+
+        <!-- Gráfico NO PAC - Distribución por Procedimiento y Fase -->
+        <section class="chart-container chart-item">
+          <h3>NO PAC - Distribución por Procedimiento y Fase</h3>
+          <div class="chart-wrapper chart-tipo-contrato">
+            <div ref="chartProcedimientosYFaseNoPAC" class="chart"></div>
+          </div>
+        </section>
       </div>
 
       <!-- PROCESOS CON RETRASOS POR DIRECCIÓN -->
@@ -1224,6 +1229,17 @@ function resetearFiltros() {
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
   margin-top: 2rem;
+}
+
+.dashboard-charts-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.chart-item {
+  margin: 0;
 }
 
 .column-pac,
