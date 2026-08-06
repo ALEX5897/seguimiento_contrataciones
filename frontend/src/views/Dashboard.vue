@@ -851,7 +851,7 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
           show: true,
           position: 'inside',
           formatter: (params: any) => params.value > 0 ? params.value : '',
-          fontSize: 10,
+          fontSize: 12,
           color: '#fff',
           fontWeight: 600
         },
@@ -866,7 +866,7 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
           show: true,
           position: 'inside',
           formatter: (params: any) => params.value > 0 ? params.value : '',
-          fontSize: 10,
+          fontSize: 12,
           color: '#fff',
           fontWeight: 600
         },
@@ -881,7 +881,7 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
           show: true,
           position: 'inside',
           formatter: (params: any) => params.value > 0 ? params.value : '',
-          fontSize: 10,
+          fontSize: 12,
           color: '#fff',
           fontWeight: 600
         },
