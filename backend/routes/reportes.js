@@ -3386,7 +3386,29 @@ router.get('/dashboard/pac', async (req, res) => {
       }
     };
 
-    // Procesos con retrasos por dirección
+    // Procesos con retrasos por dirección (sin separar PAC/NO PAC)
+    const procesosConRetrasosPorDireccionCombinado = {};
+    procesosParaAvanceEnriquecidos.forEach(p => {
+      const direccion = (p.direccionNombre || 'No especificada').trim();
+      const etapasConRetraso = (p.etapasDetalle || []).some(
+        etapa => etapa.estado === 'pendiente' && (etapa.diasAtraso || 0) > 0
+      );
+
+      if (etapasConRetraso) {
+        if (!procesosConRetrasosPorDireccionCombinado[direccion]) {
+          procesosConRetrasosPorDireccionCombinado[direccion] = {
+            total: 0,
+            porFase: {}
+          };
+        }
+        procesosConRetrasosPorDireccionCombinado[direccion].total++;
+        const fase = obtenerFaseProceso(p.etapasDetalle || []);
+        procesosConRetrasosPorDireccionCombinado[direccion].porFase[fase] =
+          (procesosConRetrasosPorDireccionCombinado[direccion].porFase[fase] || 0) + 1;
+      }
+    });
+
+    // Mantener también los por plan para compatibilidad
     const procesosConRetrasosPorDireccion = {};
     procesosParaAvanceEnriquecidos.forEach(p => {
       const direccion = (p.direccionNombre || 'No especificada').trim();
@@ -3445,7 +3467,8 @@ router.get('/dashboard/pac', async (req, res) => {
         etapasActivas,
         etapasAtrasadas
       },
-      procesosConRetrasosPorDireccion
+      procesosConRetrasosPorDireccion,
+      procesosConRetrasosPorDireccionCombinado
     });
   } catch (error) {
     console.error('Error en GET /api/reportes/dashboard/pac:', error);

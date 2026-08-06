@@ -292,15 +292,13 @@
 
       <!-- PROCESOS CON RETRASOS POR DIRECCIÓN -->
       <section class="retrasos-section"
-        v-if="(datosPAC.procesosConRetrasosPorDireccion && Object.keys(datosPAC.procesosConRetrasosPorDireccion).length > 0) ||
-               (datosNoPAC.procesosConRetrasosPorDireccion && Object.keys(datosNoPAC.procesosConRetrasosPorDireccion).length > 0)">
+        v-if="datosPAC.procesosConRetrasosPorDireccionCombinado && Object.keys(datosPAC.procesosConRetrasosPorDireccionCombinado).length > 0">
         <h2>10. PROCESOS CON RETRASOS POR DIRECCIÓN</h2>
 
         <div class="retrasos-tabla-wrapper">
           <table class="retrasos-tabla">
             <thead>
               <tr>
-                <th>Plan</th>
                 <th>Dirección</th>
                 <th>Total Retrasados</th>
                 <th>Preparatoria</th>
@@ -309,23 +307,9 @@
               </tr>
             </thead>
             <tbody>
-              <!-- Filas PAC -->
-              <tr v-for="(datos, direccion) in datosPAC.procesosConRetrasosPorDireccion" :key="'pac-' + direccion"
+              <tr v-for="(datos, direccion) in datosPAC.procesosConRetrasosPorDireccionCombinado" :key="direccion"
                   class="fila-clickeable"
-                  @click="abrirModalPorRetrasos(String(direccion), 'PAC')">
-                <td class="plan-cell pac">PAC</td>
-                <td class="direccion-cell">{{ direccion }}</td>
-                <td class="total-cell">{{ datos.total }}</td>
-                <td class="fase-cell">{{ datos.porFase.preparatoria || 0 }}</td>
-                <td class="fase-cell">{{ datos.porFase.precontractual || 0 }}</td>
-                <td class="fase-cell">{{ datos.porFase.contractual || 0 }}</td>
-              </tr>
-
-              <!-- Filas NO PAC -->
-              <tr v-for="(datos, direccion) in datosNoPAC.procesosConRetrasosPorDireccion" :key="'nopac-' + direccion"
-                  class="fila-clickeable"
-                  @click="abrirModalPorRetrasos(String(direccion), 'NO PAC')">
-                <td class="plan-cell nopac">NO PAC</td>
+                  @click="abrirModalPorRetrasosTodasDirecciones(String(direccion))">
                 <td class="direccion-cell">{{ direccion }}</td>
                 <td class="total-cell">{{ datos.total }}</td>
                 <td class="fase-cell">{{ datos.porFase.preparatoria || 0 }}</td>
@@ -473,10 +457,10 @@ const chartProcedimientosYFaseNoPAC = ref<any>(null);
 // Modal de procesos por fase o tipo de contrato
 const modalAbierto = ref(false);
 const faseSeleccionada = ref('');
-const tipoPlanSeleccionado = ref(''); // 'PAC' o 'NO PAC'
+const tipoPlanSeleccionado = ref(''); // 'PAC', 'NO PAC' o 'AMBOS'
 const tipoContratoSeleccionado = ref(''); // Tipo de contrato filtrado
 const direccionSeleccionada = ref(''); // Dirección filtrada
-const modalTipo = ref('fase'); // 'fase', 'tipoContrato' o 'retrasos'
+const modalTipo = ref('fase'); // 'fase', 'tipoContrato', 'retrasos' o 'retrasosCompleto'
 
 const nombreFaseSeleccionada = computed(() => {
   const nombres: { [key: string]: string } = {
@@ -491,6 +475,9 @@ const tituloModal = computed(() => {
   if (modalTipo.value === 'tipoContrato') {
     return `Procesos - ${tipoContratoSeleccionado.value}`;
   }
+  if (modalTipo.value === 'retrasosCompleto') {
+    return `Procesos Retrasados - ${direccionSeleccionada.value} (PAC + NO PAC)`;
+  }
   if (modalTipo.value === 'retrasos') {
     return `Procesos Retrasados - ${direccionSeleccionada.value}`;
   }
@@ -500,21 +487,22 @@ const tituloModal = computed(() => {
 const procesosFaseSeleccionada = computed(() => {
   if (!tipoPlanSeleccionado.value) return [];
 
-  const datos = tipoPlanSeleccionado.value === 'PAC' ? datosPAC.value : datosNoPAC.value;
-  if (!datos || !datos.procesos) return [];
+  let procesos: any[] = [];
 
-  let procesos = datos.procesos;
+  // Filtrar por retrasos completo (PAC + NO PAC)
+  if (modalTipo.value === 'retrasosCompleto' && direccionSeleccionada.value) {
+    const datosPACLocal = datosPAC.value;
+    const datosNoPACLocal = datosNoPAC.value;
 
-  // Filtrar por tipo de contrato si está seleccionado
-  if (modalTipo.value === 'tipoContrato' && tipoContratoSeleccionado.value) {
-    const tipoFiltro = tipoContratoSeleccionado.value.trim().toLowerCase();
-    procesos = procesos.filter((p: any) => {
-      const tipoContrato = (p.tipoContratacion || 'No definido').trim().toLowerCase();
-      return tipoContrato === tipoFiltro;
-    });
-  }
-  // Filtrar por retrasos si está seleccionada dirección
-  else if (modalTipo.value === 'retrasos' && direccionSeleccionada.value) {
+    // Combinar procesos de ambos planes
+    if (datosPACLocal?.procesos) {
+      procesos = procesos.concat(datosPACLocal.procesos);
+    }
+    if (datosNoPACLocal?.procesos) {
+      procesos = procesos.concat(datosNoPACLocal.procesos);
+    }
+
+    // Filtrar por dirección y retraso
     procesos = procesos.filter((p: any) => {
       const direccion = (p.direccionNombre || '').trim();
       if (direccion !== direccionSeleccionada.value) return false;
@@ -525,14 +513,41 @@ const procesosFaseSeleccionada = computed(() => {
       );
       return etapasConRetraso;
     });
-  }
-  // Filtrar por fase si está seleccionada
-  else if (modalTipo.value === 'fase' && faseSeleccionada.value) {
-    procesos = procesos.filter((p: any) => {
-      const etapas = p.etapasDetalle || [];
-      const fase = obtenerFaseProceso(etapas);
-      return fase === faseSeleccionada.value;
-    });
+  } else {
+    const datos = tipoPlanSeleccionado.value === 'PAC' ? datosPAC.value : datosNoPAC.value;
+    if (!datos || !datos.procesos) return [];
+
+    procesos = datos.procesos;
+
+    // Filtrar por tipo de contrato si está seleccionado
+    if (modalTipo.value === 'tipoContrato' && tipoContratoSeleccionado.value) {
+      const tipoFiltro = tipoContratoSeleccionado.value.trim().toLowerCase();
+      procesos = procesos.filter((p: any) => {
+        const tipoContrato = (p.tipoContratacion || 'No definido').trim().toLowerCase();
+        return tipoContrato === tipoFiltro;
+      });
+    }
+    // Filtrar por retrasos si está seleccionada dirección
+    else if (modalTipo.value === 'retrasos' && direccionSeleccionada.value) {
+      procesos = procesos.filter((p: any) => {
+        const direccion = (p.direccionNombre || '').trim();
+        if (direccion !== direccionSeleccionada.value) return false;
+
+        // Verificar si tiene al menos una etapa pendiente con retraso
+        const etapasConRetraso = (p.etapasDetalle || []).some(
+          (etapa: any) => etapa.estado === 'pendiente' && (etapa.diasAtraso || 0) > 0
+        );
+        return etapasConRetraso;
+      });
+    }
+    // Filtrar por fase si está seleccionada
+    else if (modalTipo.value === 'fase' && faseSeleccionada.value) {
+      procesos = procesos.filter((p: any) => {
+        const etapas = p.etapasDetalle || [];
+        const fase = obtenerFaseProceso(etapas);
+        return fase === faseSeleccionada.value;
+      });
+    }
   }
 
   return procesos;
@@ -564,6 +579,15 @@ function abrirModalPorRetrasos(direccion: string, tipoPlan: string = 'PAC') {
   faseSeleccionada.value = '';
   tipoContratoSeleccionado.value = '';
   modalTipo.value = 'retrasos';
+  modalAbierto.value = true;
+}
+
+function abrirModalPorRetrasosTodasDirecciones(direccion: string) {
+  direccionSeleccionada.value = direccion;
+  tipoPlanSeleccionado.value = 'AMBOS';
+  faseSeleccionada.value = '';
+  tipoContratoSeleccionado.value = '';
+  modalTipo.value = 'retrasosCompleto';
   modalAbierto.value = true;
 }
 
