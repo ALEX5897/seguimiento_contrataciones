@@ -111,10 +111,10 @@
             </div>
 
             <div class="kpi-card-btn kpi-avance">
-              <div class="kpi-icon kpi-icon-percentage">{{ datosPAC.velocimetro.valor }}%</div>
+              <div class="kpi-icon kpi-icon-percentage">{{ avancePAC }}%</div>
               <div class="kpi-content">
-                <div class="kpi-label">% Avance</div>
-                <div class="kpi-detalle">Ejecución</div>
+                <div class="kpi-label">% Avance General</div>
+                <div class="kpi-detalle">Procesos</div>
               </div>
             </div>
             </div>
@@ -210,10 +210,10 @@
             </div>
 
             <div class="kpi-card-btn kpi-avance">
-              <div class="kpi-icon kpi-icon-percentage">{{ datosNoPAC.velocimetro.valor }}%</div>
+              <div class="kpi-icon kpi-icon-percentage">{{ avanceNoPAC }}%</div>
               <div class="kpi-content">
-                <div class="kpi-label">% Avance</div>
-                <div class="kpi-detalle">Ejecución</div>
+                <div class="kpi-label">% Avance General</div>
+                <div class="kpi-detalle">Procesos</div>
               </div>
             </div>
             </div>
@@ -318,6 +318,22 @@ const hayFiltros = computed(() =>
   filtroDireccion.value || filtroProcedimiento.value || filtroCuatrimestre.value
 );
 
+const avancePAC = computed(() => {
+  if (!datosPAC.value?.resumenGeneral) return 0;
+  const total = datosPAC.value.resumenGeneral.totalEtapas || 0;
+  const completadas = datosPAC.value.resumenGeneral.etapasCompletadas || 0;
+  if (total === 0) return 0;
+  return Math.round((completadas / total) * 100);
+});
+
+const avanceNoPAC = computed(() => {
+  if (!datosNoPAC.value?.resumenGeneral) return 0;
+  const total = datosNoPAC.value.resumenGeneral.totalEtapas || 0;
+  const completadas = datosNoPAC.value.resumenGeneral.etapasCompletadas || 0;
+  if (total === 0) return 0;
+  return Math.round((completadas / total) * 100);
+});
+
 const avanceGeneral = computed(() => {
   if (!datosPAC.value || !datosNoPAC.value) return 0;
 
@@ -328,10 +344,6 @@ const avanceGeneral = computed(() => {
 
   const totalEtapas = totalEtapasPAC + totalEtapasNoPAC;
   const etapasCompletadas = etapasCompletadasPAC + etapasCompletadasNoPAC;
-
-  console.log(`PAC: ${etapasCompletadasPAC}/${totalEtapasPAC} = ${totalEtapasPAC > 0 ? Math.round((etapasCompletadasPAC / totalEtapasPAC) * 100) : 0}%`);
-  console.log(`NO PAC: ${etapasCompletadasNoPAC}/${totalEtapasNoPAC} = ${totalEtapasNoPAC > 0 ? Math.round((etapasCompletadasNoPAC / totalEtapasNoPAC) * 100) : 0}%`);
-  console.log(`TOTAL: ${etapasCompletadas}/${totalEtapas} = ${totalEtapas > 0 ? Math.round((etapasCompletadas / totalEtapas) * 100) : 0}%`);
 
   if (totalEtapas === 0) return 0;
 
