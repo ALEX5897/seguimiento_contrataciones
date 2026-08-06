@@ -278,6 +278,36 @@
     <div v-else-if="error" class="error-state">
       <p>{{ error }}</p>
     </div>
+
+    <!-- MODAL DE PROCESOS POR FASE -->
+    <div v-if="modalAbierto" class="modal-overlay" @click.self="cerrarModal">
+      <div class="modal-contenido">
+        <div class="modal-header">
+          <h2>Procesos en Fase {{ nombreFaseSeleccionada }}</h2>
+          <button class="btn-cerrar" @click="cerrarModal">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div v-if="procesosFaseSeleccionada.length > 0" class="procesos-lista">
+            <div v-for="proceso in procesosFaseSeleccionada" :key="proceso.id" class="proceso-item">
+              <div class="proceso-header">
+                <span class="codigo">{{ proceso.codigoOlympo }}</span>
+                <span class="tipo-plan">{{ proceso.tipoPlan }}</span>
+              </div>
+              <div class="proceso-nombre">{{ proceso.nombre }}</div>
+              <div class="proceso-detalles">
+                <span class="presupuesto">💰 {{ formatearMonto(proceso.presupuesto) }}</span>
+                <span class="avance">📊 {{ proceso.porcentajeAvance }}%</span>
+              </div>
+            </div>
+          </div>
+          <div v-else class="sin-procesos">
+            <p>No hay procesos en esta fase</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -308,6 +338,75 @@ const chartVelociometroPAC = ref<any>(null);
 const chartDistribProcesosNoPAC = ref<any>(null);
 const chartDistribPresupuestoNoPAC = ref<any>(null);
 const chartVelociometroNoPAC = ref<any>(null);
+
+// Modal de procesos por fase
+const modalAbierto = ref(false);
+const faseSeleccionada = ref('');
+const tipoPlanSeleccionado = ref(''); // 'PAC' o 'NO PAC'
+
+const nombreFaseSeleccionada = computed(() => {
+  const nombres: { [key: string]: string } = {
+    preparatoria: 'Preparatoria',
+    precontractual: 'Precontractual',
+    contractual: 'Contractual'
+  };
+  return nombres[faseSeleccionada.value] || '';
+});
+
+const procesosFaseSeleccionada = computed(() => {
+  if (!faseSeleccionada.value || !tipoPlanSeleccionado.value) return [];
+
+  const datos = tipoPlanSeleccionado.value === 'PAC' ? datosPAC.value : datosNoPAC.value;
+  if (!datos) return [];
+
+  // Obtener todos los procesos que están en la fase seleccionada
+  const procesosActuales = tipoPlanSeleccionado.value === 'PAC' ?
+    datosPAC.value?.procesos || [] :
+    datosNoPAC.value?.procesos || [];
+
+  return procesosActuales.filter((p: any) => {
+    const etapas = p.etapasDetalle || [];
+    const etapasEnriquecidas = etapas.map((e: any) => ({
+      ...e,
+      fase: e.fase || 'sin_clasificar'
+    }));
+
+    // Aplicar la misma lógica de fase que en el backend
+    const fases = ['preparatoria', 'precontractual', 'contractual'];
+    for (const fase of fases) {
+      const etapasFase = etapasEnriquecidas.filter((e: any) => e.fase === fase);
+      const hayPendiente = etapasFase.some((e: any) =>
+        e.estado === 'pendiente' || e.estado === 'en_proceso'
+      );
+
+      if (hayPendiente && fase === faseSeleccionada.value) {
+        return true;
+      }
+    }
+
+    // Si nada está pendiente y es fase contractual
+    if (faseSeleccionada.value === 'contractual') {
+      const tienePendiente = etapasEnriquecidas.some((e: any) =>
+        e.estado === 'pendiente' || e.estado === 'en_proceso'
+      );
+      return !tienePendiente;
+    }
+
+    return false;
+  });
+});
+
+function abrirModal(fase: string, tipoPlan: string) {
+  faseSeleccionada.value = fase;
+  tipoPlanSeleccionado.value = tipoPlan;
+  modalAbierto.value = true;
+}
+
+function cerrarModal() {
+  modalAbierto.value = false;
+  faseSeleccionada.value = '';
+  tipoPlanSeleccionado.value = '';
+}
 
 const fechaCorte = computed(() => {
   const hoy = new Date();
@@ -411,7 +510,8 @@ function renderizarGraficos() {
       { value: datosPAC.value.procesosPorFase.precontractual, name: 'Fase Precontractual' },
       { value: datosPAC.value.procesosPorFase.contractual, name: 'Fase Contractual' }
     ],
-    ['#3b82f6', '#10b981', '#f59e0b']
+    ['#3b82f6', '#10b981', '#f59e0b'],
+    'PAC'
   );
 
   renderPieChart(
@@ -440,7 +540,8 @@ function renderizarGraficos() {
       { value: datosNoPAC.value.procesosPorFase.precontractual, name: 'Fase Precontractual' },
       { value: datosNoPAC.value.procesosPorFase.contractual, name: 'Fase Contractual' }
     ],
-    ['#3b82f6', '#10b981', '#f59e0b']
+    ['#3b82f6', '#10b981', '#f59e0b'],
+    'NO PAC'
   );
 
   renderPieChart(
@@ -462,7 +563,7 @@ function renderizarGraficos() {
   );
 }
 
-function renderPieChart(ref: any, data: any[], colors: string[]) {
+function renderPieChart(ref: any, data: any[], colors: string[], tipoPlan?: string) {
   if (!ref.value) return;
   const chart = echarts.init(ref.value);
   const option = {
@@ -500,6 +601,23 @@ function renderPieChart(ref: any, data: any[], colors: string[]) {
   };
   chart.setOption(option);
   window.addEventListener('resize', () => chart.resize());
+
+  // Agregar evento click para abrir modal (solo para gráficos de distribución por fase)
+  if (tipoPlan && data.length === 3) {
+    chart.on('click', (params: any) => {
+      const nombreFase = params.name;
+      // Mapear nombre mostrado a clave interna
+      const faseMap: { [key: string]: string } = {
+        'Fase Preparatoria': 'preparatoria',
+        'Fase Precontractual': 'precontractual',
+        'Fase Contractual': 'contractual'
+      };
+      const fase = faseMap[nombreFase];
+      if (fase) {
+        abrirModal(fase, tipoPlan);
+      }
+    });
+  }
 }
 
 function renderGaugeChart(ref: any, valor: number, meta: number) {
@@ -1076,6 +1194,167 @@ function resetearFiltros() {
 
   .chart-wrapper {
     height: 250px;
+  }
+}
+
+/* MODAL DE PROCESOS POR FASE */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+}
+
+.modal-contenido {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.modal-header h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.btn-cerrar {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #64748b;
+  transition: color 0.2s;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-cerrar:hover {
+  color: #0f172a;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.procesos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.proceso-item {
+  padding: 1rem;
+  background: #f8fafc;
+  border-left: 4px solid #3b82f6;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.proceso-item:hover {
+  background: #f1f5f9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.proceso-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.codigo {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tipo-plan {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.proceso-nombre {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.proceso-detalles {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.presupuesto,
+.avance {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.sin-procesos {
+  text-align: center;
+  padding: 2rem;
+  color: #94a3b8;
+}
+
+.sin-procesos p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 640px) {
+  .modal-contenido {
+    max-width: 100%;
+    max-height: 90vh;
+  }
+
+  .modal-header {
+    padding: 1rem;
+  }
+
+  .modal-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .modal-body {
+    padding: 1rem;
   }
 }
 </style>
