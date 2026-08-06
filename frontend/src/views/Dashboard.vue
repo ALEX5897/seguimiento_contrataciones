@@ -161,7 +161,7 @@
       <!-- GRÁFICOS EN UNA LÍNEA -->
       <div class="dashboard-charts-row">
         <!-- Gráfico PAC - Distribución por Estado -->
-        <section class="chart-container chart-item">
+        <section class="chart-container chart-item chart-narrow">
           <h3>PAC - Distribución por Estado</h3>
           <div class="chart-wrapper">
             <div ref="chartDistribProcesosPAC" class="chart"></div>
@@ -177,7 +177,7 @@
         </section>
 
         <!-- Gráfico NO PAC - Distribución por Estado -->
-        <section class="chart-container chart-item">
+        <section class="chart-container chart-item chart-narrow">
           <h3>NO PAC - Distribución por Estado</h3>
           <div class="chart-wrapper">
             <div ref="chartDistribProcesosNoPAC" class="chart"></div>
@@ -1277,13 +1277,18 @@ function resetearFiltros() {
 
 .dashboard-charts-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: 0.7fr 1fr 0.7fr 1fr;
   gap: 1.5rem;
   margin-top: 2rem;
 }
 
 .chart-item {
   margin: 0;
+}
+
+.chart-item.chart-narrow {
+  grid-column: span 1;
+  max-width: 100%;
 }
 
 .column-pac,
