@@ -730,9 +730,9 @@ function renderStackedBarChart(ref: any, data: any) {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
       formatter: (params: any) => {
-        let html = `<div style="font-size:12px;font-weight:600">${params[0].axisValue}</div>`;
+        let html = `<div style="font-size:13px;font-weight:600">${params[0].axisValue}</div>`;
         params.forEach((p: any) => {
-          html += `<div style="font-size:12px">${p.seriesName}: ${p.value}</div>`;
+          html += `<div style="font-size:13px">${p.seriesName}: ${p.value}</div>`;
         });
         return html;
       }
@@ -741,8 +741,8 @@ function renderStackedBarChart(ref: any, data: any) {
       data: ['Prep.', 'Precontractual', 'Contractual', 'TOTAL'],
       top: 5,
       left: 'center',
-      textStyle: { fontSize: 11, color: '#475569' },
-      itemGap: 15
+      textStyle: { fontSize: 12, color: '#475569', fontWeight: 500 },
+      itemGap: 16
     },
     grid: {
       left: estimatedLabelWidth,
@@ -754,7 +754,7 @@ function renderStackedBarChart(ref: any, data: any) {
     xAxis: {
       type: 'value',
       boundaryGap: [0, 0.01],
-      axisLabel: { fontSize: 10, color: '#64748b' },
+      axisLabel: { fontSize: 11, color: '#64748b' },
       splitLine: { show: true, lineStyle: { color: '#e2e8f0' } }
     },
     yAxis: {
@@ -766,7 +766,7 @@ function renderStackedBarChart(ref: any, data: any) {
         }
         return t;
       }),
-      axisLabel: { fontSize: 10, color: '#475569', margin: 8 }
+      axisLabel: { fontSize: 11, color: '#475569', margin: 8 }
     },
     series: [
       {
@@ -778,7 +778,7 @@ function renderStackedBarChart(ref: any, data: any) {
           show: true,
           position: 'inside',
           formatter: (params: any) => params.value > 0 ? params.value : '',
-          fontSize: 9,
+          fontSize: 10,
           color: '#fff',
           fontWeight: 600
         },
@@ -793,7 +793,7 @@ function renderStackedBarChart(ref: any, data: any) {
           show: true,
           position: 'inside',
           formatter: (params: any) => params.value > 0 ? params.value : '',
-          fontSize: 9,
+          fontSize: 10,
           color: '#fff',
           fontWeight: 600
         },
@@ -808,7 +808,7 @@ function renderStackedBarChart(ref: any, data: any) {
           show: true,
           position: 'inside',
           formatter: (params: any) => params.value > 0 ? params.value : '',
-          fontSize: 9,
+          fontSize: 10,
           color: '#fff',
           fontWeight: 600
         },
@@ -822,7 +822,7 @@ function renderStackedBarChart(ref: any, data: any) {
           show: true,
           position: 'right',
           formatter: (params: any) => params.value > 0 ? params.value : '',
-          fontSize: 9,
+          fontSize: 10,
           fontWeight: 'bold',
           color: '#1f2937'
         },
