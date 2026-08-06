@@ -708,44 +708,97 @@ function renderStackedBarChart(ref: any, data: any) {
   const chart = echarts.init(ref.value);
 
   // Preparar datos para gráfico de barras apiladas
-  const procedimientos = Object.keys(data).sort();
-  const seriesData = [
-    { name: 'Preparatoria', data: procedimientos.map((p: string) => data[p].preparatoria || 0) },
-    { name: 'Precontractual', data: procedimientos.map((p: string) => data[p].precontractual || 0) },
-    { name: 'Contractual', data: procedimientos.map((p: string) => data[p].contractual || 0) }
-  ];
+  const tiposContrato = Object.keys(data).sort();
+  const preparatoriaData = tiposContrato.map((t: string) => data[t].preparatoria || 0);
+  const precontractualData = tiposContrato.map((t: string) => data[t].precontractual || 0);
+  const contractualData = tiposContrato.map((t: string) => data[t].contractual || 0);
+  const totalData = tiposContrato.map((t: string) => data[t].total || 0);
 
   const option = {
-    color: ['#3b82f6', '#10b981', '#f59e0b'],
+    color: ['#3b82f6', '#10b981', '#dc2626'],
     tooltip: {
       trigger: 'axis',
-      axisPointer: { type: 'shadow' }
+      axisPointer: { type: 'shadow' },
+      formatter: (params: any) => {
+        let html = `<div>${params[0].axisValue}</div>`;
+        params.forEach((p: any) => {
+          html += `<div>${p.seriesName}: ${p.value}</div>`;
+        });
+        return html;
+      }
     },
     legend: {
-      data: ['Preparatoria', 'Precontractual', 'Contractual'],
-      bottom: 10
+      data: ['Fase Preparatoria', 'Precontractual', 'Contractual', 'TOTAL'],
+      top: 10,
+      left: 'center'
     },
     grid: {
-      left: 200,
-      right: 50,
-      top: 30,
-      bottom: 50,
-      containLabel: true
+      left: 220,
+      right: 100,
+      top: 60,
+      bottom: 30,
+      containLabel: false
     },
     xAxis: {
-      type: 'value'
+      type: 'value',
+      boundaryGap: [0, 0.01]
     },
     yAxis: {
       type: 'category',
-      data: procedimientos.map((p: string) => p.length > 30 ? p.substring(0, 27) + '...' : p)
+      data: tiposContrato.map((t: string) => t.length > 35 ? t.substring(0, 32) + '...' : t)
     },
-    series: seriesData.map((s: any) => ({
-      name: s.name,
-      type: 'bar',
-      stack: 'total',
-      data: s.data,
-      label: { show: true, position: 'insideRight', fontSize: 10 }
-    }))
+    series: [
+      {
+        name: 'Fase Preparatoria',
+        type: 'bar',
+        stack: 'total',
+        data: preparatoriaData,
+        label: {
+          show: true,
+          position: 'inside',
+          formatter: (params: any) => params.value > 0 ? params.value : ''
+        },
+        itemStyle: { color: '#3b82f6' }
+      },
+      {
+        name: 'Precontractual',
+        type: 'bar',
+        stack: 'total',
+        data: precontractualData,
+        label: {
+          show: true,
+          position: 'inside',
+          formatter: (params: any) => params.value > 0 ? params.value : ''
+        },
+        itemStyle: { color: '#10b981' }
+      },
+      {
+        name: 'Contractual',
+        type: 'bar',
+        stack: 'total',
+        data: contractualData,
+        label: {
+          show: true,
+          position: 'inside',
+          formatter: (params: any) => params.value > 0 ? params.value : ''
+        },
+        itemStyle: { color: '#dc2626' }
+      },
+      {
+        name: 'TOTAL',
+        type: 'bar',
+        data: totalData,
+        label: {
+          show: true,
+          position: 'right',
+          formatter: (params: any) => params.value > 0 ? params.value : '',
+          fontSize: 11,
+          fontWeight: 'bold'
+        },
+        itemStyle: { color: 'transparent' },
+        z: 0
+      }
+    ]
   };
 
   chart.setOption(option);
