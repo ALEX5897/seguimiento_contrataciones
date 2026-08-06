@@ -3389,7 +3389,7 @@ router.get('/dashboard/pac', async (req, res) => {
     // Procesos con retrasos por dirección
     const procesosConRetrasosPorDireccion = {};
     procesosParaAvanceEnriquecidos.forEach(p => {
-      const direccion = (p.nombreDireccion || 'No especificada').trim();
+      const direccion = (p.direccionNombre || 'No especificada').trim();
       const etapasConRetraso = (p.etapasDetalle || []).some(
         etapa => etapa.estado === 'pendiente' && (etapa.diasAtraso || 0) > 0
       );
