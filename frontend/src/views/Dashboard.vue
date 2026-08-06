@@ -177,7 +177,7 @@
           <section class="chart-container">
             <h3>Distribución por Tipo de Contrato y Fase</h3>
             <div class="chart-wrapper">
-              <div ref="chartProcedimientosYFasePAC" class="chart" style="height: 400px;"></div>
+              <div ref="chartProcedimientosYFasePAC" class="chart" style="height: 320px;"></div>
             </div>
           </section>
         </div>
@@ -720,32 +720,36 @@ function renderStackedBarChart(ref: any, data: any) {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
       formatter: (params: any) => {
-        let html = `<div>${params[0].axisValue}</div>`;
+        let html = `<div style="font-size:12px">${params[0].axisValue}</div>`;
         params.forEach((p: any) => {
-          html += `<div>${p.seriesName}: ${p.value}</div>`;
+          html += `<div style="font-size:12px">${p.seriesName}: ${p.value}</div>`;
         });
         return html;
       }
     },
     legend: {
       data: ['Fase Preparatoria', 'Precontractual', 'Contractual', 'TOTAL'],
-      top: 10,
-      left: 'center'
+      top: 8,
+      left: 'center',
+      textStyle: { fontSize: 11 },
+      itemGap: 15
     },
     grid: {
-      left: 220,
-      right: 100,
-      top: 60,
-      bottom: 30,
+      left: 150,
+      right: 60,
+      top: 45,
+      bottom: 20,
       containLabel: false
     },
     xAxis: {
       type: 'value',
-      boundaryGap: [0, 0.01]
+      boundaryGap: [0, 0.01],
+      axisLabel: { fontSize: 10 }
     },
     yAxis: {
       type: 'category',
-      data: tiposContrato.map((t: string) => t.length > 35 ? t.substring(0, 32) + '...' : t)
+      data: tiposContrato.map((t: string) => t.length > 28 ? t.substring(0, 25) + '...' : t),
+      axisLabel: { fontSize: 10 }
     },
     series: [
       {
@@ -756,7 +760,9 @@ function renderStackedBarChart(ref: any, data: any) {
         label: {
           show: true,
           position: 'inside',
-          formatter: (params: any) => params.value > 0 ? params.value : ''
+          formatter: (params: any) => params.value > 0 ? params.value : '',
+          fontSize: 9,
+          color: '#fff'
         },
         itemStyle: { color: '#3b82f6' }
       },
@@ -768,7 +774,9 @@ function renderStackedBarChart(ref: any, data: any) {
         label: {
           show: true,
           position: 'inside',
-          formatter: (params: any) => params.value > 0 ? params.value : ''
+          formatter: (params: any) => params.value > 0 ? params.value : '',
+          fontSize: 9,
+          color: '#fff'
         },
         itemStyle: { color: '#10b981' }
       },
@@ -780,7 +788,9 @@ function renderStackedBarChart(ref: any, data: any) {
         label: {
           show: true,
           position: 'inside',
-          formatter: (params: any) => params.value > 0 ? params.value : ''
+          formatter: (params: any) => params.value > 0 ? params.value : '',
+          fontSize: 9,
+          color: '#fff'
         },
         itemStyle: { color: '#dc2626' }
       },
@@ -792,8 +802,9 @@ function renderStackedBarChart(ref: any, data: any) {
           show: true,
           position: 'right',
           formatter: (params: any) => params.value > 0 ? params.value : '',
-          fontSize: 11,
-          fontWeight: 'bold'
+          fontSize: 9,
+          fontWeight: 'bold',
+          color: '#374151'
         },
         itemStyle: { color: 'transparent' },
         z: 0
