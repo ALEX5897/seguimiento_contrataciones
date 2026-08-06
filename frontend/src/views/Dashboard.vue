@@ -49,10 +49,10 @@
       <!-- KPIs PRINCIPALES GENERALES -->
       <section class="kpis-principales">
         <div class="kpi-card-principal">
-          <div class="kpi-icon-principal">{{ datosPAC.kpisPrincipales.totalProcesos + datosNoPAC.kpisPrincipales.totalProcesos }}</div>
+          <div class="kpi-icon-principal">{{ datosPACActuales.kpisPrincipales.totalProcesos + datosNoPACActuales.kpisPrincipales.totalProcesos }}</div>
           <div class="kpi-content-principal">
             <div class="kpi-label-principal">Total de Procesos</div>
-            <div class="kpi-detalle-principal">{{ datosPAC.kpisPrincipales.totalProcesos + datosNoPAC.kpisPrincipales.totalProcesos }} contratos</div>
+            <div class="kpi-detalle-principal">{{ datosPACActuales.kpisPrincipales.totalProcesos + datosNoPACActuales.kpisPrincipales.totalProcesos }} contratos</div>
           </div>
         </div>
 
@@ -60,7 +60,7 @@
           <div class="kpi-icon-principal">💰</div>
           <div class="kpi-content-principal">
             <div class="kpi-label-principal">Presupuesto Total</div>
-            <div class="kpi-detalle-principal">{{ formatearMonto(datosPAC.kpisPrincipales.presupuestoPAC + datosNoPAC.kpisPrincipales.presupuestoNoPAC) }}</div>
+            <div class="kpi-detalle-principal">{{ formatearMonto(datosPACActuales.kpisPrincipales.presupuestoPAC + datosNoPACActuales.kpisPrincipales.presupuestoNoPAC) }}</div>
           </div>
         </div>
 
@@ -83,10 +83,10 @@
           </div>
           <div class="kpis-column">
             <div class="kpi-card-btn">
-              <div class="kpi-icon">{{ datosNoPAC.kpisPrincipales.totalProcesos }}</div>
+              <div class="kpi-icon">{{ datosNoPACActuales.kpisPrincipales.totalProcesos }}</div>
               <div class="kpi-content">
                 <div class="kpi-label">Total Procesos</div>
-                <div class="kpi-detalle">{{ datosNoPAC.kpisPrincipales.totalProcesos }} contratos</div>
+                <div class="kpi-detalle">{{ datosNoPACActuales.kpisPrincipales.totalProcesos }} contratos</div>
               </div>
             </div>
 
@@ -94,7 +94,7 @@
               <div class="kpi-icon">💵</div>
               <div class="kpi-content">
                 <div class="kpi-label">Presupuesto</div>
-                <div class="kpi-detalle">{{ formatearMonto(datosNoPAC.kpisPrincipales.presupuestoNoPAC) }}</div>
+                <div class="kpi-detalle">{{ formatearMonto(datosNoPACActuales.kpisPrincipales.presupuestoNoPAC) }}</div>
               </div>
             </div>
 
@@ -102,7 +102,7 @@
               <div class="kpi-icon">⚙️</div>
               <div class="kpi-content">
                 <div class="kpi-label">En Ejecución</div>
-                <div class="kpi-detalle">{{ datosNoPAC.kpisPrincipales.procesosConContratoCompletado }} procesos</div>
+                <div class="kpi-detalle">{{ datosNoPACActuales.kpisPrincipales.procesosConContratoCompletado }} procesos</div>
               </div>
             </div>
 
@@ -124,10 +124,10 @@
           </div>
           <div class="kpis-column">
             <div class="kpi-card-btn">
-              <div class="kpi-icon">{{ datosPAC.kpisPrincipales.totalProcesos }}</div>
+              <div class="kpi-icon">{{ datosPACActuales.kpisPrincipales.totalProcesos }}</div>
               <div class="kpi-content">
                 <div class="kpi-label">Total Procesos</div>
-                <div class="kpi-detalle">{{ datosPAC.kpisPrincipales.totalProcesos }} contratos</div>
+                <div class="kpi-detalle">{{ datosPACActuales.kpisPrincipales.totalProcesos }} contratos</div>
               </div>
             </div>
 
@@ -135,7 +135,7 @@
               <div class="kpi-icon">💰</div>
               <div class="kpi-content">
                 <div class="kpi-label">Presupuesto</div>
-                <div class="kpi-detalle">{{ formatearMonto(datosPAC.kpisPrincipales.presupuestoPAC) }}</div>
+                <div class="kpi-detalle">{{ formatearMonto(datosPACActuales.kpisPrincipales.presupuestoPAC) }}</div>
               </div>
             </div>
 
@@ -143,7 +143,7 @@
               <div class="kpi-icon">⚙️</div>
               <div class="kpi-content">
                 <div class="kpi-label">En Ejecución</div>
-                <div class="kpi-detalle">{{ datosPAC.kpisPrincipales.procesosConContratoCompletado }} procesos</div>
+                <div class="kpi-detalle">{{ datosPACActuales.kpisPrincipales.procesosConContratoCompletado }} procesos</div>
               </div>
             </div>
 
@@ -195,9 +195,15 @@
 
       <!-- SECCIÓN KPIs: RETRASOS (izquierda) Y CUMPLIMIENTO (derecha) -->
       <div class="dashboard-kpis-tables-row">
+        <!-- BOTÓN PARA LIMPIAR FILTRO -->
+        <button v-if="direccionFiltroActivo" class="btn-limpiar-filtro" @click="limpiarFiltroDirectionDelKPI11">
+          <i class="ri-close-line"></i>
+          Limpiar filtro: {{ direccionFiltroActivo }}
+        </button>
+
         <!-- PROCESOS CON RETRASOS POR DIRECCIÓN - IZQUIERDA -->
         <section class="retrasos-section"
-          v-if="Object.keys(procesosRetrasadosCombinados).length > 0">
+          v-if="Object.keys(procesosRetrasadosMostrados).length > 0">
           <h2>10. PROCESOS CON RETRASOS POR DIRECCIÓN</h2>
 
           <div class="retrasos-tabla-wrapper">
@@ -212,7 +218,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(datos, direccion) in procesosRetrasadosCombinados" :key="direccion"
+                <tr v-for="(datos, direccion) in procesosRetrasadosMostrados" :key="direccion"
                     class="fila-clickeable"
                     @click="abrirModalPorRetrasosTodasDirecciones(String(direccion))">
                   <td class="direccion-cell">{{ direccion }}</td>
@@ -228,7 +234,7 @@
 
         <!-- NIVEL DE CUMPLIMIENTO POR DIRECCIÓN - DERECHA -->
         <section class="cumplimiento-section"
-          v-if="Object.keys(nivelCumplimientoCombinado).length > 0">
+          v-if="Object.keys(nivelCumplimientoMostrado).length > 0">
           <h2>11. NIVEL DE CUMPLIMIENTO POR DIRECCIÓN</h2>
 
           <div class="cumplimiento-tabla-wrapper">
@@ -243,7 +249,9 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(datos, direccion) in nivelCumplimientoCombinado" :key="direccion">
+                <tr v-for="(datos, direccion) in nivelCumplimientoMostrado" :key="direccion"
+                    class="fila-clickeable"
+                    @click="filtrarDashboardPorDireccion(String(direccion))">
                   <td class="direccion-cell">{{ direccion }}</td>
                   <td class="total-cell">{{ datos.total }}</td>
                   <td class="porcentaje-cell">
@@ -319,6 +327,7 @@ const datosNoPAC = ref<any>(null);
 const filtroDireccion = ref('');
 const filtroProcedimiento = ref('');
 const filtroCuatrimestre = ref('');
+const direccionFiltroActivo = ref(''); // Dirección seleccionada desde KPI 11
 
 const direccionesDisponibles = ref<string[]>([]);
 const procedimientosDisponibles = ref<string[]>([]);
@@ -440,6 +449,85 @@ const nivelCumplimientoCombinado = computed(() => {
   return combinado;
 });
 
+const procesosRetrasadosMostrados = computed(() => {
+  if (direccionFiltroActivo.value) {
+    const filtrado: { [key: string]: any } = {};
+    if (procesosRetrasadosCombinados.value[direccionFiltroActivo.value]) {
+      filtrado[direccionFiltroActivo.value] = procesosRetrasadosCombinados.value[direccionFiltroActivo.value];
+    }
+    return filtrado;
+  }
+  return procesosRetrasadosCombinados.value;
+});
+
+const nivelCumplimientoMostrado = computed(() => {
+  if (direccionFiltroActivo.value) {
+    const filtrado: { [key: string]: any } = {};
+    if (nivelCumplimientoCombinado.value[direccionFiltroActivo.value]) {
+      filtrado[direccionFiltroActivo.value] = nivelCumplimientoCombinado.value[direccionFiltroActivo.value];
+    }
+    return filtrado;
+  }
+  return nivelCumplimientoCombinado.value;
+});
+
+const datosPACFiltrados = computed(() => {
+  if (!datosPAC.value || !direccionFiltroActivo.value) return datosPAC.value;
+
+  const procesos = datosPAC.value.procesos || [];
+  const procesosFiltrados = procesos.filter((p: any) => {
+    const direccion = (p.direccionNombre || '').trim();
+    return direccion === direccionFiltroActivo.value;
+  });
+
+  const presupuestoFiltrado = procesosFiltrados.reduce((sum: number, p: any) => sum + (p.presupuesto || 0), 0);
+  const procesosConContratoCompletado = procesosFiltrados.filter((p: any) => {
+    const etapas = p.etapasDetalle || [];
+    return etapas.some((e: any) => (e.etapaNombre || '').toLowerCase().includes('contrato') && e.estado === 'completado');
+  }).length;
+
+  return {
+    ...datosPAC.value,
+    procesos: procesosFiltrados,
+    kpisPrincipales: {
+      ...datosPAC.value.kpisPrincipales,
+      totalProcesos: procesosFiltrados.length,
+      presupuestoPAC: presupuestoFiltrado,
+      procesosConContratoCompletado: procesosConContratoCompletado
+    }
+  };
+});
+
+const datosNoPACFiltrados = computed(() => {
+  if (!datosNoPAC.value || !direccionFiltroActivo.value) return datosNoPAC.value;
+
+  const procesos = datosNoPAC.value.procesos || [];
+  const procesosFiltrados = procesos.filter((p: any) => {
+    const direccion = (p.direccionNombre || '').trim();
+    return direccion === direccionFiltroActivo.value;
+  });
+
+  const presupuestoFiltrado = procesosFiltrados.reduce((sum: number, p: any) => sum + (p.presupuesto || 0), 0);
+  const procesosConContratoCompletado = procesosFiltrados.filter((p: any) => {
+    const etapas = p.etapasDetalle || [];
+    return etapas.some((e: any) => (e.etapaNombre || '').toLowerCase().includes('contrato') && e.estado === 'completado');
+  }).length;
+
+  return {
+    ...datosNoPAC.value,
+    procesos: procesosFiltrados,
+    kpisPrincipales: {
+      ...datosNoPAC.value.kpisPrincipales,
+      totalProcesos: procesosFiltrados.length,
+      presupuestoNoPAC: presupuestoFiltrado,
+      procesosConContratoCompletado: procesosConContratoCompletado
+    }
+  };
+});
+
+const datosPACActuales = computed(() => direccionFiltroActivo.value ? datosPACFiltrados.value : datosPAC.value);
+const datosNoPACActuales = computed(() => direccionFiltroActivo.value ? datosNoPACFiltrados.value : datosNoPAC.value);
+
 const tituloModal = computed(() => {
   if (modalTipo.value === 'tipoContrato') {
     return `Procesos - ${tipoContratoSeleccionado.value}`;
@@ -558,6 +646,14 @@ function abrirModalPorRetrasosTodasDirecciones(direccion: string) {
   tipoContratoSeleccionado.value = '';
   modalTipo.value = 'retrasosCompleto';
   modalAbierto.value = true;
+}
+
+function filtrarDashboardPorDireccion(direccion: string) {
+  direccionFiltroActivo.value = direccion;
+}
+
+function limpiarFiltroDirectionDelKPI11() {
+  direccionFiltroActivo.value = '';
 }
 
 function cerrarModal() {
@@ -1187,6 +1283,33 @@ function resetearFiltros() {
 .btn-reset:hover {
   background: #dc2626;
   transform: translateY(-1px);
+}
+
+.btn-limpiar-filtro {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  grid-column: 1 / -1;
+  margin-bottom: 1rem;
+  width: fit-content;
+}
+
+.btn-limpiar-filtro:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.btn-limpiar-filtro:active {
+  transform: translateY(0);
 }
 
 .loading-state {
