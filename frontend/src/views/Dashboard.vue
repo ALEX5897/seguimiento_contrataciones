@@ -479,6 +479,10 @@ function renderPieChart(ref: any, data: any[], colors: string[]) {
       textStyle: {
         fontSize: 12,
         color: '#475569'
+      },
+      formatter: (name: string) => {
+        const item = data.find((d: any) => d.name === name);
+        return item ? `${name}: ${item.value}` : name;
       }
     },
     series: [
