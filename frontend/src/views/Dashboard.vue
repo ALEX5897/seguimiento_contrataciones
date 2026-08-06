@@ -4,8 +4,8 @@
     <div class="dashboard-header">
       <div class="header-title">
         <i class="ri-bar-chart-2-line"></i>
-        <h1>CUADRO DE MANDO – EJECUCIÓN DEL PAC</h1>
-        <p>Seguimiento de Contrataciones – Modelo de KPI</p>
+        <h1>CUADRO DE MANDO – EJECUCIÓN DE CONTRATACIONES</h1>
+        <p>Comparativa PAC vs NO PAC</p>
       </div>
       <div class="header-date">
         <i class="ri-calendar-line"></i>
@@ -19,11 +19,6 @@
         <select v-model="filtroDireccion" class="combo-filtro" @change="cargarDashboard">
           <option value="">Todas las direcciones</option>
           <option v-for="dir in direccionesDisponibles" :key="dir" :value="dir">{{ dir }}</option>
-        </select>
-        <select v-model="filtroPacNoPac" class="combo-filtro" @change="cargarDashboard">
-          <option value="">PAC y NO PAC</option>
-          <option value="PAC">PAC</option>
-          <option value="NO PAC">NO PAC</option>
         </select>
         <select v-model="filtroProcedimiento" class="combo-filtro" @change="cargarDashboard">
           <option value="">Todos los procedimientos</option>
@@ -49,291 +44,185 @@
       <p>Cargando dashboard...</p>
     </div>
 
-    <template v-else-if="datosPC">
-      <!-- KPIS PRINCIPALES -->
-      <section class="kpis-principales">
-        <button class="kpi-card-btn total-procesos" @click="filtrarPorKpi('todos')" :class="{ active: kpiActivo === 'todos' }">
-          <div class="kpi-icon">
-            <i class="ri-file-list-3-line"></i>
-          </div>
-          <div class="kpi-content">
-            <div class="kpi-label">TOTAL PROCESOS</div>
-            <div class="kpi-valor">{{ datosPC.kpisPrincipales.totalProcesos }}</div>
-            <div class="kpi-detalle">Procesos contractionales</div>
-          </div>
-        </button>
+    <template v-else-if="datosPAC && datosNoPAC">
 
-        <button class="kpi-card-btn presupuesto-total" @click="filtrarPorKpi('presupuesto')" :class="{ active: kpiActivo === 'presupuesto' }">
-          <div class="kpi-icon">
-            <i class="ri-money-dollar-circle-line"></i>
+      <!-- LAYOUT DOS COLUMNAS: PAC Y NO PAC -->
+      <div class="dashboard-two-columns">
+        <!-- COLUMNA IZQUIERDA: PROCESOS PAC -->
+        <div class="column-pac">
+          <div class="column-header">
+            <i class="ri-check-double-line"></i>
+            <h2>PROCESOS PAC</h2>
           </div>
-          <div class="kpi-content">
-            <div class="kpi-label">PRESUPUESTO TOTAL PAC</div>
-            <div class="kpi-valor">{{ formatearMonto(datosPC.kpisPrincipales.presupuestoPAC) }}</div>
-            <div class="kpi-detalle">Monto total programado</div>
-          </div>
-        </button>
 
-        <button class="kpi-card-btn procesos-ejecucion" @click="filtrarPorKpi('ejecucion')" :class="{ active: kpiActivo === 'ejecucion' }">
-          <div class="kpi-icon">
-            <i class="ri-play-circle-line"></i>
-          </div>
-          <div class="kpi-content">
-            <div class="kpi-label">PROCESOS EN EJECUCIÓN</div>
-            <div class="kpi-valor">{{ datosPC.kpisPrincipales.procesosEnEjecucion }}</div>
-            <div class="kpi-detalle">{{ calcularPorcentaje(datosPC.kpisPrincipales.procesosEnEjecucion, datosPC.kpisPrincipales.totalProcesos) }}% del total</div>
-          </div>
-        </button>
-
-        <button class="kpi-card-btn procesos-preparacion" @click="filtrarPorKpi('preparacion')" :class="{ active: kpiActivo === 'preparacion' }">
-          <div class="kpi-icon">
-            <i class="ri-inbox-archive-line"></i>
-          </div>
-          <div class="kpi-content">
-            <div class="kpi-label">PROCESOS EN PREPARACIÓN</div>
-            <div class="kpi-valor">{{ datosPC.procesosPorEstado.preparatoria + datosPC.procesosPorEstado.precontractual }}</div>
-            <div class="kpi-detalle">{{ calcularPorcentaje(datosPC.procesosPorEstado.preparatoria + datosPC.procesosPorEstado.precontractual, datosPC.kpisPrincipales.totalProcesos) }}% del total</div>
-          </div>
-        </button>
-
-        <button class="kpi-card-btn procesos-suspendidos" @click="filtrarPorKpi('suspendidos')" :class="{ active: kpiActivo === 'suspendidos' }">
-          <div class="kpi-icon">
-            <i class="ri-pause-circle-line"></i>
-          </div>
-          <div class="kpi-content">
-            <div class="kpi-label">PROCESOS SUSPENDIDOS</div>
-            <div class="kpi-valor">{{ datosPC.procesosPorEstado.suspendido }}</div>
-            <div class="kpi-detalle">{{ calcularPorcentaje(datosPC.procesosPorEstado.suspendido, datosPC.kpisPrincipales.totalProcesos) }}% del total</div>
-          </div>
-        </button>
-
-        <button class="kpi-card-btn procesos-desiertos" @click="filtrarPorKpi('desiertos')" :class="{ active: kpiActivo === 'desiertos' }">
-          <div class="kpi-icon">
-            <i class="ri-close-circle-line"></i>
-          </div>
-          <div class="kpi-content">
-            <div class="kpi-label">PROCESOS DESIERTOS</div>
-            <div class="kpi-valor">{{ datosPC.procesosPorEstado.desierto }}</div>
-            <div class="kpi-detalle">{{ calcularPorcentaje(datosPC.procesosPorEstado.desierto, datosPC.kpisPrincipales.totalProcesos) }}% del total</div>
-          </div>
-        </button>
-      </section>
-
-      <!-- FILA 1: GRÁFICOS -->
-      <div class="dashboard-grid-2cols">
-        <!-- 1. Distribución de procesos por estado -->
-        <section class="chart-container">
-          <h3>1. DISTRIBUCIÓN DE PROCESOS POR ESTADO</h3>
-          <div class="chart-wrapper">
-            <div ref="chartDistribProcesos" class="chart"></div>
-          </div>
-          <div class="chart-legend">
-            <table class="legend-table">
-              <tr>
-                <td><span class="color-dot" style="background: #1e40af;"></span>Fase Preparatoria</td>
-                <td>{{ datosPC.procesosPorEstado.preparatoria }} ({{ calcularPorcentaje(datosPC.procesosPorEstado.preparatoria, datosPC.kpisPrincipales.totalProcesos) }}%)</td>
-              </tr>
-              <tr>
-                <td><span class="color-dot" style="background: #059669;"></span>Precontractual</td>
-                <td>{{ datosPC.procesosPorEstado.precontractual }} ({{ calcularPorcentaje(datosPC.procesosPorEstado.precontractual, datosPC.kpisPrincipales.totalProcesos) }}%)</td>
-              </tr>
-              <tr>
-                <td><span class="color-dot" style="background: #0891b2;"></span>En ejecución</td>
-                <td>{{ datosPC.procesosPorEstado.en_ejecucion }} ({{ calcularPorcentaje(datosPC.procesosPorEstado.en_ejecucion, datosPC.kpisPrincipales.totalProcesos) }}%)</td>
-              </tr>
-              <tr>
-                <td><span class="color-dot" style="background: #f59e0b;"></span>Suspendido</td>
-                <td>{{ datosPC.procesosPorEstado.suspendido }} ({{ calcularPorcentaje(datosPC.procesosPorEstado.suspendido, datosPC.kpisPrincipales.totalProcesos) }}%)</td>
-              </tr>
-              <tr>
-                <td><span class="color-dot" style="background: #dc2626;"></span>Desierto</td>
-                <td>{{ datosPC.procesosPorEstado.desierto }} ({{ calcularPorcentaje(datosPC.procesosPorEstado.desierto, datosPC.kpisPrincipales.totalProcesos) }}%)</td>
-              </tr>
-            </table>
-          </div>
-        </section>
-
-        <!-- 2. Distribución del presupuesto por estado -->
-        <section class="chart-container">
-          <h3>2. DISTRIBUCIÓN DEL PRESUPUESTO POR ESTADO</h3>
-          <div class="chart-wrapper">
-            <div ref="chartDistribPresupuesto" class="chart"></div>
-          </div>
-          <div class="chart-legend">
-            <table class="legend-table">
-              <tr>
-                <td><span class="color-dot" style="background: #1e40af;"></span>Fase Preparatoria</td>
-                <td>{{ formatearMonto(datosPC.presupuestoPorEstado.preparatoria) }}</td>
-              </tr>
-              <tr>
-                <td><span class="color-dot" style="background: #059669;"></span>Precontractual</td>
-                <td>{{ formatearMonto(datosPC.presupuestoPorEstado.precontractual) }}</td>
-              </tr>
-              <tr>
-                <td><span class="color-dot" style="background: #0891b2;"></span>En ejecución</td>
-                <td>{{ formatearMonto(datosPC.presupuestoPorEstado.en_ejecucion) }}</td>
-              </tr>
-              <tr>
-                <td><span class="color-dot" style="background: #f59e0b;"></span>Suspendido</td>
-                <td>{{ formatearMonto(datosPC.presupuestoPorEstado.suspendido) }}</td>
-              </tr>
-              <tr>
-                <td><span class="color-dot" style="background: #dc2626;"></span>Desierto</td>
-                <td>{{ formatearMonto(datosPC.presupuestoPorEstado.desierto) }}</td>
-              </tr>
-            </table>
-          </div>
-        </section>
-      </div>
-
-      <!-- FILA 2: VELOCÍMETRO Y KPIS EFICIENCIA -->
-      <div class="dashboard-grid-2cols">
-        <!-- 3. Velocímetro - Avance del PAC -->
-        <section class="chart-container">
-          <h3>3. VELOCÍMETRO – AVANCE DEL PAC</h3>
-          <div class="chart-wrapper">
-            <div ref="chartVelociometro" class="chart"></div>
-          </div>
-          <div class="velocimetro-info">
-            <p><strong>Índice de Ejecución del PAC:</strong> {{ datosPC.velocimetro.valor }}%</p>
-            <p><strong>Meta Sugerida:</strong> {{ datosPC.velocimetro.meta }}%</p>
-            <p><strong>Monto en Ejecución:</strong> {{ formatearMonto(datosPC.kpisPrincipales.montoEnEjecucion) }}</p>
-          </div>
-        </section>
-
-        <!-- 4. KPIs de Eficiencia -->
-        <section class="chart-container">
-          <h3>4. KPIs DE EFICIENCIA</h3>
-          <div class="eficiencia-grid">
-            <div class="eficiencia-card">
-              <div class="eficiencia-label">Índice de Ejecución del PAC</div>
-              <div class="eficiencia-valor">{{ datosPC.indicesEficiencia.indiceEjecucion }}%</div>
-              <div class="eficiencia-detalle">(Monto en Ejecución / Presupuesto Total)</div>
-            </div>
-            <div class="eficiencia-card">
-              <div class="eficiencia-label">Índice de Procesos Activos</div>
-              <div class="eficiencia-valor">{{ datosPC.indicesEficiencia.indiceActivos }}%</div>
-              <div class="eficiencia-detalle">(Preparatoria + Precontractual + Ejecución / Etapas Procesales)</div>
-            </div>
-            <div class="eficiencia-card">
-              <div class="eficiencia-label">Índice de Procesos con Problemas</div>
-              <div class="eficiencia-valor">{{ datosPC.indicesEficiencia.indiceProblemas }}%</div>
-              <div class="eficiencia-detalle">(Suspendidos o Desiertos / Total Procesos)</div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <!-- FILA 3: KPIs POR PROCEDIMIENTO Y DISTRIBUCIÓN -->
-      <div class="dashboard-grid-full">
-        <!-- 5. KPIs por Procedimiento (Monto) -->
-        <section class="chart-container">
-          <h3>5. KPIs POR PROCEDIMIENTO (MONTO)</h3>
-          <div class="chart-wrapper">
-            <div ref="chartProcedimientosBar" class="chart"></div>
-          </div>
-        </section>
-
-        <!-- 6. Distribución de Procesos por Procedimiento -->
-        <section class="chart-container">
-          <h3>6. DISTRIBUCIÓN DE PROCESOS POR PROCEDIMIENTO Y ESTADO</h3>
-          <div class="chart-wrapper">
-            <div ref="chartProcedimientosEstado" class="chart"></div>
-          </div>
-        </section>
-      </div>
-
-      <!-- FILA 4: TABLAS -->
-      <div class="dashboard-grid-2cols">
-        <!-- 7. Semáforo Gerencial -->
-        <section class="chart-container">
-          <h3>7. SEMÁFORO GERENCIAL</h3>
-          <table class="semaforo-table">
-            <thead>
-              <tr>
-                <th>Indicador</th>
-                <th>Meta</th>
-                <th>Valor Actual</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(indicador, key) in datosPC.semaforoIndicadores" :key="key">
-                <td>{{ obtenerLabelIndicador(key) }}</td>
-                <td>{{ indicador.meta }}{{ key.includes('actual') ? '%' : '' }}</td>
-                <td>{{ Math.round(indicador.actual) }}{{ key.includes('actual') || key.includes('Procesos') ? '%' : '' }}</td>
-                <td>
-                  <span :class="['estado-badge', `estado-${indicador.estado}`]">
-                    {{ indicador.estado.toUpperCase() }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
-
-        <!-- 8. Resumen General -->
-        <section class="chart-container">
-          <h3>8. RESUMEN GENERAL</h3>
-          <div class="resumen-grid">
-            <div class="resumen-item">
-              <i class="ri-file-text-line"></i>
-              <div>
-                <div class="resumen-label">Total de procesos</div>
-                <div class="resumen-valor">{{ datosPC.kpisPrincipales.totalProcesos }}</div>
+          <!-- KPIs PAC -->
+          <section class="kpis-column">
+            <div class="kpi-card-btn">
+              <div class="kpi-icon">{{ datosPAC.kpisPrincipales.totalProcesos }}</div>
+              <div class="kpi-content">
+                <div class="kpi-label">Total Procesos</div>
+                <div class="kpi-detalle">{{ datosPAC.kpisPrincipales.totalProcesos }} contratos</div>
               </div>
             </div>
-            <div class="resumen-item">
-              <i class="ri-wallet-3-line"></i>
-              <div>
-                <div class="resumen-label">Presupuesto total PAC</div>
-                <div class="resumen-valor">{{ formatearMonto(datosPC.kpisPrincipales.presupuestoPAC) }}</div>
+
+            <div class="kpi-card-btn">
+              <div class="kpi-icon">💰</div>
+              <div class="kpi-content">
+                <div class="kpi-label">Presupuesto</div>
+                <div class="kpi-detalle">{{ formatearMonto(datosPAC.kpisPrincipales.presupuestoPAC) }}</div>
               </div>
             </div>
-            <div class="resumen-item">
-              <i class="ri-wallet-line"></i>
-              <div>
-                <div class="resumen-label">Monto en ejecución</div>
-                <div class="resumen-valor">{{ formatearMonto(datosPC.kpisPrincipales.montoEnEjecucion) }}</div>
+
+            <div class="kpi-card-btn">
+              <div class="kpi-icon">⚙️</div>
+              <div class="kpi-content">
+                <div class="kpi-label">En Ejecución</div>
+                <div class="kpi-detalle">{{ datosPAC.kpisPrincipales.procesosEnEjecucion }} procesos</div>
               </div>
             </div>
-            <div class="resumen-item">
-              <i class="ri-information-line"></i>
-              <div>
-                <div class="resumen-label">Monto en preparatoria</div>
-                <div class="resumen-valor">{{ formatearMonto(datosPC.presupuestoPorEstado.preparatoria) }}</div>
+          </section>
+
+          <!-- Gráficos PAC -->
+          <section class="chart-container">
+            <h3>Distribución por Estado</h3>
+            <div class="chart-wrapper">
+              <div ref="chartDistribProcesosPAC" class="chart"></div>
+            </div>
+          </section>
+
+          <section class="chart-container">
+            <h3>Distribución del Presupuesto</h3>
+            <div class="chart-wrapper">
+              <div ref="chartDistribPresupuestoPAC" class="chart"></div>
+            </div>
+          </section>
+
+          <section class="chart-container">
+            <h3>Avance General</h3>
+            <div class="chart-wrapper">
+              <div ref="chartVelociometroPAC" class="chart"></div>
+            </div>
+            <div class="velocimetro-info">
+              <p><strong>Índice de Ejecución:</strong> {{ datosPAC.velocimetro.valor }}%</p>
+              <p><strong>Monto en Ejecución:</strong> {{ formatearMonto(datosPAC.kpisPrincipales.montoEnEjecucion) }}</p>
+            </div>
+          </section>
+
+          <!-- Resumen PAC -->
+          <section class="chart-container">
+            <h3>Resumen</h3>
+            <div class="resumen-small">
+              <div class="resumen-item-small">
+                <span class="label">Preparatoria</span>
+                <span class="valor">{{ datosPAC.procesosPorEstado.preparatoria }}</span>
+              </div>
+              <div class="resumen-item-small">
+                <span class="label">Precontractual</span>
+                <span class="valor">{{ datosPAC.procesosPorEstado.precontractual }}</span>
+              </div>
+              <div class="resumen-item-small">
+                <span class="label">En Ejecución</span>
+                <span class="valor">{{ datosPAC.procesosPorEstado.en_ejecucion }}</span>
+              </div>
+              <div class="resumen-item-small">
+                <span class="label">Suspendido</span>
+                <span class="valor">{{ datosPAC.procesosPorEstado.suspendido }}</span>
+              </div>
+              <div class="resumen-item-small">
+                <span class="label">Desierto</span>
+                <span class="valor">{{ datosPAC.procesosPorEstado.desierto }}</span>
               </div>
             </div>
-            <div class="resumen-item">
-              <i class="ri-bookmark-line"></i>
-              <div>
-                <div class="resumen-label">Monto precontractual</div>
-                <div class="resumen-valor">{{ formatearMonto(datosPC.presupuestoPorEstado.precontractual) }}</div>
-              </div>
-            </div>
-            <div class="resumen-item">
-              <i class="ri-pause-circle-line"></i>
-              <div>
-                <div class="resumen-label">Monto suspendido</div>
-                <div class="resumen-valor">{{ formatearMonto(datosPC.presupuestoPorEstado.suspendido) }}</div>
-              </div>
-            </div>
-            <div class="resumen-item">
-              <i class="ri-error-warning-line"></i>
-              <div>
-                <div class="resumen-label">Monto desierto</div>
-                <div class="resumen-valor">{{ formatearMonto(datosPC.presupuestoPorEstado.desierto) }}</div>
-              </div>
-            </div>
-            <div class="resumen-item">
-              <i class="ri-money-dollar-circle-line"></i>
-              <div>
-                <div class="resumen-label">Monto NO PAC</div>
-                <div class="resumen-valor">{{ formatearMonto(datosPC.kpisPrincipales.presupuestoNoPAC) }}</div>
-              </div>
-            </div>
+          </section>
+        </div>
+
+        <!-- COLUMNA DERECHA: PROCESOS NO PAC -->
+        <div class="column-nopac">
+          <div class="column-header">
+            <i class="ri-close-line"></i>
+            <h2>PROCESOS NO PAC</h2>
           </div>
-        </section>
+
+          <!-- KPIs NO PAC -->
+          <section class="kpis-column">
+            <div class="kpi-card-btn">
+              <div class="kpi-icon">{{ datosNoPAC.kpisPrincipales.totalProcesos }}</div>
+              <div class="kpi-content">
+                <div class="kpi-label">Total Procesos</div>
+                <div class="kpi-detalle">{{ datosNoPAC.kpisPrincipales.totalProcesos }} contratos</div>
+              </div>
+            </div>
+
+            <div class="kpi-card-btn">
+              <div class="kpi-icon">💵</div>
+              <div class="kpi-content">
+                <div class="kpi-label">Presupuesto</div>
+                <div class="kpi-detalle">{{ formatearMonto(datosNoPAC.kpisPrincipales.presupuestoNoPAC) }}</div>
+              </div>
+            </div>
+
+            <div class="kpi-card-btn">
+              <div class="kpi-icon">⚡</div>
+              <div class="kpi-content">
+                <div class="kpi-label">En Ejecución</div>
+                <div class="kpi-detalle">{{ datosNoPAC.kpisPrincipales.procesosEnEjecucion }} procesos</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Gráficos NO PAC -->
+          <section class="chart-container">
+            <h3>Distribución por Estado</h3>
+            <div class="chart-wrapper">
+              <div ref="chartDistribProcesosNoPAC" class="chart"></div>
+            </div>
+          </section>
+
+          <section class="chart-container">
+            <h3>Distribución del Presupuesto</h3>
+            <div class="chart-wrapper">
+              <div ref="chartDistribPresupuestoNoPAC" class="chart"></div>
+            </div>
+          </section>
+
+          <section class="chart-container">
+            <h3>Avance General</h3>
+            <div class="chart-wrapper">
+              <div ref="chartVelociometroNoPAC" class="chart"></div>
+            </div>
+            <div class="velocimetro-info">
+              <p><strong>Índice de Ejecución:</strong> {{ datosNoPAC.velocimetro.valor }}%</p>
+              <p><strong>Monto en Ejecución:</strong> {{ formatearMonto(datosNoPAC.kpisPrincipales.montoEnEjecucion) }}</p>
+            </div>
+          </section>
+
+          <!-- Resumen NO PAC -->
+          <section class="chart-container">
+            <h3>Resumen</h3>
+            <div class="resumen-small">
+              <div class="resumen-item-small">
+                <span class="label">Preparatoria</span>
+                <span class="valor">{{ datosNoPAC.procesosPorEstado.preparatoria }}</span>
+              </div>
+              <div class="resumen-item-small">
+                <span class="label">Precontractual</span>
+                <span class="valor">{{ datosNoPAC.procesosPorEstado.precontractual }}</span>
+              </div>
+              <div class="resumen-item-small">
+                <span class="label">En Ejecución</span>
+                <span class="valor">{{ datosNoPAC.procesosPorEstado.en_ejecucion }}</span>
+              </div>
+              <div class="resumen-item-small">
+                <span class="label">Suspendido</span>
+                <span class="valor">{{ datosNoPAC.procesosPorEstado.suspendido }}</span>
+              </div>
+              <div class="resumen-item-small">
+                <span class="label">Desierto</span>
+                <span class="valor">{{ datosNoPAC.procesosPorEstado.desierto }}</span>
+              </div>
+            </div>
+          </section>
+        </div>
       </div>
     </template>
 
@@ -350,24 +239,26 @@ import api from '../services/api';
 
 const cargando = ref(true);
 const error = ref('');
-const datosPC = ref<any>(null);
-const kpiActivo = ref('todos');
+const datosPAC = ref<any>(null);
+const datosNoPAC = ref<any>(null);
 
 // Filtros
 const filtroDireccion = ref('');
-const filtroPacNoPac = ref('');
 const filtroProcedimiento = ref('');
 const filtroCuatrimestre = ref('');
 
 const direccionesDisponibles = ref<string[]>([]);
 const procedimientosDisponibles = ref<string[]>([]);
 
-// Chart instances
-const chartDistribProcesos = ref<any>(null);
-const chartDistribPresupuesto = ref<any>(null);
-const chartVelociometro = ref<any>(null);
-const chartProcedimientosBar = ref<any>(null);
-const chartProcedimientosEstado = ref<any>(null);
+// Chart instances PAC
+const chartDistribProcesosPAC = ref<any>(null);
+const chartDistribPresupuestoPAC = ref<any>(null);
+const chartVelociometroPAC = ref<any>(null);
+
+// Chart instances NO PAC
+const chartDistribProcesosNoPAC = ref<any>(null);
+const chartDistribPresupuestoNoPAC = ref<any>(null);
+const chartVelociometroNoPAC = ref<any>(null);
 
 const fechaCorte = computed(() => {
   const hoy = new Date();
@@ -375,7 +266,7 @@ const fechaCorte = computed(() => {
 });
 
 const hayFiltros = computed(() =>
-  filtroDireccion.value || filtroPacNoPac.value || filtroProcedimiento.value || filtroCuatrimestre.value
+  filtroDireccion.value || filtroProcedimiento.value || filtroCuatrimestre.value
 );
 
 onMounted(() => {
@@ -387,21 +278,34 @@ async function cargarDashboard() {
     cargando.value = true;
     error.value = '';
 
-    const params = new URLSearchParams();
-    if (filtroDireccion.value) params.append('direccion', filtroDireccion.value);
-    if (filtroPacNoPac.value) params.append('tipoPlan', filtroPacNoPac.value);
-    if (filtroProcedimiento.value) params.append('procedimiento', filtroProcedimiento.value);
-    if (filtroCuatrimestre.value) params.append('cuatrimestre', filtroCuatrimestre.value);
+    // Construir parámetros base
+    const paramsBase = new URLSearchParams();
+    if (filtroDireccion.value) paramsBase.append('direccion', filtroDireccion.value);
+    if (filtroProcedimiento.value) paramsBase.append('procedimiento', filtroProcedimiento.value);
+    if (filtroCuatrimestre.value) paramsBase.append('cuatrimestre', filtroCuatrimestre.value);
 
-    const response = await api.get(`/reportes/dashboard/pac?${params.toString()}`);
-    datosPC.value = response.data;
+    // Cargar datos PAC
+    const paramsPAC = new URLSearchParams(paramsBase);
+    paramsPAC.append('tipoPlan', 'PAC');
+    const responsePAC = await api.get(`/reportes/dashboard/pac?${paramsPAC.toString()}`);
+    datosPAC.value = responsePAC.data;
 
-    // Obtener direcciones y procedimientos disponibles
-    if (!direccionesDisponibles.value.length && response.data) {
-      // Hacer otra llamada para obtener el catálogo
+    // Cargar datos NO PAC
+    const paramsNoPAC = new URLSearchParams(paramsBase);
+    paramsNoPAC.append('tipoPlan', 'NO PAC');
+    const responseNoPAC = await api.get(`/reportes/dashboard/pac?${paramsNoPAC.toString()}`);
+    datosNoPAC.value = responseNoPAC.data;
+
+    // Obtener direcciones disponibles
+    if (!direccionesDisponibles.value.length && responsePAC.data) {
       const catalogoResponse = await api.get('/reportes/resumen');
       direccionesDisponibles.value = catalogoResponse.data.direccionesDisponibles || [];
-      procedimientosDisponibles.value = Object.keys(datosPC.value.procesosPorProcedimiento || {});
+      procedimientosDisponibles.value = [
+        ...new Set([
+          ...Object.keys(datosPAC.value.procesosPorProcedimiento || {}),
+          ...Object.keys(datosNoPAC.value.procesosPorProcedimiento || {})
+        ])
+      ];
     }
 
     // Renderizar gráficos
@@ -416,46 +320,69 @@ async function cargarDashboard() {
 }
 
 function renderizarGraficos() {
-  if (!datosPC.value) return;
+  if (!datosPAC.value || !datosNoPAC.value) return;
 
-  // 1. Distribución de procesos por estado
+  // GRÁFICOS PAC
   renderPieChart(
-    chartDistribProcesos,
+    chartDistribProcesosPAC,
     [
-      { value: datosPC.value.procesosPorEstado.preparatoria, name: 'Fase Preparatoria' },
-      { value: datosPC.value.procesosPorEstado.precontractual, name: 'Precontractual' },
-      { value: datosPC.value.procesosPorEstado.en_ejecucion, name: 'En ejecución' },
-      { value: datosPC.value.procesosPorEstado.suspendido, name: 'Suspendido' },
-      { value: datosPC.value.procesosPorEstado.desierto, name: 'Desierto' }
+      { value: datosPAC.value.procesosPorEstado.preparatoria, name: 'Fase Preparatoria' },
+      { value: datosPAC.value.procesosPorEstado.precontractual, name: 'Precontractual' },
+      { value: datosPAC.value.procesosPorEstado.en_ejecucion, name: 'En ejecución' },
+      { value: datosPAC.value.procesosPorEstado.suspendido, name: 'Suspendido' },
+      { value: datosPAC.value.procesosPorEstado.desierto, name: 'Desierto' }
     ],
     ['#1e40af', '#059669', '#0891b2', '#f59e0b', '#dc2626']
   );
 
-  // 2. Distribución del presupuesto por estado
   renderPieChart(
-    chartDistribPresupuesto,
+    chartDistribPresupuestoPAC,
     [
-      { value: datosPC.value.presupuestoPorEstado.preparatoria, name: 'Fase Preparatoria' },
-      { value: datosPC.value.presupuestoPorEstado.precontractual, name: 'Precontractual' },
-      { value: datosPC.value.presupuestoPorEstado.en_ejecucion, name: 'En ejecución' },
-      { value: datosPC.value.presupuestoPorEstado.suspendido, name: 'Suspendido' },
-      { value: datosPC.value.presupuestoPorEstado.desierto, name: 'Desierto' }
+      { value: datosPAC.value.presupuestoPorEstado.preparatoria, name: 'Fase Preparatoria' },
+      { value: datosPAC.value.presupuestoPorEstado.precontractual, name: 'Precontractual' },
+      { value: datosPAC.value.presupuestoPorEstado.en_ejecucion, name: 'En ejecución' },
+      { value: datosPAC.value.presupuestoPorEstado.suspendido, name: 'Suspendido' },
+      { value: datosPAC.value.presupuestoPorEstado.desierto, name: 'Desierto' }
     ],
     ['#1e40af', '#059669', '#0891b2', '#f59e0b', '#dc2626']
   );
 
-  // 3. Velocímetro
   renderGaugeChart(
-    chartVelociometro,
-    datosPC.value.velocimetro.valor,
-    datosPC.value.velocimetro.meta
+    chartVelociometroPAC,
+    datosPAC.value.velocimetro.valor,
+    datosPAC.value.velocimetro.meta
   );
 
-  // 4. KPIs por Procedimiento (Bar chart)
-  renderProcedimientosBar();
+  // GRÁFICOS NO PAC
+  renderPieChart(
+    chartDistribProcesosNoPAC,
+    [
+      { value: datosNoPAC.value.procesosPorEstado.preparatoria, name: 'Fase Preparatoria' },
+      { value: datosNoPAC.value.procesosPorEstado.precontractual, name: 'Precontractual' },
+      { value: datosNoPAC.value.procesosPorEstado.en_ejecucion, name: 'En ejecución' },
+      { value: datosNoPAC.value.procesosPorEstado.suspendido, name: 'Suspendido' },
+      { value: datosNoPAC.value.procesosPorEstado.desierto, name: 'Desierto' }
+    ],
+    ['#1e40af', '#059669', '#0891b2', '#f59e0b', '#dc2626']
+  );
 
-  // 5. Distribución por procedimiento y estado
-  renderProcedimientosEstado();
+  renderPieChart(
+    chartDistribPresupuestoNoPAC,
+    [
+      { value: datosNoPAC.value.presupuestoPorEstado.preparatoria, name: 'Fase Preparatoria' },
+      { value: datosNoPAC.value.presupuestoPorEstado.precontractual, name: 'Precontractual' },
+      { value: datosNoPAC.value.presupuestoPorEstado.en_ejecucion, name: 'En ejecución' },
+      { value: datosNoPAC.value.presupuestoPorEstado.suspendido, name: 'Suspendido' },
+      { value: datosNoPAC.value.presupuestoPorEstado.desierto, name: 'Desierto' }
+    ],
+    ['#1e40af', '#059669', '#0891b2', '#f59e0b', '#dc2626']
+  );
+
+  renderGaugeChart(
+    chartVelociometroNoPAC,
+    datosNoPAC.value.velocimetro.valor,
+    datosNoPAC.value.velocimetro.meta
+  );
 }
 
 function renderPieChart(ref: any, data: any[], colors: string[]) {
@@ -632,28 +559,10 @@ function calcularPorcentaje(valor: number, total: number): number {
   return total > 0 ? Math.round((valor / total) * 100) : 0;
 }
 
-function obtenerLabelIndicador(key: string): string {
-  const labels: Record<string, string> = {
-    procesosEnEjecucion: 'Procesos en ejecución',
-    procesosEficiencia: 'Índice de Procesos Activos',
-    procesosDesiert: 'Procesos desiertos',
-    avancePresup: 'Avance presupuestario',
-    procesosActivos: 'Procesos activos'
-  };
-  return labels[key] || key;
-}
-
-function filtrarPorKpi(kpi: string) {
-  kpiActivo.value = kpiActivo.value === kpi ? 'todos' : kpi;
-  // Aquí se podrían agregar filtros adicionales si es necesario
-}
-
 function resetearFiltros() {
   filtroDireccion.value = '';
-  filtroPacNoPac.value = '';
   filtroProcedimiento.value = '';
   filtroCuatrimestre.value = '';
-  kpiActivo.value = 'todos';
   cargarDashboard();
 }
 </script>
@@ -662,7 +571,7 @@ function resetearFiltros() {
 .dashboard-pac {
   background: #f8fafc;
   min-height: 100vh;
-  padding: 2rem;
+  padding: 2rem 1rem;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
@@ -688,14 +597,14 @@ function resetearFiltros() {
 }
 
 .header-title h1 {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
   margin: 0;
   line-height: 1.2;
 }
 
 .header-title p {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #e0e7ff;
   margin: 0;
   margin-top: 0.25rem;
@@ -705,12 +614,8 @@ function resetearFiltros() {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
-}
-
-.header-date i {
-  font-size: 1.5rem;
 }
 
 .filtros-section {
@@ -731,7 +636,7 @@ function resetearFiltros() {
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   padding: 0.5rem 0.75rem;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s;
   background: white;
@@ -757,6 +662,7 @@ function resetearFiltros() {
   border-radius: 6px;
   padding: 0.5rem 1rem;
   font-weight: 600;
+  font-size: 0.85rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -800,35 +706,76 @@ function resetearFiltros() {
   text-align: center;
 }
 
-.kpis-principales {
+.dashboard-two-columns {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
 }
 
-.kpi-card-btn {
+.column-pac,
+.column-nopac {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.column-header {
   display: flex;
   align-items: center;
   gap: 1rem;
   padding: 1.25rem;
   background: white;
-  border: 2px solid #e2e8f0;
+  border-left: 4px solid #2563eb;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.column-nopac .column-header {
+  border-left-color: #dc2626;
+}
+
+.column-header i {
+  font-size: 1.5rem;
+  color: #2563eb;
+}
+
+.column-nopac .column-header i {
+  color: #dc2626;
+}
+
+.column-header h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  color: #0f172a;
+}
+
+.kpis-column {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.kpi-card-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: white;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s;
-  text-align: left;
+  transition: all 0.2s;
+  text-align: center;
   font-family: inherit;
+  align-items: center;
 }
 
 .kpi-card-btn:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.kpi-card-btn.active {
-  border-color: #3b82f6;
-  background: #eff6ff;
 }
 
 .kpi-icon {
@@ -839,22 +786,23 @@ function resetearFiltros() {
   justify-content: center;
   border-radius: 8px;
   font-size: 1.75rem;
-  flex-shrink: 0;
+  font-weight: 700;
+  background: #f0f4ff;
+  color: #2563eb;
 }
 
-.total-procesos .kpi-icon { background: #dbeafe; color: #1e40af; }
-.presupuesto-total .kpi-icon { background: #dbeafe; color: #0ea5e9; }
-.procesos-ejecucion .kpi-icon { background: #d1fae5; color: #059669; }
-.procesos-preparacion .kpi-icon { background: #fef3c7; color: #d97706; }
-.procesos-suspendidos .kpi-icon { background: #fecaca; color: #dc2626; }
-.procesos-desiertos .kpi-icon { background: #e5e7eb; color: #6b7280; }
+.column-nopac .kpi-icon {
+  background: #fee2e2;
+  color: #dc2626;
+}
 
 .kpi-content {
   flex: 1;
+  width: 100%;
 }
 
 .kpi-label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   color: #64748b;
   text-transform: uppercase;
@@ -862,42 +810,22 @@ function resetearFiltros() {
   margin-bottom: 0.25rem;
 }
 
-.kpi-valor {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin-bottom: 0.25rem;
-}
-
 .kpi-detalle {
   font-size: 0.85rem;
-  color: #94a3b8;
-}
-
-.dashboard-grid-2cols {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.dashboard-grid-full {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  color: #334155;
+  font-weight: 600;
 }
 
 .chart-container {
   background: white;
-  padding: 1.5rem;
+  padding: 1.25rem;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .chart-container h3 {
   margin: 0 0 1rem 0;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: #0f172a;
   text-transform: uppercase;
@@ -908,7 +836,7 @@ function resetearFiltros() {
 
 .chart-wrapper {
   width: 100%;
-  height: 300px;
+  height: 250px;
   margin-bottom: 1rem;
 }
 
@@ -917,196 +845,93 @@ function resetearFiltros() {
   height: 100%;
 }
 
-.chart-legend {
-  margin-top: 1rem;
-}
-
-.legend-table {
-  width: 100%;
-  font-size: 0.85rem;
-  border-collapse: collapse;
-}
-
-.legend-table tr {
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.legend-table tr:last-child {
-  border-bottom: none;
-}
-
-.legend-table td {
-  padding: 0.5rem 0;
-  color: #475569;
-}
-
-.legend-table td:first-child {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.color-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
 .velocimetro-info {
-  padding: 1rem;
+  padding: 0.75rem;
   background: #f8fafc;
   border-radius: 6px;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: #475569;
 }
 
 .velocimetro-info p {
-  margin: 0.5rem 0;
-}
-
-.eficiencia-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-}
-
-.eficiencia-card {
-  padding: 1rem;
-  background: #f8fafc;
-  border-radius: 6px;
-  text-align: center;
-  border-top: 3px solid #3b82f6;
-}
-
-.eficiencia-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #64748b;
-  margin-bottom: 0.5rem;
-  text-transform: uppercase;
-}
-
-.eficiencia-valor {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin-bottom: 0.25rem;
-}
-
-.eficiencia-detalle {
-  font-size: 0.75rem;
-  color: #94a3b8;
+  margin: 0.4rem 0;
   line-height: 1.3;
 }
 
-.semaforo-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-.semaforo-table thead {
-  background: #f1f5f9;
-}
-
-.semaforo-table th {
-  padding: 0.75rem;
-  text-align: left;
-  font-weight: 700;
-  color: #475569;
-  border-bottom: 2px solid #cbd5e1;
-}
-
-.semaforo-table td {
-  padding: 0.75rem;
-  border-bottom: 1px solid #e2e8f0;
-  color: #334155;
-}
-
-.estado-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.estado-verde {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.estado-rojo {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.estado-amarillo {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.resumen-grid {
+.resumen-small {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
 }
 
-.resumen-item {
+.resumen-item-small {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
+  padding: 0.75rem;
   background: #f8fafc;
   border-radius: 6px;
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid #2563eb;
 }
 
-.resumen-item i {
-  font-size: 1.5rem;
-  color: #3b82f6;
-  flex-shrink: 0;
+.column-nopac .resumen-item-small {
+  border-left-color: #dc2626;
 }
 
-.resumen-label {
+.resumen-item-small .label {
   font-size: 0.75rem;
   font-weight: 600;
   color: #64748b;
   text-transform: uppercase;
-  margin-bottom: 0.25rem;
 }
 
-.resumen-valor {
+.resumen-item-small .valor {
   font-size: 1rem;
   font-weight: 700;
   color: #0f172a;
 }
 
-@media (max-width: 1024px) {
-  .dashboard-grid-2cols {
-    grid-template-columns: 1fr;
+@media (max-width: 1400px) {
+  .dashboard-two-columns {
+    gap: 1.5rem;
   }
 
-  .dashboard-grid-full {
-    grid-template-columns: 1fr;
+  .chart-wrapper {
+    height: 220px;
   }
 
-  .eficiencia-grid {
-    grid-template-columns: 1fr;
+  .kpis-column {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
   }
 
-  .resumen-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .kpi-card-btn {
+    padding: 0.85rem;
+  }
+
+  .kpi-icon {
+    width: 45px;
+    height: 45px;
+    font-size: 1.5rem;
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .dashboard-pac {
     padding: 1rem;
   }
 
+  .dashboard-two-columns {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .chart-wrapper {
+    height: 280px;
+  }
+}
+
+@media (max-width: 768px) {
   .dashboard-header {
     flex-direction: column;
     gap: 1rem;
@@ -1117,12 +942,16 @@ function resetearFiltros() {
     flex-direction: column;
   }
 
-  .kpis-principales {
+  .header-title h1 {
+    font-size: 1.25rem;
+  }
+
+  .kpis-column {
     grid-template-columns: 1fr;
   }
 
-  .resumen-grid {
-    grid-template-columns: 1fr;
+  .chart-wrapper {
+    height: 250px;
   }
 }
 </style>
