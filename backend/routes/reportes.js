@@ -289,6 +289,7 @@ function calcularResumenProceso(subtarea, hoy, usarTodasEtapas = false) {
     direccionNombre: String(subtarea?.direccionNombre || ''),
     responsableNombre: String(subtarea?.responsableNombre || ''),
     tipoPlan: String(subtarea?.tipoPlan || subtarea?.pacNoPac || ''),
+    tipoContratacion: String(subtarea?.tipoContratacion || 'No definido'),
     presupuesto: obtenerPresupuestoProceso(subtarea),
     costoReforma2: Number(subtarea?.costoReforma2 || subtarea?.costo2026 || 0),
     activo: obtenerEstadoProceso(subtarea) !== 0,
