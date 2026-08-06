@@ -172,14 +172,12 @@
               </div>
             </div>
           </section>
-        </div>
 
-        <!-- GRÁFICO DISTRIBUCIÓN POR PROCEDIMIENTO Y FASE (ANCHO COMPLETO) -->
-        <div class="full-width-section">
+          <!-- Gráfico Procedimientos y Fases PAC -->
           <section class="chart-container">
-            <h3>Distribución de Procesos por Procedimiento y Fase</h3>
+            <h3>Distribución por Procedimiento y Fase</h3>
             <div class="chart-wrapper">
-              <div ref="chartProcedimientosYFase" class="chart" style="height: 400px;"></div>
+              <div ref="chartProcedimientosYFasePAC" class="chart" style="height: 400px;"></div>
             </div>
           </section>
         </div>
@@ -281,6 +279,14 @@
               </div>
             </div>
           </section>
+
+          <!-- Gráfico Procedimientos y Fases NO PAC -->
+          <section class="chart-container">
+            <h3>Distribución por Procedimiento y Fase</h3>
+            <div class="chart-wrapper">
+              <div ref="chartProcedimientosYFaseNoPAC" class="chart" style="height: 400px;"></div>
+            </div>
+          </section>
         </div>
       </div>
     </template>
@@ -352,7 +358,8 @@ const chartDistribPresupuestoNoPAC = ref<any>(null);
 const chartVelociometroNoPAC = ref<any>(null);
 
 // Chart instances - Procedimientos y Fases
-const chartProcedimientosYFase = ref<any>(null);
+const chartProcedimientosYFasePAC = ref<any>(null);
+const chartProcedimientosYFaseNoPAC = ref<any>(null);
 
 // Modal de procesos por fase
 const modalAbierto = ref(false);
@@ -579,30 +586,13 @@ function renderizarGraficos() {
     datosNoPAC.value.velocimetro.meta
   );
 
-  // Gráfico de Procedimientos y Fases (combina PAC + NO PAC)
+  // Gráficos de Procedimientos y Fases por tipo (PAC y NO PAC separados)
   if (datosPAC.value?.procesosPorProcedimientoYFase) {
-    const procedimientosCombinados: any = {};
+    renderStackedBarChart(chartProcedimientosYFasePAC, datosPAC.value.procesosPorProcedimientoYFase);
+  }
 
-    // Agregar datos PAC
-    Object.entries(datosPAC.value.procesosPorProcedimientoYFase).forEach(([proc, data]: [string, any]) => {
-      procedimientosCombinados[proc] = { ...data };
-    });
-
-    // Agregar datos NO PAC
-    if (datosNoPAC.value?.procesosPorProcedimientoYFase) {
-      Object.entries(datosNoPAC.value.procesosPorProcedimientoYFase).forEach(([proc, data]: [string, any]) => {
-        if (procedimientosCombinados[proc]) {
-          procedimientosCombinados[proc].preparatoria += data.preparatoria || 0;
-          procedimientosCombinados[proc].precontractual += data.precontractual || 0;
-          procedimientosCombinados[proc].contractual += data.contractual || 0;
-          procedimientosCombinados[proc].total += data.total || 0;
-        } else {
-          procedimientosCombinados[proc] = { ...data };
-        }
-      });
-    }
-
-    renderStackedBarChart(chartProcedimientosYFase, procedimientosCombinados);
+  if (datosNoPAC.value?.procesosPorProcedimientoYFase) {
+    renderStackedBarChart(chartProcedimientosYFaseNoPAC, datosNoPAC.value.procesosPorProcedimientoYFase);
   }
 }
 
@@ -941,11 +931,6 @@ function resetearFiltros() {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
-  margin-top: 2rem;
-}
-
-.full-width-section {
-  width: 100%;
   margin-top: 2rem;
 }
 
