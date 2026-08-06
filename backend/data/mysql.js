@@ -1053,6 +1053,7 @@ export async function getAllSubtareas() {
     item.cuatrimestre = row.cuatrimestre || null;
     item.plazoContrato = row.plazo_contrato || null;
     item.procedimientoSugerido = row.procedimiento_sugerido || null;
+    item.tipoContratacion = row.procedimiento_sugerido || null;
     item.procesoEnRiesgo = Boolean(Number(row.proceso_en_riesgo ?? 0));
     item.riesgoComentario = row.riesgo_comentario ? normalizeTextEncoding(row.riesgo_comentario) : null;
     item.avanceGeneral = Number(row.avance_general ?? 0);
