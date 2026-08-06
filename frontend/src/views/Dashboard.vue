@@ -892,18 +892,6 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
   const preparatoriaData = tiposContrato.map((t: string) => data[t].preparatoria || 0);
   const precontractualData = tiposContrato.map((t: string) => data[t].precontractual || 0);
   const contractualData = tiposContrato.map((t: string) => data[t].contractual || 0);
-  const totalData = tiposContrato.map((t: string) => data[t].total || 0);
-  const presupuestoData = tiposContrato.map((t: string) => data[t].presupuesto || 0);
-
-  // Función para formatear montos completos
-  const formatearMontoCurrencia = (monto: number): string => {
-    return new Intl.NumberFormat('es-EC', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(monto);
-  };
 
   // Calcular ancho necesario para labels según cantidad de items
   const itemCount = tiposContrato.length;
@@ -926,7 +914,7 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
       }
     },
     legend: {
-      data: ['Prep.', 'Precontractual', 'Contractual', 'TOTAL'],
+      data: ['Prep.', 'Precontractual', 'Contractual'],
       top: 5,
       left: 'center',
       textStyle: { fontSize: 12, color: '#475569', fontWeight: 500 },
@@ -950,25 +938,6 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
         type: 'category',
         data: axisData,
         axisLabel: { fontSize: 11, color: '#475569', margin: 8 },
-        gridIndex: 0
-      },
-      {
-        type: 'category',
-        data: totalData.map((val: number, idx: number) => {
-          const presupuesto = presupuestoData[idx];
-          const presupuestoFormato = formatearMontoCurrencia(presupuesto);
-          return `${val.toString().padStart(3)} / ${presupuestoFormato}`;
-        }),
-        position: 'right',
-        name: 'TOTAL',
-        nameLocation: 'end',
-        nameGap: 5,
-        nameTextStyle: {
-          fontSize: 12,
-          color: '#1f2937',
-          fontWeight: 'bold'
-        },
-        axisLabel: { fontSize: 13, color: '#1f2937', fontWeight: '600', fontFamily: 'monospace', margin: 8 },
         gridIndex: 0
       }
     ],
@@ -1017,13 +986,6 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
           fontWeight: 600
         },
         itemStyle: { color: '#dc2626' }
-      },
-      {
-        name: 'TOTAL',
-        type: 'bar',
-        data: totalData,
-        itemStyle: { color: 'transparent' },
-        z: 0
       }
     ]
   };
