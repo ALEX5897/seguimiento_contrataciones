@@ -792,7 +792,7 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
     },
     grid: {
       left: estimatedLabelWidth,
-      right: 60,
+      right: 80,
       top: 35,
       bottom: 15,
       containLabel: false
@@ -861,10 +861,15 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
         label: {
           show: true,
           position: 'right',
-          formatter: (params: any) => params.value > 0 ? params.value : '',
-          fontSize: 10,
+          formatter: (params: any) => {
+            if (params.value <= 0) return '';
+            return params.value.toString().padStart(3);
+          },
+          fontSize: 11,
           fontWeight: 'bold',
-          color: '#1f2937'
+          color: '#1f2937',
+          fontFamily: 'monospace',
+          distance: 5
         },
         itemStyle: { color: 'transparent' },
         z: 0
