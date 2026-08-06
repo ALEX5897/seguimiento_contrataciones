@@ -764,11 +764,14 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
   const totalData = tiposContrato.map((t: string) => data[t].total || 0);
   const presupuestoData = tiposContrato.map((t: string) => data[t].presupuesto || 0);
 
-  // Función para formatear montos de forma comprimida
-  const formatearMontoComprimido = (monto: number): string => {
-    if (monto >= 1000000) return (monto / 1000000).toFixed(1) + 'M';
-    if (monto >= 1000) return (monto / 1000).toFixed(0) + 'K';
-    return monto.toString();
+  // Función para formatear montos completos
+  const formatearMontoCurrencia = (monto: number): string => {
+    return new Intl.NumberFormat('es-EC', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(monto);
   };
 
   // Calcular ancho necesario para labels según cantidad de items
@@ -822,8 +825,8 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
         type: 'category',
         data: totalData.map((val: number, idx: number) => {
           const presupuesto = presupuestoData[idx];
-          const presupuestoFormato = formatearMontoComprimido(presupuesto);
-          return `${val.toString().padStart(3)} / $${presupuestoFormato}`;
+          const presupuestoFormato = formatearMontoCurrencia(presupuesto);
+          return `${val.toString().padStart(3)} / ${presupuestoFormato}`;
         }),
         position: 'right',
         name: 'TOTAL',
