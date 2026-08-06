@@ -361,34 +361,8 @@ const procesosFaseSeleccionada = computed(() => {
 
   return datos.procesos.filter((p: any) => {
     const etapas = p.etapasDetalle || [];
-
-    // Filtrar solo etapas con fase válida (ignorar sin_clasificar)
-    const etapasValidas = etapas.filter((e: any) =>
-      e.fase && e.fase !== 'sin_clasificar'
-    );
-
-    // Aplicar la misma lógica de fase que en el backend
-    const fases = ['preparatoria', 'precontractual', 'contractual'];
-    for (const fase of fases) {
-      const etapasFase = etapasValidas.filter((e: any) => e.fase === fase);
-      const hayPendiente = etapasFase.some((e: any) =>
-        e.estado === 'pendiente' || e.estado === 'en_proceso'
-      );
-
-      if (hayPendiente && fase === faseSeleccionada.value) {
-        return true;
-      }
-    }
-
-    // Si nada está pendiente y es fase contractual
-    if (faseSeleccionada.value === 'contractual') {
-      const tienePendiente = etapasValidas.some((e: any) =>
-        e.estado === 'pendiente' || e.estado === 'en_proceso'
-      );
-      return !tienePendiente;
-    }
-
-    return false;
+    const fase = obtenerFaseProceso(etapas);
+    return fase === faseSeleccionada.value;
   });
 });
 
@@ -402,6 +376,29 @@ function cerrarModal() {
   modalAbierto.value = false;
   faseSeleccionada.value = '';
   tipoPlanSeleccionado.value = '';
+}
+
+// Función auxiliar para obtener la fase de un proceso (igual que backend)
+function obtenerFaseProceso(etapasDetalle: any[] = []): string {
+  const fases = ['preparatoria', 'precontractual', 'contractual'];
+
+  // Filtrar solo etapas con fase válida (ignorar sin_clasificar)
+  const etapasValidas = etapasDetalle.filter(e =>
+    e.fase && e.fase !== 'sin_clasificar'
+  );
+
+  for (const fase of fases) {
+    const etapasFase = etapasValidas.filter(e => e.fase === fase);
+    const hayPendiente = etapasFase.some(e =>
+      e.estado === 'pendiente' || e.estado === 'en_proceso'
+    );
+
+    if (hayPendiente) {
+      return fase;
+    }
+  }
+
+  return 'contractual';
 }
 
 const fechaCorte = computed(() => {
