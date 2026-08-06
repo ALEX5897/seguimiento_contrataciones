@@ -704,26 +704,25 @@ function renderGaugeChart(ref: any, valor: number, meta: number) {
 }
 
 function renderStackedBarChart(ref: any, data: any) {
-  if (!ref.value) return;
+  if (!ref.value || !data) return;
   const chart = echarts.init(ref.value);
 
   // Preparar datos para gráfico de barras apiladas
   const tiposContrato = Object.keys(data).sort();
+
+  // Validar que hay datos
+  if (tiposContrato.length === 0) return;
+
   const preparatoriaData = tiposContrato.map((t: string) => data[t].preparatoria || 0);
   const precontractualData = tiposContrato.map((t: string) => data[t].precontractual || 0);
   const contractualData = tiposContrato.map((t: string) => data[t].contractual || 0);
   const totalData = tiposContrato.map((t: string) => data[t].total || 0);
 
-  // Calcular altura dinámicamente: mínimo 250px, máximo 30px por fila
+  // Calcular ancho necesario para labels según cantidad de items
   const itemCount = tiposContrato.length;
-  const minHeight = 250;
-  const heightPerItem = 32;
-  const calculatedHeight = Math.max(minHeight, itemCount * heightPerItem);
-  ref.value.style.height = `${calculatedHeight}px`;
-
-  // Calcular ancho necesario para labels (longitud máxima)
-  const maxLabelLength = Math.max(...tiposContrato.map(t => t.length));
-  const estimatedLabelWidth = Math.min(180, Math.max(140, maxLabelLength * 6.5));
+  const baseLeftMargin = 140;
+  const additionalMargin = Math.min(40, itemCount * 2);
+  const estimatedLabelWidth = baseLeftMargin + additionalMargin;
 
   const option = {
     color: ['#3b82f6', '#10b981', '#dc2626'],
@@ -1147,8 +1146,7 @@ function resetearFiltros() {
 }
 
 .chart-wrapper.chart-tipo-contrato {
-  height: auto;
-  min-height: 280px;
+  height: 320px;
 }
 
 .chart {
