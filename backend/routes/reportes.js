@@ -3126,5 +3126,164 @@ async function agregarHojaVerificablesTarde(wb, procesos, bloquesMatriz = {}) {
   }
 }
 
+// Dashboard PAC - Cuadro de Mando
+router.get('/dashboard/pac', async (req, res) => {
+  try {
+    const scope = getScopeFromReq(req);
+    const subtareas = await mysql.getAllSubtareasByScope(scope);
+    const filtros = getFiltros(req.query);
+
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    // Procesos base
+    const procesosBase = subtareas
+      .filter((subtarea) => procesoCuentaEnReporte(subtarea))
+      .map((subtarea) => calcularResumenProceso(subtarea, hoy));
+    const procesos = filtrarProcesos(procesosBase, filtros);
+
+    // KPIs principales
+    const totalProcesos = procesos.length;
+    const presupuestoTotal = procesos.reduce((sum, p) => sum + (p.presupuesto || 0), 0);
+    const presupuestoPAC = procesos
+      .filter(p => (p.tipoPlan || p.pacNoPac || '').toUpperCase() === 'PAC')
+      .reduce((sum, p) => sum + (p.presupuesto || 0), 0);
+    const presupuestoNoPAC = presupuestoTotal - presupuestoPAC;
+
+    // Procesos por estado
+    const estadosMap = {
+      preparatoria: 'Fase Preparatoria',
+      precontractual: 'Precontractual',
+      en_ejecucion: 'En ejecución',
+      suspendido: 'Suspendido',
+      desierto: 'Desierto'
+    };
+
+    const procesosPorEstado = {};
+    Object.keys(estadosMap).forEach(estado => {
+      procesosPorEstado[estado] = procesos.filter(p => {
+        const estadoProc = obtenerEstadoProceso(p);
+        return (estadoProc === estado ||
+                (estado === 'en_ejecucion' && estadoProc === 'en ejecuta') ||
+                (estado === 'en_ejecucion' && estadoProc === 'ejecucion'));
+      }).length;
+    });
+
+    // Presupuesto por estado
+    const presupuestoPorEstado = {};
+    Object.keys(estadosMap).forEach(estado => {
+      presupuestoPorEstado[estado] = procesos
+        .filter(p => {
+          const estadoProc = obtenerEstadoProceso(p);
+          return (estadoProc === estado ||
+                  (estado === 'en_ejecucion' && estadoProc === 'en ejecuta') ||
+                  (estado === 'en_ejecucion' && estadoProc === 'ejecucion'));
+        })
+        .reduce((sum, p) => sum + (p.presupuesto || 0), 0);
+    });
+
+    // Procesos por procedimiento
+    const procesosPorProcedimiento = {};
+    procesos.forEach(p => {
+      const proc = (p.procedimiento || p.tipoContratacion || 'No definido').trim();
+      if (!procesosPorProcedimiento[proc]) {
+        procesosPorProcedimiento[proc] = { procesos: 0, monto: 0 };
+      }
+      procesosPorProcedimiento[proc].procesos += 1;
+      procesosPorProcedimiento[proc].monto += p.presupuesto || 0;
+    });
+
+    // Índices de eficiencia
+    const totalEtapas = procesos.reduce((sum, p) => sum + (p.totalEtapas || 0), 0);
+    const etapasCompletadas = procesos.reduce((sum, p) => sum + (p.completadas || 0), 0);
+    const etapasActivas = procesos.reduce((sum, p) => sum + (p.enProceso || 0), 0);
+    const etapasAtrasadas = procesos.reduce((sum, p) => sum + (p.atrasadas || 0), 0);
+
+    const indiceEjecucion = totalEtapas > 0 ? Math.round((etapasCompletadas / totalEtapas) * 100) : 0;
+    const indiceActivos = totalEtapas > 0 ? Math.round((etapasActivas / totalEtapas) * 100) : 0;
+    const indiceProblemas = totalEtapas > 0 ? Math.round((etapasAtrasadas / totalEtapas) * 100) : 0;
+
+    // Montos en ejecución vs presupuestado
+    const procesosEnEjecucion = procesosPorEstado.en_ejecucion || 0;
+    const montoEnEjecucion = presupuestoPorEstado.en_ejecucion || 0;
+    const indiceEjecucionMonto = presupuestoPAC > 0 ? Math.round((montoEnEjecucion / presupuestoPAC) * 100) : 0;
+
+    // Velocímetro - Avance del PAC
+    const velocimetro = indiceEjecucionMonto;
+    const metaVeloci = 80;
+
+    // Semáforo gerencial
+    const semaforoIndicadores = {
+      procesosEnEjecucion: {
+        meta: totalProcesos > 0 ? Math.round(totalProcesos * 0.3) : 0,
+        actual: procesosEnEjecucion,
+        estado: procesosEnEjecucion > (totalProcesos * 0.3) ? 'verde' : 'rojo'
+      },
+      procesosEficiencia: {
+        meta: 90,
+        actual: indiceActivos,
+        estado: indiceActivos > 90 ? 'verde' : 'rojo'
+      },
+      procesosDesiert: {
+        meta: 5,
+        actual: procesosPorEstado.desierto || 0,
+        estado: (procesosPorEstado.desierto || 0) < 5 ? 'verde' : 'rojo'
+      },
+      avancePresup: {
+        meta: 50,
+        actual: indiceEjecucionMonto,
+        estado: indiceEjecucionMonto > 50 ? 'rojo' : 'verde'
+      },
+      procesosActivos: {
+        meta: 90,
+        actual: (procesos.filter(p => {
+          const estadoProc = obtenerEstadoProceso(p);
+          return estadoProc === 'activo' || estadoProc === 'en ejecuta';
+        }).length / totalProcesos) * 100,
+        estado: ((procesos.filter(p => {
+          const estadoProc = obtenerEstadoProceso(p);
+          return estadoProc === 'activo' || estadoProc === 'en ejecuta';
+        }).length / totalProcesos) * 100) > 90 ? 'verde' : 'rojo'
+      }
+    };
+
+    res.json({
+      fechaGeneracion: new Date().toISOString(),
+      filtros,
+      kpisPrincipales: {
+        totalProcesos,
+        presupuestoTotal,
+        presupuestoPAC,
+        presupuestoNoPAC,
+        procesosEnEjecucion,
+        montoEnEjecucion
+      },
+      procesosPorEstado,
+      presupuestoPorEstado,
+      procesosPorProcedimiento,
+      indicesEficiencia: {
+        indiceEjecucion,
+        indiceActivos,
+        indiceProblemas
+      },
+      velocimetro: {
+        valor: velocimetro,
+        meta: metaVeloci,
+        estado: velocimetro > metaVeloci ? 'verde' : velocimetro > (metaVeloci * 0.6) ? 'amarillo' : 'rojo'
+      },
+      semaforoIndicadores,
+      resumenGeneral: {
+        totalEtapas,
+        etapasCompletadas,
+        etapasActivas,
+        etapasAtrasadas
+      }
+    });
+  } catch (error) {
+    console.error('Error en GET /api/reportes/dashboard/pac:', error);
+    res.status(500).json({ error: error.message || 'Error al generar dashboard' });
+  }
+});
+
 export default router;
 
