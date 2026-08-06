@@ -296,63 +296,44 @@
                (datosNoPAC.procesosConRetrasosPorDireccion && Object.keys(datosNoPAC.procesosConRetrasosPorDireccion).length > 0)">
         <h2>10. PROCESOS CON RETRASOS POR DIRECCIÓN</h2>
 
-        <!-- Tabla PAC -->
-        <div v-if="datosPAC.procesosConRetrasosPorDireccion && Object.keys(datosPAC.procesosConRetrasosPorDireccion).length > 0">
-          <h3 class="subtitulo-tabla">PAC</h3>
-          <div class="retrasos-tabla-wrapper">
-            <table class="retrasos-tabla">
-              <thead>
-                <tr>
-                  <th>Dirección</th>
-                  <th>Total Retrasados</th>
-                  <th>Preparatoria</th>
-                  <th>Precontractual</th>
-                  <th>Contractual</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(datos, direccion) in datosPAC.procesosConRetrasosPorDireccion" :key="'pac-' + direccion"
-                    class="fila-clickeable"
-                    @click="abrirModalPorRetrasos(String(direccion), 'PAC')">
-                  <td class="direccion-cell">{{ direccion }}</td>
-                  <td class="total-cell">{{ datos.total }}</td>
-                  <td class="fase-cell">{{ datos.porFase.preparatoria || 0 }}</td>
-                  <td class="fase-cell">{{ datos.porFase.precontractual || 0 }}</td>
-                  <td class="fase-cell">{{ datos.porFase.contractual || 0 }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <div class="retrasos-tabla-wrapper">
+          <table class="retrasos-tabla">
+            <thead>
+              <tr>
+                <th>Plan</th>
+                <th>Dirección</th>
+                <th>Total Retrasados</th>
+                <th>Preparatoria</th>
+                <th>Precontractual</th>
+                <th>Contractual</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Filas PAC -->
+              <tr v-for="(datos, direccion) in datosPAC.procesosConRetrasosPorDireccion" :key="'pac-' + direccion"
+                  class="fila-clickeable"
+                  @click="abrirModalPorRetrasos(String(direccion), 'PAC')">
+                <td class="plan-cell pac">PAC</td>
+                <td class="direccion-cell">{{ direccion }}</td>
+                <td class="total-cell">{{ datos.total }}</td>
+                <td class="fase-cell">{{ datos.porFase.preparatoria || 0 }}</td>
+                <td class="fase-cell">{{ datos.porFase.precontractual || 0 }}</td>
+                <td class="fase-cell">{{ datos.porFase.contractual || 0 }}</td>
+              </tr>
 
-        <!-- Tabla NO PAC -->
-        <div v-if="datosNoPAC.procesosConRetrasosPorDireccion && Object.keys(datosNoPAC.procesosConRetrasosPorDireccion).length > 0"
-             class="mt-6">
-          <h3 class="subtitulo-tabla">NO PAC</h3>
-          <div class="retrasos-tabla-wrapper">
-            <table class="retrasos-tabla">
-              <thead>
-                <tr>
-                  <th>Dirección</th>
-                  <th>Total Retrasados</th>
-                  <th>Preparatoria</th>
-                  <th>Precontractual</th>
-                  <th>Contractual</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(datos, direccion) in datosNoPAC.procesosConRetrasosPorDireccion" :key="'nopac-' + direccion"
-                    class="fila-clickeable"
-                    @click="abrirModalPorRetrasos(String(direccion), 'NO PAC')">
-                  <td class="direccion-cell">{{ direccion }}</td>
-                  <td class="total-cell">{{ datos.total }}</td>
-                  <td class="fase-cell">{{ datos.porFase.preparatoria || 0 }}</td>
-                  <td class="fase-cell">{{ datos.porFase.precontractual || 0 }}</td>
-                  <td class="fase-cell">{{ datos.porFase.contractual || 0 }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+              <!-- Filas NO PAC -->
+              <tr v-for="(datos, direccion) in datosNoPAC.procesosConRetrasosPorDireccion" :key="'nopac-' + direccion"
+                  class="fila-clickeable"
+                  @click="abrirModalPorRetrasos(String(direccion), 'NO PAC')">
+                <td class="plan-cell nopac">NO PAC</td>
+                <td class="direccion-cell">{{ direccion }}</td>
+                <td class="total-cell">{{ datos.total }}</td>
+                <td class="fase-cell">{{ datos.porFase.preparatoria || 0 }}</td>
+                <td class="fase-cell">{{ datos.porFase.precontractual || 0 }}</td>
+                <td class="fase-cell">{{ datos.porFase.contractual || 0 }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -1854,6 +1835,24 @@ function resetearFiltros() {
   padding: 1rem;
   color: #475569;
   font-size: 0.95rem;
+}
+
+.retrasos-tabla .plan-cell {
+  font-weight: 700;
+  padding: 1rem 0.75rem;
+  text-align: center;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.retrasos-tabla .plan-cell.pac {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.retrasos-tabla .plan-cell.nopac {
+  background: #dcfce7;
+  color: #166534;
 }
 
 .retrasos-tabla .direccion-cell {
