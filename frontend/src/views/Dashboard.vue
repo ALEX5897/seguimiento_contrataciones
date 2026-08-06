@@ -473,8 +473,9 @@ function renderPieChart(ref: any, data: any[], colors: string[]) {
     },
     legend: {
       show: true,
-      orient: 'bottom',
-      bottom: 10,
+      orient: 'vertical',
+      right: 15,
+      top: 'center',
       textStyle: {
         fontSize: 12,
         color: '#475569'
