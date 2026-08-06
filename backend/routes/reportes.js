@@ -30,8 +30,13 @@ async function lanzarNavegador() {
 function obtenerFaseProceso(etapasDetalle = []) {
   const fases = ['preparatoria', 'precontractual', 'contractual'];
 
+  // Filtrar solo etapas con fase válida (ignorar sin_clasificar)
+  const etapasValidas = etapasDetalle.filter(e =>
+    e.fase && e.fase !== 'sin_clasificar'
+  );
+
   for (const fase of fases) {
-    const etapasFase = etapasDetalle.filter(e => e.fase === fase);
+    const etapasFase = etapasValidas.filter(e => e.fase === fase);
     const hayPendiente = etapasFase.some(e =>
       e.estado === 'pendiente' || e.estado === 'en_proceso'
     );

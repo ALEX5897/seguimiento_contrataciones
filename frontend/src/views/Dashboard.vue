@@ -362,10 +362,15 @@ const procesosFaseSeleccionada = computed(() => {
   return datos.procesos.filter((p: any) => {
     const etapas = p.etapasDetalle || [];
 
+    // Filtrar solo etapas con fase válida (ignorar sin_clasificar)
+    const etapasValidas = etapas.filter((e: any) =>
+      e.fase && e.fase !== 'sin_clasificar'
+    );
+
     // Aplicar la misma lógica de fase que en el backend
     const fases = ['preparatoria', 'precontractual', 'contractual'];
     for (const fase of fases) {
-      const etapasFase = etapas.filter((e: any) => e.fase === fase);
+      const etapasFase = etapasValidas.filter((e: any) => e.fase === fase);
       const hayPendiente = etapasFase.some((e: any) =>
         e.estado === 'pendiente' || e.estado === 'en_proceso'
       );
@@ -377,7 +382,7 @@ const procesosFaseSeleccionada = computed(() => {
 
     // Si nada está pendiente y es fase contractual
     if (faseSeleccionada.value === 'contractual') {
-      const tienePendiente = etapas.some((e: any) =>
+      const tienePendiente = etapasValidas.some((e: any) =>
         e.estado === 'pendiente' || e.estado === 'en_proceso'
       );
       return !tienePendiente;
