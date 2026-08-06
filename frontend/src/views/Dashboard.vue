@@ -269,67 +269,6 @@
         </div>
       </section>
 
-      <!-- RESUMEN GENERAL -->
-      <section class="resumen-general-section">
-        <h2>12. RESUMEN GENERAL</h2>
-        <div class="resumen-general-grid">
-          <div class="resumen-item">
-            <div class="item-icon">📊</div>
-            <div class="item-content">
-              <span class="item-label">Total de procesos</span>
-              <span class="item-valor">{{ datosPAC.kpisPrincipales.totalProcesos + datosNoPAC.kpisPrincipales.totalProcesos }}</span>
-            </div>
-          </div>
-
-          <div class="resumen-item">
-            <div class="item-icon">💰</div>
-            <div class="item-content">
-              <span class="item-label">Presupuesto total</span>
-              <span class="item-valor">{{ formatearMonto(datosPAC.kpisPrincipales.presupuestoPAC + datosNoPAC.kpisPrincipales.presupuestoNoPAC) }}</span>
-            </div>
-          </div>
-
-          <div class="resumen-item">
-            <div class="item-icon">⚙️</div>
-            <div class="item-content">
-              <span class="item-label">Monto en ejecución</span>
-              <span class="item-valor">{{ formatearMonto((datosPAC.kpisPrincipales.montoEnEjecucion || 0) + (datosNoPAC.kpisPrincipales.montoEnEjecucion || 0)) }}</span>
-            </div>
-          </div>
-
-          <div class="resumen-item">
-            <div class="item-icon">📋</div>
-            <div class="item-content">
-              <span class="item-label">Monto en preparatoria</span>
-              <span class="item-valor">{{ formatearMonto((datosPAC.presupuestoPorEstado?.preparatoria || 0) + (datosNoPAC.presupuestoPorEstado?.preparatoria || 0)) }}</span>
-            </div>
-          </div>
-
-          <div class="resumen-item">
-            <div class="item-icon">📝</div>
-            <div class="item-content">
-              <span class="item-label">Monto precontractual</span>
-              <span class="item-valor">{{ formatearMonto((datosPAC.presupuestoPorEstado?.precontractual || 0) + (datosNoPAC.presupuestoPorEstado?.precontractual || 0)) }}</span>
-            </div>
-          </div>
-
-          <div class="resumen-item">
-            <div class="item-icon">⏸️</div>
-            <div class="item-content">
-              <span class="item-label">Monto suspendido</span>
-              <span class="item-valor">{{ formatearMonto((datosPAC.presupuestoPorEstado?.suspendido || 0) + (datosNoPAC.presupuestoPorEstado?.suspendido || 0)) }}</span>
-            </div>
-          </div>
-
-          <div class="resumen-item">
-            <div class="item-icon">❌</div>
-            <div class="item-content">
-              <span class="item-label">Monto desierto</span>
-              <span class="item-valor">{{ formatearMonto((datosPAC.presupuestoPorEstado?.desierto || 0) + (datosNoPAC.presupuestoPorEstado?.desierto || 0)) }}</span>
-            </div>
-          </div>
-        </div>
-      </section>
     </template>
 
     <div v-else-if="error" class="error-state">
