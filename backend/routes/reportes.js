@@ -3386,6 +3386,28 @@ router.get('/dashboard/pac', async (req, res) => {
       }
     };
 
+    // Procesos con retrasos por dirección
+    const procesosConRetrasosPorDireccion = {};
+    procesosParaAvanceEnriquecidos.forEach(p => {
+      const direccion = (p.nombreDireccion || 'No especificada').trim();
+      const etapasConRetraso = (p.etapasDetalle || []).some(
+        etapa => etapa.estado === 'pendiente' && (etapa.diasAtraso || 0) > 0
+      );
+
+      if (etapasConRetraso) {
+        if (!procesosConRetrasosPorDireccion[direccion]) {
+          procesosConRetrasosPorDireccion[direccion] = {
+            total: 0,
+            porFase: {}
+          };
+        }
+        procesosConRetrasosPorDireccion[direccion].total++;
+        const fase = obtenerFaseProceso(p.etapasDetalle || []);
+        procesosConRetrasosPorDireccion[direccion].porFase[fase] =
+          (procesosConRetrasosPorDireccion[direccion].porFase[fase] || 0) + 1;
+      }
+    });
+
     res.json({
       fechaGeneracion: new Date().toISOString(),
       filtros,
@@ -3422,7 +3444,8 @@ router.get('/dashboard/pac', async (req, res) => {
         etapasCompletadas,
         etapasActivas,
         etapasAtrasadas
-      }
+      },
+      procesosConRetrasosPorDireccion
     });
   } catch (error) {
     console.error('Error en GET /api/reportes/dashboard/pac:', error);

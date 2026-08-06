@@ -290,6 +290,33 @@
         </div>
       </div>
 
+      <!-- PROCESOS CON RETRASOS POR DIRECCIÓN -->
+      <section class="retrasos-section" v-if="datosPAC.procesosConRetrasosPorDireccion && Object.keys(datosPAC.procesosConRetrasosPorDireccion).length > 0">
+        <h2>10. PROCESOS CON RETRASOS POR DIRECCIÓN</h2>
+        <div class="retrasos-tabla-wrapper">
+          <table class="retrasos-tabla">
+            <thead>
+              <tr>
+                <th>Dirección</th>
+                <th>Total Retrasados</th>
+                <th>Preparatoria</th>
+                <th>Precontractual</th>
+                <th>Contractual</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(datos, direccion) in datosPAC.procesosConRetrasosPorDireccion" :key="direccion">
+                <td class="direccion-cell">{{ direccion }}</td>
+                <td class="total-cell">{{ datos.total }}</td>
+                <td class="fase-cell">{{ datos.porFase.preparatoria || 0 }}</td>
+                <td class="fase-cell">{{ datos.porFase.precontractual || 0 }}</td>
+                <td class="fase-cell">{{ datos.porFase.contractual || 0 }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <!-- RESUMEN GENERAL -->
       <section class="resumen-general-section">
         <h2>9. RESUMEN GENERAL</h2>
@@ -1682,6 +1709,84 @@ function resetearFiltros() {
   .modal-body {
     padding: 1rem;
   }
+}
+
+/* PROCESOS CON RETRASOS */
+.retrasos-section {
+  margin: 2rem auto;
+  max-width: 1200px;
+  padding: 0 1rem;
+}
+
+.retrasos-section h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f3a70;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 3px solid #dc2626;
+}
+
+.retrasos-tabla-wrapper {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: auto;
+}
+
+.retrasos-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+.retrasos-tabla thead {
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.retrasos-tabla th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+}
+
+.retrasos-tabla tbody tr {
+  border-bottom: 1px solid #e2e8f0;
+  transition: background-color 0.2s ease;
+}
+
+.retrasos-tabla tbody tr:hover {
+  background: #f1f5f9;
+}
+
+.retrasos-tabla td {
+  padding: 1rem;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.retrasos-tabla .direccion-cell {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.retrasos-tabla .total-cell {
+  font-weight: 700;
+  color: #dc2626;
+  font-size: 1.1rem;
+}
+
+.retrasos-tabla .fase-cell {
+  text-align: center;
+  background: #fef2f2;
+  color: #991b1b;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
 }
 
 /* RESUMEN GENERAL */
