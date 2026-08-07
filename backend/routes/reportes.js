@@ -3164,7 +3164,8 @@ async function agregarHojaVerificablesTarde(wb, procesos, bloquesMatriz = {}) {
 // Dashboard PAC - Cuadro de Mando
 router.get('/dashboard/pac', async (req, res) => {
   try {
-    const scope = getScopeFromReq(req);
+    // Dashboard público: devolver todos los datos sin filtrar por dirección
+    const scope = { role: null, userId: null, direccionNombre: null };
     const subtareas = await mysql.getAllSubtareasByScope(scope);
     const filtros = getFiltros(req.query);
 
