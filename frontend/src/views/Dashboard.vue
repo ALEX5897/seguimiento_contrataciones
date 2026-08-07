@@ -616,15 +616,6 @@ function abrirModalPorTipoContrato(tipoContrato: string, tipoPlan: string) {
   modalAbierto.value = true;
 }
 
-function abrirModalPorRetrasos(direccion: string, tipoPlan: string = 'PAC') {
-  direccionSeleccionada.value = direccion;
-  tipoPlanSeleccionado.value = tipoPlan;
-  faseSeleccionada.value = '';
-  tipoContratoSeleccionado.value = '';
-  modalTipo.value = 'retrasos';
-  modalAbierto.value = true;
-}
-
 function abrirModalPorRetrasosTodasDirecciones(direccion: string) {
   direccionSeleccionada.value = direccion;
   tipoPlanSeleccionado.value = 'AMBOS';
@@ -641,14 +632,6 @@ function abrirModalPorEnEjecucion(tipoPlan: string) {
   direccionSeleccionada.value = '';
   modalTipo.value = 'enEjecucion';
   modalAbierto.value = true;
-}
-
-function filtrarDashboardPorDireccion(direccion: string) {
-  direccionFiltroActivo.value = direccion;
-}
-
-function limpiarFiltroDirectionDelKPI11() {
-  direccionFiltroActivo.value = '';
 }
 
 function cerrarModal() {
@@ -693,10 +676,6 @@ const fechaCorte = computed(() => {
   const hoy = new Date();
   return hoy.toLocaleDateString('es-EC', { year: 'numeric', month: '2-digit', day: '2-digit' });
 });
-
-const hayFiltros = computed(() =>
-  filtroDireccion.value || filtroProcedimiento.value || filtroCuatrimestre.value
-);
 
 const avancePAC = computed(() => {
   if (!datosPAC.value?.resumenGeneral) return 0;
@@ -1144,17 +1123,6 @@ function formatearMonto(monto: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(monto);
-}
-
-function calcularPorcentaje(valor: number, total: number): number {
-  return total > 0 ? Math.round((valor / total) * 100) : 0;
-}
-
-function resetearFiltros() {
-  filtroDireccion.value = '';
-  filtroProcedimiento.value = '';
-  filtroCuatrimestre.value = '';
-  cargarDashboard();
 }
 
 </script>
