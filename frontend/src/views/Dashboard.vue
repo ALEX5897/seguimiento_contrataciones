@@ -1001,7 +1001,7 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
     },
     legend: {
       data: ['Prep.', 'Precontractual', 'Contractual'],
-      bottom: -30,
+      bottom: 20,
       left: 'center',
       textStyle: { fontSize: 12, color: '#475569', fontWeight: 500 },
       itemGap: 16
