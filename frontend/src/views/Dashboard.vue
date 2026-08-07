@@ -1010,7 +1010,7 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
       left: estimatedLabelWidth,
       right: 120,
       top: 35,
-      bottom: 15,
+      bottom: 80,
       containLabel: false
     },
     xAxis: {
