@@ -981,8 +981,8 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
 
   // Calcular ancho necesario para labels según cantidad de items
   const itemCount = tiposContrato.length;
-  const baseLeftMargin = 140;
-  const additionalMargin = Math.min(40, itemCount * 2);
+  const baseLeftMargin = 100;
+  const additionalMargin = Math.min(30, itemCount * 1.5);
   const estimatedLabelWidth = baseLeftMargin + additionalMargin;
 
   const option = {
@@ -1008,7 +1008,7 @@ function renderStackedBarChart(ref: any, data: any, tipoPlan: string = 'PAC') {
     },
     grid: {
       left: estimatedLabelWidth,
-      right: 120,
+      right: 60,
       top: 35,
       bottom: 80,
       containLabel: false
