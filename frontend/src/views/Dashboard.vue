@@ -136,7 +136,7 @@
       <!-- GRÁFICOS EN UNA LÍNEA -->
       <div class="dashboard-charts-row">
         <!-- Gráfico PAC - Distribución por Estado -->
-        <section class="chart-container chart-item chart-narrow">
+        <section class="chart-container chart-item chart-narrow chart-pac-estado">
           <h3>PAC - Distribución por Estado</h3>
           <div class="chart-wrapper">
             <div ref="chartDistribProcesosPAC" class="chart"></div>
@@ -847,10 +847,10 @@ function renderPieChart(ref: any, data: any[], colors: string[], tipoPlan?: stri
       bottom: 5,
       left: 'center',
       textStyle: {
-        fontSize: 10,
-        color: '#475569'
+        fontSize: 13,
+        color: '#0f172a'
       },
-      itemGap: 6,
+      itemGap: 8,
       formatter: (name: string) => {
         const item = data.find((d: any) => d.name === name);
         if (!item) return name;
@@ -1377,7 +1377,7 @@ function resetearFiltros() {
 
 .dashboard-charts-row {
   display: grid;
-  grid-template-columns: 0.7fr 1fr 0.7fr 1fr;
+  grid-template-columns: 0.5fr 1fr 0.7fr 1fr;
   gap: 1.5rem;
   margin-top: 2rem;
 }
@@ -1389,6 +1389,12 @@ function resetearFiltros() {
 .chart-item.chart-narrow {
   grid-column: span 1;
   max-width: 100%;
+}
+
+.chart-item.chart-pac-estado {
+  grid-column: span 1;
+  max-width: 100%;
+  min-width: 250px;
 }
 
 .column-pac,
