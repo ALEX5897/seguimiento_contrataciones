@@ -1432,14 +1432,14 @@ function resetearFiltros() {
 .kpis-column {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .kpi-card-btn {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 1rem;
+  gap: 0.64rem;
+  padding: 0.85rem;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -1457,13 +1457,13 @@ function resetearFiltros() {
 }
 
 .kpi-icon {
-  width: 50px;
-  height: 50px;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
   background: #f0f4ff;
   color: #2563eb;
@@ -1480,16 +1480,16 @@ function resetearFiltros() {
 }
 
 .kpi-label {
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   font-weight: 700;
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
 }
 
 .kpi-detalle {
-  font-size: 0.85rem;
+  font-size: 0.72rem;
   color: #334155;
   font-weight: 600;
 }
