@@ -1616,9 +1616,9 @@ function resetearFiltros() {
 .kpis-principales {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
+  gap: 0.5rem;
   margin: 0.5rem 2rem 1rem 2rem;
-  padding: 0.75rem;
+  padding: 0.5rem;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-radius: 8px;
   border-top: 3px solid #2563eb;
