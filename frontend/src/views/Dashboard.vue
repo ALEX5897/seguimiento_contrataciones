@@ -53,7 +53,7 @@
         <!-- KPIs NO PAC - IZQUIERDA -->
         <div class="kpis-section kpis-nopac">
           <div class="kpis-header">
-            <i class="ri-close-line"></i>
+            <i class="ri-check-double-line"></i>
             <h3>PROCESOS NO PAC</h3>
           </div>
           <div class="kpis-column">
@@ -73,7 +73,7 @@
               </div>
             </div>
 
-            <div class="kpi-card-btn">
+            <div class="kpi-card-btn" @click="abrirModalPorEnEjecucion('NO PAC')">
               <div class="kpi-icon">⚙️</div>
               <div class="kpi-content">
                 <div class="kpi-label">En Ejecución</div>
@@ -114,7 +114,7 @@
               </div>
             </div>
 
-            <div class="kpi-card-btn">
+            <div class="kpi-card-btn" @click="abrirModalPorEnEjecucion('PAC')">
               <div class="kpi-icon">⚙️</div>
               <div class="kpi-content">
                 <div class="kpi-label">En Ejecución</div>
@@ -513,6 +513,9 @@ const tituloModal = computed(() => {
   if (modalTipo.value === 'retrasos') {
     return `Procesos Retrasados - ${direccionSeleccionada.value}`;
   }
+  if (modalTipo.value === 'enEjecucion') {
+    return `Procesos en Ejecución - ${tipoPlanSeleccionado.value}`;
+  }
   return `Procesos en Fase ${nombreFaseSeleccionada.value}`;
 });
 
@@ -580,6 +583,22 @@ const procesosFaseSeleccionada = computed(() => {
         return fase === faseSeleccionada.value;
       });
     }
+    // Filtrar por en ejecución (contrato completado)
+    else if (modalTipo.value === 'enEjecucion') {
+      procesos = procesos.filter((p: any) => {
+        const etapas = p.etapasDetalle || [];
+        const tieneContratoCompletado = etapas.some((e: any) => {
+          const nombreNorm = (e.etapaNombre || '').toLowerCase().trim();
+          return (nombreNorm.includes('contrato') || nombreNorm.includes('contratacion')) && e.estado === 'completado';
+        });
+        // Filtrar por dirección si hay filtro activo
+        if (direccionFiltroActivo.value) {
+          const direccion = (p.direccionNombre || '').trim();
+          return tieneContratoCompletado && direccion === direccionFiltroActivo.value;
+        }
+        return tieneContratoCompletado;
+      });
+    }
   }
 
   return procesos;
@@ -620,6 +639,15 @@ function abrirModalPorRetrasosTodasDirecciones(direccion: string) {
   faseSeleccionada.value = '';
   tipoContratoSeleccionado.value = '';
   modalTipo.value = 'retrasosCompleto';
+  modalAbierto.value = true;
+}
+
+function abrirModalPorEnEjecucion(tipoPlan: string) {
+  tipoPlanSeleccionado.value = tipoPlan;
+  faseSeleccionada.value = '';
+  tipoContratoSeleccionado.value = '';
+  direccionSeleccionada.value = '';
+  modalTipo.value = 'enEjecucion';
   modalAbierto.value = true;
 }
 
