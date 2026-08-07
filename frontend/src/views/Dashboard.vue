@@ -48,6 +48,91 @@
         </div>
       </section>
 
+      <!-- SECCIÓN DE KPIs: NO PAC (izquierda) Y PAC (derecha) -->
+      <div class="dashboard-kpis-row">
+        <!-- KPIs NO PAC - IZQUIERDA -->
+        <div class="kpis-section kpis-nopac">
+          <div class="kpis-header">
+            <i class="ri-close-line"></i>
+            <h3>PROCESOS NO PAC</h3>
+          </div>
+          <div class="kpis-column">
+            <div class="kpi-card-btn">
+              <div class="kpi-icon">{{ datosNoPACActuales.kpisPrincipales.totalProcesos }}</div>
+              <div class="kpi-content">
+                <div class="kpi-label">Total Procesos</div>
+                <div class="kpi-detalle">{{ datosNoPACActuales.kpisPrincipales.totalProcesos }} contratos</div>
+              </div>
+            </div>
+
+            <div class="kpi-card-btn">
+              <div class="kpi-icon">💵</div>
+              <div class="kpi-content">
+                <div class="kpi-label">Presupuesto</div>
+                <div class="kpi-detalle">{{ formatearMonto(datosNoPACActuales.kpisPrincipales.presupuestoNoPAC) }}</div>
+              </div>
+            </div>
+
+            <div class="kpi-card-btn">
+              <div class="kpi-icon">⚙️</div>
+              <div class="kpi-content">
+                <div class="kpi-label">En Ejecución</div>
+                <div class="kpi-detalle">{{ datosNoPACActuales.kpisPrincipales.procesosConContratoCompletado }} procesos</div>
+              </div>
+            </div>
+
+            <div class="kpi-card-btn kpi-avance">
+              <div class="kpi-icon kpi-icon-percentage">{{ avanceNoPAC }}%</div>
+              <div class="kpi-content">
+                <div class="kpi-label">% Avance General</div>
+                <div class="kpi-detalle">Procesos</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPIs PAC - DERECHA -->
+        <div class="kpis-section kpis-pac">
+          <div class="kpis-header">
+            <i class="ri-check-double-line"></i>
+            <h3>PROCESOS PAC</h3>
+          </div>
+          <div class="kpis-column">
+            <div class="kpi-card-btn">
+              <div class="kpi-icon">{{ datosPACActuales.kpisPrincipales.totalProcesos }}</div>
+              <div class="kpi-content">
+                <div class="kpi-label">Total Procesos</div>
+                <div class="kpi-detalle">{{ datosPACActuales.kpisPrincipales.totalProcesos }} contratos</div>
+              </div>
+            </div>
+
+            <div class="kpi-card-btn">
+              <div class="kpi-icon">💰</div>
+              <div class="kpi-content">
+                <div class="kpi-label">Presupuesto</div>
+                <div class="kpi-detalle">{{ formatearMonto(datosPACActuales.kpisPrincipales.presupuestoPAC) }}</div>
+              </div>
+            </div>
+
+            <div class="kpi-card-btn">
+              <div class="kpi-icon">⚙️</div>
+              <div class="kpi-content">
+                <div class="kpi-label">En Ejecución</div>
+                <div class="kpi-detalle">{{ datosPACActuales.kpisPrincipales.procesosConContratoCompletado }} procesos</div>
+              </div>
+            </div>
+
+            <div class="kpi-card-btn kpi-avance">
+              <div class="kpi-icon kpi-icon-percentage">{{ avancePAC }}%</div>
+              <div class="kpi-content">
+                <div class="kpi-label">% Avance General</div>
+                <div class="kpi-detalle">Procesos</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- GRÁFICOS EN UNA LÍNEA -->
       <div class="dashboard-charts-row">
         <!-- Gráfico PAC - Distribución por Estado -->
