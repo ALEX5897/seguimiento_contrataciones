@@ -4,7 +4,7 @@
     <div class="dashboard-header">
       <div class="header-title">
         <i class="ri-bar-chart-2-line"></i>
-        <h1>CUADRO DE MANDO – EJECUCIÓN DE CONTRATACIONES</h1>
+        <h1>EJECUCIÓN DE CONTRATACIONES</h1>
         <p>Comparativa PAC vs NO PAC</p>
       </div>
       <div class="header-date">
@@ -137,7 +137,7 @@
       <div class="dashboard-charts-row">
         <!-- Gráfico PAC - Distribución por Estado -->
         <section class="chart-container chart-item chart-narrow chart-pac-estado">
-          <h3>PAC - Distribución por Estado</h3>
+          <h3>PAC - Distribución por Fase</h3>
           <div class="chart-wrapper">
             <div ref="chartDistribProcesosPAC" class="chart"></div>
           </div>
@@ -145,7 +145,7 @@
 
         <!-- Gráfico PAC - Distribución por Tipo de Contrato y Fase -->
         <section class="chart-container chart-item">
-          <h3>PAC - Distribución por Tipo de Contrato y Fase</h3>
+          <h3>PAC - Distribución por Tipo de Contrato</h3>
           <div class="chart-wrapper chart-tipo-contrato">
             <div ref="chartProcedimientosYFasePAC" class="chart"></div>
           </div>
@@ -153,7 +153,7 @@
 
         <!-- Gráfico NO PAC - Distribución por Estado -->
         <section class="chart-container chart-item chart-narrow">
-          <h3>NO PAC - Distribución por Estado</h3>
+          <h3>NO PAC - Distribución por Fase</h3>
           <div class="chart-wrapper">
             <div ref="chartDistribProcesosNoPAC" class="chart"></div>
           </div>
@@ -161,7 +161,7 @@
 
         <!-- Gráfico NO PAC - Distribución por Procedimiento y Fase -->
         <section class="chart-container chart-item">
-          <h3>NO PAC - Distribución por Procedimiento y Fase</h3>
+          <h3>NO PAC - Distribución por Procedimiento</h3>
           <div class="chart-wrapper chart-tipo-contrato">
             <div ref="chartProcedimientosYFaseNoPAC" class="chart"></div>
           </div>
@@ -170,12 +170,6 @@
 
       <!-- SECCIÓN KPIs: RETRASOS (izquierda) Y CUMPLIMIENTO (derecha) -->
       <div class="dashboard-kpis-tables-row">
-        <!-- BOTÓN PARA LIMPIAR FILTRO -->
-        <button v-if="direccionFiltroActivo" class="btn-limpiar-filtro" @click="limpiarFiltroDirectionDelKPI11">
-          <i class="ri-close-line"></i>
-          Limpiar filtro: {{ direccionFiltroActivo }}
-        </button>
-
         <!-- PROCESOS CON RETRASOS POR DIRECCIÓN - IZQUIERDA -->
         <section class="retrasos-section"
           v-if="Object.keys(procesosRetrasadosMostrados).length > 0">
@@ -224,9 +218,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(datos, direccion) in nivelCumplimientoMostrado" :key="direccion"
-                    class="fila-clickeable"
-                    @click="filtrarDashboardPorDireccion(String(direccion))">
+                <tr v-for="(datos, direccion) in nivelCumplimientoMostrado" :key="direccion">
                   <td class="direccion-cell">{{ direccion }}</td>
                   <td class="total-cell">{{ datos.total }}</td>
                   <td class="porcentaje-cell">
