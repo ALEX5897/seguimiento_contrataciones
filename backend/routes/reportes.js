@@ -689,7 +689,8 @@ function crearWorkbookContratoAdjudicacion(reporte) {
 
 router.get('/resumen', async (req, res) => {
   try {
-    const subtareas = await mysql.getAllSubtareasByScope(getScopeFromReq(req));
+    // Dashboard público: devolver todos los datos sin filtrar por dirección
+    const subtareas = await mysql.getAllSubtareasByScope({ role: null, userId: null, direccionNombre: null });
     const filtros = getFiltros(req.query);
     const reporte = construirReporte(subtareas, filtros);
     res.json(reporte);
