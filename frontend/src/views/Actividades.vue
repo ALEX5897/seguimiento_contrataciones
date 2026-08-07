@@ -155,7 +155,7 @@
 
         <div class="actividades-grid">
           <div
-            v-for="(actividad, index) in grupo.items"
+            v-for="actividad in grupo.items"
             :key="actividad.id"
             :class="[
               'actividad-card',
@@ -630,12 +630,6 @@ const filtroTipoContratacion = ref('');
 const ordenPresupuesto = ref('presupuesto-desc');
 const filtrosKpiActivos = ref<string[]>([]);
 const catalogoEtapas = ref<Record<number, any>>({});
-const acordeoneAbiertos = ref({
-  preparatoria: false,
-  precontractual: false,
-  contractual: false,
-  sin_clasificar: false
-});
 
 const actividadesVisiblesBase = computed(() =>
   actividades.value.filter((actividad: any) => esProcesoVisible(actividad))
@@ -645,10 +639,6 @@ const direccionesDisponibles = computed(() => {
   return direcciones.filter((direccion) => direccion !== 'N/A').sort((a, b) => a.localeCompare(b));
 });
 
-const responsablesDisponibles = computed(() => {
-  const responsables = [...new Set(actividadesVisiblesBase.value.map((actividad: any) => obtenerResponsable(actividad)))] as string[];
-  return responsables.filter((responsable) => responsable !== 'N/A').sort((a, b) => a.localeCompare(b));
-});
 const tiposContratacionDisponibles = computed(() => {
   const opciones = new Map<string, string>();
 
@@ -669,26 +659,6 @@ const tiposContratacionDisponibles = computed(() => {
 const filtroTipoContratacionLabel = computed(() =>
   tiposContratacionDisponibles.value.find((tipo) => tipo.value === filtroTipoContratacion.value)?.label || ''
 );
-
-const montosDisponibles = computed(() => {
-  const rangos = [
-    { label: '0-1,000', min: 0, max: 1000 },
-    { label: '1,001-5,000', min: 1001, max: 5000 },
-    { label: '5,001-10,000', min: 5001, max: 10000 },
-    { label: '10,001+', min: 10001, max: Infinity }
-  ];
-  const usados = new Set<string>();
-  for (const actividad of actividadesVisiblesBase.value) {
-    const monto = obtenerPresupuesto(actividad);
-    for (const r of rangos) {
-      if (monto >= r.min && monto <= r.max) {
-        usados.add(r.label);
-        break;
-      }
-    }
-  }
-  return rangos.filter(r => usados.has(r.label)).map(r => r.label);
-});
 
 const hayFiltrosActivos = computed(() =>
   Boolean(
@@ -806,51 +776,15 @@ const kpisProcesos = computed(() => {
   };
 });
 
-const porcentajeAtrasoProcesos = computed(() => {
-  const total = Math.max(1, kpisProcesos.value.totalProcesos);
-  return Math.min(100, Math.round((kpisProcesos.value.atrasadas / total) * 100));
-});
-
 const colorCumplimiento = computed(() => colorSemaforoPositivo(kpisProcesos.value.porcentajeCumplimiento));
-const colorAtraso = computed(() => colorSemaforoRiesgo(porcentajeAtrasoProcesos.value));
 
 const procesosRiesgoKpi = computed(() =>
   actividadesKpiPrincipales.value.filter((actividad: any) => normalizarProcesoEnRiesgo(actividad))
 );
 
-const porcentajeProcesosRiesgo = computed(() => {
-  const total = Math.max(1, kpisProcesos.value.totalProcesos);
-  return Math.min(100, Math.round((procesosRiesgoKpi.value.length / total) * 100));
-});
-
-const colorProcesosRiesgo = computed(() => colorSemaforoRiesgo(porcentajeProcesosRiesgo.value));
-
 const procesosDesiertosKpi = computed(() =>
   actividadesActivas.value.filter((actividad: any) => obtenerEstadoProcesoValor(actividad) === 2)
 );
-
-const totalProcesosConsideradosKpi = computed(() =>
-  Math.max(1, kpisProcesos.value.totalProcesos + procesosDesiertosKpi.value.length)
-);
-
-const porcentajeProcesosDesiertos = computed(() =>
-  Math.min(100, Math.round((procesosDesiertosKpi.value.length / totalProcesosConsideradosKpi.value) * 100))
-);
-
-const colorProcesosDesiertos = computed(() =>
-  procesosDesiertosKpi.value.length > 0 ? '#f97316' : '#94a3b8'
-);
-
-const procesosDesfinanciadosKpi = computed(() =>
-  actividadesActivas.value.filter((actividad: any) => procesoActivoSinPresupuesto(actividad))
-);
-
-const porcentajeProcesosDesfinanciados = computed(() => {
-  const total = Math.max(1, kpisProcesos.value.totalProcesos);
-  return Math.min(100, Math.round((procesosDesfinanciadosKpi.value.length / total) * 100));
-});
-
-const colorProcesosDesfinanciados = computed(() => colorSemaforoRiesgo(porcentajeProcesosDesfinanciados.value));
 
 const montoTotal = computed(() => {
   return actividadesKpiPrincipales.value.reduce((sum: number, actividad: any) =>
@@ -987,38 +921,6 @@ const etapasConFecha = computed(() =>
       return fechaA.getTime() - fechaB.getTime();
     })
 );
-
-const etapasAgrupadasPorClasificacion = computed(() => {
-  const grupos: Record<string, any[]> = {
-    preparatoria: [],
-    precontractual: [],
-    contractual: [],
-    sin_clasificar: []
-  };
-
-  const sinClasificarIds: number[] = [];
-
-  etapasConFecha.value.forEach((etapa: any) => {
-    const etapaId = etapa.etapaId || etapa.id;
-    const clasificacion = catalogoEtapas.value[etapaId]?.clasificacion || 'sin_clasificar';
-
-    if (!catalogoEtapas.value[etapaId]) {
-      sinClasificarIds.push(etapaId);
-    }
-
-    if (grupos[clasificacion]) {
-      grupos[clasificacion].push(etapa);
-    } else {
-      grupos.sin_clasificar.push(etapa);
-    }
-  });
-
-  console.log('📊 Etapas agrupadas:', Object.entries(grupos).map(([k, v]) => `${k}: ${v.length}`).join(', '));
-  if (sinClasificarIds.length > 0) {
-    console.log('⚠️ Etapas sin clasificación (IDs):', sinClasificarIds.join(', '));
-  }
-  return grupos;
-});
 
 const resumenCabeceraActividad = computed(() => {
   const etapas = etapasConFecha.value;
@@ -1375,12 +1277,6 @@ function colorSemaforoPositivo(valor: number) {
   return '#ef4444';
 }
 
-function colorSemaforoRiesgo(valor: number) {
-  if (valor <= 20) return '#22c55e';
-  if (valor <= 50) return '#f59e0b';
-  return '#ef4444';
-}
-
 function getEtapas(actividad: any) {
   const etapas = actividad?.etapas || actividad?.seguimientoEtapas || [];
   return etapas.map((etapa: any) => ({
@@ -1526,7 +1422,7 @@ function totalTareas(actividad: any) {
   return getEtapasConFecha(actividad).length;
 }
 
-function esEtapaAtrasada(etapa: any, actividad?: any) {
+function esEtapaAtrasada(etapa: any, _actividad?: any) {
   const estado = estadoNormalizado(etapa?.estado);
   if (estado === 'completado') return false;
 
@@ -1537,7 +1433,7 @@ function esEtapaAtrasada(etapa: any, actividad?: any) {
   return fechaObj < hoy;
 }
 
-function diasRetraso(etapa: any, actividad?: any) {
+function diasRetraso(etapa: any, _actividad?: any) {
   const fechaObj = parseFechaComparable(etapa?.fechaPlanificada || etapa?.fechaTentativa);
   const hoy = parseFechaComparable(obtenerFechaHoyGuayaquil());
   if (!fechaObj || !hoy) return 0;
@@ -1574,23 +1470,10 @@ function colorAvanceActividad(actividad: any) {
   return claseAvance(actividad) === 'avance-alto' ? '#16a34a' : '#dc2626';
 }
 
-function claseTimelineNumero(etapa: any) {
-  if (esEtapaAtrasada(etapa, actividadSeleccionada.value)) return 'timeline-numero-atrasado';
-  if (estadoNormalizado(etapa?.estado) === 'completado') return 'timeline-numero-completo';
-  return 'timeline-numero-pendiente';
-}
-
 function claseEstadoSemaforo(etapa: any) {
   const estado = estadoNormalizado(etapa?.estado);
   if (estado === 'completado') return 'estado-semaforo-verde';
   return 'estado-semaforo-amarillo';
-}
-
-function textoLeyendaTimeline(etapa: any) {
-  if (estadoNormalizado(etapa?.estado) === 'completado') {
-    return 'Completo';
-  }
-  return `Pendiente hasta ${formatearFecha(etapa?.fechaPlanificada || etapa?.fechaTentativa)}`;
 }
 
 function formatearFechaConHora(fechaISO: string | undefined | null): string {

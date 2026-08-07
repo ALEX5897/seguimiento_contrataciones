@@ -422,7 +422,7 @@
           </div>
 
           <!-- Acordeones por clasificación -->
-          <div v-for="(clasificacion, index) in ['preparatoria', 'precontractual', 'contractual', 'sin_clasificar']" :key="clasificacion" class="etapas-accordion">
+          <div v-for="clasificacion in ['preparatoria', 'precontractual', 'contractual', 'sin_clasificar']" :key="clasificacion" class="etapas-accordion">
             <button
               class="accordion-header"
               :class="{ active: acordeoneAbiertos[clasificacion as keyof typeof acordeoneAbiertos] }"
@@ -432,10 +432,10 @@
               <span class="accordion-label">
                 {{ clasificacion === 'preparatoria' ? '🔵 Preparatoria' : clasificacion === 'precontractual' ? '🟢 Precontractual' : clasificacion === 'contractual' ? '🔴 Contractual' : '⚪ Sin Clasificar' }}
               </span>
-              <span class="accordion-count">({{ etapasAgrupadas[clasificacion].length }})</span>
+              <span class="accordion-count">({{ (etapasAgrupadas[clasificacion] ?? []).length }})</span>
             </button>
             <div v-show="acordeoneAbiertos[clasificacion as keyof typeof acordeoneAbiertos]" class="accordion-content">
-              <div v-if="etapasAgrupadas[clasificacion].length === 0" class="sin-etapas-categoria">
+              <div v-if="(etapasAgrupadas[clasificacion] ?? []).length === 0" class="sin-etapas-categoria">
                 No hay etapas en esta categoría
               </div>
               <div v-for="etapa in etapasAgrupadas[clasificacion]" :key="etapa.etapaId" class="etapa-item">
@@ -1035,9 +1035,9 @@ const etapasAgrupadas = computed(() => {
   etapasFiltradas.value.forEach((etapa: any) => {
     const clasificacion = catalogoEtapas.value[etapa.etapaId]?.clasificacion || 'sin_clasificar';
     if (grupos[clasificacion]) {
-      grupos[clasificacion].push(etapa);
+      grupos[clasificacion]!.push(etapa);
     } else {
-      grupos.sin_clasificar.push(etapa);
+      grupos.sin_clasificar!.push(etapa);
     }
   });
 
@@ -1488,32 +1488,6 @@ function claseComparacionEntrega(etapa: Etapa): string {
   return diasRetrasoCompletado(etapa) === 0 ? 'a-tiempo' : 'con-retraso';
 }
 
-async function cargarConteosSeguimientosEtapas() {
-  if (!actividadSeleccionada.value) return;
-
-  const etapaIds = etapasDisponibles.value
-    .map(etapa => obtenerEtapaId(etapa))
-    .filter((id): id is number => Boolean(id));
-
-  const conteos: Record<number, number> = {};
-
-  await Promise.all(
-    etapaIds.map(async (etapaId) => {
-      try {
-        const response = await api.get(
-          `/subtareas/${actividadSeleccionada.value?.id}/etapas/${etapaId}/seguimientos`,
-          { params: { dias: 3650 } }
-        );
-        conteos[etapaId] = normalizarSeguimientos(response.data).length;
-      } catch {
-        conteos[etapaId] = 0;
-      }
-    })
-  );
-
-  conteoSeguimientosEtapas.value = conteos;
-}
-
 async function abrirSelectorEtapas(actividad: Actividad) {
   actividadSeleccionada.value = actividad;
   mostrarSelectorEtapas.value = true;
@@ -1655,36 +1629,6 @@ function toggleEtapa(etapa: Etapa, valor: boolean) {
   if (!valor) {
     etapa.fechaReforma = '';
     etapa.estado = 'pendiente';
-  }
-}
-
-async function agregarNuevaEtapa() {
-  if (!nuevaEtapaNombre.value.trim()) return;
-
-  try {
-    const response = await api.post('/subtareas/admin/etapas', {
-      nombre: nuevaEtapaNombre.value.trim()
-    });
-    
-    const nuevaEtapa = response.data;
-    
-    // Agregar la nueva etapa a la lista
-    etapasDisponibles.value.push({
-      etapaId: nuevaEtapa.id,
-      etapaNombre: nuevaEtapa.nombre,
-      aplica: true,
-      esPersonalizada: true,
-      fechaTentativa: undefined,
-      fechaReforma: undefined,
-      estado: 'pendiente',
-      observaciones: ''
-    });
-    
-    nuevaEtapaNombre.value = '';
-    mostrarNotificacion('Etapa creada correctamente', 'success');
-  } catch (error: any) {
-    console.error('Error al crear etapa:', error);
-    mostrarNotificacion('Error al crear etapa: ' + obtenerMensajeError(error, 'Desconocido'), 'error');
   }
 }
 

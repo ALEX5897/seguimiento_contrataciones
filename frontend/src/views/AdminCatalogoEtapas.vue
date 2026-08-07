@@ -27,7 +27,7 @@
 
       <div class="clasificacion-stats">
         <div v-for="(datos, clasificacion) in resumen.porClasificacion" :key="clasificacion" class="stat-item">
-          <span class="clasificacion-badge" :class="clasificacion">{{ formatoClasificacion(clasificacion) }}</span>
+          <span class="clasificacion-badge" :class="String(clasificacion)">{{ formatoClasificacion(String(clasificacion)) }}</span>
           <span class="cantidad">{{ datos.cantidad }} etapas</span>
         </div>
       </div>
