@@ -369,7 +369,7 @@
                   <th>#</th>
                   <th>Fase</th>
                   <th>Etapa</th>
-                  <th>Fecha límite</th>
+                  <th v-if="verFechaLimite">Fecha límite</th>
                   <th v-if="verFechaReforma">Fecha reforma</th>
                   <th v-if="verFechaReforma3">Fecha reforma 3</th>
                   <th v-if="verFechaCompleto">Fecha de completo</th>
@@ -387,7 +387,7 @@
                   <td><span class="etapa-numero-badge">{{ index + 1 }}</span></td>
                   <td><span class="etapa-fase-badge" :class="`fase-${obtenerClasificacionEtapa(etapa)}`">{{ obtenerEtiquetaClasificacion(etapa) }}</span></td>
                   <td>{{ etapa.etapaNombre || etapa.nombre }}</td>
-                  <td>{{ formatearFecha(etapa.fechaTentativa) }}</td>
+                  <td v-if="verFechaLimite">{{ formatearFecha(etapa.fechaTentativa) }}</td>
                   <td v-if="verFechaReforma">
                     <input
                       v-model="etapa.fechaReforma"
@@ -863,6 +863,8 @@ const puedeVerDetalleRiesgo = computed(() =>
 const puedeEliminarSeguimientos = computed(() =>
   auth.isAdmin || auth.can('actividades', 'delete') || auth.can('admin_actividades', 'delete')
 );
+
+const verFechaLimite = computed(() => auth.isAdmin);
 
 const verFechaReforma = computed(() => {
   if (auth.isAdmin) return true;
