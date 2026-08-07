@@ -17,6 +17,7 @@ function resolveModuleFromPath(path = '', method = 'GET') {
   if (pathNoApi.startsWith('/health')) return null;
   if (pathNoApi.startsWith('/auth')) return null;
   if (pathNoApi.startsWith('/permisos/mis-permisos')) return null;
+  if (pathNoApi.startsWith('/reportes/dashboard')) return null;
 
   if (pathNoApi.startsWith('/permisos')) return 'admin_permisos';
   if (pathNoApi.startsWith('/auditoria')) return 'admin_auditoria';
