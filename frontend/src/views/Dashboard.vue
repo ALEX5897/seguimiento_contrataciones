@@ -179,7 +179,7 @@
         <!-- PROCESOS CON RETRASOS POR DIRECCIÓN - IZQUIERDA -->
         <section class="retrasos-section"
           v-if="Object.keys(procesosRetrasadosMostrados).length > 0">
-          <h2>10. PROCESOS CON RETRASOS POR DIRECCIÓN</h2>
+          <h2>PROCESOS CON RETRASOS POR DIRECCIÓN</h2>
 
           <div class="retrasos-tabla-wrapper">
             <table class="retrasos-tabla">
@@ -210,7 +210,7 @@
         <!-- NIVEL DE CUMPLIMIENTO POR DIRECCIÓN - DERECHA -->
         <section class="cumplimiento-section"
           v-if="Object.keys(nivelCumplimientoMostrado).length > 0">
-          <h2>11. NIVEL DE CUMPLIMIENTO POR DIRECCIÓN</h2>
+          <h2>NIVEL DE CUMPLIMIENTO POR DIRECCIÓN</h2>
 
           <div class="cumplimiento-tabla-wrapper">
             <table class="cumplimiento-tabla">
@@ -1515,18 +1515,18 @@ function resetearFiltros() {
 }
 
 .kpi-label {
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  color: #64748b;
+  color: #475569;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.25rem;
 }
 
 .kpi-detalle {
-  font-size: 0.72rem;
-  color: #334155;
-  font-weight: 600;
+  font-size: 0.9rem;
+  color: #0f172a;
+  font-weight: 700;
 }
 
 .chart-container {
