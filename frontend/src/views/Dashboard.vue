@@ -855,7 +855,8 @@ function renderPieChart(ref: any, data: any[], colors: string[], tipoPlan?: stri
         const item = data.find((d: any) => d.name === name);
         if (!item) return name;
         const presupuestoTexto = item.presupuesto ? ` - ${formatearMonto(item.presupuesto)}` : '';
-        return `${name}: ${item.value}${presupuestoTexto}`;
+        const nombreLimpio = name.replace('Fase ', '');
+        return `${nombreLimpio}: ${item.value}${presupuestoTexto}`;
       }
     },
     series: [
@@ -1377,7 +1378,7 @@ function resetearFiltros() {
 
 .dashboard-charts-row {
   display: grid;
-  grid-template-columns: 0.5fr 1fr 0.7fr 1fr;
+  grid-template-columns: 0.6fr 1fr 0.7fr 1fr;
   gap: 1.5rem;
   margin-top: 2rem;
 }
