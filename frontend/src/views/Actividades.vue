@@ -42,8 +42,18 @@
     </section>
 
     <div v-if="!cargando" class="resumen-general-container">
-      <h3 class="resumen-general-titulo">Resumen General</h3>
-      <section class="kpi-grid professional-kpi-grid actividades-resumen-grid">
+      <div class="resumen-general-header">
+        <h3 class="resumen-general-titulo">Resumen General</h3>
+        <button
+          type="button"
+          class="btn-toggle-resumen"
+          @click="resumenGeneralExpanded = !resumenGeneralExpanded"
+        >
+          <span class="toggle-icon">{{ resumenGeneralExpanded ? '▼' : '▶' }}</span>
+          <span class="toggle-text">{{ resumenGeneralExpanded ? 'Contraer' : 'Expandir' }}</span>
+        </button>
+      </div>
+      <section v-if="resumenGeneralExpanded" class="kpi-grid professional-kpi-grid actividades-resumen-grid">
         <article class="kpi-card kpi-total-procesos">
           <div class="kpi-header">
             <i class="ri-checkbox-circle-line kpi-icon"></i>
@@ -630,6 +640,7 @@ const filtroTipoContratacion = ref('');
 const ordenPresupuesto = ref('presupuesto-desc');
 const filtrosKpiActivos = ref<string[]>([]);
 const catalogoEtapas = ref<Record<number, any>>({});
+const resumenGeneralExpanded = ref(false);
 
 const actividadesVisiblesBase = computed(() =>
   actividades.value.filter((actividad: any) => esProcesoVisible(actividad))
@@ -1657,10 +1668,12 @@ async function abrirDetalleActividad(actividad: any, actualizarRuta = true) {
       ? response.data
       : (response.data?.value || []);
 
-    etapasActividad.value = etapasRecargadas;
-    console.log('📝 Etapas cargadas para actividad', actividadId, ':', etapasRecargadas.length, 'etapas');
-    if (etapasRecargadas.length > 0) {
-      console.log('   IDs de etapas:', etapasRecargadas.map((e: any) => e.etapaId || e.id).slice(0, 5).join(', '));
+    etapasActividad.value = etapasRecargadas.filter((etapa: any) =>
+      etapa?.fechaPlanificada || etapa?.fechaTentativa
+    );
+    console.log('📝 Etapas cargadas para actividad', actividadId, ':', etapasActividad.value.length, 'etapas (filtradas)');
+    if (etapasActividad.value.length > 0) {
+      console.log('   IDs de etapas:', etapasActividad.value.map((e: any) => e.etapaId || e.id).slice(0, 5).join(', '));
     }
     sincronizarActividadEnListado(actividadId, etapasActividad.value);
     if (Number(actividadSeleccionada.value?.id) === actividadId) {
@@ -2214,13 +2227,58 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
 }
 
+.resumen-general-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+  padding: 0 0.55rem;
+}
+
 .resumen-general-titulo {
-  margin: 0 0 0.8rem 0;
+  margin: 0;
   font-size: 0.95rem;
   font-weight: 800;
   color: #1e293b;
   letter-spacing: -0.3px;
-  padding: 0 0.55rem;
+}
+
+.btn-toggle-resumen {
+  background: none;
+  border: 1px solid #e2e8f0;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.btn-toggle-resumen:hover {
+  background-color: #f1f5f9;
+  color: #1e293b;
+  border-color: #cbd5e1;
+}
+
+.btn-toggle-resumen:active {
+  transform: scale(0.98);
+}
+
+.toggle-icon {
+  display: inline-block;
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+}
+
+.toggle-text {
+  display: inline-block;
 }
 
 .actividades-resumen-grid {

@@ -3207,45 +3207,445 @@ export async function deleteSeguimientoDiario(id) {
   if (!result.affectedRows) throw new Error('Seguimiento no encontrado');
 }
 
+// ========== VERSIONES Y REFORMAS ==========
+
 export async function getAllVersiones() {
-  const [tot] = await query('SELECT COUNT(*) AS total FROM subtareas');
-  const [pres] = await query('SELECT COALESCE(SUM(presupuesto_2026_inicial), 0) AS total FROM subtareas');
-  return [{
-    id: 1,
-    nombre: 'Versión única',
-    estado: 'aprobado',
-    totalActividades: tot.total,
-    presupuestoTotal: pres.total
-  }];
+  const rows = await query(`
+    SELECT id, anio, numero_reforma, nombre, descripcion, estado, activa,
+           usuario_creacion, fecha_creacion, usuario_aprobacion, fecha_aprobacion,
+           usuario_activacion, fecha_activacion,
+           presupuesto_total, total_procesos, activos_count, inactivos_count
+    FROM versiones
+    ORDER BY anio DESC, numero_reforma DESC
+  `);
+  return rows.map(toCamelRow);
 }
 
 export async function getVersionById(id) {
-  const all = await getAllVersiones();
-  return all.find((v) => Number(v.id) === Number(id)) || null;
+  const rows = await query(
+    `SELECT id, anio, numero_reforma, nombre, descripcion, estado, activa,
+            usuario_creacion, fecha_creacion, usuario_aprobacion, fecha_aprobacion,
+            usuario_activacion, fecha_activacion,
+            presupuesto_total, total_procesos, activos_count, inactivos_count
+     FROM versiones WHERE id = ?`,
+    [id]
+  );
+
+  if (rows.length === 0) return null;
+
+  const version = toCamelRow(rows[0]);
+
+  // Obtener procesos de esta versión
+  const procesos = await query(
+    `SELECT id, version_id, codigo_olympo, subtarea, direccion_encargada, responsable,
+            presupuesto_2026_inicial, pac_no_pac, cuatrimestre, activo, proceso_en_riesgo,
+            fecha_creacion
+     FROM subtareas_versiones
+     WHERE version_id = ?
+     ORDER BY codigo_olympo`,
+    [id]
+  );
+
+  version.procesos = procesos.map(toCamelRow);
+  return version;
 }
 
 export async function getVersionActual() {
-  return (await getAllVersiones())[0] || null;
+  const rows = await query(
+    `SELECT id, anio, numero_reforma, nombre, descripcion, estado, activa,
+            usuario_creacion, fecha_creacion, usuario_aprobacion, fecha_aprobacion,
+            usuario_activacion, fecha_activacion,
+            presupuesto_total, total_procesos, activos_count, inactivos_count
+     FROM versiones WHERE activa = 1 LIMIT 1`
+  );
+
+  return rows.length > 0 ? toCamelRow(rows[0]) : null;
 }
 
-export async function getActividadesByVersion() {
-  return getAllSubtareas();
+export async function getActividadesByVersion(versionId) {
+  const rows = await query(
+    `SELECT id, version_id, codigo_olympo, subtarea, direccion_encargada, responsable,
+            presupuesto_2026_inicial, pac_no_pac, cuatrimestre, activo, proceso_en_riesgo
+     FROM subtareas_versiones
+     WHERE version_id = ? AND activo = 1
+     ORDER BY codigo_olympo`,
+    [versionId]
+  );
+  return rows.map(toCamelRow);
 }
 
-export async function crearNuevaReforma() {
-  throw new Error('Módulo de versiones deshabilitado en este esquema simplificado');
+// Crear nueva reforma vacía (borrador)
+export async function crearNuevaReforma(anio, descripcion = '', usuario = 'SISTEMA') {
+  if (!anio || anio < 2020 || anio > 2030) {
+    throw new Error('Año inválido. Debe estar entre 2020 y 2030');
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // Obtener el siguiente número de reforma
+    const [result] = await connection.query(
+      'SELECT MAX(numero_reforma) as max_num FROM versiones WHERE anio = ?',
+      [anio]
+    );
+    const numeroReforma = (result[0]?.max_num || 0) + 1;
+
+    // Crear nueva reforma
+    const [insertResult] = await connection.query(
+      `INSERT INTO versiones (
+        anio, numero_reforma, nombre, descripcion, estado, activa,
+        usuario_creacion, fecha_creacion,
+        presupuesto_total, total_procesos, activos_count, inactivos_count
+      ) VALUES (?, ?, ?, ?, 'borrador', 0, ?, NOW(), 0, 0, 0, 0)`,
+      [anio, numeroReforma, `Reforma ${numeroReforma} ${anio}`, descripcion, usuario]
+    );
+
+    const versionId = insertResult.insertId;
+
+    // Registrar cambio
+    await connection.query(
+      `INSERT INTO versiones_cambios (
+        version_id, tipo_cambio, usuario, descripcion, cantidad_registros
+      ) VALUES (?, 'crear', ?, 'Nueva reforma creada', 0)`,
+      [versionId, usuario]
+    );
+
+    await connection.commit();
+
+    return await getVersionById(versionId);
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    await connection.release();
+  }
 }
 
-export async function aprobarVersion() {
-  return;
+// Duplicar procesos de una reforma a otra
+export async function duplicarProcesos(versionIdDestino, versionIdOrigen) {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // Obtener procesos de la versión origen
+    const [procesosOrigen] = await connection.query(
+      `SELECT codigo_olympo, subtarea, direccion_encargada, responsable, responsable_id,
+              fecha_inicio, fecha_fin, plazo_contrato, pac_no_pac, procedimiento_sugerido,
+              presupuesto_2026_inicial, costo_2026, partida_presupuestaria, cuatrimestre,
+              activo, proceso_en_riesgo, riesgo_comentario, observaciones
+       FROM subtareas_versiones WHERE version_id = ?`,
+      [versionIdOrigen]
+    );
+
+    // Insertar en versión destino
+    let cantInsertados = 0;
+    for (const proceso of procesosOrigen) {
+      await connection.query(
+        `INSERT INTO subtareas_versiones (
+          version_id, codigo_olympo, subtarea, direccion_encargada, responsable, responsable_id,
+          fecha_inicio, fecha_fin, plazo_contrato, pac_no_pac, procedimiento_sugerido,
+          presupuesto_2026_inicial, costo_2026, partida_presupuestaria, cuatrimestre,
+          activo, proceso_en_riesgo, riesgo_comentario, observaciones
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          versionIdDestino, proceso.codigo_olympo, proceso.subtarea, proceso.direccion_encargada,
+          proceso.responsable, proceso.responsable_id, proceso.fecha_inicio, proceso.fecha_fin,
+          proceso.plazo_contrato, proceso.pac_no_pac, proceso.procedimiento_sugerido,
+          proceso.presupuesto_2026_inicial, proceso.costo_2026, proceso.partida_presupuestaria,
+          proceso.cuatrimestre, proceso.activo, proceso.proceso_en_riesgo, proceso.riesgo_comentario,
+          proceso.observaciones
+        ]
+      );
+      cantInsertados++;
+    }
+
+    // Actualizar totales de versión destino
+    const [stats] = await connection.query(
+      `SELECT COUNT(*) as total, SUM(CASE WHEN activo = 1 THEN 1 ELSE 0 END) as activos,
+              SUM(CASE WHEN activo = 0 THEN 1 ELSE 0 END) as inactivos,
+              SUM(presupuesto_2026_inicial) as presupuesto
+       FROM subtareas_versiones WHERE version_id = ?`,
+      [versionIdDestino]
+    );
+
+    await connection.query(
+      `UPDATE versiones SET total_procesos = ?, activos_count = ?,
+              inactivos_count = ?, presupuesto_total = ?
+       WHERE id = ?`,
+      [
+        stats[0].total || 0,
+        stats[0].activos || 0,
+        stats[0].inactivos || 0,
+        stats[0].presupuesto || 0,
+        versionIdDestino
+      ]
+    );
+
+    // Registrar cambio
+    await connection.query(
+      `INSERT INTO versiones_cambios (
+        version_id, tipo_cambio, usuario, descripcion, cantidad_registros
+      ) VALUES (?, 'duplicar', 'SISTEMA', ?, ?)`,
+      [versionIdDestino, `Procesos duplicados desde reforma ${versionIdOrigen}`, cantInsertados]
+    );
+
+    await connection.commit();
+    return cantInsertados;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    await connection.release();
+  }
 }
 
-export async function getCambiosReforma() {
-  return [];
+// Cargar procesos desde Excel
+export async function cargarExcelVersion(versionId, datosProcesos, usuario = 'SISTEMA') {
+  if (!Array.isArray(datosProcesos) || datosProcesos.length === 0) {
+    throw new Error('Los datos de procesos están vacíos');
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // Validar datos
+    const erroresValidacion = validarDatosProcesos(datosProcesos);
+    if (erroresValidacion.length > 0) {
+      throw new Error(`Errores en datos: ${erroresValidacion.join(', ')}`);
+    }
+
+    let cantInsertados = 0;
+    const codigosExistentes = new Set();
+
+    for (const proceso of datosProcesos) {
+      // Validar código único por versión
+      if (codigosExistentes.has(proceso.codigo_olympo)) {
+        throw new Error(`Código duplicado en Excel: ${proceso.codigo_olympo}`);
+      }
+      codigosExistentes.add(proceso.codigo_olympo);
+
+      // Verificar si ya existe
+      const [existe] = await connection.query(
+        'SELECT id FROM subtareas_versiones WHERE version_id = ? AND codigo_olympo = ?',
+        [versionId, proceso.codigo_olympo]
+      );
+
+      if (existe.length > 0) {
+        throw new Error(`El proceso ${proceso.codigo_olympo} ya existe en esta reforma`);
+      }
+
+      // Insertar proceso
+      await connection.query(
+        `INSERT INTO subtareas_versiones (
+          version_id, codigo_olympo, subtarea, direccion_encargada, responsable,
+          presupuesto_2026_inicial, pac_no_pac, cuatrimestre, activo, proceso_en_riesgo,
+          observaciones
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?)`,
+        [
+          versionId,
+          proceso.codigo_olympo,
+          proceso.subtarea,
+          proceso.direccion_encargada || 'N/A',
+          proceso.responsable || 'N/A',
+          parseFloat(proceso.presupuesto_2026_inicial) || 0,
+          proceso.pac_no_pac || 'PAC',
+          proceso.cuatrimestre || 'Cuatrimestre I',
+          proceso.observaciones || ''
+        ]
+      );
+      cantInsertados++;
+    }
+
+    // Actualizar totales
+    const [stats] = await connection.query(
+      `SELECT COUNT(*) as total, SUM(CASE WHEN activo = 1 THEN 1 ELSE 0 END) as activos,
+              SUM(CASE WHEN activo = 0 THEN 1 ELSE 0 END) as inactivos,
+              SUM(presupuesto_2026_inicial) as presupuesto
+       FROM subtareas_versiones WHERE version_id = ?`,
+      [versionId]
+    );
+
+    await connection.query(
+      `UPDATE versiones SET total_procesos = ?, activos_count = ?,
+              inactivos_count = ?, presupuesto_total = ?
+       WHERE id = ?`,
+      [
+        stats[0].total || 0,
+        stats[0].activos || 0,
+        stats[0].inactivos || 0,
+        stats[0].presupuesto || 0,
+        versionId
+      ]
+    );
+
+    // Registrar cambio
+    await connection.query(
+      `INSERT INTO versiones_cambios (
+        version_id, tipo_cambio, usuario, descripcion, cantidad_registros,
+        datos_cambio
+      ) VALUES (?, 'excel', ?, 'Procesos cargados desde Excel', ?, ?)`,
+      [
+        versionId,
+        usuario,
+        cantInsertados,
+        JSON.stringify({ archivos: 1, procesos_cargados: cantInsertados, fecha_carga: new Date() })
+      ]
+    );
+
+    await connection.commit();
+    return cantInsertados;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    await connection.release();
+  }
 }
 
-export async function deleteVersion() {
-  return;
+// Aprobar una reforma (cambiar de borrador a aprobado)
+export async function aprobarVersion(versionId, usuarioAprobacion) {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // Obtener versión actual
+    const [version] = await connection.query(
+      'SELECT * FROM versiones WHERE id = ?',
+      [versionId]
+    );
+
+    if (version.length === 0) {
+      throw new Error('Versión no encontrada');
+    }
+
+    const v = version[0];
+    if (v.estado !== 'borrador') {
+      throw new Error('Solo se pueden aprobar versiones en estado borrador');
+    }
+
+    // Marcar versiones anteriores como histórico
+    await connection.query(
+      `UPDATE versiones SET estado = 'historico', activa = 0
+       WHERE anio = ? AND numero_reforma < ? AND estado = 'aprobado'`,
+      [v.anio, v.numero_reforma]
+    );
+
+    // Aprobar esta versión y hacerla activa
+    await connection.query(
+      `UPDATE versiones SET estado = 'aprobado', activa = 1,
+              usuario_aprobacion = ?, fecha_aprobacion = NOW(),
+              usuario_activacion = ?, fecha_activacion = NOW()
+       WHERE id = ?`,
+      [usuarioAprobacion, usuarioAprobacion, versionId]
+    );
+
+    // Registrar cambio
+    await connection.query(
+      `INSERT INTO versiones_cambios (
+        version_id, tipo_cambio, usuario, descripcion
+      ) VALUES (?, 'aprobar', ?, 'Reforma aprobada y activada')`,
+      [versionId, usuarioAprobacion]
+    );
+
+    await connection.commit();
+    return await getVersionById(versionId);
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    await connection.release();
+  }
+}
+
+export async function getCambiosReforma(versionId) {
+  const rows = await query(
+    `SELECT id, tipo_cambio, usuario, descripcion, cantidad_registros, datos_cambio, fecha
+     FROM versiones_cambios
+     WHERE version_id = ?
+     ORDER BY fecha DESC`,
+    [versionId]
+  );
+  return rows.map(toCamelRow);
+}
+
+export async function deleteVersion(versionId) {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // Verificar estado
+    const [version] = await connection.query(
+      'SELECT estado FROM versiones WHERE id = ?',
+      [versionId]
+    );
+
+    if (version.length === 0) {
+      throw new Error('Versión no encontrada');
+    }
+
+    if (version[0].estado !== 'borrador') {
+      throw new Error('Solo se pueden eliminar versiones en estado borrador');
+    }
+
+    // Eliminar procesos
+    await connection.query(
+      'DELETE FROM subtareas_versiones WHERE version_id = ?',
+      [versionId]
+    );
+
+    // Eliminar cambios
+    await connection.query(
+      'DELETE FROM versiones_cambios WHERE version_id = ?',
+      [versionId]
+    );
+
+    // Eliminar versión
+    await connection.query(
+      'DELETE FROM versiones WHERE id = ?',
+      [versionId]
+    );
+
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    await connection.release();
+  }
+}
+
+// Funciones auxiliares de validación
+function validarDatosProcesos(procesos) {
+  const errores = [];
+  const codigosCampos = new Set();
+
+  procesos.forEach((proc, idx) => {
+    // Campos obligatorios
+    if (!proc.codigo_olympo || !proc.codigo_olympo.trim()) {
+      errores.push(`Fila ${idx + 1}: Código Olympo es obligatorio`);
+    }
+    if (!proc.subtarea || !proc.subtarea.trim()) {
+      errores.push(`Fila ${idx + 1}: Subtarea (nombre) es obligatorio`);
+    }
+
+    // Validar presupuesto
+    if (proc.presupuesto_2026_inicial !== undefined && proc.presupuesto_2026_inicial !== null) {
+      const pres = parseFloat(proc.presupuesto_2026_inicial);
+      if (isNaN(pres)) {
+        errores.push(`Fila ${idx + 1}: Presupuesto debe ser un número`);
+      }
+    }
+
+    // Validar duplicados dentro del lote
+    if (codigosCampos.has(proc.codigo_olympo)) {
+      errores.push(`Fila ${idx + 1}: Código duplicado: ${proc.codigo_olympo}`);
+    }
+    codigosCampos.add(proc.codigo_olympo);
+  });
+
+  return errores;
 }
 
 // ========== CATÁLOGO DE ETAPAS ==========

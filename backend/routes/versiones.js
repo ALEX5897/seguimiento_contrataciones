@@ -18,21 +18,17 @@ router.get('/', async (req, res) => {
 });
 
 /**
- * GET /:id - Obtener una versión específica con sus actividades
+ * GET /:id - Obtener una versión específica con sus procesos
  */
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const version = await mysql.getVersionById(id);
-    
+
     if (!version) {
       return res.status(404).json({ error: 'Versión no encontrada' });
     }
 
-    // Obtener actividades de esta versión
-    const actividades = await mysql.getAllSubtareasByScope(getScopeFromReq(req));
-    version.actividades = actividades;
-    
     res.json(version);
   } catch (error) {
     console.error('Error al obtener versión:', error);
@@ -46,14 +42,15 @@ router.get('/:id', async (req, res) => {
 router.get('/actual/info', async (req, res) => {
   try {
     const versionActual = await mysql.getVersionActual();
-    
+
     if (!versionActual) {
       return res.status(404).json({ error: 'No hay versión actual definida' });
     }
 
-    const actividades = await mysql.getAllSubtareasByScope(getScopeFromReq(req));
-    versionActual.actividades = actividades;
-    
+    // Obtener procesos de la versión actual
+    const procesos = await mysql.getActividadesByVersion(versionActual.id);
+    versionActual.procesos = procesos;
+
     res.json(versionActual);
   } catch (error) {
     console.error('Error al obtener versión actual:', error);
@@ -68,7 +65,7 @@ router.get('/actual/info', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { anio, descripcion, usuario_creacion } = req.body;
-    
+
     if (!anio) {
       return res.status(400).json({ error: 'El año es requerido' });
     }
@@ -78,6 +75,60 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('Error al crear reforma:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /:id/duplicar - Duplicar procesos de otra reforma
+ * Body: { version_origen_id, usuario }
+ */
+router.post('/:id/duplicar', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { version_origen_id, usuario } = req.body;
+
+    if (!version_origen_id) {
+      return res.status(400).json({ error: 'Se requiere la versión origen' });
+    }
+
+    const cantInsertados = await mysql.duplicarProcesos(parseInt(id), parseInt(version_origen_id));
+    const version = await mysql.getVersionById(id);
+
+    res.json({
+      message: `${cantInsertados} procesos duplicados exitosamente`,
+      procesos_insertados: cantInsertados,
+      version
+    });
+  } catch (error) {
+    console.error('Error al duplicar procesos:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /:id/excel - Cargar procesos desde Excel
+ * Body: { procesos: Array, usuario }
+ */
+router.post('/:id/excel', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { procesos, usuario } = req.body;
+
+    if (!Array.isArray(procesos)) {
+      return res.status(400).json({ error: 'Los procesos deben ser un array' });
+    }
+
+    const cantInsertados = await mysql.cargarExcelVersion(parseInt(id), procesos, usuario || 'SISTEMA');
+    const version = await mysql.getVersionById(id);
+
+    res.json({
+      message: `${cantInsertados} procesos cargados exitosamente`,
+      procesos_insertados: cantInsertados,
+      version
+    });
+  } catch (error) {
+    console.error('Error al cargar Excel:', error);
+    res.status(400).json({ error: error.message });
   }
 });
 
