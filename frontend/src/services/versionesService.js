@@ -52,6 +52,24 @@ export async function deleteVersion(id) {
   return response.data;
 }
 
+// Duplicar procesos de una versión a otra
+export async function duplicarProcesos(versionIdDestino, versionIdOrigen) {
+  const response = await api.post(`/versiones/${versionIdDestino}/duplicar`, {
+    version_origen_id: versionIdOrigen,
+    usuario: 'SISTEMA'
+  });
+  return response.data;
+}
+
+// Cargar procesos desde Excel
+export async function cargarExcelVersion(versionId, procesos) {
+  const response = await api.post(`/versiones/${versionId}/excel`, {
+    procesos,
+    usuario: 'SISTEMA'
+  });
+  return response.data;
+}
+
 export default {
   getAllVersiones,
   getVersionById,
@@ -60,5 +78,7 @@ export default {
   aprobarVersion,
   getCambiosReforma,
   compararVersiones,
-  deleteVersion
+  deleteVersion,
+  duplicarProcesos,
+  cargarExcelVersion
 };

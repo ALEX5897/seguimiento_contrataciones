@@ -5,9 +5,15 @@
       <p class="subtitle">Administra versiones y reformas del Plan Operativo Anual</p>
     </div>
 
-    <!-- Toolbar -->
+    <!-- Toolbar con Selector de Versión Activa -->
     <div class="toolbar">
-      <button class="btn-primary btn-crear" @click="abrirModalNuevaReforma">
+      <div class="version-selector-container">
+        <label>Versión Activa:</label>
+        <select class="version-selector" v-if="versionActual" disabled>
+          <option :value="versionActual.id">{{ versionActual.nombre }}</option>
+        </select>
+      </div>
+      <button class="btn-primary btn-crear" @click="abrirModalCreacion">
         ➕ Nueva Reforma
       </button>
       <div class="buscador-container">
@@ -179,63 +185,236 @@
       <button class="pag-btn" :disabled="paginaVersiones >= totalPaginasVers" @click="paginaVersiones++">Siguiente ›</button>
     </div>
 
-    <!-- Modal Nueva Reforma -->
-    <div v-if="mostrarModalReforma" class="modal-overlay" @click.self="cerrarModalReforma">
-      <div class="modal-content modal-reforma" @click.stop>
+    <!-- Modal Crear/Duplicar/Excel Reforma -->
+    <div v-if="mostrarModalCreacion" class="modal-overlay" @click.self="cerrarModalCreacion">
+      <div class="modal-content modal-reforma modal-amplio" @click.stop>
         <div class="modal-header">
-          <h2>➕ Crear Nueva Reforma</h2>
-          <button class="btn-close" @click="cerrarModalReforma">✕</button>
+          <h2>➕ Nueva Reforma</h2>
+          <button class="btn-close" @click="cerrarModalCreacion">✕</button>
         </div>
 
-        <form @submit.prevent="crearReforma" class="modal-body">
-          <div class="form-grupo">
-            <label for="anio">Año *</label>
-            <input
-              id="anio"
-              v-model.number="formularioReforma.anio"
-              type="number"
-              required
-              min="2020"
-              max="2030"
-              placeholder="2026"
-            />
-          </div>
-
-          <div class="form-grupo">
-            <label for="descripcion">Descripción de la Reforma *</label>
-            <textarea
-              id="descripcion"
-              v-model="formularioReforma.descripcion"
-              required
-              rows="4"
-              placeholder="Ejemplo: Ajuste de presupuesto Q1 - Incremento para infraestructura tecnológica"
-            ></textarea>
-          </div>
-
-          <div class="form-grupo">
-            <label for="usuario">Usuario Responsable *</label>
-            <input
-              id="usuario"
-              v-model="formularioReforma.usuario_creacion"
-              type="text"
-              required
-              placeholder="Nombre del usuario creador"
-            />
-          </div>
-
-          <div class="alert alert-info">
-            <strong>ℹ️ Información:</strong> La nueva reforma duplicará todos los procesos activos de la versión anterior. Podrás modificarlos antes de aprobar.
-          </div>
-
-          <div class="modal-footer">
-            <button type="submit" class="btn-primary" :disabled="creandoReforma">
-              {{ creandoReforma ? '⏳ Creando...' : '✅ Crear Reforma' }}
+        <div class="modal-body">
+          <!-- Tabs para opciones -->
+          <div class="tabs-creacion">
+            <button
+              :class="['tab-btn', { activo: tabCreacion === 'crear' }]"
+              @click="tabCreacion = 'crear'"
+            >
+              📝 Crear Vacía
             </button>
-            <button type="button" class="btn-secondary" @click="cerrarModalReforma">
-              Cancelar
+            <button
+              :class="['tab-btn', { activo: tabCreacion === 'duplicar' }]"
+              @click="tabCreacion = 'duplicar'"
+              v-if="versiones.length > 0"
+            >
+              📋 Duplicar de...
+            </button>
+            <button
+              :class="['tab-btn', { activo: tabCreacion === 'excel' }]"
+              @click="tabCreacion = 'excel'"
+            >
+              📊 Cargar Excel
             </button>
           </div>
-        </form>
+
+          <!-- TAB: Crear vacía -->
+          <form v-if="tabCreacion === 'crear'" @submit.prevent="crearReforma" class="form-creacion">
+            <div class="form-grupo">
+              <label for="anio-crear">Año *</label>
+              <input
+                id="anio-crear"
+                v-model.number="formularioReforma.anio"
+                type="number"
+                required
+                min="2020"
+                max="2030"
+              />
+            </div>
+
+            <div class="form-grupo">
+              <label for="desc-crear">Descripción *</label>
+              <textarea
+                id="desc-crear"
+                v-model="formularioReforma.descripcion"
+                required
+                rows="3"
+                placeholder="Ejemplo: Reforma Q1 2026 - Ajustes presupuestarios"
+              ></textarea>
+            </div>
+
+            <div class="form-grupo">
+              <label for="user-crear">Usuario Responsable *</label>
+              <input
+                id="user-crear"
+                v-model="formularioReforma.usuario_creacion"
+                type="text"
+                required
+              />
+            </div>
+
+            <div class="alert alert-info">
+              ℹ️ Se creará una reforma vacía en estado borrador. Podrás agregar procesos posteriormente.
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary" :disabled="creandoReforma">
+                {{ creandoReforma ? '⏳ Creando...' : '✅ Crear' }}
+              </button>
+              <button type="button" class="btn-secondary" @click="cerrarModalCreacion">
+                Cancelar
+              </button>
+            </div>
+          </form>
+
+          <!-- TAB: Duplicar -->
+          <form v-if="tabCreacion === 'duplicar'" @submit.prevent="crearYDuplicar" class="form-creacion">
+            <div class="form-grupo">
+              <label for="anio-dup">Año *</label>
+              <input
+                id="anio-dup"
+                v-model.number="formularioReforma.anio"
+                type="number"
+                required
+                min="2020"
+                max="2030"
+              />
+            </div>
+
+            <div class="form-grupo">
+              <label for="version-origen">Copiar Procesos de: *</label>
+              <select v-model="versionOrigen" required id="version-origen">
+                <option value="">-- Selecciona una versión --</option>
+                <option v-for="v in versiones" :key="v.id" :value="v.id">
+                  {{ v.nombre }} ({{ v.totalActividades }} procesos)
+                </option>
+              </select>
+            </div>
+
+            <div class="form-grupo">
+              <label for="desc-dup">Descripción</label>
+              <textarea
+                id="desc-dup"
+                v-model="formularioReforma.descripcion"
+                rows="3"
+                placeholder="Describe los cambios de esta reforma..."
+              ></textarea>
+            </div>
+
+            <div class="form-grupo">
+              <label for="user-dup">Usuario Responsable *</label>
+              <input
+                id="user-dup"
+                v-model="formularioReforma.usuario_creacion"
+                type="text"
+                required
+              />
+            </div>
+
+            <div class="alert alert-info">
+              ℹ️ Se crearán {{ versionOrigen ? (versiones.find(v => v.id == versionOrigen)?.totalActividades || 0) : 0 }} procesos basados en la versión origen.
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary" :disabled="creandoReforma || !versionOrigen">
+                {{ creandoReforma ? '⏳ Creando...' : '✅ Crear y Duplicar' }}
+              </button>
+              <button type="button" class="btn-secondary" @click="cerrarModalCreacion">
+                Cancelar
+              </button>
+            </div>
+          </form>
+
+          <!-- TAB: Excel -->
+          <form v-if="tabCreacion === 'excel'" @submit.prevent="crearYCargarExcel" class="form-creacion">
+            <div class="form-grupo">
+              <label for="anio-excel">Año *</label>
+              <input
+                id="anio-excel"
+                v-model.number="formularioReforma.anio"
+                type="number"
+                required
+                min="2020"
+                max="2030"
+              />
+            </div>
+
+            <div class="form-grupo">
+              <label for="archivo-excel">Archivo Excel (.xlsx) *</label>
+              <input
+                id="archivo-excel"
+                type="file"
+                accept=".xlsx,.xls"
+                @change="manejarArchivoExcel"
+                required
+              />
+              <button type="button" class="btn-link" @click="descargarPlantilla">
+                📥 Descargar Plantilla
+              </button>
+            </div>
+
+            <div v-if="previewProcesos.length > 0" class="preview-excel">
+              <h4>Preview de Procesos ({{ previewProcesos.length }})</h4>
+              <div class="preview-tabla">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Código Olympo</th>
+                      <th>Subtarea</th>
+                      <th>Presupuesto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(proc, idx) in previewProcesos.slice(0, 5)" :key="idx">
+                      <td>{{ proc.codigo_olympo }}</td>
+                      <td>{{ proc.subtarea }}</td>
+                      <td>${{ formatearMonto(proc.presupuesto_2026_inicial) }}</td>
+                    </tr>
+                    <tr v-if="previewProcesos.length > 5">
+                      <td colspan="3" class="mas-filas">... y {{ previewProcesos.length - 5 }} más</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="form-grupo">
+              <label for="desc-excel">Descripción</label>
+              <textarea
+                id="desc-excel"
+                v-model="formularioReforma.descripcion"
+                rows="3"
+                placeholder="Describe esta carga de datos..."
+              ></textarea>
+            </div>
+
+            <div class="form-grupo">
+              <label for="user-excel">Usuario Responsable *</label>
+              <input
+                id="user-excel"
+                v-model="formularioReforma.usuario_creacion"
+                type="text"
+                required
+              />
+            </div>
+
+            <div v-if="errorExcel" class="alert alert-error">
+              ❌ {{ errorExcel }}
+            </div>
+
+            <div class="form-actions">
+              <button
+                type="submit"
+                class="btn-primary"
+                :disabled="creandoReforma || previewProcesos.length === 0"
+              >
+                {{ creandoReforma ? '⏳ Cargando...' : '✅ Crear y Cargar' }}
+              </button>
+              <button type="button" class="btn-secondary" @click="cerrarModalCreacion">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
 
@@ -424,7 +603,7 @@ interface Notificacion {
 const versiones = ref<Version[]>([]);
 const versionActual = ref<Version | null>(null);
 const versionDetalle = ref<Version | null>(null);
-const mostrarModalReforma = ref(false);
+const mostrarModalCreacion = ref(false);
 const mostrarModalDetalle = ref(false);
 const cargandoModalDetalle = ref(false);
 const creandoReforma = ref(false);
@@ -433,6 +612,10 @@ const estadoFiltro = ref('');
 const busquedaVersiones = ref('');
 const ordenVersiones = ref('fecha-desc');
 const versionesParaComparar = ref<Version[]>([]);
+const tabCreacion = ref<'crear' | 'duplicar' | 'excel'>('crear');
+const versionOrigen = ref('');
+const previewProcesos = ref<any[]>([]);
+const errorExcel = ref('');
 
 const formularioReforma = ref<FormularioReforma>({
   anio: new Date().getFullYear(),
@@ -539,38 +722,142 @@ async function cargarVersiones() {
   }
 }
 
-function abrirModalNuevaReforma() {
+function abrirModalCreacion() {
   formularioReforma.value = {
     anio: new Date().getFullYear(),
     descripcion: '',
     usuario_creacion: ''
   };
-  mostrarModalReforma.value = true;
+  tabCreacion.value = 'crear';
+  versionOrigen.value = '';
+  previewProcesos.value = [];
+  errorExcel.value = '';
+  mostrarModalCreacion.value = true;
 }
 
-function cerrarModalReforma() {
-  mostrarModalReforma.value = false;
+function cerrarModalCreacion() {
+  mostrarModalCreacion.value = false;
+  previewProcesos.value = [];
+  errorExcel.value = '';
 }
 
 async function crearReforma() {
   try {
     creandoReforma.value = true;
-    
+
     const nuevaVersion = await versionesService.crearNuevaReforma(formularioReforma.value);
-    
+
     mostrarNotificacion('Reforma creada exitosamente', 'success');
-    cerrarModalReforma();
+    cerrarModalCreacion();
     await cargarVersiones();
-    
-    // Abrir detalle de la nueva versión
     verDetalleVersion(nuevaVersion);
-    
+
   } catch (error: any) {
     console.error('Error al crear reforma:', error);
     mostrarNotificacion('Error al crear reforma: ' + (error.response?.data?.error || error.message), 'error');
   } finally {
     creandoReforma.value = false;
   }
+}
+
+async function crearYDuplicar() {
+  if (!versionOrigen.value) {
+    mostrarNotificacion('Selecciona una versión origen', 'error');
+    return;
+  }
+
+  try {
+    creandoReforma.value = true;
+    const nuevaVersion = await versionesService.crearNuevaReforma(formularioReforma.value);
+    await versionesService.duplicarProcesos(nuevaVersion.id, parseInt(versionOrigen.value));
+
+    mostrarNotificacion(`${nuevaVersion.nombre} creada con procesos duplicados`, 'success');
+    cerrarModalCreacion();
+    await cargarVersiones();
+    verDetalleVersion(nuevaVersion);
+
+  } catch (error: any) {
+    console.error('Error al duplicar procesos:', error);
+    mostrarNotificacion('Error: ' + (error.response?.data?.error || error.message), 'error');
+  } finally {
+    creandoReforma.value = false;
+  }
+}
+
+async function crearYCargarExcel() {
+  if (previewProcesos.value.length === 0) {
+    mostrarNotificacion('Carga un archivo Excel primero', 'error');
+    return;
+  }
+
+  try {
+    creandoReforma.value = true;
+    const nuevaVersion = await versionesService.crearNuevaReforma(formularioReforma.value);
+    await versionesService.cargarExcelVersion(nuevaVersion.id, previewProcesos.value);
+
+    mostrarNotificacion(`${nuevaVersion.nombre} creada con ${previewProcesos.value.length} procesos`, 'success');
+    cerrarModalCreacion();
+    await cargarVersiones();
+    verDetalleVersion(nuevaVersion);
+
+  } catch (error: any) {
+    console.error('Error al cargar Excel:', error);
+    mostrarNotificacion('Error: ' + (error.response?.data?.error || error.message), 'error');
+  } finally {
+    creandoReforma.value = false;
+  }
+}
+
+async function manejarArchivoExcel(event: any) {
+  const archivo = event.target.files?.[0];
+  if (!archivo) return;
+
+  try {
+    errorExcel.value = '';
+    const datosExcel = await leerExcel(archivo);
+
+    if (!datosExcel || datosExcel.length === 0) {
+      throw new Error('El archivo Excel está vacío');
+    }
+
+    previewProcesos.value = datosExcel;
+  } catch (error: any) {
+    errorExcel.value = error.message || 'Error al procesar el archivo';
+    previewProcesos.value = [];
+  }
+}
+
+function leerExcel(archivo: File): Promise<any[]> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = e.target?.result as ArrayBuffer;
+        const wb = (window as any).XLSX?.read(data, { type: 'array' });
+        const ws = wb?.Sheets[wb.SheetNames[0]];
+        const json = (window as any).XLSX?.utils.sheet_to_json(ws);
+        resolve(json || []);
+      } catch (error) {
+        reject(new Error('Formato de Excel no válido. Asegúrate de usar .xlsx'));
+      }
+    };
+    reader.onerror = () => reject(new Error('Error al leer el archivo'));
+    reader.readAsArrayBuffer(archivo);
+  });
+}
+
+function descargarPlantilla() {
+  const contenido = 'codigo_olympo\tsubtarea\tdireccion_encargada\tresponsable\tpresupuesto_2026_inicial\tpac_no_pac\tcuatrimestre\n' +
+    'OLY-2026-001\tEjemplo Proceso 1\tDAF\tJuan Pérez\t5000\tPAC\tCuatrimestre I\n' +
+    'OLY-2026-002\tEjemplo Proceso 2\tDPEI\tMaría García\t3500\tPAC\tCuatrimestre II';
+
+  const blob = new Blob([contenido], { type: 'application/vnd.ms-excel' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'Plantilla_Procesos_POA_2026.xlsx';
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 async function verDetalleVersion(version: Version) {
@@ -1567,5 +1854,143 @@ padding-bottom: 1rem;
 .admin-versiones .modal-content,
 .admin-versiones .confirm-modal {
   border: 1px solid #e2e8f0;
+}
+
+/* Nuevos estilos para FASE 3 */
+.version-selector-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #2c3e50;
+  font-weight: 500;
+
+  .version-selector {
+    padding: 0.5rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: white;
+    font-size: 0.9rem;
+  }
+}
+
+.modal-amplio {
+  max-width: 700px;
+}
+
+.tabs-creacion {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e2e8f0;
+
+  .tab-btn {
+    padding: 1rem 1.5rem;
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    position: relative;
+    bottom: -2px;
+    transition: all 0.3s;
+
+    &:hover {
+      color: #1e293b;
+    }
+
+    &.activo {
+      color: #1d4ed8;
+      border-bottom-color: #1d4ed8;
+    }
+  }
+}
+
+.form-creacion {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.preview-excel {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+
+  h4 {
+    margin: 0 0 1rem 0;
+    color: #1e293b;
+    font-size: 0.95rem;
+  }
+
+  .preview-tabla {
+    overflow-x: auto;
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+
+      thead {
+        background: #e2e8f0;
+      }
+
+      th {
+        padding: 0.7rem;
+        text-align: left;
+        font-weight: 600;
+        color: #1e293b;
+      }
+
+      td {
+        padding: 0.6rem 0.7rem;
+        border-bottom: 1px solid #cbd5e1;
+      }
+
+      tbody tr:hover {
+        background: #f1f5f9;
+      }
+
+      .mas-filas {
+        text-align: center;
+        color: #64748b;
+        font-style: italic;
+      }
+    }
+  }
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #1d4ed8;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+
+  &:hover {
+    color: #1e40af;
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.alert-error {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 1rem;
+  border-radius: 6px;
 }
 </style>
