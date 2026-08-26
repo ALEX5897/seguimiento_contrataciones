@@ -832,32 +832,131 @@ function leerExcel(archivo: File): Promise<any[]> {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
+        const XLSX = (window as any).XLSX;
+        if (!XLSX) {
+          reject(new Error('Librería XLSX no cargada. Por favor recarga la página.'));
+          return;
+        }
+
         const data = e.target?.result as ArrayBuffer;
-        const wb = (window as any).XLSX?.read(data, { type: 'array' });
-        const ws = wb?.Sheets[wb.SheetNames[0]];
-        const json = (window as any).XLSX?.utils.sheet_to_json(ws);
-        resolve(json || []);
+        const wb = XLSX.read(data, { type: 'array' });
+
+        if (!wb || !wb.SheetNames || wb.SheetNames.length === 0) {
+          reject(new Error('El archivo Excel no tiene hojas válidas.'));
+          return;
+        }
+
+        const primeraHoja = wb.SheetNames[0];
+        const ws = wb.Sheets[primeraHoja];
+
+        if (!ws) {
+          reject(new Error('No se pudo leer la hoja del Excel.'));
+          return;
+        }
+
+        // Convertir con opciones mejoradas
+        const json = XLSX.utils.sheet_to_json(ws, {
+          header: 1,
+          defval: ''
+        });
+
+        // Si la primera fila contiene headers, procesarla mejor
+        if (json.length > 0) {
+          const headers = json[0];
+          const data_rows = json.slice(1);
+
+          // Convertir array de arrays en array de objetos
+          const resultado = data_rows
+            .filter((row: any[]) => row.some((cell: any) => cell)) // Filtrar filas vacías
+            .map((row: any[]) => {
+              const obj: any = {};
+              headers.forEach((header: any, idx: number) => {
+                obj[header] = row[idx] || '';
+              });
+              return obj;
+            });
+
+          if (resultado.length === 0) {
+            reject(new Error('El archivo Excel no contiene datos válidos (solo headers).'));
+          } else {
+            resolve(resultado);
+          }
+        } else {
+          reject(new Error('El archivo Excel está vacío.'));
+        }
       } catch (error) {
-        reject(new Error('Formato de Excel no válido. Asegúrate de usar .xlsx'));
+        console.error('Error al procesar Excel:', error);
+        reject(new Error(`Error al procesar Excel: ${(error as any).message || 'Formato no válido'}`));
       }
     };
-    reader.onerror = () => reject(new Error('Error al leer el archivo'));
+    reader.onerror = () => reject(new Error('Error al leer el archivo. Intenta de nuevo.'));
     reader.readAsArrayBuffer(archivo);
   });
 }
 
 function descargarPlantilla() {
-  const contenido = 'codigo_olympo\tsubtarea\tdireccion_encargada\tresponsable\tpresupuesto_2026_inicial\tpac_no_pac\tcuatrimestre\n' +
-    'OLY-2026-001\tEjemplo Proceso 1\tDAF\tJuan Pérez\t5000\tPAC\tCuatrimestre I\n' +
-    'OLY-2026-002\tEjemplo Proceso 2\tDPEI\tMaría García\t3500\tPAC\tCuatrimestre II';
+  try {
+    const XLSX = (window as any).XLSX;
+    if (!XLSX) {
+      mostrarNotificacion('Librería XLSX no disponible. Intenta recargar la página.', 'error');
+      return;
+    }
 
-  const blob = new Blob([contenido], { type: 'application/vnd.ms-excel' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'Plantilla_Procesos_POA_2026.xlsx';
-  link.click();
-  URL.revokeObjectURL(url);
+    // Crear datos de ejemplo
+    const datosPlantilla = [
+      {
+        codigo_olympo: 'OLY-2026-001',
+        subtarea: 'Ejemplo: Servicio de provisión de combustible',
+        direccion_encargada: 'DAF',
+        responsable: 'Juan Pérez',
+        presupuesto_2026_inicial: 5000,
+        pac_no_pac: 'PAC',
+        cuatrimestre: 'Cuatrimestre I'
+      },
+      {
+        codigo_olympo: 'OLY-2026-002',
+        subtarea: 'Ejemplo: Adquisición de ropa de trabajo',
+        direccion_encargada: 'DPEI',
+        responsable: 'María García',
+        presupuesto_2026_inicial: 3500,
+        pac_no_pac: 'PAC',
+        cuatrimestre: 'Cuatrimestre II'
+      },
+      {
+        codigo_olympo: '',
+        subtarea: '',
+        direccion_encargada: '',
+        responsable: '',
+        presupuesto_2026_inicial: '',
+        pac_no_pac: 'PAC',
+        cuatrimestre: ''
+      }
+    ];
+
+    // Crear workbook
+    const ws = XLSX.utils.json_to_sheet(datosPlantilla);
+
+    // Ajustar ancho de columnas
+    ws['!cols'] = [
+      { wch: 25 }, // codigo_olympo
+      { wch: 50 }, // subtarea
+      { wch: 20 }, // direccion_encargada
+      { wch: 20 }, // responsable
+      { wch: 20 }, // presupuesto_2026_inicial
+      { wch: 12 }, // pac_no_pac
+      { wch: 18 }  // cuatrimestre
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Procesos');
+
+    // Descargar
+    XLSX.writeFile(wb, 'Plantilla_Procesos_POA_2026.xlsx');
+    mostrarNotificacion('Plantilla descargada. Llénala y cárgala nuevamente.', 'info');
+  } catch (error) {
+    console.error('Error al descargar plantilla:', error);
+    mostrarNotificacion('Error al descargar plantilla', 'error');
+  }
 }
 
 async function verDetalleVersion(version: Version) {
