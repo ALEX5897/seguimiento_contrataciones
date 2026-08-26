@@ -1072,6 +1072,41 @@ export async function getAllSubtareas() {
 }
 
 export async function getAllSubtareasByScope(scope = {}) {
+  // Intentar obtener de versión activa si existe
+  try {
+    const versionActual = await getVersionActual();
+    if (versionActual && versionActual.id) {
+      // Obtener procesos de la versión activa
+      const procesosVersion = await getActividadesByVersion(versionActual.id);
+
+      if (procesosVersion && procesosVersion.length > 0) {
+        // Filtrar por scope si es necesario
+        const userRole = scope?.role;
+        let items = procesosVersion;
+
+        // Si el usuario tiene direcciones asignadas, filtrar
+        if (Array.isArray(scope?.direccionesAsignadas) && scope.direccionesAsignadas.length > 0) {
+          const dirNames = new Set(scope.direccionesAsignadas.map(d => String(d).trim().toLowerCase()));
+          items = items.filter((item) =>
+            dirNames.has(String(item?.direccionEncargada || '').trim().toLowerCase())
+          );
+        }
+        // Filtro por dirección para usuarios con rol "direccion"
+        else if (userRole === 'direccion') {
+          const direccion = String(scope?.direccionNombre || '').trim().toLowerCase();
+          items = items.filter((item) =>
+            String(item?.direccionEncargada || '').trim().toLowerCase() === direccion
+          );
+        }
+
+        return items;
+      }
+    }
+  } catch (error) {
+    console.log('Error obteniendo versión activa, usando fallback:', error.message);
+  }
+
+  // Fallback: usar tabla antigua si no hay versión activa
   const items = await getAllSubtareas();
   const userRole = scope?.role;
 
@@ -3272,6 +3307,67 @@ export async function getActividadesByVersion(versionId) {
     [versionId]
   );
   return rows.map(toCamelRow);
+}
+
+// Obtener procesos de la versión activa actual (para usuarios normales)
+export async function getSubtareasVersionActual() {
+  const versionActual = await getVersionActual();
+  if (!versionActual) {
+    // Fallback: retornar de tabla antigua si no hay versión activa
+    return getAllSubtareas();
+  }
+  return getActividadesByVersion(versionActual.id);
+}
+
+// Reactivar una versión aprobada (cambiarla a activa)
+export async function reactivarVersion(versionId, usuarioActivacion) {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // Obtener versión a activar
+    const [version] = await connection.query(
+      'SELECT id, estado FROM versiones WHERE id = ?',
+      [versionId]
+    );
+
+    if (version.length === 0) {
+      throw new Error('Versión no encontrada');
+    }
+
+    if (version[0].estado !== 'aprobado') {
+      throw new Error('Solo se pueden activar versiones aprobadas o históricas');
+    }
+
+    // Desactivar versión anterior
+    await connection.query(
+      'UPDATE versiones SET activa = 0 WHERE activa = 1'
+    );
+
+    // Activar esta versión
+    await connection.query(
+      `UPDATE versiones SET activa = 1,
+              usuario_activacion = ?, fecha_activacion = NOW()
+       WHERE id = ?`,
+      [usuarioActivacion, versionId]
+    );
+
+    // Registrar cambio
+    await connection.query(
+      `INSERT INTO versiones_cambios (
+        version_id, tipo_cambio, usuario, descripcion
+      ) VALUES (?, 'activar', ?, 'Versión reactivada')`,
+      [versionId, usuarioActivacion]
+    );
+
+    await connection.commit();
+    return await getVersionById(versionId);
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    await connection.release();
+  }
 }
 
 // Crear nueva reforma vacía (borrador)

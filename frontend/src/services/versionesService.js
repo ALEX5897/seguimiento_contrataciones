@@ -70,6 +70,14 @@ export async function cargarExcelVersion(versionId, procesos) {
   return response.data;
 }
 
+// Reactivar una versión aprobada/histórica
+export async function reactivarVersion(versionId, usuarioActivacion) {
+  const response = await api.put(`/versiones/${versionId}/reactivar`, {
+    usuario_activacion: usuarioActivacion
+  });
+  return response.data;
+}
+
 export default {
   getAllVersiones,
   getVersionById,

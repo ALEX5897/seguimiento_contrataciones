@@ -226,6 +226,30 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+/**
+ * PUT /:id/reactivar - Reactivar una versión aprobada/histórica
+ * Body: { usuario_activacion }
+ */
+router.put('/:id/reactivar', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { usuario_activacion } = req.body;
+
+    if (!usuario_activacion) {
+      return res.status(400).json({ error: 'Usuario de activación requerido' });
+    }
+
+    const version = await mysql.reactivarVersion(parseInt(id), usuario_activacion);
+    res.json({
+      message: `Versión ${version.nombre} reactivada exitosamente`,
+      version
+    });
+  } catch (error) {
+    console.error('Error al reactivar versión:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // Función auxiliar para calcular diferencias entre versiones
 function calcularDiferencias(actividades1, actividades2) {
   const map1 = new Map(actividades1.map(a => [a.subtareaOrigenId || a.id, a]));

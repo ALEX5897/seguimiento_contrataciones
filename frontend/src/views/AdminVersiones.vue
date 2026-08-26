@@ -167,12 +167,19 @@
           >
             🔄 Comparar
           </button>
-          <button 
-            v-if="version.estado === 'borrador'" 
-            class="btn-small btn-eliminar" 
+          <button
+            v-if="version.estado === 'borrador'"
+            class="btn-small btn-eliminar"
             @click="eliminarVersionModal(version)"
           >
             🗑️ Eliminar
+          </button>
+          <button
+            v-if="version.estado !== 'borrador' && !version.activa"
+            class="btn-small btn-reactivar"
+            @click="reactivarVersionModal(version)"
+          >
+            🔄 Reactivar
           </button>
         </div>
       </div>
@@ -562,6 +569,36 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal reactivar versión -->
+    <div v-if="reactivarModal.activa" class="confirm-overlay" @click.self="reactivarModal.activa = false">
+      <div class="confirm-modal aprobar-modal" @click.stop>
+        <div class="confirm-icon">🔄</div>
+        <h3 class="confirm-titulo">Reactivar versión</h3>
+        <p class="confirm-msg">Se hará la versión actual y se desactivará la anterior.</p>
+        <div v-if="reactivarModal.version" class="version-info-reactivar">
+          <strong>{{ reactivarModal.version.nombre }}</strong>
+          <span :class="['badge', `badge-${reactivarModal.version.estado}`]">
+            {{ formatearEstado(reactivarModal.version.estado) }}
+          </span>
+        </div>
+        <div class="form-grupo">
+          <label>Nombre de usuario *</label>
+          <input
+            v-model="reactivarModal.usuario"
+            type="text"
+            placeholder="Ingrese su nombre de usuario"
+            class="input-usuario"
+            @keyup.enter="confirmarReactivacion"
+          />
+          <span v-if="reactivarModal.error" class="campo-error">{{ reactivarModal.error }}</span>
+        </div>
+        <div class="confirm-actions">
+          <button class="btn-secondary" @click="reactivarModal.activa = false">Cancelar</button>
+          <button class="btn-aprobar-confirm" @click="confirmarReactivacion">🔄 Reactivar</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -647,6 +684,12 @@ function pedirConfirmacion(titulo: string, mensaje: string): Promise<boolean> {
 const aprobarModal = ref({ activa: false, version: null as Version | null, usuario: '', error: '' });
 function abrirAprobarModal(version: Version) {
   aprobarModal.value = { activa: true, version, usuario: '', error: '' };
+}
+
+// Modal reactivar versión
+const reactivarModal = ref({ activa: false, version: null as Version | null, usuario: '', error: '' });
+function abrirReactivarModal(version: Version) {
+  reactivarModal.value = { activa: true, version, usuario: '', error: '' };
 }
 async function confirmarAprobacion() {
   if (!aprobarModal.value.usuario.trim()) {
@@ -983,6 +1026,28 @@ function cerrarModalDetalle() {
 
 async function aprobarVersionModal(version: Version) {
   abrirAprobarModal(version);
+}
+
+async function reactivarVersionModal(version: Version) {
+  abrirReactivarModal(version);
+}
+
+async function confirmarReactivacion() {
+  if (!reactivarModal.value.usuario.trim()) {
+    reactivarModal.value.error = 'Por favor ingrese su nombre de usuario';
+    return;
+  }
+  const version = reactivarModal.value.version!;
+  const usuario = reactivarModal.value.usuario.trim();
+  reactivarModal.value.activa = false;
+  try {
+    await versionesService.reactivarVersion(version.id, usuario);
+    mostrarNotificacion(`${version.nombre} reactivada exitosamente`, 'success');
+    await cargarVersiones();
+  } catch (error) {
+    console.error('Error al reactivar:', error);
+    mostrarNotificacion('Error al reactivar la versión', 'error');
+  }
 }
 
 async function eliminarVersionModal(version: Version) {
@@ -2091,5 +2156,36 @@ padding-bottom: 1rem;
   color: #991b1b;
   padding: 1rem;
   border-radius: 6px;
+}
+
+/* Botón Reactivar */
+.btn-reactivar {
+  background: #f59e0b;
+  color: white;
+
+  &:hover {
+    background: #d97706;
+  }
+}
+
+/* Info en modal de reactivar */
+.version-info-reactivar {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  padding: 1rem;
+  border-radius: 6px;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  strong {
+    flex: 1;
+    color: #92400e;
+  }
+
+  .badge {
+    font-size: 0.85rem;
+  }
 }
 </style>
