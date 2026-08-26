@@ -3335,7 +3335,7 @@ export async function reactivarVersion(versionId, usuarioActivacion) {
       throw new Error('Versión no encontrada');
     }
 
-    if (version[0].estado !== 'aprobado') {
+    if (version[0].estado !== 'aprobado' && version[0].estado !== 'historico') {
       throw new Error('Solo se pueden activar versiones aprobadas o históricas');
     }
 
