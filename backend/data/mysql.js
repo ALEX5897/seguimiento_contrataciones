@@ -1087,16 +1087,20 @@ export async function getAllSubtareasByScope(scope = {}) {
         // Si el usuario tiene direcciones asignadas, filtrar
         if (Array.isArray(scope?.direccionesAsignadas) && scope.direccionesAsignadas.length > 0) {
           const dirNames = new Set(scope.direccionesAsignadas.map(d => String(d).trim().toLowerCase()));
-          items = items.filter((item) =>
-            dirNames.has(String(item?.direccionEncargada || '').trim().toLowerCase())
-          );
+          items = items.filter((item) => {
+            // Intentar ambas versiones (camelCase y snake_case)
+            const dirItem = String(item?.direccionEncargada || item?.direccion_encargada || '').trim().toLowerCase();
+            return dirNames.has(dirItem);
+          });
         }
         // Filtro por dirección para usuarios con rol "direccion"
         else if (userRole === 'direccion') {
           const direccion = String(scope?.direccionNombre || '').trim().toLowerCase();
-          items = items.filter((item) =>
-            String(item?.direccionEncargada || '').trim().toLowerCase() === direccion
-          );
+          items = items.filter((item) => {
+            // Intentar ambas versiones (camelCase y snake_case)
+            const dirItem = String(item?.direccionEncargada || item?.direccion_encargada || '').trim().toLowerCase();
+            return dirItem === direccion;
+          });
         }
 
         return items;
