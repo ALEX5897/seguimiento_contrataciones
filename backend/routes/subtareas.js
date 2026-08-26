@@ -405,7 +405,8 @@ router.put('/:subtareaRef', async (req, res) => {
     const subtareaId = await resolveSubtareaIdFromRef(req.params.subtareaRef, scope);
     if (!subtareaId) return res.status(404).json({ error: 'Subtarea no encontrada' });
 
-    const subtareaActualizada = await mysql.updateSubtarea(req.params.subtareaRef, req.body);
+    // Usar función que maneja tanto tabla antigua como versiones
+    const subtareaActualizada = await mysql.updateSubtareaVersion(subtareaId, req.body);
 
     if (!subtareaActualizada) {
       return res.status(404).json({ error: 'Subtarea no encontrada' });

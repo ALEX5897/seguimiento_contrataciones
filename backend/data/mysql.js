@@ -2534,6 +2534,75 @@ export async function deleteSubtarea(idOrCode) {
   await query('DELETE FROM subtareas WHERE id = ?', [id]);
 }
 
+// Editar proceso en versión activa
+export async function updateSubtareaVersion(id, data) {
+  // Primero intentar actualizar en subtareas_versiones (versión activa)
+  const versionActual = await getVersionActual();
+
+  if (versionActual) {
+    const [proceso] = await query(
+      'SELECT id FROM subtareas_versiones WHERE id = ? AND version_id = ?',
+      [id, versionActual.id]
+    );
+
+    if (proceso.length > 0) {
+      // Es un proceso de versión activa, actualizar en subtareas_versiones
+      const fields = [];
+      const values = [];
+
+      if (data.subtarea !== undefined) {
+        fields.push('subtarea = ?');
+        values.push(String(data.subtarea).substring(0, 255));
+      }
+      if (data.direccionEncargada !== undefined) {
+        fields.push('direccion_encargada = ?');
+        values.push(data.direccionEncargada || 'N/A');
+      }
+      if (data.responsable !== undefined) {
+        fields.push('responsable = ?');
+        values.push(data.responsable || 'N/A');
+      }
+      if (data.presupuesto2026Inicial !== undefined) {
+        fields.push('presupuesto_2026_inicial = ?');
+        values.push(parseFloat(data.presupuesto2026Inicial) || 0);
+      }
+      if (data.pacNoPac !== undefined) {
+        fields.push('pac_no_pac = ?');
+        values.push(data.pacNoPac || 'PAC');
+      }
+      if (data.cuatrimestre !== undefined) {
+        fields.push('cuatrimestre = ?');
+        values.push(data.cuatrimestre || 'Cuatrimestre I');
+      }
+      if (data.activo !== undefined) {
+        fields.push('activo = ?');
+        values.push(data.activo ? 1 : 0);
+      }
+
+      if (fields.length === 0) {
+        // Sin cambios
+        return getSubtareaById(id);
+      }
+
+      values.push(id);
+      values.push(versionActual.id);
+
+      const sql = `UPDATE subtareas_versiones SET ${fields.join(', ')} WHERE id = ? AND version_id = ?`;
+      await query(sql, values);
+
+      // Retornar proceso actualizado
+      const [updated] = await query(
+        'SELECT * FROM subtareas_versiones WHERE id = ? AND version_id = ?',
+        [id, versionActual.id]
+      );
+      return updated.length > 0 ? toCamelRow(updated[0]) : null;
+    }
+  }
+
+  // Fallback: actualizar en tabla antigua
+  return updateSubtarea(id, data);
+}
+
 function normalizarFechaSalida(fecha) {
   if (!fecha) return null;
   const str = String(fecha).trim();
