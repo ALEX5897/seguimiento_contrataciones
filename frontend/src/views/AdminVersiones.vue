@@ -404,6 +404,17 @@
               />
             </div>
 
+            <div class="form-grupo checkbox-grupo">
+              <label>
+                <input
+                  type="checkbox"
+                  v-model="copiarSeguimientoExcel"
+                />
+                <span>📋 Copiar seguimiento de reforma anterior</span>
+              </label>
+              <small>Los procesos que coincidan por código Olympo heredarán el seguimiento (etapas completadas, observaciones, etc.)</small>
+            </div>
+
             <div v-if="errorExcel" class="alert alert-error">
               ❌ {{ errorExcel }}
             </div>
@@ -653,6 +664,7 @@ const tabCreacion = ref<'crear' | 'duplicar' | 'excel'>('crear');
 const versionOrigen = ref('');
 const previewProcesos = ref<any[]>([]);
 const errorExcel = ref('');
+const copiarSeguimientoExcel = ref(false);
 
 const formularioReforma = ref<FormularioReforma>({
   anio: new Date().getFullYear(),
@@ -782,6 +794,7 @@ function cerrarModalCreacion() {
   mostrarModalCreacion.value = false;
   previewProcesos.value = [];
   errorExcel.value = '';
+  copiarSeguimientoExcel.value = false;
 }
 
 async function crearReforma() {
@@ -837,6 +850,17 @@ async function crearYCargarExcel() {
     creandoReforma.value = true;
     const nuevaVersion = await versionesService.crearNuevaReforma(formularioReforma.value);
     await versionesService.cargarExcelVersion(nuevaVersion.id, previewProcesos.value);
+
+    // Copiar seguimiento si está habilitado
+    if (copiarSeguimientoExcel.value) {
+      try {
+        await versionesService.copiarSeguimiento(nuevaVersion.id);
+        mostrarNotificacion('✅ Seguimiento copiado de reforma anterior', 'success');
+      } catch (error: any) {
+        console.warn('Advertencia al copiar seguimiento:', error);
+        mostrarNotificacion('⚠️ No se pudo copiar seguimiento (reforma anterior no existe)', 'warning');
+      }
+    }
 
     mostrarNotificacion(`${nuevaVersion.nombre} creada con ${previewProcesos.value.length} procesos`, 'success');
     cerrarModalCreacion();

@@ -241,6 +241,7 @@ function toCamelRow(row) {
     direccion_id: 'direccionId',
     responsable_id: 'responsableId',
     codigo_olympo: 'codigoOlympo',
+    codigo_unico_proceso: 'codigoUnicoProceso',
     direccion_encargada: 'direccionEncargada',
     partida_presupuestaria: 'partidaPresupuestaria',
     presupuesto_2026_inicial: 'presupuesto2026Inicial',
@@ -248,10 +249,15 @@ function toCamelRow(row) {
     plazo_contrato: 'plazoContrato',
     pac_no_pac: 'pacNoPac',
     procedimiento_sugerido: 'procedimientoSugerido',
+    tipo_contratacion: 'tipoContratacion',
+    estado_carga: 'estadoCarga',
     fecha_tentativa: 'fechaTentativa',
     fecha_reforma: 'fechaReforma',
+    fecha_reforma_3: 'fechaReforma3',
     fecha_planificada: 'fechaPlanificada',
     fecha_real: 'fechaReal',
+    fecha_inicio: 'fechaInicio',
+    fecha_fin: 'fechaFin',
     created_at: 'createdAt',
     updated_at: 'updatedAt',
     proceso_en_riesgo: 'procesoEnRiesgo',
@@ -264,6 +270,30 @@ function toCamelRow(row) {
     fecha_leida: 'fechaLeida',
     tarea_id: 'tareaId',
     es_version_actual: 'esVersionActual',
+    subtarea_id_original: 'subtareaIdOriginal',
+    version_id: 'versionId',
+    meta_indicador: 'metaIndicador',
+    meta_valor_2026: 'metaValor2026',
+    meta_formula_calculo: 'metaFormulaCalculo',
+    meta_tipo: 'metaTipo',
+    presupuesto_con_reformas: 'presupuestoConReformas',
+    presupuesto_original: 'presupuestoOriginal',
+    reforma_9: 'reforma9',
+    fuente_financiamiento_id: 'fuenteFinanciamientoId',
+    actividad_nombre: 'actividadNombre',
+    actividad_composicion_gasto: 'actividadComposicionGasto',
+    actividad_enfoque_genero: 'actividadEnfoqueGenero',
+    actividad_tipo_obra: 'actividadTipoObra',
+    actividad_fecha_inicio: 'actividadFechaInicio',
+    actividad_fecha_fin: 'actividadFechaFin',
+    tarea_nombre: 'tareaNombre',
+    tarea_fecha_inicio: 'tareaFechaInicio',
+    tarea_fecha_fin: 'tareaFechaFin',
+    objetivo_operativo_pmdot: 'objetivoOperativoPmdot',
+    meta_pmdot_2033: 'metaPmdot2033',
+    valor_meta_pmdot_2025: 'valorMetaPmdot2025',
+    numero_reforma: 'numeroReforma',
+    version_nombre: 'versionNombre',
     version_id: 'versionId',
     orden_login: 'ordenLogin',
     fecha_inicio_rol: 'fechaInicioRol',
@@ -1037,6 +1067,8 @@ export async function getAllSubtareas() {
 
   return subtareas.map((row) => {
     const item = toCamelRow(row);
+    // Mapear subtarea a nombre para consistencia con frontend
+    item.nombre = item.nombre || item.subtarea || row.nombre || row.subtarea;
     item.direccionNombre = row.direccion_nombre || SIN_DIRECCION_NOMBRE;
     const direccionKey = String(item.direccionNombre || '').trim().toLowerCase();
     item.direccionId = direccionIdPorNombre.get(direccionKey) || obtenerDireccionIdDesdeNombre(item.direccionNombre);
@@ -1053,11 +1085,13 @@ export async function getAllSubtareas() {
     item.cuatrimestre = row.cuatrimestre || null;
     item.plazoContrato = row.plazo_contrato || null;
     item.procedimientoSugerido = row.procedimiento_sugerido || null;
-    item.tipoContratacion = row.procedimiento_sugerido || null;
+    item.tipoContratacion = row.tipo_contratacion || null;
+    item.gestionGastoOProyecto = row.gestion_gasto_o_proyecto || 'Gasto';
     item.procesoEnRiesgo = Boolean(Number(row.proceso_en_riesgo ?? 0));
     item.riesgoComentario = row.riesgo_comentario ? normalizeTextEncoding(row.riesgo_comentario) : null;
     item.avanceGeneral = Number(row.avance_general ?? 0);
-    item.estado = 'pendiente';
+    item.fuenteFinanciamiento = row.fuente_financiamiento || null;
+    item.estado = row.estado || 'pendiente';
     item.etapas = bySubtarea.get(row.id) || [];
     item.seguimientoEtapas = item.etapas
       .filter((e) => Number(e.aplica) === 1 || e.aplica === true || String(e.aplica).toLowerCase() === 'true')
@@ -1088,7 +1122,6 @@ export async function getAllSubtareasByScope(scope = {}) {
         if (Array.isArray(scope?.direccionesAsignadas) && scope.direccionesAsignadas.length > 0) {
           const dirNames = new Set(scope.direccionesAsignadas.map(d => String(d).trim().toLowerCase()));
           items = items.filter((item) => {
-            // Intentar ambas versiones (camelCase y snake_case)
             const dirItem = String(item?.direccionEncargada || item?.direccion_encargada || '').trim().toLowerCase();
             return dirNames.has(dirItem);
           });
@@ -1097,7 +1130,6 @@ export async function getAllSubtareasByScope(scope = {}) {
         else if (userRole === 'direccion') {
           const direccion = String(scope?.direccionNombre || '').trim().toLowerCase();
           items = items.filter((item) => {
-            // Intentar ambas versiones (camelCase y snake_case)
             const dirItem = String(item?.direccionEncargada || item?.direccion_encargada || '').trim().toLowerCase();
             return dirItem === direccion;
           });
@@ -2466,19 +2498,25 @@ export async function updateSubtarea(idOrCode, data) {
   const fieldMap = {
     nombre: 'nombre',
     codigoOlympo: 'codigo_olympo',
+    codigoUnicoProceso: 'codigo_unico_proceso',
+    estado: 'estado',
     partidaPresupuestaria: 'partida_presupuestaria',
     presupuesto: 'presupuesto_2026_inicial',
     costoReforma2: 'costo_2026',
     cuatrimestre: 'cuatrimestre',
     plazoContrato: 'plazo_contrato',
     tipoPlan: 'pac_no_pac',
+    gestionGastoOProyecto: 'gestion_gasto_o_proyecto',
+    tipoContratacion: 'tipo_contratacion',
     procedimientoSugerido: 'procedimiento_sugerido',
     observaciones: 'observaciones',
+    avanceGeneral: 'avance_general',
     procesoEnRiesgo: 'proceso_en_riesgo',
     riesgoComentario: 'riesgo_comentario',
     activo: 'activo',
     fechaInicio: 'fecha_inicio',
-    fechaFin: 'fecha_fin'
+    fechaFin: 'fecha_fin',
+    fuenteFinanciamiento: 'fuente_financiamiento'
   };
 
   Object.entries(fieldMap).forEach(([camel, sql]) => {
@@ -2554,29 +2592,113 @@ export async function updateSubtareaVersion(id, data) {
       const fields = [];
       const values = [];
 
+      if (data.nombre !== undefined) {
+        fields.push('nombre = ?');
+        values.push(String(data.nombre).substring(0, 255));
+      }
       if (data.subtarea !== undefined) {
         fields.push('subtarea = ?');
         values.push(String(data.subtarea).substring(0, 255));
+      }
+      if (data.direccionId !== undefined) {
+        fields.push('direccion_id = ?');
+        values.push(data.direccionId || null);
       }
       if (data.direccionEncargada !== undefined) {
         fields.push('direccion_encargada = ?');
         values.push(data.direccionEncargada || 'N/A');
       }
+      if (data.responsableId !== undefined) {
+        fields.push('responsable_id = ?');
+        values.push(data.responsableId || null);
+      }
       if (data.responsable !== undefined) {
         fields.push('responsable = ?');
         values.push(data.responsable || 'N/A');
+      }
+      if (data.codigoOlympo !== undefined) {
+        fields.push('codigo_olympo = ?');
+        values.push(data.codigoOlympo || '');
+      }
+      if (data.codigoUnicoProceso !== undefined) {
+        fields.push('codigo_unico_proceso = ?');
+        values.push(data.codigoUnicoProceso || '');
+      }
+      if (data.estado !== undefined) {
+        fields.push('estado = ?');
+        values.push(data.estado || 'pendiente');
+      }
+      if (data.tipoPlan !== undefined) {
+        fields.push('tipo_plan = ?');
+        values.push(data.tipoPlan || 'PAC');
+      }
+      if (data.gestionGastoOProyecto !== undefined) {
+        fields.push('gestion_gasto_o_proyecto = ?');
+        values.push(data.gestionGastoOProyecto || 'Gasto');
+      }
+      if (data.procesoEnRiesgo !== undefined) {
+        fields.push('proceso_en_riesgo = ?');
+        values.push(data.procesoEnRiesgo ? 1 : 0);
+      }
+      if (data.riesgoComentario !== undefined) {
+        fields.push('riesgo_comentario = ?');
+        values.push(data.riesgoComentario || '');
+      }
+      if (data.tipoContratacion !== undefined) {
+        fields.push('tipo_contratacion = ?');
+        values.push(data.tipoContratacion || null);
+      }
+      if (data.presupuesto !== undefined) {
+        fields.push('presupuesto = ?');
+        values.push(parseFloat(data.presupuesto) || 0);
       }
       if (data.presupuesto2026Inicial !== undefined) {
         fields.push('presupuesto_2026_inicial = ?');
         values.push(parseFloat(data.presupuesto2026Inicial) || 0);
       }
-      if (data.pacNoPac !== undefined) {
-        fields.push('pac_no_pac = ?');
-        values.push(data.pacNoPac || 'PAC');
+      if (data.costoReforma2 !== undefined) {
+        fields.push('costo_reforma2 = ?');
+        values.push(parseFloat(data.costoReforma2) || 0);
+      }
+      if (data.partidaPresupuestaria !== undefined) {
+        fields.push('partida_presupuestaria = ?');
+        values.push(data.partidaPresupuestaria || '');
+      }
+      if (data.fuenteFinanciamiento !== undefined) {
+        fields.push('fuente_financiamiento = ?');
+        values.push(data.fuenteFinanciamiento || '');
+      }
+      if (data.fechaInicio !== undefined) {
+        fields.push('fecha_inicio = ?');
+        values.push(data.fechaInicio || null);
+      }
+      if (data.fechaFin !== undefined) {
+        fields.push('fecha_fin = ?');
+        values.push(data.fechaFin || null);
+      }
+      if (data.plazoContrato !== undefined) {
+        fields.push('plazo_contrato = ?');
+        values.push(data.plazoContrato || '');
+      }
+      if (data.procedimientoSugerido !== undefined) {
+        fields.push('procedimiento_sugerido = ?');
+        values.push(data.procedimientoSugerido || null);
       }
       if (data.cuatrimestre !== undefined) {
         fields.push('cuatrimestre = ?');
-        values.push(data.cuatrimestre || 'Cuatrimestre I');
+        values.push(data.cuatrimestre || null);
+      }
+      if (data.avanceGeneral !== undefined) {
+        fields.push('avance_general = ?');
+        values.push(parseInt(data.avanceGeneral) || 0);
+      }
+      if (data.observaciones !== undefined) {
+        fields.push('observaciones = ?');
+        values.push(data.observaciones || '');
+      }
+      if (data.pacNoPac !== undefined) {
+        fields.push('pac_no_pac = ?');
+        values.push(data.pacNoPac || 'PAC');
       }
       if (data.activo !== undefined) {
         fields.push('activo = ?');
@@ -2640,7 +2762,7 @@ function normalizarFechaSalida(fecha) {
 
 export async function getSubtareaEtapas(subtareaId) {
   const rows = await query(
-    `SELECT se.id, se.subtarea_id, se.etapa_id, se.aplica, se.fecha_tentativa, se.fecha_reforma, se.fecha_reforma_3,
+    `SELECT se.id, se.subtarea_id, se.etapa_id, se.aplica, se.fecha_tentativa, se.fecha_reforma, se.fecha_reforma_3, se.fecha_planificada,
             COALESCE(sg.estado, 'pendiente') AS estado,
             sg.fecha_real, sg.responsable_id, sg.observaciones,
             COALESCE(sg.responsable, s.responsable) AS responsable_nombre,
@@ -3371,15 +3493,168 @@ export async function getVersionActual() {
 }
 
 export async function getActividadesByVersion(versionId) {
+  // Obtener procesos de tabla PROCESOS (nueva estructura) CON INFO DE REFORMA
   const rows = await query(
-    `SELECT id, version_id, codigo_olympo, subtarea, direccion_encargada, responsable,
-            presupuesto_2026_inicial, pac_no_pac, cuatrimestre, activo, proceso_en_riesgo
-     FROM subtareas_versiones
-     WHERE version_id = ? AND activo = 1
-     ORDER BY codigo_olympo`,
+    `SELECT p.id, p.version_id, p.codigo_olympo, p.codigo_unico_proceso, p.subtarea,
+            p.direccion_encargada, p.responsable,
+            p.presupuesto_2026_inicial, p.costo_2026, p.pac_no_pac, p.activo, p.proceso_en_riesgo,
+            p.subtarea_id_original, p.tipo_contratacion, p.estado, p.gestion_gasto_o_proyecto,
+            p.partida_presupuestaria, p.procedimiento_sugerido, p.observaciones, p.estado_carga,
+            p.riesgo_comentario, p.avance_general, p.fuente_financiamiento,
+            p.fecha_inicio, p.fecha_fin, p.plazo_contrato, p.cuatrimestre, p.responsable_id,
+            v.numero_reforma, v.nombre as version_nombre,
+            pi.meta_indicador, pi.meta_valor_2026, pi.meta_formula_calculo, pi.meta_tipo,
+            pp.presupuesto_con_reformas, pp.presupuesto_original, pp.reforma_9, pp.vigencia,
+            pc.actividad_nombre, pc.actividad_composicion_gasto, pc.actividad_enfoque_genero,
+            pc.actividad_tipo_obra, pc.actividad_fecha_inicio, pc.actividad_fecha_fin,
+            pc.tarea_nombre, pc.tarea_fecha_inicio, pc.tarea_fecha_fin,
+            pc.objetivo_operativo_pmdot, pc.meta_pmdot_2033, pc.valor_meta_pmdot_2025
+     FROM procesos p
+     LEFT JOIN versiones v ON v.id = p.version_id
+     LEFT JOIN procesos_indicadores pi ON p.id = pi.proceso_id
+     LEFT JOIN procesos_presupuesto pp ON p.id = pp.proceso_id
+     LEFT JOIN procesos_contexto pc ON p.id = pc.proceso_id
+     WHERE p.version_id = ? AND p.activo = 1
+     ORDER BY p.codigo_olympo`,
     [versionId]
   );
-  return rows.map(toCamelRow);
+
+  // Agrupar procesos (porque LEFT JOIN devuelve múltiples filas)
+  const procesoMap = new Map();
+
+  for (const row of rows) {
+    const procesoId = row.id;
+    if (!procesoMap.has(procesoId)) {
+      const proceso = toCamelRow(row);
+      // Mapear subtarea a nombre para consistencia con frontend
+      proceso.nombre = proceso.subtarea;
+      // Mapeos adicionales para compatibilidad frontend
+      proceso.presupuesto = parseFloat(proceso.presupuestoConReformas) || parseFloat(proceso.presupuesto2026Inicial) || 0;
+      proceso.tipoPlan = proceso.pacNoPac;
+      proceso.estado = proceso.estado || 'Precontractual';
+      // Normalizar fechas de contexto
+      if (proceso.actividadFechaInicio) proceso.actividadFechaInicio = normalizarFechaSalida(proceso.actividadFechaInicio);
+      if (proceso.actividadFechaFin) proceso.actividadFechaFin = normalizarFechaSalida(proceso.actividadFechaFin);
+      if (proceso.tareaFechaInicio) proceso.tareaFechaInicio = normalizarFechaSalida(proceso.tareaFechaInicio);
+      if (proceso.tareaFechaFin) proceso.tareaFechaFin = normalizarFechaSalida(proceso.tareaFechaFin);
+      if (proceso.fechaInicio) proceso.fechaInicio = normalizarFechaSalida(proceso.fechaInicio);
+      if (proceso.fechaFin) proceso.fechaFin = normalizarFechaSalida(proceso.fechaFin);
+      // Resolver subtarea_id_original desde subtareas_versiones si no está disponible
+      proceso.subtareaIdOriginalResuelto = proceso.subtareaIdOriginal;
+      procesoMap.set(procesoId, proceso);
+    }
+  }
+
+  // Resolver subtarea_id_original para procesos que no lo tienen
+  for (const proceso of procesoMap.values()) {
+    if (!proceso.subtareaIdOriginalResuelto && proceso.codigoOlympo) {
+      const svResult = await query(
+        `SELECT subtarea_id_original FROM subtareas_versiones
+         WHERE codigo_olympo = ? AND version_id = ?`,
+        [proceso.codigoOlympo, versionId]
+      );
+      if (svResult.length > 0) {
+        proceso.subtareaIdOriginalResuelto = svResult[0].subtarea_id_original;
+      }
+    }
+  }
+
+  let procesos = Array.from(procesoMap.values());
+
+  // Obtener etapas/seguimiento para cada proceso
+  for (const proceso of procesos) {
+    // Resolver el subtarea_id correcto
+    let subtareaId = proceso.subtareaIdOriginal;
+
+    // Si no tiene subtarea_id_original, buscar a través de subtareas_versiones por código olympo
+    if (!subtareaId && proceso.codigoOlympo) {
+      const svResult = await query(
+        `SELECT subtarea_id_original FROM subtareas_versiones
+         WHERE codigo_olympo = ? AND version_id = ?`,
+        [proceso.codigoOlympo, proceso.versionId]
+      );
+      if (svResult.length > 0) {
+        subtareaId = svResult[0].subtarea_id_original;
+      }
+    }
+
+    // Fallback: si aún no tiene subtarea_id, usar el proceso.id
+    if (!subtareaId) {
+      subtareaId = proceso.id;
+    }
+
+    const etapasData = await query(
+      `SELECT se.id, se.etapa_id, se.fecha_tentativa, se.fecha_reforma, se.fecha_reforma_3, se.fecha_planificada,
+              ep.nombre AS etapa_nombre, ep.orden, ep.clasificacion, ep.descripcion,
+              sg.estado, sg.fecha_real, sg.observaciones,
+              sg.responsable AS responsable_nombre, se.aplica
+       FROM subtareas_etapas se
+       LEFT JOIN etapas_catalogo ep ON ep.id = se.etapa_id
+       LEFT JOIN seguimiento_etapas sg ON sg.subtarea_id = se.subtarea_id AND sg.etapa_id = se.etapa_id
+       WHERE se.subtarea_id = ?
+       ORDER BY COALESCE(ep.orden, 999)`,
+      [subtareaId]
+    );
+
+    proceso.etapas = etapasData.map(e => ({
+      id: e.id,
+      etapaId: e.etapa_id,
+      etapaNombre: e.etapa_nombre,
+      orden: e.orden,
+      clasificacion: e.clasificacion,
+      descripcion: e.descripcion,
+      estado: e.estado || 'pendiente',
+      fechaTentativa: e.fecha_planificada,
+      fechaReal: e.fecha_real,
+      observaciones: e.observaciones,
+      responsable: e.responsable_nombre,
+      aplica: e.aplica === 1 || e.aplica === true
+    }));
+
+    // Seguimiento etapas es alias para etapas (compatibilidad frontend)
+    proceso.seguimientoEtapas = proceso.etapas
+      .filter(e => Number(e.aplica) === 1 || e.aplica === true || String(e.aplica).toLowerCase() === 'true')
+      .map(etapa => ({
+        ...etapa,
+        fechaPlanificada: etapa.fechaTentativa || null
+      }));
+  }
+
+  // Consolidar procesos por nombre exacto (múltiples partidas del mismo contrato)
+  const procesosConsolidados = new Map();
+
+  for (const proceso of procesos) {
+    const nombreExacto = proceso.nombre;
+
+    if (!procesosConsolidados.has(nombreExacto)) {
+      // Primera ocurrencia: crear proceso consolidado
+      procesosConsolidados.set(nombreExacto, {
+        ...proceso,
+        partidas: [{
+          id: proceso.id,
+          codigoOlympo: proceso.codigoOlympo,
+          presupuesto: proceso.presupuesto,
+          direccion: proceso.direccionEncargada
+        }],
+        tieneMultiplesPartidas: false
+      });
+    } else {
+      // Siguiente ocurrencia: agregar partida y sumar presupuesto
+      const consolidado = procesosConsolidados.get(nombreExacto);
+      consolidado.presupuesto += proceso.presupuesto;
+      consolidado.partidas.push({
+        id: proceso.id,
+        codigoOlympo: proceso.codigoOlympo,
+        presupuesto: proceso.presupuesto,
+        direccion: proceso.direccionEncargada
+      });
+      consolidado.tieneMultiplesPartidas = true;
+      consolidado.codigoOlympo = 'Múltiples partidas';
+    }
+  }
+
+  procesos = Array.from(procesosConsolidados.values());
+  return procesos;
 }
 
 // Obtener procesos de la versión activa actual (para usuarios normales)
@@ -3497,44 +3772,44 @@ export async function duplicarProcesos(versionIdDestino, versionIdOrigen) {
   try {
     await connection.beginTransaction();
 
-    // Obtener procesos de la versión origen
+    // Obtener procesos de la versión origen (DE TABLA PROCESOS)
     const [procesosOrigen] = await connection.query(
-      `SELECT codigo_olympo, subtarea, direccion_encargada, responsable, responsable_id,
+      `SELECT id, codigo_olympo, subtarea, direccion_encargada, responsable, responsable_id,
               fecha_inicio, fecha_fin, plazo_contrato, pac_no_pac, procedimiento_sugerido,
-              presupuesto_2026_inicial, costo_2026, partida_presupuestaria, cuatrimestre,
-              activo, proceso_en_riesgo, riesgo_comentario, observaciones
-       FROM subtareas_versiones WHERE version_id = ?`,
+              presupuesto_2026_inicial, costo_2026, partida_presupuestaria,
+              activo, proceso_en_riesgo, riesgo_comentario, observaciones, tipo_contratacion, estado
+       FROM procesos WHERE version_id = ?`,
       [versionIdOrigen]
     );
 
-    // Insertar en versión destino
+    // Insertar en versión destino (EN TABLA PROCESOS)
     let cantInsertados = 0;
     for (const proceso of procesosOrigen) {
       await connection.query(
-        `INSERT INTO subtareas_versiones (
+        `INSERT INTO procesos (
           version_id, codigo_olympo, subtarea, direccion_encargada, responsable, responsable_id,
           fecha_inicio, fecha_fin, plazo_contrato, pac_no_pac, procedimiento_sugerido,
-          presupuesto_2026_inicial, costo_2026, partida_presupuestaria, cuatrimestre,
-          activo, proceso_en_riesgo, riesgo_comentario, observaciones
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          presupuesto_2026_inicial, costo_2026, partida_presupuestaria,
+          activo, proceso_en_riesgo, riesgo_comentario, observaciones, tipo_contratacion, estado
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           versionIdDestino, proceso.codigo_olympo, proceso.subtarea, proceso.direccion_encargada,
           proceso.responsable, proceso.responsable_id, proceso.fecha_inicio, proceso.fecha_fin,
           proceso.plazo_contrato, proceso.pac_no_pac, proceso.procedimiento_sugerido,
           proceso.presupuesto_2026_inicial, proceso.costo_2026, proceso.partida_presupuestaria,
-          proceso.cuatrimestre, proceso.activo, proceso.proceso_en_riesgo, proceso.riesgo_comentario,
-          proceso.observaciones
+          proceso.activo, proceso.proceso_en_riesgo, proceso.riesgo_comentario,
+          proceso.observaciones, proceso.tipo_contratacion, proceso.estado
         ]
       );
       cantInsertados++;
     }
 
-    // Actualizar totales de versión destino
+    // Actualizar totales de versión destino (DE TABLA PROCESOS)
     const [stats] = await connection.query(
       `SELECT COUNT(*) as total, SUM(CASE WHEN activo = 1 THEN 1 ELSE 0 END) as activos,
               SUM(CASE WHEN activo = 0 THEN 1 ELSE 0 END) as inactivos,
               SUM(presupuesto_2026_inicial) as presupuesto
-       FROM subtareas_versiones WHERE version_id = ?`,
+       FROM procesos WHERE version_id = ?`,
       [versionIdDestino]
     );
 
@@ -3569,7 +3844,102 @@ export async function duplicarProcesos(versionIdDestino, versionIdOrigen) {
   }
 }
 
-// Cargar procesos desde Excel
+// Copiar seguimiento de versión anterior basado en codigo_olympo
+export async function copiarSeguimientoDeReformaAnterior(versionIdDestino) {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // Obtener la versión anterior (historico o aprobado)
+    const [versionAnterior] = await connection.query(
+      `SELECT id FROM versiones
+       WHERE estado IN ('historico', 'aprobado')
+       AND id != ?
+       ORDER BY fecha_creacion DESC LIMIT 1`,
+      [versionIdDestino]
+    );
+
+    if (!versionAnterior || versionAnterior.length === 0) {
+      await connection.commit();
+      return { copiados: 0, mensaje: 'No hay reforma anterior' };
+    }
+
+    const versionOrigenId = versionAnterior[0].id;
+
+    // Procesos en versión destino con codigo_olympo (DE TABLA PROCESOS)
+    const [procesosDestino] = await connection.query(
+      `SELECT id, codigo_olympo FROM procesos
+       WHERE version_id = ? AND codigo_olympo IS NOT NULL`,
+      [versionIdDestino]
+    );
+
+    // Procesos en versión anterior con subtarea_id_original (DE TABLA PROCESOS)
+    const [procesosOrigen] = await connection.query(
+      `SELECT id, codigo_olympo, subtarea_id_original
+       FROM procesos
+       WHERE version_id = ? AND codigo_olympo IS NOT NULL`,
+      [versionOrigenId]
+    );
+
+    // Crear mapa de procesos origen por codigo_olympo
+    const procesosOrigenMap = new Map();
+    procesosOrigen.forEach(p => {
+      if (p.codigo_olympo) {
+        procesosOrigenMap.set(p.codigo_olympo, p);
+      }
+    });
+
+    // Copiar seguimiento para procesos coincidentes
+    let copiados = 0;
+    for (const procDestino of procesosDestino) {
+      const procOrigen = procesosOrigenMap.get(procDestino.codigo_olympo);
+
+      if (procOrigen && procOrigen.subtarea_id_original) {
+        // Obtener seguimiento de la versión origen
+        const [seguimientos] = await connection.query(
+          `SELECT subtarea_id, etapa_id, estado, fecha_planificada, fecha_real,
+                  responsable_id, responsable, observaciones
+           FROM seguimiento_etapas
+           WHERE subtarea_id = ?`,
+          [procOrigen.subtarea_id_original]
+        );
+
+        // Copiar cada seguimiento al proceso destino
+        for (const seg of seguimientos) {
+          await connection.query(
+            `INSERT INTO seguimiento_etapas
+             (subtarea_id, etapa_id, estado, fecha_planificada, fecha_real, responsable_id, responsable, observaciones)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              procDestino.id, seg.etapa_id, seg.estado, seg.fecha_planificada,
+              seg.fecha_real, seg.responsable_id, seg.responsable, seg.observaciones
+            ]
+          );
+        }
+
+        copiados++;
+      }
+    }
+
+    // Registrar cambio
+    await connection.query(
+      `INSERT INTO versiones_cambios
+       (version_id, tipo_cambio, usuario, descripcion, cantidad_registros)
+       VALUES (?, 'copiar_seguimiento', 'SISTEMA', ?, ?)`,
+      [versionIdDestino, `Seguimiento copiado de reforma anterior`, copiados]
+    );
+
+    await connection.commit();
+    return { copiados, mensaje: `Se copiaron seguimientos de ${copiados} procesos` };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    await connection.release();
+  }
+}
+
+// Cargar procesos desde Excel (NUEVA ESTRUCTURA)
 export async function cargarExcelVersion(versionId, datosProcesos, usuario = 'SISTEMA') {
   if (!Array.isArray(datosProcesos) || datosProcesos.length === 0) {
     throw new Error('Los datos de procesos están vacíos');
@@ -3579,60 +3949,184 @@ export async function cargarExcelVersion(versionId, datosProcesos, usuario = 'SI
   try {
     await connection.beginTransaction();
 
-    // Validar datos
-    const erroresValidacion = validarDatosProcesos(datosProcesos);
-    if (erroresValidacion.length > 0) {
-      throw new Error(`Errores en datos: ${erroresValidacion.join(', ')}`);
+    let cantInsertados = 0;
+    let cantErrores = 0;
+    const codigosEnVersion = new Set();
+
+    function truncate(value, maxLen) {
+      if (!value) return null;
+      const str = String(value).trim();
+      if (str.length > maxLen) return str.substring(0, maxLen);
+      return str || null;
     }
 
-    let cantInsertados = 0;
-    const codigosExistentes = new Set();
+    function parseNumber(value) {
+      if (!value) return 0;
+      const num = parseFloat(value);
+      return isNaN(num) ? 0 : num;
+    }
+
+    // Contador para procesos sin código (N/A 01, N/A 02, etc.)
+    let contadorNAProcessos = 0;
 
     for (const proceso of datosProcesos) {
-      // Validar código único por versión
-      if (codigosExistentes.has(proceso.codigo_olympo)) {
-        throw new Error(`Código duplicado en Excel: ${proceso.codigo_olympo}`);
-      }
-      codigosExistentes.add(proceso.codigo_olympo);
+      let codigoFinal = proceso.codigo_olympo;
 
-      // Verificar si ya existe
+      // Si no tiene código, generar uno como "N/A 01", "N/A 02", etc.
+      if (!codigoFinal || codigoFinal === 'N/A') {
+        contadorNAProcessos++;
+        codigoFinal = `N/A ${String(contadorNAProcessos).padStart(2, '0')}`;
+      }
+
+      // Validar unicidad dentro de la versión (permitir duplicados entre versiones)
+      if (codigosEnVersion.has(codigoFinal)) {
+        cantErrores++;
+        continue;
+      }
+      codigosEnVersion.add(codigoFinal);
+
+      // Verificar si ya existe en esta versión específica
       const [existe] = await connection.query(
-        'SELECT id FROM subtareas_versiones WHERE version_id = ? AND codigo_olympo = ?',
-        [versionId, proceso.codigo_olympo]
+        'SELECT id FROM procesos WHERE codigo_olympo = ? AND version_id = ?',
+        [codigoFinal, versionId]
       );
 
       if (existe.length > 0) {
-        throw new Error(`El proceso ${proceso.codigo_olympo} ya existe en esta reforma`);
+        cantErrores++;
+        continue;
       }
 
-      // Insertar proceso
-      await connection.query(
-        `INSERT INTO subtareas_versiones (
-          version_id, codigo_olympo, subtarea, direccion_encargada, responsable,
-          presupuesto_2026_inicial, pac_no_pac, cuatrimestre, activo, proceso_en_riesgo,
-          observaciones
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?)`,
-        [
-          versionId,
-          proceso.codigo_olympo,
-          proceso.subtarea,
-          proceso.direccion_encargada || 'N/A',
-          proceso.responsable || 'N/A',
-          parseFloat(proceso.presupuesto_2026_inicial) || 0,
-          proceso.pac_no_pac || 'PAC',
-          proceso.cuatrimestre || 'Cuatrimestre I',
-          proceso.observaciones || ''
-        ]
-      );
-      cantInsertados++;
+      try {
+        // 1. INSERTAR EN TABLA PROCESOS (datos principales)
+        // IMPORTANTE: presupuesto_2026_inicial = presupuesto_con_reformas (SIN FALLBACK)
+        const [resultProceso] = await connection.query(
+          `INSERT INTO procesos (
+            version_id, codigo_olympo, codigo_unico_proceso, subtarea, responsable,
+            direccion_encargada, presupuesto_2026_inicial, costo_2026,
+            partida_presupuestaria, pac_no_pac, procedimiento_sugerido,
+            tipo_contratacion, estado, activo, observaciones, estado_carga
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 'cargado_excel')`,
+          [
+            versionId,
+            codigoFinal,
+            truncate(proceso.codigo_unico_proceso, 50),
+            truncate(proceso.subtarea, 1000) || 'Sin descripción',
+            truncate(proceso.responsable, 500) || 'N/A',
+            proceso.direccion || 'N/A',
+            parseNumber(proceso.presupuesto_con_reformas),
+            parseNumber(proceso.presupuesto_2026_anual),
+            truncate(proceso.partida_presupuestaria, 50),
+            proceso.pac_no_pac || 'PAC',
+            truncate(proceso.procedimiento_sugerido, 100),
+            truncate(proceso.tipo_contratacion, 100),
+            proceso.estado || 'Precontractual',
+            truncate(proceso.observaciones, 500)
+          ]
+        );
+
+        const procesoId = resultProceso.insertId;
+
+        // 2. INSERTAR INDICADORES (silenciar errores)
+        if (proceso.meta_indicador) {
+          try {
+            await connection.query(
+              `INSERT INTO procesos_indicadores (
+                proceso_id, meta_indicador, meta_valor_2026, meta_formula_calculo, meta_tipo,
+                meta_cal_enero, meta_cal_febrero, meta_cal_marzo, meta_cal_abril,
+                meta_cal_mayo, meta_cal_junio, meta_cal_julio, meta_cal_agosto,
+                meta_cal_septiembre, meta_cal_octubre, meta_cal_noviembre, meta_cal_diciembre
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                procesoId,
+                truncate(proceso.meta_indicador, 255),
+                truncate(proceso.meta_valor_2026, 255),
+                truncate(proceso.meta_formula_calculo, 2000),
+                proceso.meta_tipo || 'Acumulativa',
+                parseNumber(proceso.meta_cal_ene || proceso.meta_cal_enero),
+                parseNumber(proceso.meta_cal_feb),
+                parseNumber(proceso.meta_cal_mar),
+                parseNumber(proceso.meta_cal_abr),
+                parseNumber(proceso.meta_cal_may),
+                parseNumber(proceso.meta_cal_jun),
+                parseNumber(proceso.meta_cal_jul),
+                parseNumber(proceso.meta_cal_ago),
+                parseNumber(proceso.meta_cal_sep),
+                parseNumber(proceso.meta_cal_oct),
+                parseNumber(proceso.meta_cal_nov),
+                parseNumber(proceso.meta_cal_dic)
+              ]
+            );
+          } catch (error) {
+            // Silenciar error de indicador, el proceso se cargó
+          }
+        }
+
+        // 3. INSERTAR PRESUPUESTO Y REFORMAS (silenciar errores)
+        if (parseNumber(proceso.presupuesto_con_reformas) > 0 || parseNumber(proceso.presupuesto_2026_anual) > 0) {
+          try {
+            await connection.query(
+              `INSERT INTO procesos_presupuesto (
+                proceso_id, presupuesto_original, reforma_9, presupuesto_con_reformas,
+                vigencia, fecha_calculo
+              ) VALUES (?, ?, ?, ?, ?, NOW())`,
+              [
+                procesoId,
+                parseNumber(proceso.presupuesto_2026_anual),
+                parseNumber(proceso.reforma_9 || 0),
+                parseNumber(proceso.presupuesto_con_reformas),
+                new Date().getFullYear()
+              ]
+            );
+          } catch (error) {
+            // Silenciar error de presupuesto
+          }
+        }
+
+        // 4. INSERTAR CONTEXTO (Actividades, tareas, PMDOT) (silenciar errores)
+        if (proceso.actividad_nombre || proceso.tarea_nombre) {
+          try {
+            await connection.query(
+              `INSERT INTO procesos_contexto (
+                proceso_id, actividad_nombre, actividad_composicion_gasto,
+                actividad_enfoque_genero, actividad_tipo_obra,
+                actividad_fecha_inicio, actividad_fecha_fin,
+                tarea_nombre, tarea_fecha_inicio, tarea_fecha_fin,
+                objetivo_operativo_pmdot, meta_pmdot_2033, valor_meta_pmdot_2025
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                procesoId,
+                truncate(proceso.actividad_nombre, 500),
+                truncate(proceso.actividad_composicion_gasto, 100),
+                truncate(proceso.actividad_enfoque_genero, 50),
+                truncate(proceso.actividad_tipo_obra, 100),
+                proceso.actividad_fecha_inicio || null,
+                proceso.actividad_fecha_fin || null,
+                truncate(proceso.tarea_nombre, 500),
+                proceso.tarea_fecha_inicio || null,
+                proceso.tarea_fecha_fin || null,
+                truncate(proceso.objetivo_operativo_pmdot, 255),
+                truncate(proceso.meta_pmdot_2033, 255),
+                truncate(proceso.valor_meta_pmdot_2025, 100)
+              ]
+            );
+          } catch (error) {
+            // Silenciar error de contexto
+          }
+        }
+
+        cantInsertados++;
+
+      } catch (error) {
+        cantErrores++;
+        continue;
+      }
     }
 
-    // Actualizar totales
+    // Actualizar totales de versión
     const [stats] = await connection.query(
-      `SELECT COUNT(*) as total, SUM(CASE WHEN activo = 1 THEN 1 ELSE 0 END) as activos,
-              SUM(CASE WHEN activo = 0 THEN 1 ELSE 0 END) as inactivos,
+      `SELECT COUNT(*) as total, COUNT(CASE WHEN activo=1 THEN 1 END) as activos,
               SUM(presupuesto_2026_inicial) as presupuesto
-       FROM subtareas_versiones WHERE version_id = ?`,
+       FROM procesos WHERE version_id = ?`,
       [versionId]
     );
 
@@ -3643,7 +4137,7 @@ export async function cargarExcelVersion(versionId, datosProcesos, usuario = 'SI
       [
         stats[0].total || 0,
         stats[0].activos || 0,
-        stats[0].inactivos || 0,
+        (stats[0].total || 0) - (stats[0].activos || 0),
         stats[0].presupuesto || 0,
         versionId
       ]
@@ -3652,19 +4146,17 @@ export async function cargarExcelVersion(versionId, datosProcesos, usuario = 'SI
     // Registrar cambio
     await connection.query(
       `INSERT INTO versiones_cambios (
-        version_id, tipo_cambio, usuario, descripcion, cantidad_registros,
-        datos_cambio
-      ) VALUES (?, 'excel', ?, 'Procesos cargados desde Excel', ?, ?)`,
-      [
-        versionId,
-        usuario,
-        cantInsertados,
-        JSON.stringify({ archivos: 1, procesos_cargados: cantInsertados, fecha_carga: new Date() })
-      ]
+        version_id, tipo_cambio, usuario, descripcion, cantidad_registros
+      ) VALUES (?, 'excel', ?, 'Procesos cargados desde Excel', ?)`,
+      [versionId, usuario, cantInsertados]
     );
 
     await connection.commit();
-    return cantInsertados;
+    return {
+      insertados: cantInsertados,
+      errores: cantErrores,
+      total: datosProcesos.length
+    };
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -3997,6 +4489,67 @@ export async function deleteEtapaCatalogo(id) {
   const result = await query('DELETE FROM etapas_pac WHERE id = ?', [id]);
   return result.affectedRows > 0;
 }
+
+// ============================================
+// CONFIGURACIÓN DEL SISTEMA
+// ============================================
+
+export async function getConfiguracion(clave) {
+  try {
+    const [result] = await query(
+      'SELECT clave, valor, tipo FROM configuracion_sistema WHERE clave = ?',
+      [clave]
+    );
+    if (result.length === 0) return null;
+
+    const config = result[0];
+    const valor = config.tipo === 'boolean' ? Boolean(Number(config.valor)) : config.valor;
+    return { clave: config.clave, valor };
+  } catch (error) {
+    console.error('Error al obtener configuración:', error);
+    return null;
+  }
+}
+
+export async function obtenerTodasConfiguraciones() {
+  try {
+    const [result] = await query(
+      'SELECT clave, valor, tipo, descripcion FROM configuracion_sistema ORDER BY clave'
+    );
+
+    return result.map(config => ({
+      clave: config.clave,
+      valor: config.tipo === 'boolean' ? Boolean(Number(config.valor)) : config.valor,
+      tipo: config.tipo,
+      descripcion: config.descripcion
+    }));
+  } catch (error) {
+    console.error('Error al obtener configuraciones:', error);
+    return [];
+  }
+}
+
+export async function actualizarConfiguracion(clave, valor) {
+  try {
+    const [result] = await query(
+      'UPDATE configuracion_sistema SET valor = ? WHERE clave = ?',
+      [String(valor), clave]
+    );
+
+    if (result.affectedRows === 0) {
+      throw new Error(`Configuración "${clave}" no encontrada`);
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error al actualizar configuración:', error);
+    throw error;
+  }
+}
+
+// ============================================
+// ALIAS DE EXPORTACIÓN (compatibilidad)
+// ============================================
 
 export const getAllActividades = getAllSubtareas;
 export const getActividadById = getSubtareaById;

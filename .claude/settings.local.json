@@ -38,7 +38,8 @@
       "Bash(ssh -i ~/.ssh/srvr_seg_contratos acasa@172.16.1.72 \"which pm2\")",
       "Bash(ssh -i ~/.ssh/srvr_seg_contratos acasa@172.16.1.72)",
       "Bash(ssh -i ~/.ssh/srvr_seg_contratos acasa@172.16.1.72 'sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u acasa --hp /home/acasa && pm2 save')",
-      "PowerShell(Start-Process \"http://localhost:5173\")"
+      "PowerShell(Start-Process \"http://localhost:5173\")",
+      "PowerShell(Get-Process node | Select-Object ProcessName, Id, @{Name=\"CPU\";Expression={$_.CPU}}, @{Name=\"Memory\\(MB\\)\";Expression={[math]::Round\\($_.WorkingSet/1MB,2\\)}} | Format-Table -AutoSize)"
     ]
   }
 }

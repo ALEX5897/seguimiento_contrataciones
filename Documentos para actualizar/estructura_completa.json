@@ -1,0 +1,2832 @@
+{
+  "auditoria_eventos": {
+    "columnas": [
+      {
+        "COLUMN_NAME": "id",
+        "COLUMN_TYPE": "bigint",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "PRI",
+        "EXTRA": "auto_increment",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "user_id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "username",
+        "COLUMN_TYPE": "varchar(80)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "role",
+        "COLUMN_TYPE": "varchar(80)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "direccion_nombre",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "accion",
+        "COLUMN_TYPE": "varchar(20)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "modulo",
+        "COLUMN_TYPE": "varchar(80)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "recurso",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "metodo",
+        "COLUMN_TYPE": "varchar(10)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "ruta",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "status_code",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "exito",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "0"
+      },
+      {
+        "COLUMN_NAME": "ip",
+        "COLUMN_TYPE": "varchar(64)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "user_agent",
+        "COLUMN_TYPE": "varchar(512)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "request_query",
+        "COLUMN_TYPE": "longtext",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "request_body",
+        "COLUMN_TYPE": "longtext",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "response_body",
+        "COLUMN_TYPE": "longtext",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "error_mensaje",
+        "COLUMN_TYPE": "text",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "fecha",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "DEFAULT_GENERATED",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "datos": [
+      {
+        "id": 1,
+        "user_id": 22,
+        "username": "sin_direccion",
+        "role": "direccion",
+        "direccion_nombre": "Sin dirección",
+        "accion": "update",
+        "modulo": null,
+        "recurso": "/220/etapas",
+        "metodo": "PUT",
+        "ruta": "/api/subtareas/220/etapas",
+        "status_code": 200,
+        "exito": 1,
+        "ip": "127.0.0.1",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
+        "request_query": "{}",
+        "request_body": "{\"etapas\":[{\"etapaId\":1,\"aplica\":true,\"fechaTentativa\":\"2026-01-10\",\"estado\":\"completado\",\"fechaReal\":\"2026-11-27\",\"observaciones\":\"\"},{\"etapaId\":2,\"aplica\":true,\"fechaTentativa\":\"2026-01-23\",\"estado\":\"completado\",\"fechaReal\":\"2026-01-10\",\"observaciones\":\"\"},{\"etapaId\":3,\"aplica\":true,\"fechaTentativa\":\"2025-12-01\",\"estado\":\"completado\",\"fechaReal\":\"2026-04-02\",\"observaciones\":\"\"},{\"etapaId\":4,\"aplica\":true,\"fechaTentativa\":\"2025-12-15\",\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":5,\"aplica\":true,\"fechaTentativa\":\"2025-12-30\",\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":6,\"aplica\":true,\"fechaTentativa\":\"2026-04-30\",\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":7,\"aplica\":true,\"fechaTentativa\":\"2026-04-10\",\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":8,\"aplica\":true,\"fechaTentativa\":\"2026-04-22\",\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":9,\"aplica\":true,\"fechaTentativa\":\"2026-04-16\",\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":10,\"aplica\":true,\"fechaTentativa\":\"2026-04-17\",\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":11,\"aplica\":true,\"fechaTentativa\":\"2026-04-24\",\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":12,\"aplica\":true,\"fechaTentativa\":\"2026-04-03\",\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":13,\"aplica\":true,\"fechaTentativa\":\"2026-04-22\",\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":14,\"aplica\":true,\"fechaTentativa\":\"2026-04-09\",\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":15,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":16,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":17,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":18,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":19,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":20,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":21,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":22,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":23,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":24,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":25,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":26,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":27,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":28,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":29,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":30,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":31,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":32,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":33,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":34,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":35,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":36,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":37,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":38,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":39,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":40,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":41,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":42,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":43,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":44,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":45,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":46,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":47,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":48,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":49,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":50,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":51,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":52,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":53,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":54,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":55,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":56,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":57,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":58,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":59,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"},{\"etapaId\":60,\"aplica\":true,\"fechaTentativa\":null,\"estado\":\"pendiente\",\"fechaReal\":null,\"observaciones\":\"\"}]}",
+        "response_body": "{\"durationMs\":950,\"payload\":[{\"id\":42115,\"subtareaId\":220,\"etapaId\":1,\"aplica\":1,\"fechaTentativa\":\"2026-01-10\",\"estado\":\"completado\",\"fechaPlanificada\":\"2026-01-10\",\"fechaReal\":\"2026-11-27\",\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"SOLICTUD DE CERTIFICACION PROGRAMATICA\",\"orden\":1,\"esPersonalizada\":1},{\"id\":42116,\"subtareaId\":220,\"etapaId\":2,\"aplica\":1,\"fechaTentativa\":\"2026-01-23\",\"estado\":\"completado\",\"fechaPlanificada\":\"2026-01-23\",\"fechaReal\":\"2026-01-10\",\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"CERTIFICACION POA PAI\",\"orden\":2,\"esPersonalizada\":1},{\"id\":42117,\"subtareaId\":220,\"etapaId\":3,\"aplica\":1,\"fechaTentativa\":\"2025-12-01\",\"estado\":\"completado\",\"fechaPlanificada\":\"2025-12-01\",\"fechaReal\":\"2026-04-02\",\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"INFORME TECNICO\",\"orden\":3,\"esPersonalizada\":1},{\"id\":42118,\"subtareaId\":220,\"etapaId\":4,\"aplica\":1,\"fechaTentativa\":\"2025-12-15\",\"estado\":\"pendiente\",\"fechaPlanificada\":\"2025-12-15\",\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"INFORME DE NECESIDAD\",\"orden\":4,\"esPersonalizada\":1},{\"id\":42119,\"subtareaId\":220,\"etapaId\":5,\"aplica\":1,\"fechaTentativa\":\"2025-12-30\",\"estado\":\"pendiente\",\"fechaPlanificada\":\"2025-12-30\",\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"TERMINOS DE REFERENCIA - ESPECIFICACIONES TECNICAS\",\"orden\":5,\"esPersonalizada\":1},{\"id\":42120,\"subtareaId\":220,\"etapaId\":6,\"aplica\":1,\"fechaTentativa\":\"2026-04-30\",\"estado\":\"pendiente\",\"fechaPlanificada\":\"2026-04-30\",\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"MESA TECNICA\",\"orden\":6,\"esPersonalizada\":1},{\"id\":42121,\"subtareaId\":220,\"etapaId\":7,\"aplica\":1,\"fechaTentativa\":\"2026-04-10\",\"estado\":\"pendiente\",\"fechaPlanificada\":\"2026-04-10\",\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"CORRECCION\",\"orden\":7,\"esPersonalizada\":1},{\"id\":42122,\"subtareaId\":220,\"etapaId\":8,\"aplica\":1,\"fechaTentativa\":\"2026-04-22\",\"estado\":\"pendiente\",\"fechaPlanificada\":\"2026-04-22\",\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"SOLICITUD DE AUTORIZACION DE INFORME DE NECESIDAD\",\"orden\":8,\"esPersonalizada\":1},{\"id\":42123,\"subtareaId\":220,\"etapaId\":9,\"aplica\":1,\"fechaTentativa\":\"2026-04-16\",\"estado\":\"pendiente\",\"fechaPlanificada\":\"2026-04-16\",\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"AUTORIZACION DEL INFORME\",\"orden\":9,\"esPersonalizada\":1},{\"id\":42124,\"subtareaId\":220,\"etapaId\":10,\"aplica\":1,\"fechaTentativa\":\"2026-04-17\",\"estado\":\"pendiente\",\"fechaPlanificada\":\"2026-04-17\",\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"SOLICITUD DE CATE\",\"orden\":10,\"esPersonalizada\":1},{\"id\":42125,\"subtareaId\":220,\"etapaId\":11,\"aplica\":1,\"fechaTentativa\":\"2026-04-24\",\"estado\":\"pendiente\",\"fechaPlanificada\":\"2026-04-24\",\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"CATE\",\"orden\":11,\"esPersonalizada\":1},{\"id\":42126,\"subtareaId\":220,\"etapaId\":12,\"aplica\":1,\"fechaTentativa\":\"2026-04-03\",\"estado\":\"pendiente\",\"fechaPlanificada\":\"2026-04-03\",\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"SOLICITUD DE PUBLICACION\",\"orden\":12,\"esPersonalizada\":1},{\"id\":42127,\"subtareaId\":220,\"etapaId\":13,\"aplica\":1,\"fechaTentativa\":\"2026-04-22\",\"estado\":\"pendiente\",\"fechaPlanificada\":\"2026-04-22\",\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"PUBLICACION PROFORMAS\",\"orden\":13,\"esPersonalizada\":1},{\"id\":42128,\"subtareaId\":220,\"etapaId\":14,\"aplica\":1,\"fechaTentativa\":\"2026-04-09\",\"estado\":\"pendiente\",\"fechaPlanificada\":\"2026-04-09\",\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"RECEPCION PROFORMAS\",\"orden\":14,\"esPersonalizada\":1},{\"id\":42129,\"subtareaId\":220,\"etapaId\":15,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"ESTUDIO DE MERCADO\",\"orden\":15,\"esPersonalizada\":1},{\"id\":42130,\"subtareaId\":220,\"etapaId\":16,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"SOLICITUD DE CERTIFICACION PRESUPUESTARIA\",\"orden\":16,\"esPersonalizada\":1},{\"id\":42131,\"subtareaId\":220,\"etapaId\":17,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"CERTIFICACION PRESUESTARIA\",\"orden\":17,\"esPersonalizada\":1},{\"id\":42132,\"subtareaId\":220,\"etapaId\":18,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"SOLICITUD DE CERTICACION PAC\",\"orden\":18,\"esPersonalizada\":1},{\"id\":42133,\"subtareaId\":220,\"etapaId\":19,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"CERTIFICACION PAC\",\"orden\":19,\"esPersonalizada\":1},{\"id\":42134,\"subtareaId\":220,\"etapaId\":20,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"ELABORACION DE PLIEGOS PARA DIRECTORIO\",\"orden\":20,\"esPersonalizada\":1},{\"id\":42135,\"subtareaId\":220,\"etapaId\":21,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"CONVOCATORIA DEL DIRECTORIO\",\"orden\":21,\"esPersonalizada\":1},{\"id\":42136,\"subtareaId\":220,\"etapaId\":22,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"DIRECTORIO\",\"orden\":22,\"esPersonalizada\":1},{\"id\":42137,\"subtareaId\":220,\"etapaId\":23,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"RESOLUCION DEL DIRECTORIO\",\"orden\":23,\"esPersonalizada\":1},{\"id\":42138,\"subtareaId\":220,\"etapaId\":24,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"SOLICITUD DE PUBLICACION VPN\",\"orden\":24,\"esPersonalizada\":1},{\"id\":42139,\"subtareaId\":220,\"etapaId\":25,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"RESULTADOS DE VPN\",\"orden\":25,\"esPersonalizada\":1},{\"id\":42140,\"subtareaId\":220,\"etapaId\":26,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"SOLICITUD DE AUTORIZACION SERCOP\",\"orden\":26,\"esPersonalizada\":1},{\"id\":42141,\"subtareaId\":220,\"etapaId\":27,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"AUTORIZACION SERCOP\",\"orden\":27,\"esPersonalizada\":1},{\"id\":42142,\"subtareaId\":220,\"etapaId\":28,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"ELABORACION DE BASES INTERNACIONALES PLIEGO\",\"orden\":28,\"esPersonalizada\":1},{\"id\":42143,\"subtareaId\":220,\"etapaId\":29,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"SOLICTUD DE AUTORIZACION QUITO HONESTO\",\"orden\":29,\"esPersonalizada\":1},{\"id\":42144,\"subtareaId\":220,\"etapaId\":30,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"INFORME QUITO HONESTO\",\"orden\":30,\"esPersonalizada\":1},{\"id\":42145,\"subtareaId\":220,\"etapaId\":31,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"SOLICITUD DE AUTORIZACION MINTEL\",\"orden\":31,\"esPersonalizada\":1},{\"id\":42146,\"subtareaId\":220,\"etapaId\":32,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"AUTORIZACION MINTEL\",\"orden\":32,\"esPersonalizada\":1},{\"id\":42147,\"subtareaId\":220,\"etapaId\":33,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"REGISTRO DE Información ERP\",\"orden\":33,\"esPersonalizada\":1},{\"id\":42148,\"subtareaId\":220,\"etapaId\":34,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"SOLICTUD DE AUTORIZACION DE INICIO\",\"orden\":34,\"esPersonalizada\":1},{\"id\":42149,\"subtareaId\":220,\"etapaId\":35,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"AUTORIZACION INICIO\",\"orden\":35,\"esPersonalizada\":1},{\"id\":42150,\"subtareaId\":220,\"etapaId\":36,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"ELABORACION DE PLIEGOS\",\"orden\":36,\"esPersonalizada\":1},{\"id\":42151,\"subtareaId\":220,\"etapaId\":37,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"SOLICITUD DE RESOLUCION DE INICO\",\"orden\":37,\"esPersonalizada\":1},{\"id\":42152,\"subtareaId\":220,\"etapaId\":38,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"RESOLUCION DE INICIO\",\"orden\":38,\"esPersonalizada\":1},{\"id\":42153,\"subtareaId\":220,\"etapaId\":39,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"CARGA EN EL ERP DE RESOLUCION DE INICIO\",\"orden\":39,\"esPersonalizada\":1},{\"id\":42154,\"subtareaId\":220,\"etapaId\":40,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"FECHA DE PUBLICACION EN EL PORTAL - SUSCRIPCION DE INFIMA CUANTIA\",\"orden\":40,\"esPersonalizada\":1},{\"id\":42155,\"subtareaId\":220,\"etapaId\":41,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"PREGUNTAS\",\"orden\":41,\"esPersonalizada\":1},{\"id\":42156,\"subtareaId\":220,\"etapaId\":42,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"RESPUESTA\",\"orden\":42,\"esPersonalizada\":1},{\"id\":42157,\"subtareaId\":220,\"etapaId\":43,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"ENTREA DE OFERTA\",\"orden\":43,\"esPersonalizada\":1},{\"id\":42158,\"subtareaId\":220,\"etapaId\":44,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"REVISION PARA CONVALIDACION\",\"orden\":44,\"esPersonalizada\":1},{\"id\":42159,\"subtareaId\":220,\"etapaId\":45,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"SOLICITUD DE CONVALIDACION\",\"orden\":45,\"esPersonalizada\":1},{\"id\":42160,\"subtareaId\":220,\"etapaId\":46,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"ENTREGA DE CONVALIDACION\",\"orden\":46,\"esPersonalizada\":1},{\"id\":42161,\"subtareaId\":220,\"etapaId\":47,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"CALIFICACION\",\"orden\":47,\"esPersonalizada\":1},{\"id\":42162,\"subtareaId\":220,\"etapaId\":48,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"INFORME DE RECOMENDACION - PUJA\",\"orden\":48,\"esPersonalizada\":1},{\"id\":42163,\"subtareaId\":220,\"etapaId\":49,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"ADJUDICACION\",\"orden\":49,\"esPersonalizada\":1},{\"id\":42164,\"subtareaId\":220,\"etapaId\":50,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"CONTRATO\",\"orden\":50,\"esPersonalizada\":1},{\"id\":42165,\"subtareaId\":220,\"etapaId\":51,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"CARTA DE INTENCIÓN\",\"orden\":51,\"esPersonalizada\":1},{\"id\":42166,\"subtareaId\":220,\"etapaId\":52,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"VALORIZACIÓN\",\"orden\":52,\"esPersonalizada\":1},{\"id\":42167,\"subtareaId\":220,\"etapaId\":53,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"APROBACIÓN\",\"orden\":53,\"esPersonalizada\":1},{\"id\":42168,\"subtareaId\":220,\"etapaId\":54,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"INFORME FINANCIERO\",\"orden\":54,\"esPersonalizada\":1},{\"id\":42169,\"subtareaId\":220,\"etapaId\":55,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"INFORME JURÍDICO\",\"orden\":55,\"esPersonalizada\":1},{\"id\":42170,\"subtareaId\":220,\"etapaId\":56,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"BORRADOR DE ACUERDO COMERCIAL\",\"orden\":56,\"esPersonalizada\":1},{\"id\":42171,\"subtareaId\":220,\"etapaId\":57,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"FIRMA DEL ACUERDO COMERCIAL\",\"orden\":57,\"esPersonalizada\":1},{\"id\":42172,\"subtareaId\":220,\"etapaId\":58,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"SOLICITUD DE REFORMA PAC\",\"orden\":58,\"esPersonalizada\":1},{\"id\":42173,\"subtareaId\":220,\"etapaId\":59,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"ENTREGA DE PROFORMAS\",\"orden\":59,\"esPersonalizada\":1},{\"id\":52335,\"subtareaId\":220,\"etapaId\":60,\"aplica\":1,\"fechaTentativa\":\"\",\"estado\":\"pendiente\",\"fechaPlanificada\":null,\"fechaReal\":null,\"responsableId\":25,\"observaciones\":null,\"responsableNombre\":\"Arboleda Bonilla Pablo Israel\",\"responsable_id_ref\":25,\"etapaNombre\":\"RESOLUCION VPN\",\"orden\":60,\"esPersonalizada\":1}]}",
+        "error_mensaje": null,
+        "fecha": "2026-04-02T21:56:49.000Z"
+      },
+      {
+        "id": 2,
+        "user_id": 9,
+        "username": "dir_daf_jefatura_financiera",
+        "role": "direccion",
+        "direccion_nombre": "DAF / Jefatura Financiera",
+        "accion": "login",
+        "modulo": "auth",
+        "recurso": "/auth/login",
+        "metodo": "POST",
+        "ruta": "/api/auth/login",
+        "status_code": 200,
+        "exito": 1,
+        "ip": "127.0.0.1",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
+        "request_query": "{}",
+        "request_body": "{\"username\":\"dir_daf_jefatura_financiera\"}",
+        "response_body": "{\"userId\":9,\"role\":\"direccion\"}",
+        "error_mensaje": null,
+        "fecha": "2026-04-03T03:01:01.000Z"
+      }
+    ]
+  },
+  "configuracion_notificaciones": {
+    "columnas": [
+      {
+        "COLUMN_NAME": "id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "PRI",
+        "EXTRA": "auto_increment",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "enabled",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "0"
+      },
+      {
+        "COLUMN_NAME": "remitente_nombre",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "remitente_email",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "tipo_servidor",
+        "COLUMN_TYPE": "varchar(50)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "smtp"
+      },
+      {
+        "COLUMN_NAME": "smtp_host",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "smtp_port",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "587"
+      },
+      {
+        "COLUMN_NAME": "smtp_secure",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "0"
+      },
+      {
+        "COLUMN_NAME": "requiere_auth",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "1"
+      },
+      {
+        "COLUMN_NAME": "smtp_user",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "smtp_password",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "supervisor_emails",
+        "COLUMN_TYPE": "text",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "hora_envio",
+        "COLUMN_TYPE": "varchar(5)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "08:00"
+      },
+      {
+        "COLUMN_NAME": "zona_horaria",
+        "COLUMN_TYPE": "varchar(80)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "America/Guayaquil"
+      },
+      {
+        "COLUMN_NAME": "notificar_etapas_atrasadas",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "1"
+      },
+      {
+        "COLUMN_NAME": "dias_atraso_minimo",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "2"
+      },
+      {
+        "COLUMN_NAME": "asunto_plantilla",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "plantilla_html",
+        "COLUMN_TYPE": "longtext",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "pie_mensaje",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "ultima_ejecucion_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "ultima_ejecucion_fecha",
+        "COLUMN_TYPE": "varchar(10)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "created_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      },
+      {
+        "COLUMN_NAME": "updated_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "datos": [
+      {
+        "id": 1,
+        "enabled": 0,
+        "remitente_nombre": "Sistema de Seguimiento",
+        "remitente_email": "notificaciones@quito-turismo.gob.ec",
+        "tipo_servidor": "office365",
+        "smtp_host": "smtp.office365.com",
+        "smtp_port": 587,
+        "smtp_secure": 0,
+        "requiere_auth": 1,
+        "smtp_user": "notificaciones@quito-turismo.gob.ec",
+        "smtp_password": "Qturismo**123$",
+        "supervisor_emails": "acasa@quito-turismo.gob.ec, tquinatoa@quito-turismo.gob.ec",
+        "hora_envio": "08:00",
+        "zona_horaria": "America/Guayaquil",
+        "notificar_etapas_atrasadas": 1,
+        "dias_atraso_minimo": 8,
+        "asunto_plantilla": "Seguimiento de contrataciones - {{motivo}}",
+        "plantilla_html": "<!DOCTYPE html>\n<html lang=\"es\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>{{asunto}}</title>\n  </head>\n  <body style=\"margin:0;padding:24px;background-color:#f8fafc;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;color:#1e293b;\">\n    <div style=\"max-width:700px;margin:0 auto;background-color:#ffffff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(15,23,42,0.08);\">\n      \n      <div style=\"background-color: #0076BC; padding: 30px; text-align: center;\">\n        <img src=\"https://turismo.quito.gob.ec/wp-content/uploads/2024/06/logoQT.png\" \n             alt=\"Logo Quito Turismo\" \n             style=\"height: 55px; width: auto; display: inline-block; margin-bottom: 20px;\" />\n        \n        <div style=\"color: #ffffff; text-align: left;\">\n          <div style=\"font-size: 11px; letter-spacing: .15em; text-transform: uppercase; opacity: 0.9; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 8px; display: inline-block;\">\n            SISTEMA DE SEGUIMIENTO - Quito Turismo EP\n          </div>\n          <h1 style=\"margin: 0; font-size: 24px; line-height: 1.2; font-weight: 600; color: #ffffff;\">\n            {{titulo}}\n          </h1>\n          <p style=\"margin: 8px 0 0; font-size: 15px; font-weight: 300; color: #ffffff; opacity: 0.9;\">\n            {{motivo}}\n          </p>\n        </div>\n      </div>\n\n      <div style=\"padding: 40px 30px; line-height: 1.7; font-size: 16px; color: #334155;\">\n        <div style=\"background-color: #ffffff; border: 1px solid #e2e8f0; border-left: 5px solid #0076BC; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);\">\n           {{contenido}}\n        </div>\n      </div>\n\n      <div style=\"background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 25px 30px; color: #64748b; font-size: 12px;\">\n        <div style=\"margin-bottom: 12px;\">\n            <strong>Emitido el:</strong> {{fecha}}\n        </div>\n        <div style=\"border-top: 1px solid #e2e8f0; padding-top: 15px; line-height: 1.6;\">\n            {{pie}}<br>\n            <strong style=\"color: #0076BC;\">Dirección de Tecnologías de la Información</strong><br>\n            <span style=\"opacity: 0.7;\">Este es un mensaje automatizado, por favor no responda directamente a este remitente.</span>\n        </div>\n      </div>\n      \n    </div>\n  </body>\n</html>",
+        "pie_mensaje": "Este es un mensaje automático del Sistema de Seguimiento de Contrataciones - QuitoTurismo",
+        "ultima_ejecucion_at": "2026-04-21T05:00:44.000Z",
+        "ultima_ejecucion_fecha": "2026-04-21",
+        "created_at": "2026-04-08T19:56:33.000Z",
+        "updated_at": "2026-04-21T19:01:45.000Z"
+      }
+    ]
+  },
+  "direcciones_catalogo": {
+    "columnas": [
+      {
+        "COLUMN_NAME": "id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "PRI",
+        "EXTRA": "auto_increment",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "nombre",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "UNI",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "activo",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "1"
+      },
+      {
+        "COLUMN_NAME": "created_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      },
+      {
+        "COLUMN_NAME": "updated_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "datos": [
+      {
+        "id": 1,
+        "nombre": "DAF / Jefatura Administrativa",
+        "activo": 1,
+        "created_at": "2026-03-16T20:51:42.000Z",
+        "updated_at": "2026-03-16T20:51:42.000Z"
+      },
+      {
+        "id": 2,
+        "nombre": "DAF / Jefatura de Talento Humano",
+        "activo": 1,
+        "created_at": "2026-03-16T20:51:42.000Z",
+        "updated_at": "2026-03-16T20:51:42.000Z"
+      }
+    ]
+  },
+  "etapas_catalogo": {
+    "columnas": [
+      {
+        "COLUMN_NAME": "id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "PRI",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "nombre",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "clasificacion",
+        "COLUMN_TYPE": "enum('preparatoria','precontractual','contractual','sin_clasificar')",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "sin_clasificar"
+      },
+      {
+        "COLUMN_NAME": "orden",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "descripcion",
+        "COLUMN_TYPE": "text",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "created_at",
+        "COLUMN_TYPE": "timestamp",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      },
+      {
+        "COLUMN_NAME": "updated_at",
+        "COLUMN_TYPE": "timestamp",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "datos": [
+      {
+        "id": 1,
+        "nombre": "SOLICTUD DE CERTIFICACION PROGRAMATICA",
+        "clasificacion": "preparatoria",
+        "orden": 1,
+        "descripcion": null,
+        "created_at": "2026-08-05T13:45:04.000Z",
+        "updated_at": "2026-08-05T13:45:04.000Z"
+      },
+      {
+        "id": 2,
+        "nombre": "CERTIFICACION POA PAI",
+        "clasificacion": "preparatoria",
+        "orden": 2,
+        "descripcion": null,
+        "created_at": "2026-08-05T13:45:04.000Z",
+        "updated_at": "2026-08-05T13:45:04.000Z"
+      }
+    ]
+  },
+  "etapas_pac": {
+    "columnas": [
+      {
+        "COLUMN_NAME": "id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "PRI",
+        "EXTRA": "auto_increment",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "nombre",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "UNI",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "orden",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "es_personalizada",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "0"
+      }
+    ],
+    "datos": [
+      {
+        "id": 1,
+        "nombre": "SOLICTUD DE CERTIFICACION PROGRAMATICA",
+        "orden": 1,
+        "es_personalizada": 1
+      },
+      {
+        "id": 2,
+        "nombre": "CERTIFICACION POA PAI",
+        "orden": 2,
+        "es_personalizada": 1
+      }
+    ]
+  },
+  "notificaciones": {
+    "columnas": [
+      {
+        "COLUMN_NAME": "id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "PRI",
+        "EXTRA": "auto_increment",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "tipo",
+        "COLUMN_TYPE": "varchar(50)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "destinatario",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "asunto",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "mensaje",
+        "COLUMN_TYPE": "longtext",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "tarea_id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "fecha",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "leida",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "0"
+      },
+      {
+        "COLUMN_NAME": "fecha_leida",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "enviada",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "0"
+      }
+    ],
+    "datos": [
+      {
+        "id": 1,
+        "tipo": "email",
+        "destinatario": "acasa@quito-turismo.gob.ec",
+        "asunto": "Prueba de configuración de correo",
+        "mensaje": "<!DOCTYPE html>\n<html lang=\"es\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>Prueba de configuración de correo</title>\n  </head>\n  <body style=\"margin:0;padding:24px;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#0f172a;\">\n    <div style=\"max-width:760px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(15,23,42,0.08);\">\n      <div style=\"background:#0f172a;color:#ffffff;padding:20px 24px;\">\n        <div style=\"font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.8;\">Quito Turismo</div>\n        <h1 style=\"margin:8px 0 0;font-size:22px;line-height:1.3;\">Validación de configuración SMTP</h1>\n        <p style=\"margin:8px 0 0;font-size:14px;opacity:.9;\">Prueba de correo</p>\n      </div>\n\n      <div style=\"padding:24px;line-height:1.6;font-size:14px;\">\n        \n    <p>Hola,</p>\n    <p>Este mensaje confirma que la configuración del módulo de correo fue procesada correctamente.</p>\n    <ul>\n      <li><strong>Servidor:</strong> office365</li>\n      <li><strong>Host:</strong> smtp.office365.com</li>\n      <li><strong>Puerto:</strong> 587</li>\n      <li><strong>Hora programada:</strong> 08:00</li>\n    </ul>\n    <p>Si recibió este mensaje, el sistema está listo para enviar alertas automáticas.</p>\n  \n      </div>\n\n      <div style=\"background:#f8fafc;border-top:1px solid #e2e8f0;padding:16px 24px;color:#64748b;font-size:12px;\">\n        <div><strong>Fecha:</strong> 08/04/2026, 10:06 a. m.</div>\n        <div style=\"margin-top:6px;\">Este es un mensaje automático del Sistema de Seguimiento de Contrataciones - QuitoTurismo</div>\n      </div>\n    </div>\n  </body>\n</html>",
+        "tarea_id": null,
+        "fecha": "2026-04-08T15:06:27.000Z",
+        "leida": 0,
+        "fecha_leida": null,
+        "enviada": 1
+      },
+      {
+        "id": 2,
+        "tipo": "email",
+        "destinatario": "acasa@quito-turismo.gob.ec",
+        "asunto": "Validación de notificación - Contratar el servicio especializado para el diseño, desarrollo, fortalecimiento e implementación del producto Turístico ?��Semana Santa Quiteña 2026?�?, para diversificar la oferta Turística del Distrito Metrop…",
+        "mensaje": "<!DOCTYPE html>\n<html lang=\"es\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>Validación de notificación - Contratar el servicio especializado para el diseño, desarrollo, fortalecimiento e implementación del producto Turístico ?��Semana Santa Quiteña 2026?�?, para diversificar la oferta Turística del Distrito Metrop…</title>\n  </head>\n  <body style=\"margin:0;padding:24px;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#0f172a;\">\n    <div style=\"max-width:760px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(15,23,42,0.08);\">\n      <div style=\"background:#0f172a;color:#ffffff;padding:20px 24px;\">\n        <div style=\"font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.8;\">Quito Turismo</div>\n        <h1 style=\"margin:8px 0 0;font-size:22px;line-height:1.3;\">Notificación de prueba con proceso real</h1>\n        <p style=\"margin:8px 0 0;font-size:14px;opacity:.9;\">Validación manual de proceso con etapas atrasadas</p>\n      </div>\n\n      <div style=\"padding:24px;line-height:1.6;font-size:14px;\">\n        \n    <p>Estimado/a,</p>\n    <p>Este es un <strong>correo de validación</strong> usando un proceso real del sistema.</p>\n    <p style=\"background:#fff7ed;border:1px solid #fdba74;color:#9a3412;padding:10px 12px;border-radius:10px;\">No se detectaron etapas actualmente atrasadas en este momento, por lo que se envía una simulación con comentarios reales del proceso para validar la plantilla.</p>\n    <div style=\"margin:18px 0 22px;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;\">\n      <div style=\"background:#eff6ff;padding:14px 16px;border-bottom:1px solid #dbeafe;\">\n        <div style=\"font-size:12px;color:#1d4ed8;font-weight:700;letter-spacing:.04em;text-transform:uppercase;\">Proceso</div>\n        <h3 style=\"margin:6px 0 0;font-size:18px;color:#0f172a;\">Contratar el servicio especializado para el diseño, desarrollo, fortalecimiento e implementación del producto Turístico ?��Semana Santa Quiteña 2026?�?, para diversificar la oferta Turística del Distrito Metropolitano de Quito y Promoción del destino</h3>\n        <div style=\"margin-top:6px;font-size:13px;color:#334155;\">\n          <strong>Código:</strong> 02.01.001.049.730207.000.002 &nbsp;|&nbsp;\n          <strong>Dirección:</strong> Dirección de Desarrollo de Productos Sostenibles\n        </div>\n      </div>\n      <table style=\"width:100%;border-collapse:collapse;font-size:13px;\">\n        <thead>\n          <tr style=\"background:#f8fafc;\">\n            <th style=\"padding:10px;border:1px solid #e2e8f0;text-align:left;\">Etapa atrasada</th>\n            <th style=\"padding:10px;border:1px solid #e2e8f0;text-align:left;\">Fecha tentativa</th>\n            <th style=\"padding:10px;border:1px solid #e2e8f0;text-align:center;\">Días tarde</th>\n            <th style=\"padding:10px;border:1px solid #e2e8f0;text-align:left;\">Último comentario</th>\n          </tr>\n        </thead>\n        <tbody>\n    <tr>\n      <td style=\"padding:10px;border:1px solid #e2e8f0;vertical-align:top;\">CARGA EN EL ERP DE RESOLUCION DE INICIO</td>\n      <td style=\"padding:10px;border:1px solid #e2e8f0;vertical-align:top;\">08/04/2026</td>\n      <td style=\"padding:10px;border:1px solid #e2e8f0;vertical-align:top;text-align:center;font-weight:700;color:#b91c1c;\">1</td>\n      <td style=\"padding:10px;border:1px solid #e2e8f0;vertical-align:top;\">Se carga la Información al finalizar el proceso</td>\n    </tr>\n  \n    <tr>\n      <td style=\"padding:10px;border:1px solid #e2e8f0;vertical-align:top;\">CONTRATO</td>\n      <td style=\"padding:10px;border:1px solid #e2e8f0;vertical-align:top;\">08/04/2026</td>\n      <td style=\"padding:10px;border:1px solid #e2e8f0;vertical-align:top;text-align:center;font-weight:700;color:#b91c1c;\">1</td>\n      <td style=\"padding:10px;border:1px solid #e2e8f0;vertical-align:top;\">Se envió el informe para declarar desierto el proceso</td>\n    </tr>\n  \n    <tr>\n      <td style=\"padding:10px;border:1px solid #e2e8f0;vertical-align:top;\">REGISTRO DE Información ERP</td>\n      <td style=\"padding:10px;border:1px solid #e2e8f0;vertical-align:top;\">08/04/2026</td>\n      <td style=\"padding:10px;border:1px solid #e2e8f0;vertical-align:top;text-align:center;font-weight:700;color:#b91c1c;\">1</td>\n      <td style=\"padding:10px;border:1px solid #e2e8f0;vertical-align:top;\">Se realizará la carga de la Información hasta terminar el proceso</td>\n    </tr>\n  </tbody>\n      </table>\n    </div>\n    <p>Mensaje enviado para validar el formato de notificación.</p>\n  \n      </div>\n\n      <div style=\"background:#f8fafc;border-top:1px solid #e2e8f0;padding:16px 24px;color:#64748b;font-size:12px;\">\n        <div><strong>Fecha:</strong> 08/04/2026, 10:26 a. m.</div>\n        <div style=\"margin-top:6px;\">Este es un mensaje automático del Sistema de Seguimiento de Contrataciones - QuitoTurismo</div>\n      </div>\n    </div>\n  </body>\n</html>",
+        "tarea_id": null,
+        "fecha": "2026-04-08T15:26:55.000Z",
+        "leida": 0,
+        "fecha_leida": null,
+        "enviada": 1
+      }
+    ]
+  },
+  "permisos_menu_catalogo": {
+    "columnas": [
+      {
+        "COLUMN_NAME": "id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "PRI",
+        "EXTRA": "auto_increment",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "clave",
+        "COLUMN_TYPE": "varchar(80)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "UNI",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "nombre",
+        "COLUMN_TYPE": "varchar(120)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "ruta",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "activo",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "1"
+      },
+      {
+        "COLUMN_NAME": "orden",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "0"
+      },
+      {
+        "COLUMN_NAME": "created_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      },
+      {
+        "COLUMN_NAME": "updated_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "datos": [
+      {
+        "id": 1,
+        "clave": "dashboard",
+        "nombre": "Dashboard",
+        "ruta": "/",
+        "activo": 1,
+        "orden": 10,
+        "created_at": "2026-03-27T21:04:06.000Z",
+        "updated_at": "2026-03-27T21:04:06.000Z"
+      },
+      {
+        "id": 2,
+        "clave": "actividades",
+        "nombre": "Procesos",
+        "ruta": "/actividades",
+        "activo": 1,
+        "orden": 20,
+        "created_at": "2026-03-27T21:04:06.000Z",
+        "updated_at": "2026-03-27T21:04:06.000Z"
+      }
+    ]
+  },
+  "permisos_modulos_catalogo": {
+    "columnas": [
+      {
+        "COLUMN_NAME": "id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "PRI",
+        "EXTRA": "auto_increment",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "clave",
+        "COLUMN_TYPE": "varchar(80)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "UNI",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "nombre",
+        "COLUMN_TYPE": "varchar(120)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "descripcion",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "activo",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "1"
+      },
+      {
+        "COLUMN_NAME": "orden",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "0"
+      },
+      {
+        "COLUMN_NAME": "created_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      },
+      {
+        "COLUMN_NAME": "updated_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "datos": [
+      {
+        "id": 1,
+        "clave": "dashboard",
+        "nombre": "Dashboard",
+        "descripcion": "Acceso a indicadores generales",
+        "activo": 1,
+        "orden": 10,
+        "created_at": "2026-03-27T21:04:04.000Z",
+        "updated_at": "2026-03-27T21:04:04.000Z"
+      },
+      {
+        "id": 2,
+        "clave": "actividades",
+        "nombre": "Procesos / Actividades",
+        "descripcion": "Gestión y consulta de procesos",
+        "activo": 1,
+        "orden": 20,
+        "created_at": "2026-03-27T21:04:04.000Z",
+        "updated_at": "2026-03-27T21:04:04.000Z"
+      }
+    ]
+  },
+  "permisos_roles_campos_etapas": {
+    "columnas": [
+      {
+        "COLUMN_NAME": "id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "PRI",
+        "EXTRA": "auto_increment",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "role",
+        "COLUMN_TYPE": "varchar(80)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "campo_clave",
+        "COLUMN_TYPE": "varchar(80)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "puede_ver",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "1"
+      },
+      {
+        "COLUMN_NAME": "puede_editar",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "1"
+      },
+      {
+        "COLUMN_NAME": "created_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      },
+      {
+        "COLUMN_NAME": "updated_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "datos": [
+      {
+        "id": 1,
+        "role": "admin",
+        "campo_clave": "fecha_reforma",
+        "puede_ver": 1,
+        "puede_editar": 1,
+        "created_at": "2026-05-18T20:47:40.000Z",
+        "updated_at": "2026-05-18T20:52:04.000Z"
+      },
+      {
+        "id": 2,
+        "role": "admin",
+        "campo_clave": "fecha_reforma_3",
+        "puede_ver": 1,
+        "puede_editar": 1,
+        "created_at": "2026-05-18T20:47:40.000Z",
+        "updated_at": "2026-05-18T20:52:04.000Z"
+      }
+    ]
+  },
+  "permisos_roles_menu": {
+    "columnas": [
+      {
+        "COLUMN_NAME": "id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "PRI",
+        "EXTRA": "auto_increment",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "role",
+        "COLUMN_TYPE": "varchar(80)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "menu_clave",
+        "COLUMN_TYPE": "varchar(80)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "puede_ingresar",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "0"
+      },
+      {
+        "COLUMN_NAME": "created_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      },
+      {
+        "COLUMN_NAME": "updated_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "datos": [
+      {
+        "id": 1,
+        "role": "admin",
+        "menu_clave": "dashboard",
+        "puede_ingresar": 1,
+        "created_at": "2026-03-27T21:04:06.000Z",
+        "updated_at": "2026-03-27T21:04:06.000Z"
+      },
+      {
+        "id": 2,
+        "role": "admin",
+        "menu_clave": "actividades",
+        "puede_ingresar": 1,
+        "created_at": "2026-03-27T21:04:06.000Z",
+        "updated_at": "2026-03-27T21:04:06.000Z"
+      }
+    ]
+  },
+  "permisos_roles_modulos": {
+    "columnas": [
+      {
+        "COLUMN_NAME": "id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "PRI",
+        "EXTRA": "auto_increment",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "role",
+        "COLUMN_TYPE": "varchar(80)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "modulo_clave",
+        "COLUMN_TYPE": "varchar(80)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "puede_leer",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "0"
+      },
+      {
+        "COLUMN_NAME": "puede_crear",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "0"
+      },
+      {
+        "COLUMN_NAME": "puede_actualizar",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "0"
+      },
+      {
+        "COLUMN_NAME": "puede_borrar",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "0"
+      },
+      {
+        "COLUMN_NAME": "created_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      },
+      {
+        "COLUMN_NAME": "updated_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "datos": [
+      {
+        "id": 1,
+        "role": "admin",
+        "modulo_clave": "dashboard",
+        "puede_leer": 1,
+        "puede_crear": 1,
+        "puede_actualizar": 1,
+        "puede_borrar": 1,
+        "created_at": "2026-03-27T21:04:06.000Z",
+        "updated_at": "2026-03-27T21:04:06.000Z"
+      },
+      {
+        "id": 2,
+        "role": "admin",
+        "modulo_clave": "actividades",
+        "puede_leer": 1,
+        "puede_crear": 1,
+        "puede_actualizar": 1,
+        "puede_borrar": 1,
+        "created_at": "2026-03-27T21:04:06.000Z",
+        "updated_at": "2026-03-27T21:04:06.000Z"
+      }
+    ]
+  },
+  "responsables_catalogo": {
+    "columnas": [
+      {
+        "COLUMN_NAME": "id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "PRI",
+        "EXTRA": "auto_increment",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "nombre",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "email",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "direccion_id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "activo",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "1"
+      },
+      {
+        "COLUMN_NAME": "created_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      },
+      {
+        "COLUMN_NAME": "updated_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "datos": [
+      {
+        "id": 1,
+        "nombre": "Andrés Mogro",
+        "email": "jmogro@quito-turismo.gob.ec",
+        "direccion_id": 2,
+        "activo": 1,
+        "created_at": "2026-03-16T20:51:42.000Z",
+        "updated_at": "2026-04-09T00:14:21.000Z"
+      },
+      {
+        "id": 2,
+        "nombre": "Carlos Benítez Salguero",
+        "email": "cbenitez@quito-turismo.gob.ec",
+        "direccion_id": 10,
+        "activo": 1,
+        "created_at": "2026-03-16T20:51:42.000Z",
+        "updated_at": "2026-04-09T00:04:06.000Z"
+      }
+    ]
+  },
+  "seguimiento_etapas": {
+    "columnas": [
+      {
+        "COLUMN_NAME": "id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "PRI",
+        "EXTRA": "auto_increment",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "subtarea_id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "etapa_id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "estado",
+        "COLUMN_TYPE": "varchar(50)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "pendiente"
+      },
+      {
+        "COLUMN_NAME": "fecha_planificada",
+        "COLUMN_TYPE": "date",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "fecha_real",
+        "COLUMN_TYPE": "date",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "responsable_id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "responsable",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "observaciones",
+        "COLUMN_TYPE": "text",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      }
+    ],
+    "datos": [
+      {
+        "id": 6451,
+        "subtarea_id": 130,
+        "etapa_id": 1,
+        "estado": "completado",
+        "fecha_planificada": "2026-06-15T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6452,
+        "subtarea_id": 130,
+        "etapa_id": 2,
+        "estado": "completado",
+        "fecha_planificada": "2026-06-15T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6453,
+        "subtarea_id": 130,
+        "etapa_id": 3,
+        "estado": "completado",
+        "fecha_planificada": "2026-06-16T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6454,
+        "subtarea_id": 130,
+        "etapa_id": 4,
+        "estado": "completado",
+        "fecha_planificada": "2026-06-16T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6455,
+        "subtarea_id": 130,
+        "etapa_id": 5,
+        "estado": "completado",
+        "fecha_planificada": "2026-06-16T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6456,
+        "subtarea_id": 130,
+        "etapa_id": 6,
+        "estado": "completado",
+        "fecha_planificada": "2026-06-17T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6457,
+        "subtarea_id": 130,
+        "etapa_id": 7,
+        "estado": "completado",
+        "fecha_planificada": "2026-06-18T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6458,
+        "subtarea_id": 130,
+        "etapa_id": 8,
+        "estado": "completado",
+        "fecha_planificada": "2026-06-19T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6459,
+        "subtarea_id": 130,
+        "etapa_id": 9,
+        "estado": "completado",
+        "fecha_planificada": "2026-06-22T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6460,
+        "subtarea_id": 130,
+        "etapa_id": 10,
+        "estado": "completado",
+        "fecha_planificada": "2026-06-23T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6461,
+        "subtarea_id": 130,
+        "etapa_id": 11,
+        "estado": "completado",
+        "fecha_planificada": "2026-06-24T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6462,
+        "subtarea_id": 130,
+        "etapa_id": 12,
+        "estado": "completado",
+        "fecha_planificada": "2026-06-24T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6463,
+        "subtarea_id": 130,
+        "etapa_id": 13,
+        "estado": "completado",
+        "fecha_planificada": "2026-06-25T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6464,
+        "subtarea_id": 130,
+        "etapa_id": 14,
+        "estado": "completado",
+        "fecha_planificada": "2026-06-26T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6465,
+        "subtarea_id": 130,
+        "etapa_id": 15,
+        "estado": "completado",
+        "fecha_planificada": "2026-06-29T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6466,
+        "subtarea_id": 130,
+        "etapa_id": 16,
+        "estado": "completado",
+        "fecha_planificada": "2026-06-30T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6467,
+        "subtarea_id": 130,
+        "etapa_id": 17,
+        "estado": "completado",
+        "fecha_planificada": "2026-06-30T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6468,
+        "subtarea_id": 130,
+        "etapa_id": 18,
+        "estado": "completado",
+        "fecha_planificada": "2026-07-01T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6469,
+        "subtarea_id": 130,
+        "etapa_id": 19,
+        "estado": "completado",
+        "fecha_planificada": "2026-07-01T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6470,
+        "subtarea_id": 130,
+        "etapa_id": 20,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6471,
+        "subtarea_id": 130,
+        "etapa_id": 21,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6472,
+        "subtarea_id": 130,
+        "etapa_id": 22,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6473,
+        "subtarea_id": 130,
+        "etapa_id": 23,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6474,
+        "subtarea_id": 130,
+        "etapa_id": 24,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6475,
+        "subtarea_id": 130,
+        "etapa_id": 25,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6476,
+        "subtarea_id": 130,
+        "etapa_id": 26,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6477,
+        "subtarea_id": 130,
+        "etapa_id": 27,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6478,
+        "subtarea_id": 130,
+        "etapa_id": 28,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6479,
+        "subtarea_id": 130,
+        "etapa_id": 29,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6480,
+        "subtarea_id": 130,
+        "etapa_id": 30,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6481,
+        "subtarea_id": 130,
+        "etapa_id": 31,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6482,
+        "subtarea_id": 130,
+        "etapa_id": 32,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6483,
+        "subtarea_id": 130,
+        "etapa_id": 33,
+        "estado": "completado",
+        "fecha_planificada": "2026-07-02T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6484,
+        "subtarea_id": 130,
+        "etapa_id": 34,
+        "estado": "completado",
+        "fecha_planificada": "2026-07-03T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6485,
+        "subtarea_id": 130,
+        "etapa_id": 35,
+        "estado": "completado",
+        "fecha_planificada": "2026-07-03T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6486,
+        "subtarea_id": 130,
+        "etapa_id": 36,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6487,
+        "subtarea_id": 130,
+        "etapa_id": 37,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6488,
+        "subtarea_id": 130,
+        "etapa_id": 38,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6489,
+        "subtarea_id": 130,
+        "etapa_id": 39,
+        "estado": "completado",
+        "fecha_planificada": "2026-07-03T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6490,
+        "subtarea_id": 130,
+        "etapa_id": 40,
+        "estado": "completado",
+        "fecha_planificada": "2026-07-09T05:00:00.000Z",
+        "fecha_real": "2026-07-28T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6491,
+        "subtarea_id": 130,
+        "etapa_id": 41,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6492,
+        "subtarea_id": 130,
+        "etapa_id": 42,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6493,
+        "subtarea_id": 130,
+        "etapa_id": 43,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6494,
+        "subtarea_id": 130,
+        "etapa_id": 44,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6495,
+        "subtarea_id": 130,
+        "etapa_id": 45,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6496,
+        "subtarea_id": 130,
+        "etapa_id": 46,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6497,
+        "subtarea_id": 130,
+        "etapa_id": 47,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6498,
+        "subtarea_id": 130,
+        "etapa_id": 48,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6499,
+        "subtarea_id": 130,
+        "etapa_id": 49,
+        "estado": "pendiente",
+        "fecha_planificada": null,
+        "fecha_real": null,
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      },
+      {
+        "id": 6500,
+        "subtarea_id": 130,
+        "etapa_id": 50,
+        "estado": "completado",
+        "fecha_planificada": "2026-07-09T05:00:00.000Z",
+        "fecha_real": "2026-07-30T05:00:00.000Z",
+        "responsable_id": null,
+        "responsable": "Fabricio Medina",
+        "observaciones": null
+      }
+    ]
+  },
+  "seguimientos_diarios": {
+    "columnas": [
+      {
+        "COLUMN_NAME": "id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "PRI",
+        "EXTRA": "auto_increment",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "subtarea_id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "etapa_id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "fecha",
+        "COLUMN_TYPE": "date",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "comentario",
+        "COLUMN_TYPE": "text",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "tiene_alerta",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "0"
+      },
+      {
+        "COLUMN_NAME": "responsable_id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "responsable",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "created_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      },
+      {
+        "COLUMN_NAME": "updated_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "datos": []
+  },
+  "subtareas": {
+    "columnas": [
+      {
+        "COLUMN_NAME": "id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "PRI",
+        "EXTRA": "auto_increment",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "direccion_encargada",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "nombre",
+        "COLUMN_TYPE": "text",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "codigo_olympo",
+        "COLUMN_TYPE": "varchar(100)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "UNI",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "partida_presupuestaria",
+        "COLUMN_TYPE": "varchar(120)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "presupuesto_2026_inicial",
+        "COLUMN_TYPE": "decimal(14,2)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "0.00"
+      },
+      {
+        "COLUMN_NAME": "costo_2026",
+        "COLUMN_TYPE": "decimal(14,2)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "0.00"
+      },
+      {
+        "COLUMN_NAME": "cuatrimestre",
+        "COLUMN_TYPE": "varchar(50)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "plazo_contrato",
+        "COLUMN_TYPE": "varchar(120)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "pac_no_pac",
+        "COLUMN_TYPE": "varchar(30)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "PAC"
+      },
+      {
+        "COLUMN_NAME": "procedimiento_sugerido",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "responsable_id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "responsable",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "activo",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "1"
+      },
+      {
+        "COLUMN_NAME": "observaciones",
+        "COLUMN_TYPE": "text",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "proceso_en_riesgo",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "0"
+      },
+      {
+        "COLUMN_NAME": "riesgo_comentario",
+        "COLUMN_TYPE": "text",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "fecha_reforma_3",
+        "COLUMN_TYPE": "date",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "fecha_inicio",
+        "COLUMN_TYPE": "date",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "fecha_fin",
+        "COLUMN_TYPE": "date",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "created_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      },
+      {
+        "COLUMN_NAME": "updated_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "datos": [
+      {
+        "id": 130,
+        "direccion_encargada": "DPEI / Jefatura de TICS",
+        "nombre": "Renovación de la suscripción de las licencias de diseño asistido por computadoras (cad) diseño gráfico modelado en 3D",
+        "codigo_olympo": "01.01.001.055.530702.000.009",
+        "partida_presupuestaria": "530702",
+        "presupuesto_2026_inicial": "7000.00",
+        "costo_2026": "7000.00",
+        "cuatrimestre": "2",
+        "plazo_contrato": null,
+        "pac_no_pac": "No PAC",
+        "procedimiento_sugerido": "Ínfimas cuantías",
+        "responsable_id": 6,
+        "responsable": "Fabricio Medina",
+        "activo": 1,
+        "observaciones": null,
+        "proceso_en_riesgo": 0,
+        "riesgo_comentario": null,
+        "fecha_reforma_3": null,
+        "fecha_inicio": null,
+        "fecha_fin": null,
+        "created_at": "2026-03-13T15:54:00.000Z",
+        "updated_at": "2026-07-21T17:25:21.000Z"
+      }
+    ]
+  },
+  "subtareas_etapas": {
+    "columnas": [
+      {
+        "COLUMN_NAME": "id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "PRI",
+        "EXTRA": "auto_increment",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "subtarea_id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "etapa_id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "aplica",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "1"
+      },
+      {
+        "COLUMN_NAME": "fecha_tentativa",
+        "COLUMN_TYPE": "date",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "fecha_reforma",
+        "COLUMN_TYPE": "date",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "fecha_reforma_3",
+        "COLUMN_TYPE": "date",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      }
+    ],
+    "datos": [
+      {
+        "id": 6451,
+        "subtarea_id": 130,
+        "etapa_id": 1,
+        "aplica": 1,
+        "fecha_tentativa": "2026-06-15T05:00:00.000Z",
+        "fecha_reforma": "2026-06-15T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6452,
+        "subtarea_id": 130,
+        "etapa_id": 2,
+        "aplica": 1,
+        "fecha_tentativa": "2026-06-15T05:00:00.000Z",
+        "fecha_reforma": "2026-06-15T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6453,
+        "subtarea_id": 130,
+        "etapa_id": 3,
+        "aplica": 1,
+        "fecha_tentativa": "2026-06-16T05:00:00.000Z",
+        "fecha_reforma": "2026-06-16T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6454,
+        "subtarea_id": 130,
+        "etapa_id": 4,
+        "aplica": 1,
+        "fecha_tentativa": "2026-06-16T05:00:00.000Z",
+        "fecha_reforma": "2026-06-16T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6455,
+        "subtarea_id": 130,
+        "etapa_id": 5,
+        "aplica": 1,
+        "fecha_tentativa": "2026-06-16T05:00:00.000Z",
+        "fecha_reforma": "2026-06-16T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6456,
+        "subtarea_id": 130,
+        "etapa_id": 6,
+        "aplica": 1,
+        "fecha_tentativa": "2026-06-17T05:00:00.000Z",
+        "fecha_reforma": "2026-06-17T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6457,
+        "subtarea_id": 130,
+        "etapa_id": 7,
+        "aplica": 1,
+        "fecha_tentativa": "2026-06-18T05:00:00.000Z",
+        "fecha_reforma": "2026-06-18T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6458,
+        "subtarea_id": 130,
+        "etapa_id": 8,
+        "aplica": 1,
+        "fecha_tentativa": "2026-06-19T05:00:00.000Z",
+        "fecha_reforma": "2026-06-19T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6459,
+        "subtarea_id": 130,
+        "etapa_id": 9,
+        "aplica": 1,
+        "fecha_tentativa": "2026-06-22T05:00:00.000Z",
+        "fecha_reforma": "2026-06-22T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6460,
+        "subtarea_id": 130,
+        "etapa_id": 10,
+        "aplica": 1,
+        "fecha_tentativa": "2026-06-23T05:00:00.000Z",
+        "fecha_reforma": "2026-06-23T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6461,
+        "subtarea_id": 130,
+        "etapa_id": 11,
+        "aplica": 1,
+        "fecha_tentativa": "2026-06-24T05:00:00.000Z",
+        "fecha_reforma": "2026-06-24T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6462,
+        "subtarea_id": 130,
+        "etapa_id": 12,
+        "aplica": 1,
+        "fecha_tentativa": "2026-06-24T05:00:00.000Z",
+        "fecha_reforma": "2026-06-24T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6463,
+        "subtarea_id": 130,
+        "etapa_id": 13,
+        "aplica": 1,
+        "fecha_tentativa": "2026-06-25T05:00:00.000Z",
+        "fecha_reforma": "2026-06-25T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6464,
+        "subtarea_id": 130,
+        "etapa_id": 14,
+        "aplica": 1,
+        "fecha_tentativa": "2026-06-26T05:00:00.000Z",
+        "fecha_reforma": "2026-06-26T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6465,
+        "subtarea_id": 130,
+        "etapa_id": 15,
+        "aplica": 1,
+        "fecha_tentativa": "2026-06-29T05:00:00.000Z",
+        "fecha_reforma": "2026-06-29T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6466,
+        "subtarea_id": 130,
+        "etapa_id": 16,
+        "aplica": 1,
+        "fecha_tentativa": "2026-06-30T05:00:00.000Z",
+        "fecha_reforma": "2026-06-30T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6467,
+        "subtarea_id": 130,
+        "etapa_id": 17,
+        "aplica": 1,
+        "fecha_tentativa": "2026-06-30T05:00:00.000Z",
+        "fecha_reforma": "2026-06-30T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6468,
+        "subtarea_id": 130,
+        "etapa_id": 18,
+        "aplica": 1,
+        "fecha_tentativa": "2026-07-01T05:00:00.000Z",
+        "fecha_reforma": "2026-07-01T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6469,
+        "subtarea_id": 130,
+        "etapa_id": 19,
+        "aplica": 1,
+        "fecha_tentativa": "2026-07-01T05:00:00.000Z",
+        "fecha_reforma": "2026-07-01T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6470,
+        "subtarea_id": 130,
+        "etapa_id": 20,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6471,
+        "subtarea_id": 130,
+        "etapa_id": 21,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6472,
+        "subtarea_id": 130,
+        "etapa_id": 22,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6473,
+        "subtarea_id": 130,
+        "etapa_id": 23,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6474,
+        "subtarea_id": 130,
+        "etapa_id": 24,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6475,
+        "subtarea_id": 130,
+        "etapa_id": 25,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6476,
+        "subtarea_id": 130,
+        "etapa_id": 26,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6477,
+        "subtarea_id": 130,
+        "etapa_id": 27,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6478,
+        "subtarea_id": 130,
+        "etapa_id": 28,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6479,
+        "subtarea_id": 130,
+        "etapa_id": 29,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6480,
+        "subtarea_id": 130,
+        "etapa_id": 30,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6481,
+        "subtarea_id": 130,
+        "etapa_id": 31,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6482,
+        "subtarea_id": 130,
+        "etapa_id": 32,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6483,
+        "subtarea_id": 130,
+        "etapa_id": 33,
+        "aplica": 1,
+        "fecha_tentativa": "2026-07-02T05:00:00.000Z",
+        "fecha_reforma": "2026-07-02T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6484,
+        "subtarea_id": 130,
+        "etapa_id": 34,
+        "aplica": 1,
+        "fecha_tentativa": "2026-07-03T05:00:00.000Z",
+        "fecha_reforma": "2026-07-03T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6485,
+        "subtarea_id": 130,
+        "etapa_id": 35,
+        "aplica": 1,
+        "fecha_tentativa": "2026-07-03T05:00:00.000Z",
+        "fecha_reforma": "2026-07-03T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6486,
+        "subtarea_id": 130,
+        "etapa_id": 36,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6487,
+        "subtarea_id": 130,
+        "etapa_id": 37,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6488,
+        "subtarea_id": 130,
+        "etapa_id": 38,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6489,
+        "subtarea_id": 130,
+        "etapa_id": 39,
+        "aplica": 1,
+        "fecha_tentativa": "2026-07-03T05:00:00.000Z",
+        "fecha_reforma": "2026-07-03T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6490,
+        "subtarea_id": 130,
+        "etapa_id": 40,
+        "aplica": 1,
+        "fecha_tentativa": "2026-07-09T05:00:00.000Z",
+        "fecha_reforma": "2026-07-09T05:00:00.000Z",
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6491,
+        "subtarea_id": 130,
+        "etapa_id": 41,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6492,
+        "subtarea_id": 130,
+        "etapa_id": 42,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6493,
+        "subtarea_id": 130,
+        "etapa_id": 43,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6494,
+        "subtarea_id": 130,
+        "etapa_id": 44,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6495,
+        "subtarea_id": 130,
+        "etapa_id": 45,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6496,
+        "subtarea_id": 130,
+        "etapa_id": 46,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6497,
+        "subtarea_id": 130,
+        "etapa_id": 47,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6498,
+        "subtarea_id": 130,
+        "etapa_id": 48,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6499,
+        "subtarea_id": 130,
+        "etapa_id": 49,
+        "aplica": 1,
+        "fecha_tentativa": null,
+        "fecha_reforma": null,
+        "fecha_reforma_3": null
+      },
+      {
+        "id": 6500,
+        "subtarea_id": 130,
+        "etapa_id": 50,
+        "aplica": 1,
+        "fecha_tentativa": "2026-07-09T05:00:00.000Z",
+        "fecha_reforma": "2026-07-09T05:00:00.000Z",
+        "fecha_reforma_3": null
+      }
+    ]
+  },
+  "usuarios": {
+    "columnas": [
+      {
+        "COLUMN_NAME": "id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "PRI",
+        "EXTRA": "auto_increment",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "username",
+        "COLUMN_TYPE": "varchar(80)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "UNI",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "nombre",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "password_hash",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "role",
+        "COLUMN_TYPE": "varchar(80)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "direccion_nombre",
+        "COLUMN_TYPE": "varchar(255)",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "orden_login",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "0"
+      },
+      {
+        "COLUMN_NAME": "activo",
+        "COLUMN_TYPE": "tinyint(1)",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": "1"
+      },
+      {
+        "COLUMN_NAME": "fecha_inicio_rol",
+        "COLUMN_TYPE": "date",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "fecha_fin_rol",
+        "COLUMN_TYPE": "date",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "created_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      },
+      {
+        "COLUMN_NAME": "updated_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "datos": [
+      {
+        "id": 1,
+        "username": "Admin",
+        "nombre": "Administrador del Sistema",
+        "password_hash": "$2a$10$1Lnh2nGEjVcBykjy7srxZeku.lzsQp8MgZ7bHeVCcLsSZ.r0D59Hy",
+        "role": "admin",
+        "direccion_nombre": null,
+        "orden_login": 16,
+        "activo": 1,
+        "fecha_inicio_rol": null,
+        "fecha_fin_rol": null,
+        "created_at": "2026-03-16T20:20:31.000Z",
+        "updated_at": "2026-04-07T21:06:18.000Z"
+      },
+      {
+        "id": 6,
+        "username": "admin_default_73446",
+        "nombre": "Admin Default Pass",
+        "password_hash": "$2a$10$jNAzuOq7kYCQp0uvjJOpku4SnT6A1eghk5U00NRcQbqFRuv8DA0H.",
+        "role": "admin",
+        "direccion_nombre": null,
+        "orden_login": 0,
+        "activo": 0,
+        "fecha_inicio_rol": "2026-05-21T05:00:00.000Z",
+        "fecha_fin_rol": "2026-05-22T05:00:00.000Z",
+        "created_at": "2026-03-16T20:27:52.000Z",
+        "updated_at": "2026-05-18T21:28:28.000Z"
+      }
+    ]
+  },
+  "usuarios_direcciones": {
+    "columnas": [
+      {
+        "COLUMN_NAME": "id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "PRI",
+        "EXTRA": "auto_increment",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "usuario_id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "direccion_id",
+        "COLUMN_TYPE": "int",
+        "IS_NULLABLE": "NO",
+        "COLUMN_KEY": "MUL",
+        "EXTRA": "",
+        "COLUMN_DEFAULT": null
+      },
+      {
+        "COLUMN_NAME": "created_at",
+        "COLUMN_TYPE": "datetime",
+        "IS_NULLABLE": "YES",
+        "COLUMN_KEY": "",
+        "EXTRA": "DEFAULT_GENERATED",
+        "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "datos": [
+      {
+        "id": 10,
+        "usuario_id": 25,
+        "direccion_id": 12,
+        "created_at": "2026-08-03T13:36:09.000Z"
+      }
+    ]
+  }
+}

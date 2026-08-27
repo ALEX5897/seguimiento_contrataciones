@@ -36,6 +36,37 @@
       </div>
     </div>
 
+    <!-- Panel de configuración del sistema -->
+    <div class="config-panel">
+      <details open>
+        <summary class="config-summary">
+          <span class="config-icon">⚙️</span>
+          <span class="config-title">Configuración del Sistema</span>
+          <span class="config-status">{{ configuracionCargada ? '✓' : '⏳' }}</span>
+        </summary>
+        <div class="config-content">
+          <div class="config-item">
+            <label class="config-label">
+              <input
+                type="checkbox"
+                v-model="editarFechaPlanificadaDirecciones"
+                @change="onToggleEditarFechaPlanificada"
+                :disabled="actualizandoConfig"
+              />
+              <span class="label-text">Permitir que usuarios de dirección editen Fecha Planificada</span>
+            </label>
+            <p class="config-description">
+              Cuando está habilitado, los usuarios de dirección pueden editar la fecha planificada de las etapas.
+              El administrador siempre podrá hacerlo.
+            </p>
+            <div v-if="mensajeConfiguracion" :class="['config-message', `config-message-${mensajeConfiguracion.tipo}`]">
+              {{ mensajeConfiguracion.texto }}
+            </div>
+          </div>
+        </div>
+      </details>
+    </div>
+
     <!-- Error de carga de catálogos -->
     <div v-if="errorCargaCatalogos" class="catalogo-error">
       <span>⚠️ {{ errorCargaCatalogos }}</span>
@@ -58,6 +89,7 @@
             <th>Dirección</th>
             <th>Tipo Plan</th>
             <th>Presupuesto</th>
+            <th>Partidas</th>
             <th>Estado</th>
             <th>Acciones</th>
           </tr>
@@ -69,6 +101,18 @@
             <td>{{ act.direccionNombre || 'N/A' }}</td>
             <td>{{ act.tipoPlan }}</td>
             <td>${{ formatearMontoMoneda(act.presupuesto || 0) }}</td>
+            <td>
+              <button
+                v-if="act.tieneMultiplesPartidas"
+                type="button"
+                class="btn-partidas-admin"
+                @click="abrirPartidas(act)"
+                :title="`Ver ${act.partidas?.length || 0} partidas`"
+              >
+                📋 {{ act.partidas?.length || 0 }}
+              </button>
+              <span v-else class="partidas-unica">1</span>
+            </td>
             <td>
               <span :class="['badge', estadoProcesoBadgeClase(act.activo)]">
                 {{ estadoProcesoLabel(act.activo) }}
@@ -127,19 +171,43 @@
             <!-- Pestaña 1: Información General -->
             <div v-if="pestañaActiva === 'general'" class="tab-pane">
               <div class="form-grupo">
-                <label for="nombre">Nombre *</label>
+                <label for="nombre">Nombre del Proceso *</label>
                 <input
                   id="nombre"
                   v-model="formulario.nombre"
                   type="text"
                   required
-                  placeholder="Nombre del proceso"
+                  placeholder="Nombre del proceso o contrato"
                 />
               </div>
 
               <div class="form-fila">
                 <div class="form-grupo">
-                  <label for="direccionId">Dirección</label>
+                  <label for="codigoOlympo">Código Olympo *</label>
+                  <input
+                    id="codigoOlympo"
+                    v-model="formulario.codigoOlympo"
+                    type="text"
+                    required
+                    placeholder="Ej: 01.01.001.166.840107.000.009"
+                  />
+                </div>
+                <div class="form-grupo">
+                  <label for="codigoUnicoProceso">Código Único</label>
+                  <input
+                    id="codigoUnicoProceso"
+                    :value="formulario.codigoUnicoProceso"
+                    type="text"
+                    disabled
+                    placeholder="Generado automáticamente"
+                  />
+                  <small class="field-help">Solo lectura - generado automáticamente</small>
+                </div>
+              </div>
+
+              <div class="form-fila">
+                <div class="form-grupo">
+                  <label for="direccionId">Dirección Responsable</label>
                   <select id="direccionId" v-model.number="formulario.direccionId">
                     <option :value="undefined">Sin dirección</option>
                     <option
@@ -151,16 +219,6 @@
                     </option>
                   </select>
                 </div>
-                <div class="form-grupo">
-                  <label for="tipoPlan">Tipo Plan</label>
-                  <select id="tipoPlan" v-model="formulario.tipoPlan">
-                    <option value="PAC">PAC</option>
-                    <option value="No PAC">No PAC</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="form-fila">
                 <div class="form-grupo">
                   <label for="responsableId">Responsable</label>
                   <select id="responsableId" v-model="formulario.responsableId">
@@ -177,36 +235,47 @@
                     </option>
                   </select>
                 </div>
-                <div class="form-grupo">
-                  <label for="estado">Estado</label>
-                  <select id="estado" v-model="formulario.estado">
-                    <option value="pendiente">Pendiente</option>
-                    <option value="en_proceso">En proceso</option>
-                    <option value="completado">Completo</option>
-                  </select>
-                </div>
               </div>
 
-              <div class="form-grupo">
-                <label for="estadoProceso">Estado del proceso</label>
-                <select id="estadoProceso" v-model.number="formulario.activo">
-                  <option :value="1">Activo</option>
-                  <option :value="0">Inactivo</option>
-                  <option :value="2">Desierto</option>
-                </select>
+              <div class="form-fila">
+                <div class="form-grupo">
+                  <label for="estadoProceso">Estado del Proceso</label>
+                  <select id="estadoProceso" v-model.number="formulario.activo">
+                    <option :value="1">Activo</option>
+                    <option :value="0">Inactivo</option>
+                    <option :value="2">Desierto</option>
+                  </select>
+                </div>
+                <div class="form-grupo">
+                  <label for="procesoEnRiesgo">
+                    <input
+                      id="procesoEnRiesgo"
+                      v-model="formulario.procesoEnRiesgo"
+                      type="checkbox"
+                    />
+                    ⚠️ En Riesgo
+                  </label>
+                </div>
               </div>
             </div>
 
-            <!-- Pestaña 2: Datos Presupuestarios -->
+            <!-- Pestaña 2: Presupuesto -->
             <div v-if="pestañaActiva === 'presupuestario'" class="tab-pane">
-              <div class="form-grupo">
-                <label for="codigoOlympo">Código Olympo</label>
-                <input
-                  id="codigoOlympo"
-                  v-model="formulario.codigoOlympo"
-                  type="text"
-                  placeholder="Ej: 01.01.001.166.840107.000.009"
-                />
+              <div class="form-fila">
+                <div class="form-grupo">
+                  <label for="gestionGastoOProyecto">Tipo Gestión</label>
+                  <select id="gestionGastoOProyecto" v-model="formulario.gestionGastoOProyecto">
+                    <option value="Gasto">Gasto</option>
+                    <option value="Proyecto">Proyecto</option>
+                  </select>
+                </div>
+                <div class="form-grupo">
+                  <label for="tipoPlan">Tipo Plan</label>
+                  <select id="tipoPlan" v-model="formulario.tipoPlan">
+                    <option value="PAC">PAC</option>
+                    <option value="No PAC">No PAC</option>
+                  </select>
+                </div>
               </div>
 
               <div class="form-fila">
@@ -220,105 +289,65 @@
                   />
                 </div>
                 <div class="form-grupo">
-                  <label for="fuenteFinanciamiento">Fuente Financiamiento</label>
+                  <label for="fuenteFinanciamiento">Fuente de Financiamiento</label>
                   <input
                     id="fuenteFinanciamiento"
                     v-model="formulario.fuenteFinanciamiento"
                     type="text"
-                    placeholder="Ej: Fondos Propios"
+                    placeholder="Ej: Fondos Propios, Crédito"
                   />
                 </div>
               </div>
 
-              <div class="form-fila">
-                <div class="form-grupo">
-                  <label for="presupuesto">Presupuesto (2026 Inicial)</label>
-                  <input
-                    id="presupuesto"
-                    v-model="presupuestoTexto"
-                    type="text"
-                    inputmode="decimal"
-                    class="input-money"
-                    placeholder="Ej: 1.200,00"
-                    @input="onPresupuestoInput"
-                    @focus="onPresupuestoFocus"
-                    @blur="onPresupuestoBlur"
-                  />
-                  <small class="field-help">Ingresa montos con o sin centavos. Ejemplo: 1200 → 1.200,00</small>
-                </div>
-                <div class="form-grupo">
-                  <label for="costoReforma2">Costo 2026 / Reforma 2</label>
-                  <input
-                    id="costoReforma2"
-                    v-model="costoReforma2Texto"
-                    type="text"
-                    inputmode="decimal"
-                    class="input-money"
-                    placeholder="Ej: 500,00"
-                    @input="onCostoReforma2Input"
-                    @focus="onCostoReforma2Focus"
-                    @blur="onCostoReforma2Blur"
-                  />
-                </div>
+              <div class="form-grupo">
+                <label for="presupuesto">Presupuesto</label>
+                <input
+                  id="presupuesto"
+                  v-model="presupuestoTexto"
+                  type="text"
+                  inputmode="decimal"
+                  class="input-money"
+                  placeholder="Ej: 1.200,00"
+                  @input="onPresupuestoInput"
+                  @focus="onPresupuestoFocus"
+                  @blur="onPresupuestoBlur"
+                />
+                <small class="field-help">Formato: 1200 → 1.200,00</small>
               </div>
             </div>
 
             <!-- Pestaña 3: Cronograma -->
             <div v-if="pestañaActiva === 'cronograma'" class="tab-pane">
-              <div class="form-fila">
-                <div class="form-grupo">
-                  <label for="fechaInicio">Fecha Inicio</label>
-                  <input
-                    id="fechaInicio"
-                    v-model="formulario.fechaInicio"
-                    type="date"
-                  />
-                  <small class="field-help" v-if="formulario.fechaInicio">
-                    Seleccionada: {{ formatearFechaParaVista(formulario.fechaInicio) }}
-                  </small>
-                </div>
-                <div class="form-grupo">
-                  <label for="fechaFin">Fecha Fin</label>
-                  <input
-                    id="fechaFin"
-                    v-model="formulario.fechaFin"
-                    type="date"
-                  />
-                  <small class="field-help" v-if="formulario.fechaFin">
-                    Seleccionada: {{ formatearFechaParaVista(formulario.fechaFin) }}
-                  </small>
-                </div>
-              </div>
-
-              <div class="form-fila">
-                <div class="form-grupo">
-                  <label for="cuatrimestre">Cuatrimestre</label>
-                  <select id="cuatrimestre" v-model.number="formulario.cuatrimestre">
-                    <option :value="null">Sin cuatrimestre</option>
-                    <option :value="1">1er Cuatrimestre</option>
-                    <option :value="2">2do Cuatrimestre</option>
-                    <option :value="3">3er Cuatrimestre</option>
-                  </select>
-                  <small class="field-help" v-if="formulario.cuatrimestre">
-                    Seleccionado: Cuatrimestre {{ formulario.cuatrimestre }}
-                  </small>
-                </div>
-                <div class="form-grupo">
-                  <label for="plazoContrato">Plazo de Contrato</label>
-                  <input
-                    id="plazoContrato"
-                    v-model="formulario.plazoContrato"
-                    type="text"
-                    placeholder="Ej: 120 días"
-                  />
-                </div>
+              <div class="form-grupo">
+                <label for="cuatrimestre">Cuatrimestre de Ejecución</label>
+                <select id="cuatrimestre" v-model.number="formulario.cuatrimestre">
+                  <option :value="null">Sin especificar</option>
+                  <option :value="1">1er Cuatrimestre (Enero - Abril)</option>
+                  <option :value="2">2do Cuatrimestre (Mayo - Agosto)</option>
+                  <option :value="3">3er Cuatrimestre (Septiembre - Diciembre)</option>
+                </select>
+                <small class="field-help" v-if="formulario.cuatrimestre">
+                  Seleccionado: Cuatrimestre {{ formulario.cuatrimestre }}
+                </small>
               </div>
             </div>
 
-            <!-- Pestaña 4: Procuración -->
-            <div v-if="pestañaActiva === 'procuracion'" class="tab-pane">
+            <!-- Pestaña 4: Contratación -->
+            <div v-if="pestañaActiva === 'contratacion'" class="tab-pane">
               <div class="form-grupo">
-                <label for="procedimientoSugerido">Procedimiento Sugerido</label>
+                <label for="tipoContratacion">Tipo de Contratación</label>
+                <select id="tipoContratacion" v-model="formulario.tipoContratacion">
+                  <option :value="null">Sin especificar</option>
+                  <option value="Compra de Bienes">Compra de Bienes</option>
+                  <option value="Prestación de Servicios">Prestación de Servicios</option>
+                  <option value="Ejecución de Obras">Ejecución de Obras</option>
+                  <option value="Consultoría">Consultoría</option>
+                  <option value="Arrendamiento">Arrendamiento</option>
+                </select>
+              </div>
+
+              <div class="form-grupo">
+                <label for="procedimientoSugerido">Procedimiento de Contratación</label>
                 <select id="procedimientoSugerido" v-model="formulario.procedimientoSugerido">
                   <option :value="null">Sin especificar</option>
                   <option value="Ínfimas cuantías">Ínfimas cuantías</option>
@@ -334,25 +363,15 @@
                   <option value="Otro">Otro</option>
                 </select>
                 <small class="field-help" v-if="formulario.procedimientoSugerido">
-                  Procedimiento: {{ formulario.procedimientoSugerido }}
+                  Seleccionado: {{ formulario.procedimientoSugerido }}
                 </small>
-              </div>
-
-              <div class="form-fila">
-                <div class="form-grupo">
-                  <label for="pacNoPac">PAC / No PAC</label>
-                  <select id="pacNoPac" v-model="formulario.tipoPlan">
-                    <option value="PAC">PAC</option>
-                    <option value="No PAC">No PAC</option>
-                  </select>
-                </div>
               </div>
             </div>
 
-            <!-- Pestaña 5: Notas -->
-            <div v-if="pestañaActiva === 'notas'" class="tab-pane">
+            <!-- Pestaña 5: Seguimiento -->
+            <div v-if="pestañaActiva === 'seguimiento'" class="tab-pane">
               <div class="form-grupo">
-                <label for="avanceGeneral">Avance General (%)</label>
+                <label for="avanceGeneral">Avance General del Proceso</label>
                 <div class="avance-input-group">
                   <input
                     id="avanceGeneral"
@@ -368,18 +387,31 @@
                 <div class="progreso-barra-formulario">
                   <div class="progreso-fill" :style="{ width: (formulario.avanceGeneral || 0) + '%' }"></div>
                 </div>
+                <small class="field-help">Indica el porcentaje de avance general del proceso (0-100%)</small>
+              </div>
+
+              <div v-if="formulario.procesoEnRiesgo" class="form-grupo">
+                <label for="riesgoComentario">⚠️ Detalle del Riesgo</label>
+                <textarea
+                  id="riesgoComentario"
+                  v-model="formulario.riesgoComentario"
+                  rows="4"
+                  class="textarea-observaciones-proceso"
+                  placeholder="Describe qué factor de riesgo puede afectar este proceso..."
+                />
+                <small class="field-help">{{ (formulario.riesgoComentario || '').length }} caracteres.</small>
               </div>
 
               <div class="form-grupo">
-                <label for="observaciones">Observaciones</label>
+                <label for="observaciones">Observaciones Generales</label>
                 <textarea
                   id="observaciones"
                   v-model="formulario.observaciones"
-                  rows="8"
+                  rows="6"
                   class="textarea-observaciones-proceso"
-                  placeholder="Escribe aquí notas, alcance, observaciones o contexto relevante del proceso"
+                  placeholder="Notas adicionales, comentarios o información relevante del proceso..."
                 />
-                <small class="field-help">Este espacio admite texto libre para describir mejor el proceso. {{ (formulario.observaciones || '').length }} caracteres.</small>
+                <small class="field-help">{{ (formulario.observaciones || '').length }} caracteres.</small>
               </div>
             </div>
 
@@ -692,10 +724,6 @@
                 <span class="info-label">Presupuesto:</span>
                 <span class="info-valor destacado">${{ formatearMontoMoneda(actividadVista.presupuesto || 0) }}</span>
               </div>
-              <div class="info-item">
-                <span class="info-label">Costo Reforma 2:</span>
-                <span class="info-valor">${{ formatearMontoMoneda(actividadVista.costoReforma2 || 0) }}</span>
-              </div>
             </div>
           </div>
 
@@ -780,6 +808,46 @@
       {{ notificacion.mensaje }}
     </div>
 
+    <!-- Modal de Partidas -->
+    <div v-if="mostrarPartidas" class="modal-overlay" @click.self="cerrarPartidas">
+      <div class="modal-content modal-partidas" @click.stop>
+        <div class="modal-header-partidas">
+          <div class="modal-header-content">
+            <h2>📋 Partidas del Contrato</h2>
+            <p v-if="actividadPartidas">{{ actividadPartidas.nombre }}</p>
+          </div>
+          <button class="btn-close-modal" @click="cerrarPartidas">✕</button>
+        </div>
+
+        <div v-if="actividadPartidas && actividadPartidas.partidas" class="partidas-content">
+          <div class="partidas-resumen">
+            <strong>Total de partidas: {{ actividadPartidas.partidas.length }}</strong>
+            <strong>Presupuesto consolidado: ${{ (actividadPartidas.presupuesto || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</strong>
+          </div>
+          <table class="partidas-tabla">
+            <thead>
+              <tr>
+                <th>Código Olympo</th>
+                <th>Monto</th>
+                <th>Dirección</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="partida in actividadPartidas.partidas" :key="partida.id">
+                <td class="codigo-cell">{{ partida.codigoOlympo }}</td>
+                <td class="monto-cell">${{ (partida.presupuesto || 0).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+                <td class="direccion-cell">{{ partida.direccion || 'N/A' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="botones-modal">
+          <button class="btn-secondary" @click="cerrarPartidas">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal de confirmación -->
     <div v-if="confirmar.activa" class="modal-overlay confirm-overlay" @click.self="confirmar.activa = false; confirmar.resolve(false)">
       <div class="confirm-modal" @click.stop>
@@ -813,7 +881,6 @@ interface Actividad {
   partidaPresupuestaria?: string;
   fuenteFinanciamiento?: string;
   presupuesto: number;
-  costoReforma2?: number;
   fechaInicio?: string;
   fechaFin?: string;
   estado?: string;
@@ -824,6 +891,13 @@ interface Actividad {
   plazoContrato?: string;
   procedimientoSugerido?: string | null;
   etapas?: any[];
+  tieneMultiplesPartidas?: boolean;
+  partidas?: Array<{
+    id: number;
+    codigoOlympo: string;
+    presupuesto: number;
+    direccion?: string;
+  }>;
 }
 
 interface Etapa {
@@ -885,10 +959,10 @@ const busquedaEtapas = ref('');
 const pestañaActiva = ref('general');
 const tabs = [
   { id: 'general', icon: '📋', label: 'Información General' },
-  { id: 'presupuestario', icon: '💰', label: 'Datos Presupuestarios' },
+  { id: 'presupuestario', icon: '💰', label: 'Presupuesto' },
   { id: 'cronograma', icon: '📅', label: 'Cronograma' },
-  { id: 'procuracion', icon: '🛒', label: 'Procuración' },
-  { id: 'notas', icon: '📝', label: 'Notas' }
+  { id: 'contratacion', icon: '🛒', label: 'Contratación' },
+  { id: 'seguimiento', icon: '📊', label: 'Seguimiento' }
 ];
 
 // Seguimientos diarios
@@ -896,6 +970,8 @@ const mostrarSeguimientos = ref(false);
 const cargandoSeguimientosModal = ref(false);
 const etapaActualSeguimiento = ref<Etapa | null>(null);
 const seguimientosDiarios = ref<any[]>([]);
+const mostrarPartidas = ref(false);
+const actividadPartidas = ref<Actividad | null>(null);
 const nuevoComentario = ref('');
 const nuevoAlerta = ref(false);
 const conteoSeguimientosEtapas = ref<Record<number, number>>({});
@@ -935,29 +1011,37 @@ function estadoProcesoBadgeClase(value: unknown): string {
 function getFormularioVacio(): Partial<Actividad> {
   return {
     nombre: '',
-    direccionId: undefined,
-    tipoPlan: 'PAC',
     codigoOlympo: '',
+    codigoUnicoProceso: '',
+    direccionId: undefined,
     responsableId: undefined,
+    tipoPlan: 'PAC',
+    gestionGastoOProyecto: 'Gasto',
+    estado: 'pendiente',
+    activo: 1,
+    procesoEnRiesgo: false,
+
+    // Presupuestario
     partidaPresupuestaria: '',
     fuenteFinanciamiento: '',
     presupuesto: 0,
-    costoReforma2: 0,
-    fechaInicio: '',
-    fechaFin: '',
-    estado: 'pendiente',
-    avanceGeneral: 0,
-    activo: 1,
-    observaciones: '',
+
+    // Cronograma
     cuatrimestre: null,
-    plazoContrato: '',
-    procedimientoSugerido: null
+
+    // Contratación
+    tipoContratacion: null,
+    procedimientoSugerido: null,
+
+    // Seguimiento
+    avanceGeneral: 0,
+    riesgoComentario: '',
+    observaciones: ''
   };
 }
 
 const formulario = ref<Partial<Actividad>>(getFormularioVacio());
 const presupuestoTexto = ref('0,00');
-const costoReforma2Texto = ref('0,00');
 
 const notificacion = ref<{ mensaje: string; tipo: 'success' | 'error' }>({ mensaje: '', tipo: 'success' });
 
@@ -1137,28 +1221,57 @@ function onPresupuestoFocus(event: Event) {
   (event.target as HTMLInputElement | null)?.select();
 }
 
-function sincronizarCostoReforma2Texto(valor: string | number | undefined | null) {
-  const monto = normalizarMontoMoneda(valor);
-  formulario.value.costoReforma2 = monto;
-  costoReforma2Texto.value = formatearMontoMoneda(monto);
+// Configuración del sistema
+const editarFechaPlanificadaDirecciones = ref(false);
+const configuracionCargada = ref(false);
+const actualizandoConfig = ref(false);
+const mensajeConfiguracion = ref<{ tipo: string; texto: string } | null>(null);
+
+async function cargarConfiguracion() {
+  try {
+    const response = await api.get('/configuracion/editar_fecha_planificada_direcciones');
+    const valor = response.data?.valor;
+    editarFechaPlanificadaDirecciones.value = valor === true || valor === '1' || valor === 1;
+    configuracionCargada.value = true;
+  } catch (error) {
+    console.warn('No se pudo cargar configuración:', error);
+    editarFechaPlanificadaDirecciones.value = false;
+    configuracionCargada.value = true;
+  }
 }
 
-function onCostoReforma2Input() {
-  formulario.value.costoReforma2 = normalizarMontoMoneda(costoReforma2Texto.value);
-}
-
-function onCostoReforma2Blur() {
-  sincronizarCostoReforma2Texto(costoReforma2Texto.value);
-}
-
-function onCostoReforma2Focus(event: Event) {
-  (event.target as HTMLInputElement | null)?.select();
+async function onToggleEditarFechaPlanificada() {
+  actualizandoConfig.value = true;
+  mensajeConfiguracion.value = null;
+  try {
+    await api.put('/configuracion/editar_fecha_planificada_direcciones', {
+      valor: editarFechaPlanificadaDirecciones.value ? '1' : '0'
+    });
+    mensajeConfiguracion.value = {
+      tipo: 'success',
+      texto: editarFechaPlanificadaDirecciones.value
+        ? '✓ Edición habilitada para dirección'
+        : '✓ Edición deshabilitada para dirección'
+    };
+    setTimeout(() => {
+      mensajeConfiguracion.value = null;
+    }, 3000);
+  } catch (error) {
+    console.error('Error al actualizar configuración:', error);
+    editarFechaPlanificadaDirecciones.value = !editarFechaPlanificadaDirecciones.value;
+    mensajeConfiguracion.value = {
+      tipo: 'error',
+      texto: '❌ Error al actualizar configuración'
+    };
+  } finally {
+    actualizandoConfig.value = false;
+  }
 }
 
 onMounted(async () => {
   window.addEventListener('keydown', manejarEscapeModales);
   console.log('AdminActividades: montada');
-  await Promise.all([cargarActividades(), cargarResponsables(), cargarDireccionesCatalogo()]);
+  await Promise.all([cargarActividades(), cargarResponsables(), cargarDireccionesCatalogo(), cargarConfiguracion()]);
 });
 
 onBeforeUnmount(() => {
@@ -1194,9 +1307,19 @@ async function cargarActividades() {
   try {
     const response = await api.get('/subtareas');
     // Manejar respuesta que puede ser array o objeto con value/Count
-    actividades.value = Array.isArray(response.data) 
-      ? response.data 
+    const datos = Array.isArray(response.data)
+      ? response.data
       : (response.data.value || []);
+
+    // Mapear campos del API al formato esperado por el componente
+    actividades.value = datos.map((item: any) => ({
+      ...item,
+      nombre: item.nombre || item.subtarea,
+      direccionNombre: item.direccionNombre || item.direccionEncargada,
+      presupuesto: item.presupuesto || item.presupuesto2026Inicial || 0,
+      tipoPlan: item.tipoPlan || item.pacNoPac
+    }));
+
     console.log('Actividades cargadas:', actividades.value);
   } catch (error: any) {
     console.error('Error al cargar actividades:', error);
@@ -1240,7 +1363,6 @@ function abrirFormularioNueva() {
   pestañaActiva.value = 'general';
   formulario.value = getFormularioVacio();
   sincronizarPresupuestoTexto(formulario.value.presupuesto);
-  sincronizarCostoReforma2Texto(formulario.value.costoReforma2);
   mostrarFormulario.value = true;
 }
 
@@ -1263,9 +1385,9 @@ function abrirFormularioEdicion(actividad: Actividad) {
   actividadCopia.cuatrimestre = actividadCopia.cuatrimestre ? Number(actividadCopia.cuatrimestre) : null;
   actividadCopia.avanceGeneral = Number(actividadCopia.avanceGeneral || 0);
 
-  formulario.value = actividadCopia;
-  sincronizarPresupuestoTexto(actividadCopia.presupuesto);
-  sincronizarCostoReforma2Texto(actividadCopia.costoReforma2);
+  // Merge con valores por defecto para asegurar que todos los campos existan
+  formulario.value = { ...getFormularioVacio(), ...actividadCopia };
+  sincronizarPresupuestoTexto(formulario.value.presupuesto);
   mostrarFormulario.value = true;
 }
 
@@ -1286,12 +1408,9 @@ async function guardarActividad() {
 
     const direccionIdNormalizado = Number(formulario.value.direccionId) || null;
     const presupuestoNormalizado = normalizarMontoMoneda(presupuestoTexto.value);
-    const costoReforma2Normalizado = normalizarMontoMoneda(costoReforma2Texto.value);
 
     formulario.value.presupuesto = presupuestoNormalizado;
-    formulario.value.costoReforma2 = costoReforma2Normalizado;
     presupuestoTexto.value = formatearMontoMoneda(presupuestoNormalizado);
-    costoReforma2Texto.value = formatearMontoMoneda(costoReforma2Normalizado);
 
     // Normalizar tipos de datos
     const cuatrimestreNormalizado = formulario.value.cuatrimestre ? Number(formulario.value.cuatrimestre) : null;
@@ -1309,7 +1428,6 @@ async function guardarActividad() {
     const payload = {
       ...formularioBase,
       presupuesto: presupuestoNormalizado,
-      costoReforma2: costoReforma2Normalizado,
       cuatrimestre: cuatrimestreNormalizado,
       activo: estadoProcesoNumero(formulario.value.activo),
       direccionId: direccionIdNormalizado,
@@ -1760,6 +1878,16 @@ function cerrarSeguimientosDiarios() {
   nuevoAlerta.value = false;
 }
 
+function abrirPartidas(actividad: Actividad) {
+  actividadPartidas.value = actividad;
+  mostrarPartidas.value = true;
+}
+
+function cerrarPartidas() {
+  mostrarPartidas.value = false;
+  actividadPartidas.value = null;
+}
+
 async function guardarNuevoSeguimiento() {
   if (!actividadSeleccionada.value || !etapaActualSeguimiento.value) return;
   if (!nuevoComentario.value.trim()) {
@@ -1949,6 +2077,111 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
         cursor: pointer;
         outline: none;
         &:focus { border-color: #3b82f6; }
+      }
+    }
+  }
+
+  .config-panel {
+    margin-bottom: 1rem;
+    background: #f8fafc;
+    border: 1px solid #d9e2ea;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+
+    details {
+      &[open] {
+        summary {
+          border-bottom: 1px solid #d9e2ea;
+        }
+      }
+    }
+
+    .config-summary {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s;
+      list-style: none;
+
+      &:hover {
+        background-color: #eef2f7;
+      }
+
+      .config-icon {
+        font-size: 1.2rem;
+      }
+
+      .config-title {
+        font-weight: 600;
+        color: #334155;
+        flex: 1;
+      }
+
+      .config-status {
+        font-size: 0.85rem;
+        color: #64748b;
+      }
+    }
+
+    .config-content {
+      padding: 1.5rem;
+      background: white;
+    }
+
+    .config-item {
+      .config-label {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        cursor: pointer;
+        user-select: none;
+        margin-bottom: 1rem;
+
+        input[type="checkbox"] {
+          width: 20px;
+          height: 20px;
+          margin-top: 0.25rem;
+          cursor: pointer;
+          accent-color: #3b82f6;
+        }
+
+        .label-text {
+          font-weight: 500;
+          color: #1f2937;
+          padding-top: 0.25rem;
+        }
+      }
+
+      .config-description {
+        margin: 0 0 1rem 2.5rem;
+        font-size: 0.9rem;
+        color: #64748b;
+        line-height: 1.5;
+      }
+
+      .config-message {
+        margin-left: 2.5rem;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        animation: slideInDown 0.3s ease;
+
+        &.config-message-success {
+          background-color: #d4edda;
+          color: #155724;
+          border: 1px solid #c3e6cb;
+        }
+
+        &.config-message-error {
+          background-color: #f8d7da;
+          color: #721c24;
+          border: 1px solid #f5c6cb;
+        }
       }
     }
   }
@@ -2740,6 +2973,17 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
       max-height: 100px;
       opacity: 1;
       margin-top: 0.75rem;
+    }
+  }
+
+  @keyframes slideInDown {
+    from {
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
     }
   }
 }
@@ -4072,6 +4316,146 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
         }
       }
     }
+
+    .modal-partidas {
+      .modal-header-partidas {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #fcd34d;
+
+        h2 {
+          font-size: 1.15rem;
+          margin: 0;
+          color: #1e293b;
+        }
+
+        p {
+          font-size: 0.9rem;
+          color: #666;
+          margin: 0.3rem 0 0;
+        }
+
+        .btn-close-modal {
+          background: none;
+          border: none;
+          font-size: 1.5rem;
+          cursor: pointer;
+          color: #666;
+          padding: 0;
+          width: 1.8rem;
+          height: 1.8rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 4px;
+          transition: all 0.2s;
+
+          &:hover {
+            background-color: #fef3c7;
+            color: #b45309;
+          }
+        }
+      }
+
+      .partidas-content {
+        margin-bottom: 1rem;
+      }
+
+      .partidas-resumen {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.8rem;
+        background-color: #fffbeb;
+        border: 1px solid #fcd34d;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+
+        strong {
+          color: #92400e;
+        }
+      }
+
+      .partidas-tabla {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+
+        thead {
+          background-color: #fed7aa;
+          color: #92400e;
+        }
+
+        th {
+          padding: 0.6rem;
+          text-align: left;
+          font-weight: 600;
+          border: 1px solid #fcd34d;
+        }
+
+        td {
+          padding: 0.6rem;
+          border: 1px solid #fcd34d;
+          background-color: #fffbeb;
+          color: #b45309;
+
+          &.codigo-cell {
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.75rem;
+            font-weight: 600;
+          }
+
+          &.monto-cell {
+            text-align: right;
+            font-weight: 600;
+          }
+        }
+
+        tbody tr:hover {
+          background-color: #fef3c7;
+        }
+      }
+    }
+  }
+
+  .btn-partidas-admin {
+    background-color: #fef3c7;
+    border: 1px solid #fbbf24;
+    color: #92400e;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.2s;
+
+    &:hover {
+      background-color: #fcd34d;
+      border-color: #f59e0b;
+      transform: scale(1.02);
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+
+  .partidas-unica {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    background-color: #ecfdf3;
+    border: 1px solid #86efac;
+    border-radius: 4px;
+    color: #166534;
+    font-size: 0.85rem;
+    font-weight: 600;
   }
 }
 </style>

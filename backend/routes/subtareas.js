@@ -73,7 +73,7 @@ async function getScopeWithDirecciones(req) {
   if (scope.userId && Number.isInteger(scope.userId)) {
     try {
       const direcciones = await mysql.getDireccionesUsuario(scope.userId);
-      scope.direccionesAsignadas = direcciones.map((d) => d.id);
+      scope.direccionesAsignadas = direcciones.map((d) => d.nombre);
     } catch (err) {
       console.error('Error al cargar direcciones del usuario:', err);
       scope.direccionesAsignadas = [];

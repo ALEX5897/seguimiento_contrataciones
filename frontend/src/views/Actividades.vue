@@ -190,7 +190,16 @@
 
         <div class="actividad-meta-chips">
           <span class="actividad-meta-chip pac-nopac">{{ obtenerPacNoPacCabecera(actividad) }}</span>
+          <span class="actividad-meta-chip reforma">Reforma {{ actividad.numeroReforma || actividad.numero_reforma || '0' }}</span>
           <span v-if="procesoActivoSinPresupuesto(actividad)" class="actividad-meta-chip warning-budget">Sin presupuesto</span>
+          <button
+            v-if="actividad.tieneMultiplesPartidas"
+            type="button"
+            class="actividad-meta-chip partidas-btn"
+            @click.stop="togglePartidas(actividad.id)"
+          >
+            📋 {{ actividad.partidas?.length || 0 }} partidas
+          </button>
         </div>
 
         <div class="actividad-info">
@@ -204,6 +213,28 @@
             <span class="actividad-presupuesto-porcentaje">({{ porcentajePresupuesto(actividad).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}%)</span>
           </p>
           <p><strong>Período:</strong> {{ formatearFecha(periodoPrimeraUltimaActividad(actividad).desde) }} - {{ formatearFecha(periodoPrimeraUltimaActividad(actividad).hasta) }}</p>
+        </div>
+
+        <div v-if="actividad.tieneMultiplesPartidas && expandidosPartidas.has(actividad.id)" class="partidas-expandidas">
+          <div class="partidas-header">
+            <strong>Partidas incluidas en este contrato:</strong>
+          </div>
+          <div class="partidas-table">
+            <div class="partida-fila partida-header-row">
+              <div class="partida-col codigo">Código</div>
+              <div class="partida-col monto">Monto</div>
+              <div class="partida-col direccion">Dirección</div>
+            </div>
+            <div
+              v-for="partida in actividad.partidas"
+              :key="partida.id"
+              class="partida-fila"
+            >
+              <div class="partida-col codigo">{{ partida.codigoOlympo }}</div>
+              <div class="partida-col monto">${{ partida.presupuesto.toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
+              <div class="partida-col direccion">{{ partida.direccion }}</div>
+            </div>
+          </div>
         </div>
 
         <div class="actividad-stats">
@@ -379,8 +410,7 @@
                   <th>#</th>
                   <th>Fase</th>
                   <th>Etapa</th>
-                  <th v-if="verFechaLimite">Fecha límite</th>
-                  <th v-if="verFechaReforma">Fecha reforma</th>
+                  <th v-if="verFechaReforma">Fecha Planificada</th>
                   <th v-if="verFechaReforma3">Fecha reforma 3</th>
                   <th v-if="verFechaCompleto">Fecha de completo</th>
                   <th v-if="verEstadoEtapa">Estado</th>
@@ -400,7 +430,7 @@
                   <td v-if="verFechaLimite">{{ formatearFecha(etapa.fechaTentativa) }}</td>
                   <td v-if="verFechaReforma">
                     <input
-                      v-model="etapa.fechaReforma"
+                      v-model="etapa.fechaPlanificada"
                       type="date"
                       class="estado-select-detalle"
                       :disabled="Boolean(estadoGuardado) || !editarFechaReforma"
@@ -446,7 +476,7 @@
                   </td>
                   <td>
                     <span
-                      v-if="estadoNormalizado(etapa.estado) === 'completado' && etapa.fechaReal && (etapa.fechaReforma || etapa.fechaTentativa)"
+                      v-if="estadoNormalizado(etapa.estado) === 'completado' && etapa.fechaReal && (etapa.fechaPlanificada || etapa.fechaTentativa)"
                       :class="['cumplimiento-chip', diasRetrasoCompletado(etapa) === 0 ? 'a-tiempo' : 'con-retraso']"
                     >
                       {{ diasRetrasoCompletado(etapa) === 0 ? '✅ A tiempo' : `⚠️ ${diasRetrasoCompletado(etapa)} días tarde` }}
@@ -641,6 +671,7 @@ const ordenPresupuesto = ref('presupuesto-desc');
 const filtrosKpiActivos = ref<string[]>([]);
 const catalogoEtapas = ref<Record<number, any>>({});
 const resumenGeneralExpanded = ref(false);
+const expandidosPartidas = ref<Set<number>>(new Set());
 
 const actividadesVisiblesBase = computed(() =>
   actividades.value.filter((actividad: any) => esProcesoVisible(actividad))
@@ -875,31 +906,28 @@ const puedeEliminarSeguimientos = computed(() =>
   auth.isAdmin || auth.can('actividades', 'delete') || auth.can('admin_actividades', 'delete')
 );
 
-const verFechaLimite = computed(() => auth.isAdmin);
+// ID de subtarea para los endpoints API (usa subtareaIdOriginalResuelto si está disponible)
+const subtareaIdActiva = computed(() =>
+  actividadSeleccionada.value?.subtareaIdOriginalResuelto ||
+  actividadSeleccionada.value?.subtareaIdOriginal ||
+  actividadSeleccionada.value?.id
+);
 
-const verFechaReforma = computed(() => {
-  if (auth.isAdmin) return true;
-  const campos = auth.permisos?.campos || {};
-  return campos.fecha_reforma?.ver !== false;
-});
+const verFechaLimite = computed(() => false); // Oculta
+
+const verFechaReforma = computed(() => true); // Siempre visible - fecha base planificada para comparación
+
+const puedeEditarFechaPlani = ref(false); // Cargado desde configuración del servidor
 
 const editarFechaReforma = computed(() => {
   if (auth.isAdmin) return true;
-  const campos = auth.permisos?.campos || {};
-  return campos.fecha_reforma?.editar !== false;
+  if (auth.role === 'direccion') return puedeEditarFechaPlani.value;
+  return false;
 });
 
-const verFechaReforma3 = computed(() => {
-  if (auth.isAdmin) return true;
-  const campos = auth.permisos?.campos || {};
-  return campos.fecha_reforma_3?.ver !== false;
-});
+const verFechaReforma3 = computed(() => false); // Siempre oculta
 
-const editarFechaReforma3 = computed(() => {
-  if (auth.isAdmin) return true;
-  const campos = auth.permisos?.campos || {};
-  return campos.fecha_reforma_3?.editar !== false;
-});
+const editarFechaReforma3 = computed(() => false); // Siempre no editable
 
 const verFechaCompleto = computed(() => {
   if (auth.isAdmin) return true;
@@ -1008,6 +1036,17 @@ onMounted(async () => {
     } catch (err) {
       console.warn('⚠️ No se pudo cargar el catálogo de etapas');
       catalogoEtapas.value = {};
+    }
+
+    // Cargar configuración de edición de fecha planificada
+    try {
+      const configResponse = await api.get('/configuracion/editar_fecha_planificada_direcciones');
+      const valor = configResponse.data?.valor;
+      puedeEditarFechaPlani.value = valor === true || valor === '1' || valor === 1;
+      console.log('⚙️  Editar fecha planificada habilitado:', puedeEditarFechaPlani.value);
+    } catch (err) {
+      console.warn('⚠️  No se pudo cargar configuración de edición de fecha planificada');
+      puedeEditarFechaPlani.value = false;
     }
 
     actividades.value = await actividadesService.getAll();
@@ -1127,6 +1166,14 @@ function toggleFiltroKpi(filtro: string) {
 
   // Agregar el nuevo filtro
   filtrosKpiActivos.value.push(filtro);
+}
+
+function togglePartidas(actividadId: number) {
+  if (expandidosPartidas.value.has(actividadId)) {
+    expandidosPartidas.value.delete(actividadId);
+  } else {
+    expandidosPartidas.value.add(actividadId);
+  }
 }
 
 function obtenerDireccion(actividad: any) {
@@ -1295,7 +1342,7 @@ function getEtapas(actividad: any) {
   return etapas.map((etapa: any) => ({
     ...etapa,
     fechaTentativa: normalizarFechaInput(etapa?.fechaTentativa),
-    fechaReforma: normalizarFechaInput(etapa?.fechaReforma),
+    fechaPlanificada: normalizarFechaInput(etapa?.fechaPlanificada),
     fechaReforma3: normalizarFechaInput(etapa?.fechaReforma3),
     fechaPlanificada: normalizarFechaInput(etapa?.fechaPlanificada),
     fechaReal: normalizarFechaInput(etapa?.fechaReal),
@@ -1663,15 +1710,34 @@ async function abrirDetalleActividad(actividad: any, actualizarRuta = true) {
   }
 
   try {
-    const response = await api.get(`/subtareas/${actividad.id}/etapas`);
-    const etapasRecargadas = Array.isArray(response.data)
-      ? response.data
-      : (response.data?.value || []);
+    // Intentar usar las etapas que ya vienen del backend
+    let etapasRecargadas = actividad.etapas || actividad.seguimientoEtapas || [];
+
+    // Si no hay etapas en la actividad, intentar obtenerlas del API
+    if (etapasRecargadas.length === 0 && actividad.subtareaIdOriginal) {
+      try {
+        const response = await api.get(`/subtareas/${actividad.subtareaIdOriginal}/etapas`);
+        etapasRecargadas = Array.isArray(response.data)
+          ? response.data
+          : (response.data?.value || []);
+      } catch (apiError) {
+        console.warn('No se pudo obtener etapas del API, usando datos del backend:', apiError.message);
+      }
+    }
+
+    // Normalizar todas las fechas de las etapas al formato yyyy-MM-dd
+    etapasRecargadas.forEach((etapa: any) => {
+      if (etapa?.fechaTentativa) etapa.fechaTentativa = normalizarFechaInput(etapa.fechaTentativa);
+      if (etapa?.fechaPlanificada) etapa.fechaPlanificada = normalizarFechaInput(etapa.fechaPlanificada);
+      if (etapa?.fechaReforma3) etapa.fechaReforma3 = normalizarFechaInput(etapa.fechaReforma3);
+      if (etapa?.fechaPlanificada) etapa.fechaPlanificada = normalizarFechaInput(etapa.fechaPlanificada);
+      if (etapa?.fechaReal) etapa.fechaReal = normalizarFechaInput(etapa.fechaReal);
+    });
 
     etapasActividad.value = etapasRecargadas.filter((etapa: any) =>
-      etapa?.fechaPlanificada || etapa?.fechaTentativa
+      etapa?.fechaPlanificada || etapa?.fechaTentativa || true // Mostrar todas las etapas
     );
-    console.log('📝 Etapas cargadas para actividad', actividadId, ':', etapasActividad.value.length, 'etapas (filtradas)');
+    console.log('📝 Etapas cargadas para actividad', actividadId, ':', etapasActividad.value.length, 'etapas');
     if (etapasActividad.value.length > 0) {
       console.log('   IDs de etapas:', etapasActividad.value.map((e: any) => e.etapaId || e.id).slice(0, 5).join(', '));
     }
@@ -1791,7 +1857,7 @@ function construirPayloadEtapas() {
       etapaId: obtenerEtapaId(etapa),
       aplica: Boolean(Number(etapa?.aplica ?? 1)),
       fechaTentativa: fechaTentativa,
-      fechaReforma: normalizarFechaInput(etapa?.fechaReforma) || null,
+      fechaPlanificada: normalizarFechaInput(etapa?.fechaPlanificada) || null,
       fechaReforma3: normalizarFechaInput(etapa?.fechaReforma3) || null,
       estado: etapa?.estado || 'pendiente',
       fechaReal: fechaReal || null,
@@ -1823,7 +1889,7 @@ function onFechaCompletadoChange(etapa: any) {
 }
 
 function onFechaReformaChange(etapa: any) {
-  etapa.fechaReforma = normalizarFechaInput(etapa?.fechaReforma);
+  etapa.fechaPlanificada = normalizarFechaInput(etapa?.fechaPlanificada);
   guardarEstadoEtapa();
 }
 
@@ -1870,7 +1936,7 @@ function onFechaReforma3Change(etapa: any) {
 
     try {
       try {
-        const response = await api.get(`/subtareas/${actividadSeleccionada.value.id}/seguimientos-resumen`, {
+        const response = await api.get(`/subtareas/${subtareaIdActiva.value}/seguimientos-resumen`, {
           params: { dias: 3650 }
         });
         const resumen = Array.isArray(response.data) ? response.data : [];
@@ -1891,7 +1957,7 @@ function onFechaReforma3Change(etapa: any) {
             etapasConComentariosSinFecha.map(async (etapaId: number) => {
               try {
                 const detalle = await api.get(
-                  `/subtareas/${actividadSeleccionada.value.id}/etapas/${etapaId}/seguimientos`,
+                  `/subtareas/${subtareaIdActiva.value}/etapas/${etapaId}/seguimientos`,
                   { params: { dias: 3650 } }
                 );
                 const items = normalizarSeguimientos(detalle.data);
@@ -1907,7 +1973,7 @@ function onFechaReforma3Change(etapa: any) {
           etapaIds.map(async (etapaId: number) => {
             try {
               const response = await api.get(
-                `/subtareas/${actividadSeleccionada.value.id}/etapas/${etapaId}/seguimientos`,
+                `/subtareas/${subtareaId}/etapas/${etapaId}/seguimientos`,
                 { params: { dias: 3650 } }
               );
               const items = normalizarSeguimientos(response.data);
@@ -1935,7 +2001,7 @@ async function guardarEstadoEtapa() {
   if (!actividadSeleccionada.value?.id) return;
   estadoGuardado.value = 'guardando';
   try {
-    await api.put(`/subtareas/${actividadSeleccionada.value.id}/etapas`, {
+    await api.put(`/subtareas/${subtareaIdActiva.value}/etapas`, {
       etapas: construirPayloadEtapas()
     });
 
@@ -1981,7 +2047,7 @@ async function cargarSeguimientosEtapa(etapaId: number) {
   errorSeguimiento.value = '';
   mensajeSeguimiento.value = null;
   try {
-    const response = await api.get(`/subtareas/${actividadSeleccionada.value.id}/etapas/${etapaId}/seguimientos`, {
+    const response = await api.get(`/subtareas/${subtareaIdActiva.value}/etapas/${etapaId}/seguimientos`, {
       params: { dias: 3650 }
     });
     const items = aplicarSeguimientosEtapa(etapaId, response.data);
@@ -2041,7 +2107,7 @@ async function eliminarSeguimiento(item: any) {
   errorSeguimiento.value = '';
   mensajeSeguimiento.value = null;
   try {
-    const response = await api.delete(`/subtareas/${actividadSeleccionada.value.id}/etapas/${etapaId}/seguimientos/${seguimientoId}`);
+    const response = await api.delete(`/subtareas/${subtareaIdActiva.value}/etapas/${etapaId}/seguimientos/${seguimientoId}`);
     aplicarSeguimientosEtapa(etapaId, response.data);
     mensajeSeguimiento.value = { texto: 'Comentario eliminado correctamente.', tipo: 'success' };
   } catch (error) {
@@ -2070,7 +2136,7 @@ async function guardarEstadoProceso(activo: 0 | 1 | 2) {
   mensajeRiesgoProceso.value = null;
 
   try {
-    const response = await api.put(`/subtareas/${actividadSeleccionada.value.id}`, { activo });
+    const response = await api.put(`/subtareas/${subtareaIdActiva.value}`, { activo });
     const actividadActualizada = response.data || {};
     const estadoActualizado = obtenerEstadoProcesoValor({ activo: actividadActualizada?.activo ?? activo });
 
@@ -2119,7 +2185,7 @@ async function guardarRiesgoProceso() {
   mensajeRiesgoProceso.value = null;
 
   try {
-    const response = await api.put(`/subtareas/${actividadSeleccionada.value.id}`, {
+    const response = await api.put(`/subtareas/${subtareaIdActiva.value}`, {
       procesoEnRiesgo: procesoEnRiesgo.value,
       riesgoComentario: procesoEnRiesgo.value ? comentario : null
     });
@@ -3212,6 +3278,87 @@ h1 {
   background: #fff7ed;
   border-color: #fdba74;
   color: #c2410c;
+}
+
+.actividad-meta-chip.reforma {
+  background: #e0e7ff;
+  border-color: #6366f1;
+  color: #3730a3;
+  font-weight: 600;
+}
+
+.actividad-meta-chip.partidas-btn {
+  background: #fef3c7;
+  border-color: #fbbf24;
+  color: #92400e;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+}
+
+.actividad-meta-chip.partidas-btn:hover {
+  background: #fcd34d;
+  border-color: #f59e0b;
+  transform: scale(1.02);
+}
+
+.partidas-expandidas {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 6px;
+}
+
+.partidas-header {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 0.6rem;
+}
+
+.partidas-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.partida-fila {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1.2fr;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.partida-header-row {
+  background: #fed7aa;
+  font-weight: 600;
+  color: #92400e;
+  border-radius: 4px;
+  padding: 0.5rem 0.5rem;
+}
+
+.partida-fila:not(.partida-header-row) {
+  background: #fffbeb;
+  border-bottom: 1px solid #fcd34d;
+  color: #b45309;
+}
+
+.partida-col {
+  word-break: break-word;
+}
+
+.partida-col.codigo {
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.partida-col.monto {
+  text-align: right;
+  font-weight: 600;
 }
 
 .actividad-stats {

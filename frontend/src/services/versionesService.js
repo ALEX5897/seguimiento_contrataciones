@@ -78,6 +78,12 @@ export async function reactivarVersion(versionId, usuarioActivacion) {
   return response.data;
 }
 
+// Copiar seguimiento de reforma anterior
+export async function copiarSeguimiento(versionId) {
+  const response = await api.post(`/versiones/${versionId}/copiar-seguimiento`);
+  return response.data;
+}
+
 export default {
   getAllVersiones,
   getVersionById,
@@ -88,5 +94,7 @@ export default {
   compararVersiones,
   deleteVersion,
   duplicarProcesos,
-  cargarExcelVersion
+  cargarExcelVersion,
+  reactivarVersion,
+  copiarSeguimiento
 };

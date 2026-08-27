@@ -13,6 +13,7 @@ import reportesRouter from './routes/reportes.js';
 import permisosRouter from './routes/permisos.js';
 import auditoriaRouter from './routes/auditoria.js';
 import chatIaRouter from './routes/chatIA.js';
+import configuracionRouter from './routes/configuracion.js';
 import { ejecutarNotificacionesProgramadas } from './services/notificaciones.js';
 import { initMySQL, normalizePayloadEncoding } from './data/mysql.js';
 import { requireAuth } from './middleware/auth.js';
@@ -125,6 +126,7 @@ app.use('/api/reportes', reportesRouter);
 app.use('/api/permisos', permisosRouter);
 app.use('/api/auditoria', auditoriaRouter);
 app.use('/api/chat-ia', chatIaRouter);
+app.use('/api/configuracion', configuracionRouter);
 
 // Ruta de salud
 app.get('/api/health', (req, res) => {

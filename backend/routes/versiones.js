@@ -250,6 +250,31 @@ router.put('/:id/reactivar', async (req, res) => {
   }
 });
 
+/**
+ * POST /:id/copiar-seguimiento - Copiar seguimiento de reforma anterior por codigo_olympo
+ */
+router.post('/:id/copiar-seguimiento', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const version = await mysql.getVersionById(id);
+    if (!version) {
+      return res.status(404).json({ error: 'Versión no encontrada' });
+    }
+
+    const resultado = await mysql.copiarSeguimientoDeReformaAnterior(parseInt(id));
+
+    res.json({
+      message: resultado.mensaje,
+      copiados: resultado.copiados,
+      version: { id: version.id, nombre: version.nombre }
+    });
+  } catch (error) {
+    console.error('Error al copiar seguimiento:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Función auxiliar para calcular diferencias entre versiones
 function calcularDiferencias(actividades1, actividades2) {
   const map1 = new Map(actividades1.map(a => [a.subtareaOrigenId || a.id, a]));
