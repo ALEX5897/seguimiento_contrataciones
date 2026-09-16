@@ -1,0 +1,343 @@
+{
+  "version": "1.0",
+  "fecha_creacion": "2026-08-05",
+  "descripcion": "Catálogo de clasificación de etapas de procesos de contratación",
+  "clasificaciones": {
+    "preparatoria": {
+      "nombre": "Fase Preparatoria",
+      "descripcion": "Etapas iniciales de preparación de la solicitud de contratación",
+      "icono": "🔵",
+      "etapas": [
+        {
+          "id": 1,
+          "nombre": "SOLICTUD DE CERTIFICACION PROGRAMATICA",
+          "orden": 1
+        },
+        {
+          "id": 2,
+          "nombre": "CERTIFICACION POA PAI",
+          "orden": 2
+        },
+        {
+          "id": 10,
+          "nombre": "SOLICITUD DE CATE",
+          "orden": 3
+        },
+        {
+          "id": 11,
+          "nombre": "CATE",
+          "orden": 4
+        },
+        {
+          "id": 3,
+          "nombre": "INFORME TECNICO",
+          "orden": 5
+        },
+        {
+          "id": 4,
+          "nombre": "INFORME DE NECESIDAD",
+          "orden": 6
+        },
+        {
+          "id": 8,
+          "nombre": "SOLICITUD DE AUTORIZACION DE INFORME DE NECESIDAD",
+          "orden": 7
+        },
+        {
+          "id": 9,
+          "nombre": "AUTORIZACION DEL INFORME",
+          "orden": 8
+        },
+        {
+          "id": 5,
+          "nombre": "TERMINOS DE REFERENCIA - ESPECIFICACIONES TECNICAS",
+          "orden": 9
+        }
+      ]
+    },
+    "precontractual": {
+      "nombre": "Fase Precontractual",
+      "descripcion": "Etapas del proceso de licitación, publicación y adjudicación",
+      "icono": "🟢",
+      "etapas": [
+        {
+          "id": 12,
+          "nombre": "SOLICITUD DE PUBLICACION",
+          "orden": 1
+        },
+        {
+          "id": 13,
+          "nombre": "PUBLICACION PROFORMAS",
+          "orden": 2
+        },
+        {
+          "id": 59,
+          "nombre": "ENTREGA DE PROFORMAS",
+          "orden": 3
+        },
+        {
+          "id": 14,
+          "nombre": "RECEPCION PROFORMAS",
+          "orden": 4
+        },
+        {
+          "id": 15,
+          "nombre": "ESTUDIO DE MERCADO",
+          "orden": 5
+        },
+        {
+          "id": 16,
+          "nombre": "SOLICITUD DE CERTIFICACION PRESUPUESTARIA",
+          "orden": 6
+        },
+        {
+          "id": 17,
+          "nombre": "CERTIFICACION PRESUESTARIA",
+          "orden": 7
+        },
+        {
+          "id": 18,
+          "nombre": "SOLICITUD DE CERTICACION PAC",
+          "orden": 8
+        },
+        {
+          "id": 19,
+          "nombre": "CERTIFICACION PAC",
+          "orden": 9
+        },
+        {
+          "id": 34,
+          "nombre": "SOLICTUD DE AUTORIZACION DE INICIO",
+          "orden": 10
+        },
+        {
+          "id": 35,
+          "nombre": "AUTORIZACION INICIO",
+          "orden": 11
+        },
+        {
+          "id": 36,
+          "nombre": "ELABORACION DE PLIEGOS",
+          "orden": 12
+        },
+        {
+          "id": 37,
+          "nombre": "SOLICITUD DE RESOLUCION DE INICO",
+          "orden": 13
+        },
+        {
+          "id": 38,
+          "nombre": "RESOLUCION DE INICIO",
+          "orden": 14
+        },
+        {
+          "id": 40,
+          "nombre": "FECHA DE PUBLICACION EN EL PORTAL - SUSCRIPCION DE INFIMA CUANTIA",
+          "orden": 15
+        },
+        {
+          "id": 41,
+          "nombre": "PREGUNTAS",
+          "orden": 16
+        },
+        {
+          "id": 42,
+          "nombre": "RESPUESTA",
+          "orden": 17
+        },
+        {
+          "id": 43,
+          "nombre": "ENTREA DE OFERTA",
+          "orden": 18
+        },
+        {
+          "id": 44,
+          "nombre": "REVISION PARA CONVALIDACION",
+          "orden": 19
+        },
+        {
+          "id": 45,
+          "nombre": "SOLICITUD DE CONVALIDACION",
+          "orden": 20
+        },
+        {
+          "id": 46,
+          "nombre": "ENTREGA DE CONVALIDACION",
+          "orden": 21
+        },
+        {
+          "id": 47,
+          "nombre": "CALIFICACION",
+          "orden": 22
+        },
+        {
+          "id": 49,
+          "nombre": "ADJUDICACION",
+          "orden": 23
+        }
+      ]
+    },
+    "contractual": {
+      "nombre": "Fase Contractual",
+      "descripcion": "Etapa de formalización del contrato",
+      "icono": "🔴",
+      "etapas": [
+        {
+          "id": 50,
+          "nombre": "CONTRATO",
+          "orden": 1
+        }
+      ]
+    },
+    "sin_clasificar": {
+      "nombre": "Sin Clasificar",
+      "descripcion": "Etapas que requieren clasificación adicional",
+      "icono": "⚪",
+      "etapas": [
+        {
+          "id": 6,
+          "nombre": "MESA TECNICA"
+        },
+        {
+          "id": 7,
+          "nombre": "CORRECCION"
+        },
+        {
+          "id": 20,
+          "nombre": "ELABORACION DE PLIEGOS PARA DIRECTORIO"
+        },
+        {
+          "id": 21,
+          "nombre": "CONVOCATORIA DEL DIRECTORIO"
+        },
+        {
+          "id": 22,
+          "nombre": "DIRECTORIO"
+        },
+        {
+          "id": 23,
+          "nombre": "RESOLUCION DEL DIRECTORIO"
+        },
+        {
+          "id": 24,
+          "nombre": "SOLICITUD DE PUBLICACION VPN"
+        },
+        {
+          "id": 25,
+          "nombre": "RESULTADOS DE VPN"
+        },
+        {
+          "id": 26,
+          "nombre": "SOLICITUD DE AUTORIZACION SERCOP"
+        },
+        {
+          "id": 27,
+          "nombre": "AUTORIZACION SERCOP"
+        },
+        {
+          "id": 28,
+          "nombre": "ELABORACION DE BASES INTERNACIONALES PLIEGO"
+        },
+        {
+          "id": 29,
+          "nombre": "SOLICTUD DE AUTORIZACION QUITO HONESTO"
+        },
+        {
+          "id": 30,
+          "nombre": "INFORME QUITO HONESTO"
+        },
+        {
+          "id": 31,
+          "nombre": "SOLICITUD DE AUTORIZACION MINTEL"
+        },
+        {
+          "id": 32,
+          "nombre": "AUTORIZACION MINTEL"
+        },
+        {
+          "id": 33,
+          "nombre": "REGISTRO DE Información ERP"
+        },
+        {
+          "id": 39,
+          "nombre": "CARGA EN EL ERP DE RESOLUCION DE INICIO"
+        },
+        {
+          "id": 48,
+          "nombre": "INFORME DE RECOMENDACION - PUJA"
+        },
+        {
+          "id": 51,
+          "nombre": "CARTA DE INTENCIÓN"
+        },
+        {
+          "id": 52,
+          "nombre": "VALORIZACIÓN"
+        },
+        {
+          "id": 53,
+          "nombre": "APROBACIÓN"
+        },
+        {
+          "id": 54,
+          "nombre": "INFORME FINANCIERO"
+        },
+        {
+          "id": 55,
+          "nombre": "INFORME JURÍDICO"
+        },
+        {
+          "id": 56,
+          "nombre": "BORRADOR DE ACUERDO COMERCIAL"
+        },
+        {
+          "id": 57,
+          "nombre": "FIRMA DEL ACUERDO COMERCIAL"
+        },
+        {
+          "id": 58,
+          "nombre": "SOLICITUD DE REFORMA PAC"
+        },
+        {
+          "id": 60,
+          "nombre": "RESOLUCION VPN"
+        },
+        {
+          "id": 61,
+          "nombre": "SUSCRIPCION DE INFIMA CUANTIA"
+        },
+        {
+          "id": 62,
+          "nombre": "Anexo"
+        },
+        {
+          "id": 63,
+          "nombre": "Informe de recomendacion"
+        },
+        {
+          "id": 64,
+          "nombre": "VERIFICACION DE CATALOGO"
+        },
+        {
+          "id": 65,
+          "nombre": "SOLICITUD DE CATALOGO"
+        },
+        {
+          "id": 66,
+          "nombre": "Fecha de Publicación"
+        }
+      ]
+    }
+  },
+  "resumen": {
+    "total_etapas": 66,
+    "clasificadas": 33,
+    "sin_clasificar": 33,
+    "por_fase": {
+      "preparatoria": 9,
+      "precontractual": 23,
+      "contractual": 1,
+      "sin_clasificar": 33
+    }
+  }
+}

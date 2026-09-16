@@ -1,6 +1,37 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config/constants';
 
+const MOJIBAKE_REPLACEMENTS = new Map<string, string>([
+  ['Ã¡', 'á'], ['Ã©', 'é'], ['Ã­', 'í'], ['Ã³', 'ó'], ['Ãº', 'ú'], ['Ã±', 'ñ'],
+  ['Ã', 'Á'], ['Ã‰', 'É'], ['Ã', 'Í'], ['Ã“', 'Ó'], ['Ãš', 'Ú'], ['Ã‘', 'Ñ'],
+  ['Â¿', '¿'], ['Â¡', '¡'], ['Âº', 'º'], ['Âª', 'ª'], ['ÔÇô', '–'], ['ÔÇÖ', '’'], ['ÔÇ£', '“'], ['ÔÇ', '”']
+]);
+
+function normalizeApiText(value: string): string {
+  let text = String(value ?? '').normalize('NFC');
+
+  for (const [bad, good] of MOJIBAKE_REPLACEMENTS.entries()) {
+    text = text.split(bad).join(good);
+  }
+
+  return text.replace(/Â/g, '');
+}
+
+function normalizeApiPayload<T>(value: T): T {
+  if (value === null || value === undefined) return value;
+  if (typeof value === 'string') return normalizeApiText(value) as T;
+  if (Array.isArray(value)) return value.map((item) => normalizeApiPayload(item)) as T;
+  if (value instanceof Blob || value instanceof ArrayBuffer || ArrayBuffer.isView(value as object)) return value;
+
+  if (typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, normalizeApiPayload(item)])
+    ) as T;
+  }
+
+  return value;
+}
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -17,11 +48,15 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor para manejo de errores global
+// Interceptor para normalización y manejo de errores global
 api.interceptors.response.use(
-  response => response,
+  response => {
+    if (response?.data !== undefined) {
+      response.data = normalizeApiPayload(response.data);
+    }
+    return response;
+  },
   error => {
-    console.error('API Error:', error.response?.data || error.message);
     if (error?.response?.status === 401) {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user');
@@ -93,6 +128,24 @@ export interface ResumenDiarioSubtareas {
   totalSubtareas: number;
   subtareasSegundaReforma: number;
   fecha: string;
+}
+
+export interface DashboardWeeklyPoint {
+  key: string;
+  label: string;
+  year: number;
+  week: number;
+  start: string;
+  end: string;
+  order: number;
+  etapasProgramadas: number;
+  alertas: number;
+}
+
+export interface DashboardWeeklySummary {
+  series: DashboardWeeklyPoint[];
+  mejorSemanaCumplimiento: DashboardWeeklyPoint | null;
+  peorSemanaAlertas: DashboardWeeklyPoint | null;
 }
 
 export interface Subtarea {
@@ -200,6 +253,217 @@ export interface ReporteResumenResponse {
   resumenPorDireccion: ReporteDireccion[];
 }
 
+export interface PermisosAcciones {
+  read: boolean;
+  create: boolean;
+  update: boolean;
+  delete: boolean;
+}
+
+export interface PermisosSesion {
+  role: string;
+  modulos: Record<string, PermisosAcciones>;
+  menu: Record<string, boolean>;
+  campos: Record<string, { ver: boolean; editar: boolean }>;
+}
+
+export interface PermisoModuloCatalogo {
+  clave: string;
+  nombre: string;
+  descripcion: string | null;
+  activo: boolean;
+  orden: number;
+  permisos: PermisosAcciones;
+}
+
+export interface PermisoMenuCatalogo {
+  clave: string;
+  nombre: string;
+  ruta: string;
+  activo: boolean;
+  orden: number;
+  puedeIngresar: boolean;
+}
+
+export interface PermisoCampoEtapa {
+  clave: string;
+  nombre: string;
+  orden: number;
+  puedeVer: boolean;
+  puedeEditar: boolean;
+}
+
+export interface PermisosRolDetalle {
+  role: string;
+  modulos: PermisoModuloCatalogo[];
+  menu: PermisoMenuCatalogo[];
+  campos: PermisoCampoEtapa[];
+}
+
+export interface AuditoriaEvento {
+  id: number;
+  userId: number | null;
+  username: string | null;
+  role: string | null;
+  direccionNombre: string | null;
+  accion: string;
+  modulo: string | null;
+  recurso: string | null;
+  metodo: string;
+  ruta: string;
+  statusCode: number;
+  exito: boolean;
+  ip: string | null;
+  userAgent: string | null;
+  errorMensaje: string | null;
+  fecha: string;
+}
+
+export interface AuditoriaListadoResponse {
+  items: AuditoriaEvento[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface AuditoriaSesionActiva {
+  userId: number;
+  username: string | null;
+  nombre: string | null;
+  role: string | null;
+  direccionNombre: string | null;
+  ultimoLogin: string;
+  ip: string | null;
+  userAgent: string | null;
+  usuarioActivo: boolean;
+}
+
+export interface AuditoriaInicioSesion {
+  id: number;
+  userId: number | null;
+  username: string | null;
+  nombre: string | null;
+  role: string | null;
+  direccionNombre: string | null;
+  exito: boolean;
+  statusCode: number;
+  ip: string | null;
+  userAgent: string | null;
+  errorMensaje: string | null;
+  fecha: string;
+}
+
+export interface AuditoriaSesionesResumenResponse {
+  activeWindowMinutes: number;
+  generatedAt: string;
+  activos: AuditoriaSesionActiva[];
+  ultimosInicios: AuditoriaInicioSesion[];
+}
+
+export interface NotificacionHistorialItem {
+  id: number;
+  tipo: string;
+  destinatario: string;
+  asunto: string;
+  mensaje: string;
+  fecha: string;
+  leida: boolean;
+  enviada: boolean;
+}
+
+export interface NotificacionEmailConfig {
+  enabled: boolean;
+  fromName: string;
+  fromEmail: string;
+  serverType: string;
+  smtpHost: string;
+  smtpPort: number;
+  smtpSecure: boolean;
+  requireAuth: boolean;
+  smtpUser: string;
+  smtpPassword: string;
+  smtpPasswordConfigured?: boolean;
+  supervisorEmails: string;
+  sendTime: string;
+  timezone: string;
+  notifyDelayedStages: boolean;
+  delayedStageDays: number;
+  subjectTemplate: string;
+  htmlTemplate: string;
+  footerText: string;
+  lastExecutionAt?: string | null;
+  lastExecutionDate?: string | null;
+}
+
+export interface NotificacionExecutionStatus {
+  jobId: string;
+  status: 'running' | 'completed' | 'failed';
+  percent: number;
+  message: string;
+  phase?: string;
+  startedAt?: string;
+  updatedAt?: string;
+  executedAt?: string;
+  force?: boolean;
+  skipped?: boolean;
+  alreadyRunning?: boolean;
+  processedRecipients?: number;
+  totalRecipients?: number;
+  sent?: number;
+  totalStages?: number;
+  error?: string | null;
+  delayedStages?: {
+    success?: boolean;
+    skipped?: boolean;
+    message?: string;
+    sent: number;
+    totalRecipients: number;
+    totalStages: number;
+    thresholdDays: number;
+  } | null;
+}
+
+export interface DireccionCatalogItem {
+  id: number;
+  nombre: string;
+}
+
+export interface ChatIaConfig {
+  enabled: boolean;
+  provider: string;
+  model: string;
+  maxInputChars: number;
+  maxHistory: number;
+  grounded?: boolean;
+  configured: boolean;
+  fallbackActive?: boolean;
+}
+
+export interface ChatIaMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+export interface ChatIaResponse {
+  response: string;
+  provider: string;
+  model: string;
+  intent?: string | null;
+  intentFlags?: {
+    wantsList?: boolean;
+    wantsCount?: boolean;
+    asksDelayed?: boolean;
+    asksBudget?: boolean;
+  } | null;
+  registros_usados?: number | null;
+  warning?: string;
+  needsClarification?: boolean;
+  grounded?: boolean;
+  sqlEjecutado?: string;
+  sqlParams?: unknown[];
+}
+
 export const tareasService = {
   async getAll(filtros = {}) {
     const response = await api.get('/tareas', { params: filtros });
@@ -274,6 +538,20 @@ export const subtareasService = {
     return response.data as ResumenDiarioSubtareas;
   },
 
+  async getResumenSemanal(params: {
+    area?: string;
+    responsable?: string;
+    busqueda?: string;
+    direccion?: string;
+    tipoPlan?: string;
+    cuatrimestre?: string;
+    tipoContratacion?: string;
+    monto?: string;
+  } = {}) {
+    const response = await api.get('/subtareas/resumen/semanal', { params });
+    return response.data as DashboardWeeklySummary;
+  },
+
   async updateEtapa(codigoOlympo: string, etapaId: number, payload: {
     estado?: string;
     fechaPlanificada?: string | null;
@@ -295,12 +573,54 @@ export const estadosService = {
 export const notificacionesService = {
   async getAll(filtros = {}) {
     const response = await api.get('/notificaciones', { params: filtros });
-    return response.data;
+    return response.data as NotificacionHistorialItem[];
+  },
+
+  async getConfiguracion() {
+    const response = await api.get('/notificaciones/configuracion');
+    return response.data as NotificacionEmailConfig;
+  },
+
+  async guardarConfiguracion(payload: NotificacionEmailConfig) {
+    const response = await api.put('/notificaciones/configuracion', payload);
+    return response.data as NotificacionEmailConfig;
+  },
+
+  async enviarPrueba(destinatario: string) {
+    const response = await api.post('/notificaciones/probar', { destinatario });
+    return response.data as { success: boolean; sent: boolean; message?: string; messageId?: string };
+  },
+
+  async ejecutarAhora() {
+    const response = await api.post('/notificaciones/ejecutar', {}, { timeout: 15000 });
+    return response.data as NotificacionExecutionStatus;
+  },
+
+  async getEstadoEjecucion(jobId: string) {
+    const response = await api.get(`/notificaciones/ejecuciones/${encodeURIComponent(jobId)}`, { timeout: 15000 });
+    return response.data as NotificacionExecutionStatus;
   },
 
   async marcarLeida(id: number) {
     const response = await api.patch(`/notificaciones/${id}/leer`);
     return response.data;
+  }
+};
+
+export const chatIaService = {
+  async getConfig() {
+    const response = await api.get('/chat-ia/config');
+    return response.data as ChatIaConfig;
+  },
+
+  async getDirecciones() {
+    const response = await api.get('/chat-ia/direcciones');
+    return response.data as DireccionCatalogItem[];
+  },
+
+  async sendMessage(message: string, history: ChatIaMessage[], direccionFiltro: string | null = null) {
+    const response = await api.post('/chat-ia/message', { message, history, direccionFiltro }, { timeout: 150000 });
+    return response.data as ChatIaResponse;
   }
 };
 
@@ -323,6 +643,60 @@ export const authService = {
   async me() {
     const response = await api.get('/auth/me');
     return response.data;
+  },
+
+  async logout() {
+    const response = await api.post('/auth/logout');
+    return response.data;
+  }
+};
+
+export const permisosService = {
+  async getAll() {
+    const response = await api.get('/permisos');
+    return response.data as { roles: string[]; permisos: PermisosRolDetalle[] };
+  },
+
+  async createRole(payload: { role: string; baseRole?: string; copiarPermisos?: boolean }) {
+    const response = await api.post('/permisos/roles', payload);
+    return response.data as PermisosRolDetalle;
+  },
+
+  async deleteRole(role: string) {
+    const response = await api.delete(`/permisos/roles/${encodeURIComponent(role)}`);
+    return response.data as { success: boolean; role: string };
+  },
+
+  async getByRole(role: string) {
+    const response = await api.get(`/permisos/rol/${encodeURIComponent(role)}`);
+    return response.data as PermisosRolDetalle;
+  },
+
+  async updateByRole(role: string, payload: { modulos: Array<{ clave: string; permisos: PermisosAcciones }>; menu: Array<{ clave: string; puedeIngresar: boolean }> }) {
+    const response = await api.put(`/permisos/rol/${encodeURIComponent(role)}`, payload);
+    return response.data as PermisosRolDetalle;
+  },
+
+  async getMine() {
+    const response = await api.get('/permisos/mis-permisos');
+    return response.data as PermisosSesion;
+  }
+};
+
+export const auditoriaService = {
+  async getAll(params: Record<string, string | number | boolean | undefined>) {
+    const response = await api.get('/auditoria', { params });
+    return response.data as AuditoriaListadoResponse;
+  },
+
+  async getSesionesResumen(params: Record<string, string | number | boolean | undefined> = {}) {
+    const response = await api.get('/auditoria/sesiones/resumen', { params });
+    return response.data as AuditoriaSesionesResumenResponse;
+  },
+
+  async getById(id: number) {
+    const response = await api.get(`/auditoria/${id}`);
+    return response.data as any;
   }
 };
 
@@ -348,10 +722,68 @@ export const usuariosService = {
   }
 };
 
+export interface CampoReporte {
+  key: string;
+  label: string;
+  tipo: 'text' | 'fecha' | 'numero' | 'moneda' | 'boolean';
+  grupo: string;
+}
+
+const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+function ensureBlob(data: unknown): Blob {
+  if (data instanceof Blob) return data;
+  return new Blob([data as ArrayBuffer], { type: XLSX_MIME });
+}
+
 export const reportesService = {
   async getResumen(filtros: ReportesFiltros = {}) {
     const response = await api.get('/reportes/resumen', { params: filtros });
     return response.data as ReporteResumenResponse;
+  },
+
+  async getCampos(): Promise<CampoReporte[]> {
+    const response = await api.get('/reportes/campos');
+    return response.data as CampoReporte[];
+  },
+
+  async generarReporte(areas: string[] | 'ALL', campos: string[], incluirVerificables = false, bloquesMatriz: any = {}): Promise<{ blob: Blob; filename: string }> {
+    let response;
+    try {
+      response = await api.post('/reportes/generar', { areas, campos, incluirVerificables, bloquesMatriz }, { responseType: 'blob' });
+    } catch (err: any) {
+      // Si el servidor devuelve un error JSON pero responseType es blob, lo parseamos manualmente
+      const data = err?.response?.data;
+      if (data instanceof Blob && data.type?.includes('json')) {
+        const text = await data.text();
+        try {
+          const parsed = JSON.parse(text);
+          throw new Error(parsed.error || 'Error al generar el reporte.');
+        } catch {
+          throw new Error(text || 'Error al generar el reporte.');
+        }
+      }
+      throw err;
+    }
+    const disposition = String(response.headers['content-disposition'] || '');
+    const match = disposition.match(/filename="?([^";]+)"?/i);
+    return {
+      blob: ensureBlob(response.data),
+      filename: match?.[1] || 'reporte.xlsx'
+    };
+  },
+
+  async descargarXlsxPersonalizado(filtros: ReportesFiltros = {}) {
+    const response = await api.get('/reportes/export/xlsx/personalizado', {
+      params: filtros,
+      responseType: 'blob'
+    });
+    const disposition = String(response.headers['content-disposition'] || '');
+    const match = disposition.match(/filename="?([^";]+)"?/i);
+    return {
+      blob: ensureBlob(response.data),
+      filename: match?.[1] || 'reporte_personalizado.xlsx'
+    };
   },
 
   async descargarXlsx(filtros: ReportesFiltros = {}) {
@@ -359,13 +791,24 @@ export const reportesService = {
       params: filtros,
       responseType: 'blob'
     });
-
     const disposition = String(response.headers['content-disposition'] || '');
     const match = disposition.match(/filename="?([^";]+)"?/i);
-
     return {
-      blob: response.data as Blob,
+      blob: ensureBlob(response.data),
       filename: match?.[1] || 'reporte_seguimiento.xlsx'
+    };
+  },
+
+  async descargarXlsxContratoAdjudicacion(filtros: ReportesFiltros = {}) {
+    const response = await api.get('/reportes/export/xlsx/contrato-adjudicacion', {
+      params: filtros,
+      responseType: 'blob'
+    });
+    const disposition = String(response.headers['content-disposition'] || '');
+    const match = disposition.match(/filename="?([^";]+)"?/i);
+    return {
+      blob: ensureBlob(response.data),
+      filename: match?.[1] || 'reporte_contrato_adjudicacion.xlsx'
     };
   }
 };

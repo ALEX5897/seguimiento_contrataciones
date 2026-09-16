@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia';
-import api from '../services/api';
+import api, { authService } from '../services/api';
+import type { PermisosAcciones, PermisosSesion } from '../services/api';
 
-export type RolUsuario = 'admin' | 'direccion' | 'reporteria';
+export type RolUsuario = string;
 
 export interface UsuarioSesion {
   id: number;
@@ -14,14 +15,92 @@ export interface UsuarioSesion {
 
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
+const PERMISSIONS_KEY = 'auth_permissions';
+
+const EMPTY_ACTIONS: PermisosAcciones = {
+  read: false,
+  create: false,
+  update: false,
+  delete: false
+};
+
+function readPermissionsFromStorage(): PermisosSesion {
+  const raw = localStorage.getItem(PERMISSIONS_KEY);
+  if (!raw) return { role: '', modulos: {}, menu: {}, campos: {} };
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<PermisosSesion>;
+    return {
+      role: String(parsed.role || ''),
+      modulos: parsed.modulos && typeof parsed.modulos === 'object' ? parsed.modulos : {},
+      menu: parsed.menu && typeof parsed.menu === 'object' ? parsed.menu : {},
+      campos: parsed.campos && typeof parsed.campos === 'object' ? parsed.campos : {}
+    };
+  } catch {
+    return { role: '', modulos: {}, menu: {}, campos: {} };
+  }
+}
+
+function normalizeMePayload(payload: any): { user: UsuarioSesion; permisos: PermisosSesion } {
+  const user: UsuarioSesion = {
+    id: Number(payload?.id),
+    username: String(payload?.username || ''),
+    nombre: String(payload?.nombre || ''),
+    role: payload?.role as RolUsuario,
+    direccionNombre: payload?.direccionNombre ?? null,
+    activo: payload?.activo
+  };
+
+  const permisos = payload?.permisos as PermisosSesion | undefined;
+  return {
+    user,
+    permisos: permisos || { role: user.role || '', modulos: {}, menu: {}, campos: {} }
+  };
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+async function clearBrowserCacheOnLogout() {
+  try {
+    sessionStorage.clear();
+  } catch {
+    // Ignorar si el navegador bloquea sessionStorage
+  }
+
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+    }
+  } catch {
+    // Ignorar si Cache Storage no está disponible
+  }
+
+  try {
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+    }
+  } catch {
+    // Ignorar si Service Worker no está habilitado
+  }
+}
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: localStorage.getItem(TOKEN_KEY) || '',
     user: (() => {
       const raw = localStorage.getItem(USER_KEY);
-      return raw ? (JSON.parse(raw) as UsuarioSesion) : null;
+      if (!raw || raw === 'undefined') return null;
+      try {
+        return JSON.parse(raw) as UsuarioSesion;
+      } catch {
+        return null;
+      }
     })() as UsuarioSesion | null,
+    permisos: readPermissionsFromStorage() as PermisosSesion,
     loading: false
   }),
 
@@ -34,25 +113,58 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    setSession(token: string, user: UsuarioSesion) {
+    setSession(token: string, user: UsuarioSesion, permisos?: PermisosSesion) {
       this.token = token;
       this.user = user;
+      this.permisos = permisos || { role: user.role || '', modulos: {}, menu: {}, campos: {} };
       localStorage.setItem(TOKEN_KEY, token);
       localStorage.setItem(USER_KEY, JSON.stringify(user));
+      localStorage.setItem(PERMISSIONS_KEY, JSON.stringify(this.permisos));
     },
 
     clearSession() {
       this.token = '';
       this.user = null;
+      this.permisos = { role: '', modulos: {}, menu: {}, campos: {} };
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(PERMISSIONS_KEY);
+    },
+
+    async logout() {
+      try {
+        if (this.token) {
+          await authService.logout();
+        }
+      } catch (error) {
+        console.error('No se pudo registrar logout en servidor:', error);
+      } finally {
+        this.clearSession();
+        await clearBrowserCacheOnLogout();
+      }
+    },
+
+    can(moduleKey: string, action: keyof PermisosAcciones = 'read') {
+      const key = String(moduleKey || '').trim();
+      if (!key) return false;
+      const actions = this.permisos.modulos?.[key] || EMPTY_ACTIONS;
+      return Boolean(actions[action]);
+    },
+
+    canAccessMenu(menuKey: string) {
+      const key = String(menuKey || '').trim();
+      if (!key) return false;
+      return Boolean(this.permisos.menu?.[key]);
     },
 
     async login(username: string, password: string) {
       this.loading = true;
       try {
-        const response = await api.post('/auth/login', { username, password });
-        this.setSession(response.data.token, response.data.user);
+        const user = String(username || '').trim();
+        const pass = String(password || '').trim();
+        const response = await api.post('/auth/login', { username: user, password: pass });
+        const permisos = (response.data?.permisos || { role: response.data?.user?.role || '', modulos: {}, menu: {} }) as PermisosSesion;
+        this.setSession(response.data.token, response.data.user, permisos);
         return response.data.user as UsuarioSesion;
       } finally {
         this.loading = false;
@@ -61,16 +173,36 @@ export const useAuthStore = defineStore('auth', {
 
     async fetchMe() {
       if (!this.token) return null;
-      try {
-        const response = await api.get('/auth/me');
-        const user = response.data as UsuarioSesion;
-        this.user = user;
-        localStorage.setItem(USER_KEY, JSON.stringify(user));
-        return user;
-      } catch {
-        this.clearSession();
-        return null;
+
+      const retryDelays = [0, 400, 1200];
+      let lastError: unknown = null;
+
+      for (const delay of retryDelays) {
+        if (delay > 0) {
+          await wait(delay);
+        }
+
+        try {
+          const response = await api.get('/auth/me');
+          const normalized = normalizeMePayload(response.data);
+          const user = normalized.user;
+          this.user = user;
+          this.permisos = normalized.permisos;
+          localStorage.setItem(USER_KEY, JSON.stringify(user));
+          localStorage.setItem(PERMISSIONS_KEY, JSON.stringify(normalized.permisos));
+          return user;
+        } catch (error) {
+          lastError = error;
+          const status = (error as any)?.response?.status;
+          if (status === 401) {
+            this.clearSession();
+            return null;
+          }
+        }
       }
+
+      console.warn('No se pudo sincronizar la sesión con el servidor; se conserva la sesión local.', lastError);
+      return this.user;
     }
   }
 });

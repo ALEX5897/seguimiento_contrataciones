@@ -1,0 +1,20 @@
+[Unit]
+Description=Seguimiento POA QT Backend (Produccion)
+After=network.target mysql.service
+Wants=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/seguimiento_contrataciones/backend
+EnvironmentFile=/opt/seguimiento_contrataciones/backend/.env.production
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+User=www-data
+Group=www-data
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

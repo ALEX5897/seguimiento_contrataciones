@@ -2,8 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import cron from 'node-cron';
-// import { tareasRouter } from './routes/tareas.js'; // Comentado - tabla obsoleta
-import { actividadesRouter } from './routes/actividades.js';
 import { estadosRouter } from './routes/estados.js';
 import { notificacionesRouter } from './routes/notificaciones.js';
 import subtareasRouter from './routes/subtareas.js';
@@ -12,20 +10,51 @@ import authRouter from './routes/auth.js';
 import usuariosRouter from './routes/usuarios.js';
 import catalogosRouter from './routes/catalogos.js';
 import reportesRouter from './routes/reportes.js';
-import { verificarVencimientos, verificarAtrasos } from './services/alertas.js';
-import { initMySQL } from './data/mysql.js';
+import permisosRouter from './routes/permisos.js';
+import auditoriaRouter from './routes/auditoria.js';
+import chatIaRouter from './routes/chatIA.js';
+import configuracionRouter from './routes/configuracion.js';
+import cargaMasivaRouter from './routes/cargaMasiva.js';
+import { ejecutarNotificacionesProgramadas } from './services/notificaciones.js';
+import { initMySQL, normalizePayloadEncoding } from './data/mysql.js';
 import { requireAuth } from './middleware/auth.js';
+import { requireApiPermission } from './middleware/permisos.js';
+import { auditApiChanges } from './middleware/auditoria.js';
 
-dotenv.config();
+const ENV_PATH = process.env.DOTENV_CONFIG_PATH || (process.env.NODE_ENV === 'production' ? '.env.production' : '.env');
+const envLoaded = dotenv.config({ path: ENV_PATH });
+if (envLoaded.error && ENV_PATH !== '.env') {
+  dotenv.config();
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
+const DB_RETRY_ATTEMPTS = parseInt(process.env.DB_RETRY_ATTEMPTS || '10', 10);
+const DB_RETRY_DELAY_MS = parseInt(process.env.DB_RETRY_DELAY_MS || '3000', 10);
+const realtimeClients = new Set();
+
+function emitirCambioTiempoReal(evento) {
+  const data = `event: data-change\ndata: ${JSON.stringify(evento)}\n\n`;
+  for (const client of realtimeClients) {
+    try {
+      client.write(data);
+    } catch {
+      realtimeClients.delete(client);
+    }
+  }
+}
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use('/api', (req, res, next) => {
+  const originalJson = res.json.bind(res);
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.json = (body) => originalJson(normalizePayloadEncoding(body));
+  next();
+});
 
 // Logging middleware
 app.use((req, res, next) => {
@@ -33,22 +62,73 @@ app.use((req, res, next) => {
   next();
 });
 
+// Stream SSE para sincronizar cambios en vistas abiertas.
+app.get('/api/realtime/stream', requireAuth, (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+
+  res.write(`event: connected\ndata: ${JSON.stringify({ ok: true, ts: new Date().toISOString() })}\n\n`);
+  realtimeClients.add(res);
+
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(`event: ping\ndata: ${Date.now()}\n\n`);
+    } catch {
+      clearInterval(heartbeat);
+      realtimeClients.delete(res);
+    }
+  }, 25000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    realtimeClients.delete(res);
+  });
+});
+
+app.use('/api', (req, res, next) => {
+  const isWriteMethod = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method);
+  if (!isWriteMethod) return next();
+
+  res.on('finish', () => {
+    if (res.statusCode >= 400) return;
+    if (req.path.startsWith('/realtime/stream')) return;
+
+    emitirCambioTiempoReal({
+      path: req.path,
+      method: req.method,
+      statusCode: res.statusCode,
+      at: new Date().toISOString()
+    });
+  });
+
+  next();
+});
+
 // Rutas
-// app.use('/api/tareas', tareasRouter); // Comentado - ahora son subtareas
 app.use('/api/auth', authRouter);
 app.use('/api/usuarios', usuariosRouter);
 app.use('/api', (req, res, next) => {
   if (req.path === '/health') return next();
   if (req.path.startsWith('/auth')) return next();
+  if (req.path.startsWith('/realtime/stream')) return next();
   return requireAuth(req, res, next);
 });
-app.use('/api/actividades', actividadesRouter); // Ahora apunta a subtareas (actividades)
+app.use('/api', requireApiPermission);
+app.use('/api', auditApiChanges);
+app.use('/api/actividades', subtareasRouter);
 app.use('/api/estados', estadosRouter);
 app.use('/api/notificaciones', notificacionesRouter);
 app.use('/api/subtareas', subtareasRouter);
 app.use('/api/versiones', versionesRouter);
 app.use('/api/catalogos', catalogosRouter);
 app.use('/api/reportes', reportesRouter);
+app.use('/api/permisos', permisosRouter);
+app.use('/api/auditoria', auditoriaRouter);
+app.use('/api/chat-ia', chatIaRouter);
+app.use('/api/configuracion', configuracionRouter);
+app.use('/api/carga-masiva', cargaMasivaRouter);
 
 // Ruta de salud
 app.get('/api/health', (req, res) => {
@@ -59,24 +139,17 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Programar verificaciones automáticas
-// Cada día a las 8:00 AM - verificar vencimientos próximos
-cron.schedule('0 8 * * *', async () => {
-  console.log('Ejecutando verificación de vencimientos...');
-  await verificarVencimientos();
-});
-
-// Cada día a las 9:00 AM - verificar tareas atrasadas
-cron.schedule('0 9 * * *', async () => {
-  console.log('Ejecutando verificación de atrasos...');
-  await verificarAtrasos();
-});
-
-// Cada lunes a las 8:00 AM - resumen semanal
-cron.schedule('0 8 * * 1', async () => {
-  console.log('Generando resumen semanal...');
-  const { generarResumenSemanal } = await import('./services/resumen.js');
-  await generarResumenSemanal();
+// Programar verificación automática de correo cada 5 minutos.
+// La hora efectiva de envío se controla desde el módulo de notificaciones.
+cron.schedule('*/5 * * * *', async () => {
+  try {
+    const resultado = await ejecutarNotificacionesProgramadas();
+    if (!resultado?.skipped) {
+      console.log('📨 Proceso automático de correo ejecutado:', JSON.stringify(resultado));
+    }
+  } catch (error) {
+    console.error('❌ Error en el planificador de correos:', error?.message || error);
+  }
 });
 
 // Manejo de errores global
@@ -90,7 +163,26 @@ app.use((err, req, res, next) => {
 
 // Iniciar servidor
 async function startServer() {
-  await initMySQL();
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= DB_RETRY_ATTEMPTS; attempt += 1) {
+    try {
+      await initMySQL();
+      lastError = null;
+      break;
+    } catch (error) {
+      lastError = error;
+      const retriable = ['ECONNREFUSED', 'ETIMEDOUT', 'EHOSTUNREACH', 'ENETUNREACH'].includes(error?.code);
+      const isLast = attempt === DB_RETRY_ATTEMPTS;
+
+      if (!retriable || isLast) break;
+
+      console.warn(`⚠️  MySQL no disponible (intento ${attempt}/${DB_RETRY_ATTEMPTS}). Reintentando en ${DB_RETRY_DELAY_MS}ms...`);
+      await new Promise((resolve) => setTimeout(resolve, DB_RETRY_DELAY_MS));
+    }
+  }
+
+  if (lastError) throw lastError;
 
   app.listen(PORT, HOST, () => {
     console.log(`\n🚀 Servidor ejecutándose en http://${HOST}:${PORT}`);
@@ -101,6 +193,10 @@ async function startServer() {
 }
 
 startServer().catch((error) => {
-  console.error('❌ Error al iniciar el servidor:', error.message);
+  const errorMessage = error?.message || error?.sqlMessage || String(error);
+  console.error('❌ Error al iniciar el servidor:', errorMessage);
+  if (error?.code) console.error('Código:', error.code);
+  if (error?.errno) console.error('Errno:', error.errno);
+  if (error?.stack) console.error(error.stack);
   process.exit(1);
 });

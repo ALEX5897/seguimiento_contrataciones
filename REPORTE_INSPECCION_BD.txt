@@ -1,0 +1,192 @@
+================================================================================
+REPORTE COMPLETO DE INSPECCIÓN DE BASE DE DATOS
+================================================================================
+Fecha: 2026-05-27
+
+================================================================================
+1. RESUMEN GENERAL
+================================================================================
+
+Tabla SUBTAREAS (Procesos de contratación):
+  - Total de registros: 227
+  - Procesos activos (activo=1): 81
+  - Procesos inactivos (activo=0): 145
+  - Procesos en estado 2: 1
+
+  Por tipo:
+    - PAC: 192 registros (84.6%)
+    - NO PAC: 35 registros (15.4%)
+
+Tabla SEGUIMIENTO_ETAPAS (Etapas de seguimiento):
+  - Total de registros: 11,340
+  - Etapas completadas: 714 (6.3%)
+  - Etapas pendientes: 10,626 (93.7%)
+    - Atrasadas (fecha < hoy): 797
+    - En progreso (sin retraso): 9,829
+
+================================================================================
+2. INFORMACIÓN FINANCIERA
+================================================================================
+
+Presupuesto Total 2026:
+  - Presupuesto 2026 Inicial: $10,631,080.06
+  - Costo 2026 registrado: $3,503,838.39
+  - Subtareas con costo > 0: 68 registros
+
+Top 10 Procesos por Mayor Costo:
+  1. CONTRATACIÓN DEL SERVICIO DE ORGANIZACIÓN DE EVENTOS DE Promoción Turística
+     → Costo: $700,000.00 | Tipo: PAC | Estado: Activo
+
+  2. Servicio de relaciones públicas y representación en el exterior para la
+     Promoción del destino Quito para los mercados de Europa y resto del mundo
+     → Costo: $495,000.00 | Tipo: NO PAC | Estado: Activo
+
+  3. Servicio de relaciones públicas y representación en el exterior para la
+     Promoción del destino Quito para los mercados de América
+     → Costo: $438,975.00 | Tipo: NO PAC | Estado: Activo
+
+  4. Servicio de agencia de Publicidad especializada en pauta para difundir
+     las acciones de Quito Turismo a nivel nacional, local e internacional
+     → Costo: $195,000.00 | Tipo: PAC | Estado: Activo
+
+  5. Servicio de Organización y producción de 1 evento internacional PCMA
+     → Costo: $150,000.00 | Tipo: PAC | Estado: Activo
+
+  6. Servicio de implementación de facilidades Turísticas en el DMQ
+     → Costo: $147,000.00 | Tipo: PAC | Estado: Activo
+
+  7. Contratar el servicio especializado para la Semana Santa Quiteña 2026
+     → Costo: $120,000.00 | Tipo: PAC | Estado: Inactivo
+
+  8. Mantenimiento de edificios de la EPMGDT (fase 2)
+     → Costo: $102,695.50 | Tipo: PAC | Estado: Activo
+
+  9. Contratación del servicio de agencias de viajes para provisión de pasajes
+     → Costo: $98,036.43 | Tipo: PAC | Estado: Activo
+
+  10. SERVICIO DE PAUTA DE CAMPAÑA Promocional DEL DESTINO QUITO
+      → Costo: $88,500.00 | Tipo: PAC | Estado: Activo
+
+================================================================================
+3. ESTRUCTURAS Y TABLAS DISPONIBLES
+================================================================================
+
+Tablas principales:
+  • subtareas - Procesos de contratación
+  • seguimiento_etapas - Etapas de seguimiento de procesos
+  • etapas_pac - Catálogo de etapas
+  • usuarios - Usuarios del sistema
+  • responsables_catalogo - Catálogo de responsables
+  • direcciones_catalogo - Catálogo de direcciones
+  • seguimientos_diarios - Registro diario de seguimientos
+
+Tablas de configuración y permisos:
+  • permisos_roles_modulos - Permisos de módulos por rol
+  • permisos_roles_menu - Permisos de menú por rol
+  • permisos_modulos_catalogo - Catálogo de módulos
+  • permisos_menu_catalogo - Catálogo de menú
+  • permisos_roles_campos_etapas - Permisos de campos por rol en etapas
+
+Tablas de auditoría y notificaciones:
+  • auditoria_eventos - Registro de eventos
+  • notificaciones - Sistema de notificaciones
+  • configuracion_notificaciones - Configuración de notificaciones
+
+Tablas de relación:
+  • subtareas_etapas - Relación entre subtareas y etapas
+
+================================================================================
+4. COLUMNAS DE SUBTAREAS
+================================================================================
+
+  - id (int) - Identificador único
+  - activo (tinyint) - Estado: 0=inactivo, 1=activo, 2=especial
+  - nombre (varchar) - Nombre del proceso
+  - codigo_olympo (varchar) - Código en sistema Olympo
+  - direccion_encargada (varchar) - Dirección responsable
+  - responsable (varchar) - Responsable del proceso
+  - responsable_id (int) - ID del responsable
+  - fecha_inicio (date) - Fecha de inicio
+  - fecha_fin (date) - Fecha de finalización
+  - plazo_contrato (varchar) - Plazo del contrato
+  - pac_no_pac (varchar) - Tipo: PAC o NO PAC
+  - procedimiento_sugerido (varchar) - Procedimiento sugerido
+  - presupuesto_2026_inicial (decimal) - Presupuesto inicial 2026
+  - costo_2026 (decimal) - Costo registrado 2026
+  - partida_presupuestaria (varchar) - Partida presupuestaria
+  - cuatrimestre (varchar) - Cuatrimestre
+  - proceso_en_riesgo (varchar) - Indicador de riesgo
+  - riesgo_comentario (varchar) - Comentario sobre riesgo
+  - observaciones (text) - Observaciones adicionales
+  - created_at (datetime) - Fecha de creación
+  - updated_at (datetime) - Fecha de última actualización
+
+================================================================================
+5. COLUMNAS DE SEGUIMIENTO_ETAPAS
+================================================================================
+
+  - id (int) - Identificador único
+  - subtarea_id (int) - Referencia a subtareas
+  - etapa_id (int) - Referencia a etapas_pac
+  - estado (varchar) - Estado: pendiente, completado, etc.
+  - fecha_planificada (date) - Fecha planificada
+  - fecha_real (date) - Fecha real de ejecución
+  - responsable (varchar) - Responsable de la etapa
+  - responsable_id (int) - ID del responsable
+  - observaciones (text) - Observaciones
+
+================================================================================
+6. INDICADORES CRÍTICOS
+================================================================================
+
+Tasa de Completitud:
+  • Etapas completadas: 714 de 11,340 (6.3%)
+  • Etapas en progreso: 9,829 (86.6%)
+  • Etapas atrasadas: 797 (7.0%)
+
+Estado de Procesos:
+  • Procesos activos: 81 de 227 (35.7%)
+  • Procesos inactivos: 145 de 227 (63.9%)
+  • Procesos especiales: 1 (0.4%)
+
+Distribución PAC/NO PAC:
+  • PAC: 192 procesos (84.6%)
+  • NO PAC: 35 procesos (15.4%)
+
+Procesos sin etapas registradas: Necesario verificar JOIN
+
+Retrasos:
+  • Etapas atrasadas: 797 (7.0% del total)
+  • Estos son procesos cuya fecha planificada ya pasó pero aún no están completados
+
+================================================================================
+7. RECOMENDACIONES PARA MEJORA
+================================================================================
+
+1. REVISIÓN DE DATOS ATRASADOS:
+   - 797 etapas tienen retraso > 0 días
+   - Priorizar revisión de procesos críticos (alto presupuesto)
+   - Implementar alertas automáticas para retrasos
+
+2. COMPLETITUD DE INFORMACIÓN:
+   - Muchas etapas sin fecha_planificada asignada
+   - Revisar procesos sin responsable asignado
+   - Completar fecha_inicio y fecha_fin en procesos activos
+
+3. TASA DE COMPLETITUD:
+   - Solo 6.3% de etapas completadas
+   - Puede indicar: retrasos significativos, procesos largos o datos históricos incompletos
+   - Revisar datos de procesos con 0% completitud
+
+4. SINCRONIZACIÓN DE DATOS:
+   - Verificar que la relación entre subtareas y etapas_pac esté correcta
+   - Revisar procesos sin etapas asignadas (si existen)
+   - Validar referencias de responsable_id
+
+5. GESTIÓN DE RIESGOS:
+   - Revisar procesos marcados como "en_riesgo"
+   - Implementar plan de mitigación para procesos críticos
+
+================================================================================
+FIN DEL REPORTE
+================================================================================

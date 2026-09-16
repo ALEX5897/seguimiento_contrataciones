@@ -13,6 +13,7 @@ export interface Version {
   actividadesActivas: number;
   actividadesInactivas: number;
   actividades?: any[];
+  activa?: boolean | number;
 }
 
 export interface CrearReformaData {
@@ -29,3 +30,7 @@ export function aprobarVersion(id: number, usuario: string): Promise<Version>;
 export function getCambiosReforma(id: number): Promise<any[]>;
 export function compararVersiones(id1: number, id2: number): Promise<any>;
 export function deleteVersion(id: number): Promise<void>;
+export function duplicarProcesos(versionIdDestino: number, versionIdOrigen: number): Promise<any>;
+export function cargarExcelVersion(versionId: number, procesos: any[]): Promise<any>;
+export function reactivarVersion(versionId: number, usuarioActivacion: string): Promise<Version>;
+export function copiarSeguimiento(versionId: number): Promise<any>;

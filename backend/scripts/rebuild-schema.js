@@ -57,6 +57,7 @@ CREATE TABLE subtareas_etapas (
   etapa_id INT NOT NULL,
   aplica BOOLEAN NOT NULL DEFAULT true,
   fecha_tentativa DATE NULL,
+  fecha_reforma DATE NULL,
   UNIQUE KEY unique_subtarea_etapa (subtarea_id, etapa_id),
   FOREIGN KEY (subtarea_id) REFERENCES subtareas(id) ON DELETE CASCADE,
   FOREIGN KEY (etapa_id) REFERENCES etapas_pac(id) ON DELETE CASCADE

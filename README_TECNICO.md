@@ -68,7 +68,11 @@ cd ..
 
 ## 3.3 Configurar variables de entorno backend
 
-Crear archivo `backend/.env` (puede basarse en `backend/.env.example`).
+Para producción, crear archivo `backend/.env.production` (puede basarse en `backend/.env.production.example`).
+
+```bash
+cp backend/.env.production.example backend/.env.production
+```
 
 Variables soportadas por backend:
 
@@ -104,11 +108,35 @@ SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER=usuario_smtp
 SMTP_PASS=clave_smtp
+
+# Chat IA (si IA_CHAT_ENABLED=true)
+IA_CHAT_ENABLED=false
+IA_CHAT_PROVIDER=openai
+IA_CHAT_MODEL=gpt-4o-mini
+IA_CHAT_API_KEY=clave_openai
+IA_CHAT_BASE_URL=https://api.openai.com/v1
+IA_CHAT_MAX_INPUT_CHARS=2000
+IA_CHAT_MAX_HISTORY=10
+IA_CHAT_TEMPERATURE=0.2
+IA_CHAT_REQUEST_TIMEOUT_MS=30000
+
+# Alternativa gratis local (Ollama)
+# IA_CHAT_ENABLED=true
+# IA_CHAT_PROVIDER=ollama
+# IA_CHAT_MODEL=llama3.2:3b
+# IA_CHAT_BASE_URL=http://127.0.0.1:11434
+# IA_CHAT_API_KEY=
 ```
 
 ## 3.4 Configurar frontend para producción
 
-Crear/editar `frontend/.env`:
+Crear/editar `frontend/.env.production`:
+
+```bash
+cp frontend/.env.production.example frontend/.env.production
+```
+
+Variables:
 
 ```dotenv
 VITE_API_URL=/api
@@ -116,6 +144,8 @@ VITE_ALLOW_MANUAL_COMPLETION_DATE=true
 ```
 
 > Con `VITE_API_URL=/api`, el frontend funciona detrás de nginx en el mismo dominio.
+>
+> El backend está configurado para cargar automáticamente `backend/.env.production` cuando `NODE_ENV=production`.
 
 ## 3.5 Build de frontend
 

@@ -1,0 +1,181 @@
+
+> seguimiento-contrataciones-backend@1.1.6 start
+> node server.js
+
+[dotenv@17.3.1] injecting env (14) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+
+🚀 Servidor ejecutándose en http://0.0.0.0:3000
+🗄️  MySQL conectado en 172.16.1.80 (BD: poa_pac)
+📧 Notificaciones: DESACTIVADAS
+⏰ Verificaciones automáticas programadas
+
+2026-07-29T20:14:21.359Z - GET /api/realtime/stream
+2026-07-29T20:14:23.548Z - GET /api/chat-ia/config
+2026-07-29T20:14:23.557Z - GET /api/realtime/stream
+2026-07-29T20:14:23.847Z - GET /api/chat-ia/direcciones
+2026-07-29T20:14:23.854Z - GET /api/subtareas
+2026-07-29T20:14:24.642Z - GET /api/subtareas/225/etapas
+  [getSubtareaEtapas Etapa 2] Recuperado: fechaReforma=2026-01-01, fechaTentativa=2026-01-31, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [getSubtareaEtapas Etapa 6] Recuperado: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [getSubtareaEtapas Etapa 11] Recuperado: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+2026-07-29T20:14:25.044Z - GET /api/subtareas/225/seguimientos-resumen
+2026-07-29T20:14:25.420Z - GET /api/subtareas/225/etapas/3/seguimientos
+2026-07-29T20:14:25.421Z - GET /api/subtareas/225/etapas/1/seguimientos
+2026-07-29T20:14:25.422Z - GET /api/subtareas/225/etapas/4/seguimientos
+2026-07-29T20:14:25.424Z - GET /api/subtareas/225/etapas/7/seguimientos
+2026-07-29T20:14:40.711Z - GET /api/chat-ia/config
+2026-07-29T20:14:40.717Z - GET /api/realtime/stream
+2026-07-29T20:14:41.022Z - GET /api/chat-ia/direcciones
+2026-07-29T20:14:41.024Z - GET /api/subtareas
+2026-07-29T20:14:41.757Z - GET /api/subtareas/225/etapas
+  [getSubtareaEtapas Etapa 2] Recuperado: fechaReforma=2026-01-01, fechaTentativa=2026-01-31, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [getSubtareaEtapas Etapa 6] Recuperado: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [getSubtareaEtapas Etapa 11] Recuperado: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+2026-07-29T20:14:42.211Z - GET /api/subtareas/225/seguimientos-resumen
+2026-07-29T20:14:42.590Z - GET /api/subtareas/225/etapas/3/seguimientos
+2026-07-29T20:14:42.591Z - GET /api/subtareas/225/etapas/1/seguimientos
+2026-07-29T20:14:42.592Z - GET /api/subtareas/225/etapas/4/seguimientos
+2026-07-29T20:14:42.593Z - GET /api/subtareas/225/etapas/7/seguimientos
+2026-07-29T20:14:57.499Z - PUT /api/subtareas/225/etapas
+[setSubtareaEtapas] Iniciando con 59 etapas para subtarea 225
+  [Etapa 1] Input: fechaReforma=null, fechaTentativa=2026-01-01
+  [Etapa 1] Guardando: fechaReforma=null, fechaTentativa=2026-01-01, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 2] Input: fechaReforma=2026-01-01, fechaTentativa=2026-01-31
+  [Etapa 2] Guardando: fechaReforma=2026-01-01, fechaTentativa=2026-01-31, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 3] Input: fechaReforma=null, fechaTentativa=2026-03-29
+  [Etapa 3] Guardando: fechaReforma=null, fechaTentativa=2026-03-29, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 4] Input: fechaReforma=null, fechaTentativa=2026-03-29
+  [Etapa 4] Guardando: fechaReforma=null, fechaTentativa=2026-03-29, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 5] Input: fechaReforma=null, fechaTentativa=2026-03-29
+  [Etapa 5] Guardando: fechaReforma=null, fechaTentativa=2026-03-29, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 6] Input: fechaReforma=2026-07-29, fechaTentativa=2026-03-28
+  [Etapa 6] Guardando: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 7] Input: fechaReforma=null, fechaTentativa=2026-03-29
+  [Etapa 7] Guardando: fechaReforma=null, fechaTentativa=2026-03-29, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 8] Input: fechaReforma=null, fechaTentativa=2026-03-29
+  [Etapa 8] Guardando: fechaReforma=null, fechaTentativa=2026-03-29, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 9] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 9] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 10] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 10] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 11] Input: fechaReforma=2026-01-01, fechaTentativa=2026-03-28
+  [Etapa 11] Guardando: fechaReforma=2026-01-01, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 12] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 12] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 13] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 13] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 14] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 14] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 15] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 15] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 16] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 16] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 17] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 17] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 18] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 18] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 19] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 19] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 20] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 20] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 21] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 21] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 22] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 22] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 23] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 23] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 24] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 24] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 25] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 25] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 26] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 26] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 27] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 27] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 28] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 28] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 29] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 29] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 30] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 30] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 31] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 31] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 32] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 32] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 33] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 33] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 34] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 34] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 35] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 35] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 36] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 36] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 37] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 37] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 38] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 38] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 39] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 39] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 40] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 40] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 41] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 41] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 42] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 42] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 43] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 43] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 44] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 44] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 45] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 45] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 46] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 46] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 47] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 47] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 48] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 48] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 49] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 49] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 50] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 50] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 51] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 51] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 52] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 52] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 53] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 53] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 54] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 54] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 55] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 55] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 56] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 56] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 57] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 57] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 58] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 58] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [Etapa 59] Input: fechaReforma=null, fechaTentativa=2026-03-28
+  [Etapa 59] Guardando: fechaReforma=null, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+[setSubtareaEtapas] Enriquecidas 59 etapas
+[setSubtareaEtapas] Transacción iniciada
+[setSubtareaEtapas] Transacción confirmada. 59 etapas procesadas
+  [getSubtareaEtapas Etapa 2] Recuperado: fechaReforma=2026-01-01, fechaTentativa=2026-01-31, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [getSubtareaEtapas Etapa 6] Recuperado: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [getSubtareaEtapas Etapa 11] Recuperado: fechaReforma=2026-01-01, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+[setSubtareaEtapas] Final: 59 etapas retornadas
+2026-07-29T20:14:58.031Z - GET /api/subtareas/225/etapas
+  [getSubtareaEtapas Etapa 2] Recuperado: fechaReforma=2026-01-01, fechaTentativa=2026-01-31, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [getSubtareaEtapas Etapa 6] Recuperado: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [getSubtareaEtapas Etapa 11] Recuperado: fechaReforma=2026-01-01, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+2026-07-29T20:14:59.651Z - GET /api/subtareas
+2026-07-29T20:15:00.788Z - GET /api/subtareas/225/etapas
+  [getSubtareaEtapas Etapa 2] Recuperado: fechaReforma=2026-01-01, fechaTentativa=2026-01-31, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [getSubtareaEtapas Etapa 6] Recuperado: fechaReforma=2026-07-29, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+  [getSubtareaEtapas Etapa 11] Recuperado: fechaReforma=2026-01-01, fechaTentativa=2026-03-28, fechaReforma3=null, estado=pendiente, fechaReal=null
+2026-07-29T20:15:01.585Z - GET /api/subtareas/225/seguimientos-resumen
+2026-07-29T20:15:01.991Z - GET /api/subtareas/225/etapas/3/seguimientos
+2026-07-29T20:15:02.326Z - GET /api/subtareas/225/etapas/1/seguimientos
+2026-07-29T20:15:02.327Z - GET /api/subtareas/225/etapas/4/seguimientos
+2026-07-29T20:15:02.328Z - GET /api/subtareas/225/etapas/7/seguimientos

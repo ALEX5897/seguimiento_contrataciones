@@ -1,6 +1,6 @@
 {
   "name": "seguimiento-contrataciones-backend",
-  "version": "1.0.0",
+  "version": "1.1.6",
   "description": "API para seguimiento de tareas y contrataciones POA 2026",
   "main": "server.js",
   "type": "module",
@@ -12,7 +12,12 @@
     "repair:encoding": "node scripts/repair-encoding.js",
     "seed:test": "node scripts/reset-and-seed-test-data.js",
     "import:base1": "node scripts/import-base-1.js",
-    "demo:reset": "node scripts/prepare-demo-reset-estados-seguimientos.js"
+    "demo:reset": "node scripts/prepare-demo-reset-estados-seguimientos.js",
+    "report:procesos-activos": "node scripts/export-procesos-activos-contrato-adjudicacion.js",
+    "update:progreso": "node scripts/update-progreso-desarrollo.js",
+    "migration:export": "node scripts/export-migration.js",
+    "migration:restore": "node scripts/restore-migration.js",
+    "postinstall": "npm run update:progreso"
   },
   "keywords": [
     "poa",
@@ -22,16 +27,24 @@
   "author": "QuitoTurismo",
   "license": "ISC",
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.2.0",
     "axios": "^1.13.6",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.6",
+    "csv-parse": "^7.0.2",
     "dotenv": "^17.3.1",
+    "exceljs": "^4.4.0",
     "express": "^5.2.1",
+    "iconv-lite": "^0.7.2",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
     "mysql2": "^3.19.0",
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.2",
+    "pdfkit": "^0.18.0",
     "pinia": "^3.0.4",
+    "puppeteer": "^24.42.0",
+    "table-parser": "^1.0.1",
     "vue-router": "^5.0.3",
     "xlsx": "^0.18.5"
   }

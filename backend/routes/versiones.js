@@ -1,14 +1,8 @@
 import express from 'express';
 import * as mysql from '../data/mysql.js';
+import { getScopeFromReq } from '../utils/helpers.js';
 
 const router = express.Router();
-
-function scopeFromReq(req) {
-  return {
-    role: req.user?.role,
-    direccionNombre: req.user?.direccionNombre || null
-  };
-}
 
 /**
  * GET / - Listar todas las versiones del POA
@@ -24,21 +18,17 @@ router.get('/', async (req, res) => {
 });
 
 /**
- * GET /:id - Obtener una versión específica con sus actividades
+ * GET /:id - Obtener una versión específica con sus procesos
  */
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const version = await mysql.getVersionById(id);
-    
+
     if (!version) {
       return res.status(404).json({ error: 'Versión no encontrada' });
     }
 
-    // Obtener actividades de esta versión
-    const actividades = await mysql.getAllSubtareasByScope(scopeFromReq(req));
-    version.actividades = actividades;
-    
     res.json(version);
   } catch (error) {
     console.error('Error al obtener versión:', error);
@@ -52,14 +42,15 @@ router.get('/:id', async (req, res) => {
 router.get('/actual/info', async (req, res) => {
   try {
     const versionActual = await mysql.getVersionActual();
-    
+
     if (!versionActual) {
       return res.status(404).json({ error: 'No hay versión actual definida' });
     }
 
-    const actividades = await mysql.getAllSubtareasByScope(scopeFromReq(req));
-    versionActual.actividades = actividades;
-    
+    // Obtener procesos de la versión actual
+    const procesos = await mysql.getActividadesByVersion(versionActual.id);
+    versionActual.procesos = procesos;
+
     res.json(versionActual);
   } catch (error) {
     console.error('Error al obtener versión actual:', error);
@@ -73,9 +64,8 @@ router.get('/actual/info', async (req, res) => {
  */
 router.post('/', async (req, res) => {
   try {
-    if (req.user?.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
     const { anio, descripcion, usuario_creacion } = req.body;
-    
+
     if (!anio) {
       return res.status(400).json({ error: 'El año es requerido' });
     }
@@ -89,11 +79,64 @@ router.post('/', async (req, res) => {
 });
 
 /**
+ * POST /:id/duplicar - Duplicar procesos de otra reforma
+ * Body: { version_origen_id, usuario }
+ */
+router.post('/:id/duplicar', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { version_origen_id, usuario } = req.body;
+
+    if (!version_origen_id) {
+      return res.status(400).json({ error: 'Se requiere la versión origen' });
+    }
+
+    const cantInsertados = await mysql.duplicarProcesos(parseInt(id), parseInt(version_origen_id));
+    const version = await mysql.getVersionById(id);
+
+    res.json({
+      message: `${cantInsertados} procesos duplicados exitosamente`,
+      procesos_insertados: cantInsertados,
+      version
+    });
+  } catch (error) {
+    console.error('Error al duplicar procesos:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /:id/excel - Cargar procesos desde Excel
+ * Body: { procesos: Array, usuario }
+ */
+router.post('/:id/excel', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { procesos, usuario } = req.body;
+
+    if (!Array.isArray(procesos)) {
+      return res.status(400).json({ error: 'Los procesos deben ser un array' });
+    }
+
+    const cantInsertados = await mysql.cargarExcelVersion(parseInt(id), procesos, usuario || 'SISTEMA');
+    const version = await mysql.getVersionById(id);
+
+    res.json({
+      message: `${cantInsertados} procesos cargados exitosamente`,
+      procesos_insertados: cantInsertados,
+      version
+    });
+  } catch (error) {
+    console.error('Error al cargar Excel:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
  * PUT /:id/aprobar - Aprobar una versión (cambiar estado a aprobado)
  */
 router.put('/:id/aprobar', async (req, res) => {
   try {
-    if (req.user?.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
     const { id } = req.params;
     const { usuario_aprobacion } = req.body;
     
@@ -137,7 +180,7 @@ router.get('/comparar/:id1/:id2', async (req, res) => {
       return res.status(404).json({ error: 'Una o ambas versiones no encontradas' });
     }
 
-    const scope = scopeFromReq(req);
+    const scope = getScopeFromReq(req);
     const [actividades1, actividades2] = await Promise.all([
       mysql.getAllSubtareasByScope(scope),
       mysql.getAllSubtareasByScope(scope)
@@ -162,7 +205,6 @@ router.get('/comparar/:id1/:id2', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
   try {
-    if (req.user?.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
     const { id } = req.params;
     
     const version = await mysql.getVersionById(id);
@@ -180,6 +222,55 @@ router.delete('/:id', async (req, res) => {
     res.json({ message: 'Versión eliminada correctamente' });
   } catch (error) {
     console.error('Error al eliminar versión:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * PUT /:id/reactivar - Reactivar una versión aprobada/histórica
+ * Body: { usuario_activacion }
+ */
+router.put('/:id/reactivar', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { usuario_activacion } = req.body;
+
+    if (!usuario_activacion) {
+      return res.status(400).json({ error: 'Usuario de activación requerido' });
+    }
+
+    const version = await mysql.reactivarVersion(parseInt(id), usuario_activacion);
+    res.json({
+      message: `Versión ${version.nombre} reactivada exitosamente`,
+      version
+    });
+  } catch (error) {
+    console.error('Error al reactivar versión:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /:id/copiar-seguimiento - Copiar seguimiento de reforma anterior por codigo_olympo
+ */
+router.post('/:id/copiar-seguimiento', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const version = await mysql.getVersionById(id);
+    if (!version) {
+      return res.status(404).json({ error: 'Versión no encontrada' });
+    }
+
+    const resultado = await mysql.copiarSeguimientoDeReformaAnterior(parseInt(id));
+
+    res.json({
+      message: resultado.mensaje,
+      copiados: resultado.copiados,
+      version: { id: version.id, nombre: version.nombre }
+    });
+  } catch (error) {
+    console.error('Error al copiar seguimiento:', error);
     res.status(500).json({ error: error.message });
   }
 });

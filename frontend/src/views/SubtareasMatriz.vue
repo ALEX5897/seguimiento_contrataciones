@@ -38,7 +38,7 @@
           <strong>{{ resumenDiario.totalEtapas }}</strong>
         </div>
         <div class="kpi-card">
-          <span class="kpi-label">Completadas</span>
+          <span class="kpi-label">Completas</span>
           <strong>{{ resumenDiario.completadas }}</strong>
         </div>
         <div class="kpi-card warning">
@@ -84,7 +84,7 @@
           <option value="pendiente">Pendiente</option>
           <option value="con_pendientes">Con pendientes</option>
           <option value="en_retraso">En retraso</option>
-          <option value="completado">Completado</option>
+          <option value="completado">Completo</option>
         </select>
         <input
           v-model="busqueda"
@@ -123,13 +123,13 @@
 
         <div class="timeline">
           <div v-for="(etapa, idx) in (subtarea.seguimientoEtapas || [])" :key="`timeline-${etapa.id}`" class="timeline-item">
-            <div class="timeline-node" :class="estadoVisual(etapa)"></div>
+            <div class="timeline-node" :class="estadoVisual(etapa, subtarea)"></div>
             <div v-if="idx < (subtarea.seguimientoEtapas || []).length - 1" class="timeline-line"></div>
             <div class="timeline-content">
               <div class="timeline-title">{{ etapa.etapaNombre }}</div>
               <div class="timeline-date">
                 Fecha tentativa: {{ formatFecha(etapa.fechaPlanificada) }}
-                <span v-if="esAtrasada(etapa)" class="atraso-tag">Atraso {{ calcularDiasRetraso(etapa) }} días</span>
+                <span v-if="esAtrasada(etapa, subtarea)" class="atraso-tag">Atraso {{ calcularDiasRetraso(etapa, subtarea) }} días</span>
               </div>
             </div>
           </div>
@@ -153,16 +153,16 @@
                 <td>
                   <div class="etapa-cell">
                     <span>{{ etapa.etapaNombre }}</span>
-                    <span v-if="esAtrasada(etapa)" class="atraso-tag-inline">🔴 {{ calcularDiasRetraso(etapa) }} días</span>
+                    <span v-if="esAtrasada(etapa, subtarea)" class="atraso-tag-inline">🔴 {{ calcularDiasRetraso(etapa, subtarea) }} días</span>
                     <span class="estado-inline">Estado: {{ formatoEstadoTexto(etapa.estado) }}</span>
                   </div>
                 </td>
                 <td>
                   <select v-model="etapa.estado" class="estado-select" :disabled="normalizarEstado(etapa.estado) === 'completado'" @change="onEstadoEtapaChange(etapa)">
                     <option value="pendiente">Pendiente</option>
-                    <option value="completado">Completado</option>
+                    <option value="completado">Completo</option>
                   </select>
-                  <div v-if="esAtrasada(etapa)" class="estado-hint">Se marca en retraso por fecha tentativa vencida</div>
+                  <div v-if="esAtrasada(etapa, subtarea)" class="estado-hint">Se marca en retraso por fecha tentativa vencida</div>
                 </td>
                 <td>
                   <input
@@ -203,14 +203,15 @@
     </div>
 
     <!-- Modal de Seguimientos Diarios -->
-    <div v-if="mostrarSeguimientos" class="modal-overlay" @click="cerrarSeguimientosDiarios">
+    <div v-if="mostrarSeguimientos" class="modal-overlay" @click.self="cerrarSeguimientosDiarios">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h2>📋 Seguimiento Diario - {{ etapaActualSeguimiento?.etapaNombre }}</h2>
           <button class="btn-close" @click="cerrarSeguimientosDiarios">✕</button>
         </div>
 
-        <div class="modal-body">
+        <div v-if="cargandoSeguimientos" class="loading">Cargando seguimientos...</div>
+        <div v-else class="modal-body">
           <!-- Formulario para nuevo comentario -->
           <div class="nuevo-comentario-section">
             <h3>➕ Agregar Nuevo Comentario</h3>
@@ -248,7 +249,7 @@
               >
                 <div class="seguimiento-header">
                   <div class="seguimiento-fecha">
-                    📅 {{ formatearFechaConHora(seguimiento.fecha) }}
+                    📅 {{ formatearFechaConHora(seguimiento.createdAt || seguimiento.created_at || seguimiento.fecha) }}
                   </div>
                   <div class="seguimiento-responsable">
                     👤 {{ seguimiento.responsableNombre || 'Sin responsable' }}
@@ -297,6 +298,7 @@ const resumenDiario = ref<any>(null);
 
 // Seguimientos diarios
 const mostrarSeguimientos = ref(false);
+const cargandoSeguimientos = ref(false);
 const etapaActualSeguimiento = ref<any>(null);
 const subtareaActualSeguimiento = ref<any>(null);
 const seguimientosDiarios = ref<any[]>([]);
@@ -323,11 +325,11 @@ const subtareasFiltradas = computed(() => {
   }
 
   if (soloAtrasadas.value) {
-    items = items.filter((s) => (s.seguimientoEtapas || []).some((e) => esAtrasada(e)));
+    items = items.filter((s) => procesoCuentaEnAtrasosMatriz(s) && (s.seguimientoEtapas || []).some((e) => esAtrasada(e, s)));
   }
 
   if (soloVencenHoy.value) {
-    items = items.filter((s) => (s.seguimientoEtapas || []).some((e) => esVenceHoy(e)));
+    items = items.filter((s) => procesoCuentaEnAtrasosMatriz(s) && (s.seguimientoEtapas || []).some((e) => esVenceHoy(e)));
   }
 
   if (filtroEstadoEtapa.value) {
@@ -354,8 +356,10 @@ const alertasCriticas = computed<AlertaCritica[]>(() => {
   const alertas: AlertaCritica[] = [];
 
   for (const subtarea of subtareasFiltradas.value) {
+    if (!procesoCuentaEnAtrasosMatriz(subtarea)) continue;
+
     for (const etapa of subtarea.seguimientoEtapas || []) {
-      if (esAtrasada(etapa)) {
+      if (esAtrasada(etapa, subtarea)) {
         alertas.push({
           id: `${subtarea.codigoOlympo}-${etapa.id}-atrasada`,
           tipo: 'atrasada',
@@ -412,42 +416,88 @@ function obtenerEtapaId(etapa: any): number | null {
   return Number.isFinite(valor) && valor > 0 ? valor : null;
 }
 
+function parseFechaMatriz(fecha: string | Date | null | undefined) {
+  if (!fecha) return null;
+  if (fecha instanceof Date) {
+    const copia = new Date(fecha.getTime());
+    copia.setHours(0, 0, 0, 0);
+    return copia;
+  }
+
+  const texto = String(fecha).trim();
+  const match = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 0, 0, 0, 0);
+  }
+
+  const parsed = new Date(texto);
+  if (Number.isNaN(parsed.getTime())) return null;
+  parsed.setHours(0, 0, 0, 0);
+  return parsed;
+}
+
+function obtenerHoyMatriz() {
+  return parseFechaMatriz(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil' }).format(new Date()));
+}
+
 function formatFecha(fecha: string | null | undefined) {
-  if (!fecha) return 'No aplica';
-  return new Date(fecha).toLocaleDateString('es-EC');
+  const parsed = parseFechaMatriz(fecha);
+  if (!parsed) return 'No aplica';
+  return parsed.toLocaleDateString('es-EC');
 }
 
 function normalizarEstado(estado: string | null | undefined) {
   return estado === 'completado' ? 'completado' : 'pendiente';
 }
 
-function esAtrasada(etapa: EtapaSeguimiento) {
+function obtenerEstadoProcesoMatriz(subtarea: Subtarea | any): 0 | 1 | 2 {
+  const valor = (subtarea as any)?.activo;
+  if (valor === undefined || valor === null || valor === '') return 1;
+  if (typeof valor === 'number') {
+    if (valor === 2) return 2;
+    return valor === 0 ? 0 : 1;
+  }
+  if (typeof valor === 'boolean') return valor ? 1 : 0;
+
+  const normalizado = String(valor).trim().toLowerCase();
+  if (['2', 'desierto'].includes(normalizado)) return 2;
+  if (['0', 'false', 'inactivo'].includes(normalizado)) return 0;
+  return 1;
+}
+
+function obtenerPresupuestoProcesoMatriz(subtarea: Subtarea | any) {
+  const valor = Number((subtarea as any)?.presupuesto ?? (subtarea as any)?.presupuesto2026Inicial ?? (subtarea as any)?.presupuesto_2026_inicial ?? 0);
+  return Number.isFinite(valor) ? valor : 0;
+}
+
+function procesoCuentaEnAtrasosMatriz(subtarea: Subtarea | any) {
+  return obtenerEstadoProcesoMatriz(subtarea) === 1 && obtenerPresupuestoProcesoMatriz(subtarea) > 0;
+}
+
+function esAtrasada(etapa: EtapaSeguimiento, subtarea?: Subtarea | any) {
+  if (subtarea && !procesoCuentaEnAtrasosMatriz(subtarea)) return false;
   if (!etapa?.fechaPlanificada) return false;
   const estado = normalizarEstado(etapa.estado);
   if (estado === 'completado') return false;
 
-  const fechaPlanificada = new Date(etapa.fechaPlanificada);
-  if (Number.isNaN(fechaPlanificada.getTime())) return false;
+  const fechaPlanificada = parseFechaMatriz(etapa.fechaPlanificada);
+  const hoy = obtenerHoyMatriz();
+  if (!fechaPlanificada || !hoy) return false;
 
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
-  fechaPlanificada.setHours(0, 0, 0, 0);
   return fechaPlanificada < hoy;
 }
 
-function estadoVisual(etapa: EtapaSeguimiento) {
-  if (esAtrasada(etapa)) return 'en_retraso';
+function estadoVisual(etapa: EtapaSeguimiento, subtarea?: Subtarea | any) {
+  if (esAtrasada(etapa, subtarea)) return 'en_retraso';
   return normalizarEstado(etapa.estado);
 }
 
-function calcularDiasRetraso(etapa: EtapaSeguimiento) {
+function calcularDiasRetraso(etapa: EtapaSeguimiento, subtarea?: Subtarea | any) {
+  if (subtarea && !procesoCuentaEnAtrasosMatriz(subtarea)) return 0;
   if (!etapa?.fechaPlanificada) return 0;
-  const fechaPlanificada = new Date(etapa.fechaPlanificada);
-  if (Number.isNaN(fechaPlanificada.getTime())) return 0;
-
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
-  fechaPlanificada.setHours(0, 0, 0, 0);
+  const fechaPlanificada = parseFechaMatriz(etapa.fechaPlanificada);
+  const hoy = obtenerHoyMatriz();
+  if (!fechaPlanificada || !hoy) return 0;
 
   const diffMs = hoy.getTime() - fechaPlanificada.getTime();
   if (diffMs <= 0) return 0;
@@ -461,17 +511,17 @@ function formatoEstadoTexto(estado: string | null | undefined) {
     pendiente: 'Pendiente',
     con_pendientes: 'Con pendientes',
     en_retraso: 'En retraso',
-    completado: 'Completado'
+    completado: 'Completo'
   };
   return labels[normalizado] || normalizado;
 }
 
 function esVenceHoy(etapa: EtapaSeguimiento) {
   if (!etapa?.fechaPlanificada) return false;
-  const fecha = new Date(etapa.fechaPlanificada);
-  if (Number.isNaN(fecha.getTime())) return false;
-  const hoy = new Date();
-  return fecha.getFullYear() === hoy.getFullYear() && fecha.getMonth() === hoy.getMonth() && fecha.getDate() === hoy.getDate();
+  const fecha = parseFechaMatriz(etapa.fechaPlanificada);
+  const hoy = obtenerHoyMatriz();
+  if (!fecha || !hoy) return false;
+  return fecha.getTime() === hoy.getTime();
 }
 
 function activarSoloAtrasadas() {
@@ -539,6 +589,10 @@ async function guardarEtapa(codigoOlympo: string, etapa: EtapaSeguimiento) {
 async function abrirSeguimientosDiarios(subtarea: any, etapa: any) {
   etapaActualSeguimiento.value = etapa;
   subtareaActualSeguimiento.value = subtarea;
+  mostrarSeguimientos.value = true;
+  cargandoSeguimientos.value = true;
+  seguimientosDiarios.value = [];
+
   try {
     const etapaId = obtenerEtapaId(etapa);
     if (!etapaId) {
@@ -552,17 +606,19 @@ async function abrirSeguimientosDiarios(subtarea: any, etapa: any) {
       ? response.data
       : (response.data.seguimientos || response.data || []);
     
-    mostrarSeguimientos.value = true;
     nuevoComentario.value = '';
     nuevoAlerta.value = false;
   } catch (error: any) {
     console.error('Error al cargar seguimientos:', error);
     mostrarNotificacion(obtenerMensajeError(error, 'Error al cargar seguimientos diarios'), 'error');
+  } finally {
+    cargandoSeguimientos.value = false;
   }
 }
 
 function cerrarSeguimientosDiarios() {
   mostrarSeguimientos.value = false;
+  cargandoSeguimientos.value = false;
   etapaActualSeguimiento.value = null;
   subtareaActualSeguimiento.value = null;
   seguimientosDiarios.value = [];
@@ -630,15 +686,13 @@ function formatearFechaConHora(fechaISO: string | undefined | null): string {
   if (!fechaISO) return 'Sin fecha';
   try {
     const fecha = new Date(fechaISO);
-    return fecha.toLocaleDateString('es-EC', { 
-      year: 'numeric', 
-      month:'short', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (Number.isNaN(fecha.getTime())) return 'Fecha invalida';
+    const dd = String(fecha.getDate()).padStart(2, '0');
+    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+    const yyyy = String(fecha.getFullYear());
+    return `${dd}/${mm}/${yyyy}`;
   } catch (e) {
-    return 'Fecha inválida';
+    return 'Fecha invalida';
   }
 }
 </script>

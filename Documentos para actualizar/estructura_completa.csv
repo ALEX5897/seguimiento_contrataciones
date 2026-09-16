@@ -1,0 +1,260 @@
+TABLA,COLUMNA,TIPO_DATO,NULLABLE,CLAVE,EXTRA,VALOR_EJEMPLO
+"auditoria_eventos","id","bigint","NO","PRI","auto_increment","1"
+"auditoria_eventos","user_id","int","YES","MUL","","22"
+"auditoria_eventos","username","varchar(80)","YES","","","sin_direccion"
+"auditoria_eventos","role","varchar(80)","YES","","","direccion"
+"auditoria_eventos","direccion_nombre","varchar(255)","YES","","","Sin dirección"
+"auditoria_eventos","accion","varchar(20)","NO","MUL","","update"
+"auditoria_eventos","modulo","varchar(80)","YES","MUL","",""
+"auditoria_eventos","recurso","varchar(255)","YES","","","/220/etapas"
+"auditoria_eventos","metodo","varchar(10)","NO","","","PUT"
+"auditoria_eventos","ruta","varchar(255)","NO","","","/api/subtareas/220/etapas"
+"auditoria_eventos","status_code","int","NO","","","200"
+"auditoria_eventos","exito","tinyint(1)","NO","","","1"
+"auditoria_eventos","ip","varchar(64)","YES","","","127.0.0.1"
+"auditoria_eventos","user_agent","varchar(512)","YES","","","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML; like Gecko) Chrome/146.0.0.0 Safari/537.36"
+"auditoria_eventos","request_query","longtext","YES","","","{}"
+"auditoria_eventos","request_body","longtext","YES","","","{"etapas":[{"etapaId":1;"aplica":true;"fechaTentativa":"2026-01-10";"estado":"completado";"fechaReal":"2026-11-27";"observaciones":""};{"etapaId":2;"aplica":true;"fechaTentativa":"2026-01-23";"estado":"completado";"fechaReal":"2026-01-10";"observaciones":""};{"etapaId":3;"aplica":true;"fechaTentativa":"2025-12-01";"estado":"completado";"fechaReal":"2026-04-02";"observaciones":""};{"etapaId":4;"aplica":true;"fechaTentativa":"2025-12-15";"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":5;"aplica":true;"fechaTentativa":"2025-12-30";"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":6;"aplica":true;"fechaTentativa":"2026-04-30";"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":7;"aplica":true;"fechaTentativa":"2026-04-10";"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":8;"aplica":true;"fechaTentativa":"2026-04-22";"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":9;"aplica":true;"fechaTentativa":"2026-04-16";"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":10;"aplica":true;"fechaTentativa":"2026-04-17";"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":11;"aplica":true;"fechaTentativa":"2026-04-24";"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":12;"aplica":true;"fechaTentativa":"2026-04-03";"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":13;"aplica":true;"fechaTentativa":"2026-04-22";"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":14;"aplica":true;"fechaTentativa":"2026-04-09";"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":15;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":16;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":17;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":18;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":19;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":20;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":21;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":22;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":23;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":24;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":25;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":26;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":27;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":28;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":29;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":30;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":31;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":32;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":33;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":34;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":35;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":36;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":37;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":38;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":39;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":40;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":41;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":42;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":43;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":44;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":45;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":46;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":47;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":48;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":49;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":50;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":51;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":52;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":53;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":54;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":55;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":56;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":57;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":58;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":59;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""};{"etapaId":60;"aplica":true;"fechaTentativa":null;"estado":"pendiente";"fechaReal":null;"observaciones":""}]}"
+"auditoria_eventos","response_body","longtext","YES","","","{"durationMs":950;"payload":[{"id":42115;"subtareaId":220;"etapaId":1;"aplica":1;"fechaTentativa":"2026-01-10";"estado":"completado";"fechaPlanificada":"2026-01-10";"fechaReal":"2026-11-27";"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"SOLICTUD DE CERTIFICACION PROGRAMATICA";"orden":1;"esPersonalizada":1};{"id":42116;"subtareaId":220;"etapaId":2;"aplica":1;"fechaTentativa":"2026-01-23";"estado":"completado";"fechaPlanificada":"2026-01-23";"fechaReal":"2026-01-10";"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"CERTIFICACION POA PAI";"orden":2;"esPersonalizada":1};{"id":42117;"subtareaId":220;"etapaId":3;"aplica":1;"fechaTentativa":"2025-12-01";"estado":"completado";"fechaPlanificada":"2025-12-01";"fechaReal":"2026-04-02";"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"INFORME TECNICO";"orden":3;"esPersonalizada":1};{"id":42118;"subtareaId":220;"etapaId":4;"aplica":1;"fechaTentativa":"2025-12-15";"estado":"pendiente";"fechaPlanificada":"2025-12-15";"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"INFORME DE NECESIDAD";"orden":4;"esPersonalizada":1};{"id":42119;"subtareaId":220;"etapaId":5;"aplica":1;"fechaTentativa":"2025-12-30";"estado":"pendiente";"fechaPlanificada":"2025-12-30";"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"TERMINOS DE REFERENCIA - ESPECIFICACIONES TECNICAS";"orden":5;"esPersonalizada":1};{"id":42120;"subtareaId":220;"etapaId":6;"aplica":1;"fechaTentativa":"2026-04-30";"estado":"pendiente";"fechaPlanificada":"2026-04-30";"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"MESA TECNICA";"orden":6;"esPersonalizada":1};{"id":42121;"subtareaId":220;"etapaId":7;"aplica":1;"fechaTentativa":"2026-04-10";"estado":"pendiente";"fechaPlanificada":"2026-04-10";"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"CORRECCION";"orden":7;"esPersonalizada":1};{"id":42122;"subtareaId":220;"etapaId":8;"aplica":1;"fechaTentativa":"2026-04-22";"estado":"pendiente";"fechaPlanificada":"2026-04-22";"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"SOLICITUD DE AUTORIZACION DE INFORME DE NECESIDAD";"orden":8;"esPersonalizada":1};{"id":42123;"subtareaId":220;"etapaId":9;"aplica":1;"fechaTentativa":"2026-04-16";"estado":"pendiente";"fechaPlanificada":"2026-04-16";"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"AUTORIZACION DEL INFORME";"orden":9;"esPersonalizada":1};{"id":42124;"subtareaId":220;"etapaId":10;"aplica":1;"fechaTentativa":"2026-04-17";"estado":"pendiente";"fechaPlanificada":"2026-04-17";"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"SOLICITUD DE CATE";"orden":10;"esPersonalizada":1};{"id":42125;"subtareaId":220;"etapaId":11;"aplica":1;"fechaTentativa":"2026-04-24";"estado":"pendiente";"fechaPlanificada":"2026-04-24";"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"CATE";"orden":11;"esPersonalizada":1};{"id":42126;"subtareaId":220;"etapaId":12;"aplica":1;"fechaTentativa":"2026-04-03";"estado":"pendiente";"fechaPlanificada":"2026-04-03";"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"SOLICITUD DE PUBLICACION";"orden":12;"esPersonalizada":1};{"id":42127;"subtareaId":220;"etapaId":13;"aplica":1;"fechaTentativa":"2026-04-22";"estado":"pendiente";"fechaPlanificada":"2026-04-22";"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"PUBLICACION PROFORMAS";"orden":13;"esPersonalizada":1};{"id":42128;"subtareaId":220;"etapaId":14;"aplica":1;"fechaTentativa":"2026-04-09";"estado":"pendiente";"fechaPlanificada":"2026-04-09";"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"RECEPCION PROFORMAS";"orden":14;"esPersonalizada":1};{"id":42129;"subtareaId":220;"etapaId":15;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"ESTUDIO DE MERCADO";"orden":15;"esPersonalizada":1};{"id":42130;"subtareaId":220;"etapaId":16;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"SOLICITUD DE CERTIFICACION PRESUPUESTARIA";"orden":16;"esPersonalizada":1};{"id":42131;"subtareaId":220;"etapaId":17;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"CERTIFICACION PRESUESTARIA";"orden":17;"esPersonalizada":1};{"id":42132;"subtareaId":220;"etapaId":18;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"SOLICITUD DE CERTICACION PAC";"orden":18;"esPersonalizada":1};{"id":42133;"subtareaId":220;"etapaId":19;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"CERTIFICACION PAC";"orden":19;"esPersonalizada":1};{"id":42134;"subtareaId":220;"etapaId":20;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"ELABORACION DE PLIEGOS PARA DIRECTORIO";"orden":20;"esPersonalizada":1};{"id":42135;"subtareaId":220;"etapaId":21;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"CONVOCATORIA DEL DIRECTORIO";"orden":21;"esPersonalizada":1};{"id":42136;"subtareaId":220;"etapaId":22;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"DIRECTORIO";"orden":22;"esPersonalizada":1};{"id":42137;"subtareaId":220;"etapaId":23;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"RESOLUCION DEL DIRECTORIO";"orden":23;"esPersonalizada":1};{"id":42138;"subtareaId":220;"etapaId":24;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"SOLICITUD DE PUBLICACION VPN";"orden":24;"esPersonalizada":1};{"id":42139;"subtareaId":220;"etapaId":25;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"RESULTADOS DE VPN";"orden":25;"esPersonalizada":1};{"id":42140;"subtareaId":220;"etapaId":26;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"SOLICITUD DE AUTORIZACION SERCOP";"orden":26;"esPersonalizada":1};{"id":42141;"subtareaId":220;"etapaId":27;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"AUTORIZACION SERCOP";"orden":27;"esPersonalizada":1};{"id":42142;"subtareaId":220;"etapaId":28;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"ELABORACION DE BASES INTERNACIONALES PLIEGO";"orden":28;"esPersonalizada":1};{"id":42143;"subtareaId":220;"etapaId":29;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"SOLICTUD DE AUTORIZACION QUITO HONESTO";"orden":29;"esPersonalizada":1};{"id":42144;"subtareaId":220;"etapaId":30;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"INFORME QUITO HONESTO";"orden":30;"esPersonalizada":1};{"id":42145;"subtareaId":220;"etapaId":31;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"SOLICITUD DE AUTORIZACION MINTEL";"orden":31;"esPersonalizada":1};{"id":42146;"subtareaId":220;"etapaId":32;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"AUTORIZACION MINTEL";"orden":32;"esPersonalizada":1};{"id":42147;"subtareaId":220;"etapaId":33;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"REGISTRO DE Información ERP";"orden":33;"esPersonalizada":1};{"id":42148;"subtareaId":220;"etapaId":34;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"SOLICTUD DE AUTORIZACION DE INICIO";"orden":34;"esPersonalizada":1};{"id":42149;"subtareaId":220;"etapaId":35;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"AUTORIZACION INICIO";"orden":35;"esPersonalizada":1};{"id":42150;"subtareaId":220;"etapaId":36;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"ELABORACION DE PLIEGOS";"orden":36;"esPersonalizada":1};{"id":42151;"subtareaId":220;"etapaId":37;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"SOLICITUD DE RESOLUCION DE INICO";"orden":37;"esPersonalizada":1};{"id":42152;"subtareaId":220;"etapaId":38;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"RESOLUCION DE INICIO";"orden":38;"esPersonalizada":1};{"id":42153;"subtareaId":220;"etapaId":39;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"CARGA EN EL ERP DE RESOLUCION DE INICIO";"orden":39;"esPersonalizada":1};{"id":42154;"subtareaId":220;"etapaId":40;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"FECHA DE PUBLICACION EN EL PORTAL - SUSCRIPCION DE INFIMA CUANTIA";"orden":40;"esPersonalizada":1};{"id":42155;"subtareaId":220;"etapaId":41;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"PREGUNTAS";"orden":41;"esPersonalizada":1};{"id":42156;"subtareaId":220;"etapaId":42;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"RESPUESTA";"orden":42;"esPersonalizada":1};{"id":42157;"subtareaId":220;"etapaId":43;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"ENTREA DE OFERTA";"orden":43;"esPersonalizada":1};{"id":42158;"subtareaId":220;"etapaId":44;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"REVISION PARA CONVALIDACION";"orden":44;"esPersonalizada":1};{"id":42159;"subtareaId":220;"etapaId":45;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"SOLICITUD DE CONVALIDACION";"orden":45;"esPersonalizada":1};{"id":42160;"subtareaId":220;"etapaId":46;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"ENTREGA DE CONVALIDACION";"orden":46;"esPersonalizada":1};{"id":42161;"subtareaId":220;"etapaId":47;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"CALIFICACION";"orden":47;"esPersonalizada":1};{"id":42162;"subtareaId":220;"etapaId":48;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"INFORME DE RECOMENDACION - PUJA";"orden":48;"esPersonalizada":1};{"id":42163;"subtareaId":220;"etapaId":49;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"ADJUDICACION";"orden":49;"esPersonalizada":1};{"id":42164;"subtareaId":220;"etapaId":50;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"CONTRATO";"orden":50;"esPersonalizada":1};{"id":42165;"subtareaId":220;"etapaId":51;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"CARTA DE INTENCIÓN";"orden":51;"esPersonalizada":1};{"id":42166;"subtareaId":220;"etapaId":52;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"VALORIZACIÓN";"orden":52;"esPersonalizada":1};{"id":42167;"subtareaId":220;"etapaId":53;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"APROBACIÓN";"orden":53;"esPersonalizada":1};{"id":42168;"subtareaId":220;"etapaId":54;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"INFORME FINANCIERO";"orden":54;"esPersonalizada":1};{"id":42169;"subtareaId":220;"etapaId":55;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"INFORME JURÍDICO";"orden":55;"esPersonalizada":1};{"id":42170;"subtareaId":220;"etapaId":56;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"BORRADOR DE ACUERDO COMERCIAL";"orden":56;"esPersonalizada":1};{"id":42171;"subtareaId":220;"etapaId":57;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"FIRMA DEL ACUERDO COMERCIAL";"orden":57;"esPersonalizada":1};{"id":42172;"subtareaId":220;"etapaId":58;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"SOLICITUD DE REFORMA PAC";"orden":58;"esPersonalizada":1};{"id":42173;"subtareaId":220;"etapaId":59;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"ENTREGA DE PROFORMAS";"orden":59;"esPersonalizada":1};{"id":52335;"subtareaId":220;"etapaId":60;"aplica":1;"fechaTentativa":"";"estado":"pendiente";"fechaPlanificada":null;"fechaReal":null;"responsableId":25;"observaciones":null;"responsableNombre":"Arboleda Bonilla Pablo Israel";"responsable_id_ref":25;"etapaNombre":"RESOLUCION VPN";"orden":60;"esPersonalizada":1}]}"
+"auditoria_eventos","error_mensaje","text","YES","","",""
+"auditoria_eventos","fecha","datetime","NO","MUL","DEFAULT_GENERATED","Thu Apr 02 2026 16:56:49 GMT-0500 (hora de Ecuador)"
+"configuracion_notificaciones","id","int","NO","PRI","auto_increment","1"
+"configuracion_notificaciones","enabled","tinyint(1)","NO","","","0"
+"configuracion_notificaciones","remitente_nombre","varchar(255)","YES","","","Sistema de Seguimiento"
+"configuracion_notificaciones","remitente_email","varchar(255)","YES","","","notificaciones@quito-turismo.gob.ec"
+"configuracion_notificaciones","tipo_servidor","varchar(50)","NO","","","office365"
+"configuracion_notificaciones","smtp_host","varchar(255)","YES","","","smtp.office365.com"
+"configuracion_notificaciones","smtp_port","int","NO","","","587"
+"configuracion_notificaciones","smtp_secure","tinyint(1)","NO","","","0"
+"configuracion_notificaciones","requiere_auth","tinyint(1)","NO","","","1"
+"configuracion_notificaciones","smtp_user","varchar(255)","YES","","","notificaciones@quito-turismo.gob.ec"
+"configuracion_notificaciones","smtp_password","varchar(255)","YES","","","Qturismo**123$"
+"configuracion_notificaciones","supervisor_emails","text","YES","","","acasa@quito-turismo.gob.ec; tquinatoa@quito-turismo.gob.ec"
+"configuracion_notificaciones","hora_envio","varchar(5)","NO","","","08:00"
+"configuracion_notificaciones","zona_horaria","varchar(80)","NO","","","America/Guayaquil"
+"configuracion_notificaciones","notificar_etapas_atrasadas","tinyint(1)","NO","","","1"
+"configuracion_notificaciones","dias_atraso_minimo","int","NO","","","8"
+"configuracion_notificaciones","asunto_plantilla","varchar(255)","YES","","","Seguimiento de contrataciones - {{motivo}}"
+"configuracion_notificaciones","plantilla_html","longtext","YES","","","<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width; initial-scale=1.0" />
+    <title>{{asunto}}</title>
+  </head>
+  <body style="margin:0;padding:24px;background-color:#f8fafc;font-family:'Segoe UI';Tahoma;Geneva;Verdana;sans-serif;color:#1e293b;">
+    <div style="max-width:700px;margin:0 auto;background-color:#ffffff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(15;23;42;0.08);">
+      
+      <div style="background-color: #0076BC; padding: 30px; text-align: center;">
+        <img src="https://turismo.quito.gob.ec/wp-content/uploads/2024/06/logoQT.png" 
+             alt="Logo Quito Turismo" 
+             style="height: 55px; width: auto; display: inline-block; margin-bottom: 20px;" />
+        
+        <div style="color: #ffffff; text-align: left;">
+          <div style="font-size: 11px; letter-spacing: .15em; text-transform: uppercase; opacity: 0.9; margin-bottom: 8px; border-bottom: 1px solid rgba(255;255;255;0.2); padding-bottom: 8px; display: inline-block;">
+            SISTEMA DE SEGUIMIENTO - Quito Turismo EP
+          </div>
+          <h1 style="margin: 0; font-size: 24px; line-height: 1.2; font-weight: 600; color: #ffffff;">
+            {{titulo}}
+          </h1>
+          <p style="margin: 8px 0 0; font-size: 15px; font-weight: 300; color: #ffffff; opacity: 0.9;">
+            {{motivo}}
+          </p>
+        </div>
+      </div>
+
+      <div style="padding: 40px 30px; line-height: 1.7; font-size: 16px; color: #334155;">
+        <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-left: 5px solid #0076BC; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0;0;0;0.02);">
+           {{contenido}}
+        </div>
+      </div>
+
+      <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 25px 30px; color: #64748b; font-size: 12px;">
+        <div style="margin-bottom: 12px;">
+            <strong>Emitido el:</strong> {{fecha}}
+        </div>
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 15px; line-height: 1.6;">
+            {{pie}}<br>
+            <strong style="color: #0076BC;">Dirección de Tecnologías de la Información</strong><br>
+            <span style="opacity: 0.7;">Este es un mensaje automatizado; por favor no responda directamente a este remitente.</span>
+        </div>
+      </div>
+      
+    </div>
+  </body>
+</html>"
+"configuracion_notificaciones","pie_mensaje","varchar(255)","YES","","","Este es un mensaje automático del Sistema de Seguimiento de Contrataciones - QuitoTurismo"
+"configuracion_notificaciones","ultima_ejecucion_at","datetime","YES","","","Tue Apr 21 2026 00:00:44 GMT-0500 (hora de Ecuador)"
+"configuracion_notificaciones","ultima_ejecucion_fecha","varchar(10)","YES","","","2026-04-21"
+"configuracion_notificaciones","created_at","datetime","YES","","DEFAULT_GENERATED","Wed Apr 08 2026 14:56:33 GMT-0500 (hora de Ecuador)"
+"configuracion_notificaciones","updated_at","datetime","YES","","DEFAULT_GENERATED on update CURRENT_TIMESTAMP","Tue Apr 21 2026 14:01:45 GMT-0500 (hora de Ecuador)"
+"direcciones_catalogo","id","int","NO","PRI","auto_increment","1"
+"direcciones_catalogo","nombre","varchar(255)","NO","UNI","","DAF / Jefatura Administrativa"
+"direcciones_catalogo","activo","tinyint(1)","NO","","","1"
+"direcciones_catalogo","created_at","datetime","YES","","DEFAULT_GENERATED","Mon Mar 16 2026 15:51:42 GMT-0500 (hora de Ecuador)"
+"direcciones_catalogo","updated_at","datetime","YES","","DEFAULT_GENERATED on update CURRENT_TIMESTAMP","Mon Mar 16 2026 15:51:42 GMT-0500 (hora de Ecuador)"
+"etapas_catalogo","id","int","NO","PRI","","1"
+"etapas_catalogo","nombre","varchar(255)","NO","","","SOLICTUD DE CERTIFICACION PROGRAMATICA"
+"etapas_catalogo","clasificacion","enum('preparatoria','precontractual','contractual','sin_clasificar')","YES","","","preparatoria"
+"etapas_catalogo","orden","int","YES","","","1"
+"etapas_catalogo","descripcion","text","YES","","",""
+"etapas_catalogo","created_at","timestamp","YES","","DEFAULT_GENERATED","Wed Aug 05 2026 08:45:04 GMT-0500 (hora de Ecuador)"
+"etapas_catalogo","updated_at","timestamp","YES","","DEFAULT_GENERATED on update CURRENT_TIMESTAMP","Wed Aug 05 2026 08:45:04 GMT-0500 (hora de Ecuador)"
+"etapas_pac","id","int","NO","PRI","auto_increment","1"
+"etapas_pac","nombre","varchar(255)","NO","UNI","","SOLICTUD DE CERTIFICACION PROGRAMATICA"
+"etapas_pac","orden","int","NO","","","1"
+"etapas_pac","es_personalizada","tinyint(1)","YES","","","1"
+"notificaciones","id","int","NO","PRI","auto_increment","1"
+"notificaciones","tipo","varchar(50)","NO","","","email"
+"notificaciones","destinatario","varchar(255)","NO","","","acasa@quito-turismo.gob.ec"
+"notificaciones","asunto","varchar(255)","NO","","","Prueba de configuración de correo"
+"notificaciones","mensaje","longtext","NO","","","<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width; initial-scale=1.0" />
+    <title>Prueba de configuración de correo</title>
+  </head>
+  <body style="margin:0;padding:24px;background:#f8fafc;font-family:Arial;Helvetica;sans-serif;color:#0f172a;">
+    <div style="max-width:760px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(15;23;42;0.08);">
+      <div style="background:#0f172a;color:#ffffff;padding:20px 24px;">
+        <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.8;">Quito Turismo</div>
+        <h1 style="margin:8px 0 0;font-size:22px;line-height:1.3;">Validación de configuración SMTP</h1>
+        <p style="margin:8px 0 0;font-size:14px;opacity:.9;">Prueba de correo</p>
+      </div>
+
+      <div style="padding:24px;line-height:1.6;font-size:14px;">
+        
+    <p>Hola;</p>
+    <p>Este mensaje confirma que la configuración del módulo de correo fue procesada correctamente.</p>
+    <ul>
+      <li><strong>Servidor:</strong> office365</li>
+      <li><strong>Host:</strong> smtp.office365.com</li>
+      <li><strong>Puerto:</strong> 587</li>
+      <li><strong>Hora programada:</strong> 08:00</li>
+    </ul>
+    <p>Si recibió este mensaje; el sistema está listo para enviar alertas automáticas.</p>
+  
+      </div>
+
+      <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:16px 24px;color:#64748b;font-size:12px;">
+        <div><strong>Fecha:</strong> 08/04/2026; 10:06 a. m.</div>
+        <div style="margin-top:6px;">Este es un mensaje automático del Sistema de Seguimiento de Contrataciones - QuitoTurismo</div>
+      </div>
+    </div>
+  </body>
+</html>"
+"notificaciones","tarea_id","int","YES","MUL","",""
+"notificaciones","fecha","datetime","NO","MUL","","Wed Apr 08 2026 10:06:27 GMT-0500 (hora de Ecuador)"
+"notificaciones","leida","tinyint(1)","NO","","","0"
+"notificaciones","fecha_leida","datetime","YES","","",""
+"notificaciones","enviada","tinyint(1)","NO","","","1"
+"permisos_menu_catalogo","id","int","NO","PRI","auto_increment","1"
+"permisos_menu_catalogo","clave","varchar(80)","NO","UNI","","dashboard"
+"permisos_menu_catalogo","nombre","varchar(120)","NO","","","Dashboard"
+"permisos_menu_catalogo","ruta","varchar(255)","NO","","","/"
+"permisos_menu_catalogo","activo","tinyint(1)","NO","","","1"
+"permisos_menu_catalogo","orden","int","NO","","","10"
+"permisos_menu_catalogo","created_at","datetime","YES","","DEFAULT_GENERATED","Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador)"
+"permisos_menu_catalogo","updated_at","datetime","YES","","DEFAULT_GENERATED on update CURRENT_TIMESTAMP","Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador)"
+"permisos_modulos_catalogo","id","int","NO","PRI","auto_increment","1"
+"permisos_modulos_catalogo","clave","varchar(80)","NO","UNI","","dashboard"
+"permisos_modulos_catalogo","nombre","varchar(120)","NO","","","Dashboard"
+"permisos_modulos_catalogo","descripcion","varchar(255)","YES","","","Acceso a indicadores generales"
+"permisos_modulos_catalogo","activo","tinyint(1)","NO","","","1"
+"permisos_modulos_catalogo","orden","int","NO","","","10"
+"permisos_modulos_catalogo","created_at","datetime","YES","","DEFAULT_GENERATED","Fri Mar 27 2026 16:04:04 GMT-0500 (hora de Ecuador)"
+"permisos_modulos_catalogo","updated_at","datetime","YES","","DEFAULT_GENERATED on update CURRENT_TIMESTAMP","Fri Mar 27 2026 16:04:04 GMT-0500 (hora de Ecuador)"
+"permisos_roles_campos_etapas","id","int","NO","PRI","auto_increment","1"
+"permisos_roles_campos_etapas","role","varchar(80)","NO","MUL","","admin"
+"permisos_roles_campos_etapas","campo_clave","varchar(80)","NO","","","fecha_reforma"
+"permisos_roles_campos_etapas","puede_ver","tinyint(1)","NO","","","1"
+"permisos_roles_campos_etapas","puede_editar","tinyint(1)","NO","","","1"
+"permisos_roles_campos_etapas","created_at","datetime","YES","","DEFAULT_GENERATED","Mon May 18 2026 15:47:40 GMT-0500 (hora de Ecuador)"
+"permisos_roles_campos_etapas","updated_at","datetime","YES","","DEFAULT_GENERATED on update CURRENT_TIMESTAMP","Mon May 18 2026 15:52:04 GMT-0500 (hora de Ecuador)"
+"permisos_roles_menu","id","int","NO","PRI","auto_increment","1"
+"permisos_roles_menu","role","varchar(80)","NO","MUL","","admin"
+"permisos_roles_menu","menu_clave","varchar(80)","NO","MUL","","dashboard"
+"permisos_roles_menu","puede_ingresar","tinyint(1)","NO","","","1"
+"permisos_roles_menu","created_at","datetime","YES","","DEFAULT_GENERATED","Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador)"
+"permisos_roles_menu","updated_at","datetime","YES","","DEFAULT_GENERATED on update CURRENT_TIMESTAMP","Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador)"
+"permisos_roles_modulos","id","int","NO","PRI","auto_increment","1"
+"permisos_roles_modulos","role","varchar(80)","NO","MUL","","admin"
+"permisos_roles_modulos","modulo_clave","varchar(80)","NO","MUL","","dashboard"
+"permisos_roles_modulos","puede_leer","tinyint(1)","NO","","","1"
+"permisos_roles_modulos","puede_crear","tinyint(1)","NO","","","1"
+"permisos_roles_modulos","puede_actualizar","tinyint(1)","NO","","","1"
+"permisos_roles_modulos","puede_borrar","tinyint(1)","NO","","","1"
+"permisos_roles_modulos","created_at","datetime","YES","","DEFAULT_GENERATED","Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador)"
+"permisos_roles_modulos","updated_at","datetime","YES","","DEFAULT_GENERATED on update CURRENT_TIMESTAMP","Fri Mar 27 2026 16:04:06 GMT-0500 (hora de Ecuador)"
+"responsables_catalogo","id","int","NO","PRI","auto_increment","1"
+"responsables_catalogo","nombre","varchar(255)","NO","","","Andrés Mogro"
+"responsables_catalogo","email","varchar(255)","YES","","","jmogro@quito-turismo.gob.ec"
+"responsables_catalogo","direccion_id","int","YES","MUL","","2"
+"responsables_catalogo","activo","tinyint(1)","NO","","","1"
+"responsables_catalogo","created_at","datetime","YES","","DEFAULT_GENERATED","Mon Mar 16 2026 15:51:42 GMT-0500 (hora de Ecuador)"
+"responsables_catalogo","updated_at","datetime","YES","","DEFAULT_GENERATED on update CURRENT_TIMESTAMP","Wed Apr 08 2026 19:14:21 GMT-0500 (hora de Ecuador)"
+"seguimiento_etapas","id","int","NO","PRI","auto_increment","6451"
+"seguimiento_etapas","subtarea_id","int","NO","MUL","","130"
+"seguimiento_etapas","etapa_id","int","NO","MUL","","1"
+"seguimiento_etapas","estado","varchar(50)","NO","","","completado"
+"seguimiento_etapas","fecha_planificada","date","YES","","","Mon Jun 15 2026 00:00:00 GMT-0500 (hora de Ecuador)"
+"seguimiento_etapas","fecha_real","date","YES","","","Tue Jul 28 2026 00:00:00 GMT-0500 (hora de Ecuador)"
+"seguimiento_etapas","responsable_id","int","YES","MUL","",""
+"seguimiento_etapas","responsable","varchar(255)","YES","","","Fabricio Medina"
+"seguimiento_etapas","observaciones","text","YES","","",""
+"seguimientos_diarios","id","int","NO","PRI","auto_increment",""
+"seguimientos_diarios","subtarea_id","int","NO","MUL","",""
+"seguimientos_diarios","etapa_id","int","NO","MUL","",""
+"seguimientos_diarios","fecha","date","NO","","",""
+"seguimientos_diarios","comentario","text","NO","","",""
+"seguimientos_diarios","tiene_alerta","tinyint(1)","YES","","",""
+"seguimientos_diarios","responsable_id","int","YES","MUL","",""
+"seguimientos_diarios","responsable","varchar(255)","YES","","",""
+"seguimientos_diarios","created_at","datetime","NO","","DEFAULT_GENERATED",""
+"seguimientos_diarios","updated_at","datetime","NO","","DEFAULT_GENERATED on update CURRENT_TIMESTAMP",""
+"subtareas","id","int","NO","PRI","auto_increment","130"
+"subtareas","direccion_encargada","varchar(255)","NO","","","DPEI / Jefatura de TICS"
+"subtareas","nombre","text","NO","","","Renovación de la suscripción de las licencias de diseño asistido por computadoras (cad) diseño gráfico modelado en 3D"
+"subtareas","codigo_olympo","varchar(100)","NO","UNI","","01.01.001.055.530702.000.009"
+"subtareas","partida_presupuestaria","varchar(120)","YES","","","530702"
+"subtareas","presupuesto_2026_inicial","decimal(14,2)","NO","","","7000.00"
+"subtareas","costo_2026","decimal(14,2)","NO","","","7000.00"
+"subtareas","cuatrimestre","varchar(50)","YES","","","2"
+"subtareas","plazo_contrato","varchar(120)","YES","","",""
+"subtareas","pac_no_pac","varchar(30)","NO","","","No PAC"
+"subtareas","procedimiento_sugerido","varchar(255)","YES","","","Ínfimas cuantías"
+"subtareas","responsable_id","int","YES","MUL","","6"
+"subtareas","responsable","varchar(255)","YES","","","Fabricio Medina"
+"subtareas","activo","tinyint(1)","NO","","","1"
+"subtareas","observaciones","text","YES","","",""
+"subtareas","proceso_en_riesgo","tinyint(1)","NO","","","0"
+"subtareas","riesgo_comentario","text","YES","","",""
+"subtareas","fecha_reforma_3","date","YES","","",""
+"subtareas","fecha_inicio","date","YES","","",""
+"subtareas","fecha_fin","date","YES","","",""
+"subtareas","created_at","datetime","YES","","DEFAULT_GENERATED","Fri Mar 13 2026 10:54:00 GMT-0500 (hora de Ecuador)"
+"subtareas","updated_at","datetime","YES","","DEFAULT_GENERATED on update CURRENT_TIMESTAMP","Tue Jul 21 2026 12:25:21 GMT-0500 (hora de Ecuador)"
+"subtareas_etapas","id","int","NO","PRI","auto_increment","6451"
+"subtareas_etapas","subtarea_id","int","NO","MUL","","130"
+"subtareas_etapas","etapa_id","int","NO","MUL","","1"
+"subtareas_etapas","aplica","tinyint(1)","NO","","","1"
+"subtareas_etapas","fecha_tentativa","date","YES","","","Mon Jun 15 2026 00:00:00 GMT-0500 (hora de Ecuador)"
+"subtareas_etapas","fecha_reforma","date","YES","","","Mon Jun 15 2026 00:00:00 GMT-0500 (hora de Ecuador)"
+"subtareas_etapas","fecha_reforma_3","date","YES","","",""
+"usuarios","id","int","NO","PRI","auto_increment","1"
+"usuarios","username","varchar(80)","NO","UNI","","Admin"
+"usuarios","nombre","varchar(255)","NO","","","Administrador del Sistema"
+"usuarios","password_hash","varchar(255)","NO","","","$2a$10$1Lnh2nGEjVcBykjy7srxZeku.lzsQp8MgZ7bHeVCcLsSZ.r0D59Hy"
+"usuarios","role","varchar(80)","NO","","","admin"
+"usuarios","direccion_nombre","varchar(255)","YES","","",""
+"usuarios","orden_login","int","NO","","","16"
+"usuarios","activo","tinyint(1)","NO","","","1"
+"usuarios","fecha_inicio_rol","date","YES","","",""
+"usuarios","fecha_fin_rol","date","YES","","",""
+"usuarios","created_at","datetime","YES","","DEFAULT_GENERATED","Mon Mar 16 2026 15:20:31 GMT-0500 (hora de Ecuador)"
+"usuarios","updated_at","datetime","YES","","DEFAULT_GENERATED on update CURRENT_TIMESTAMP","Tue Apr 07 2026 16:06:18 GMT-0500 (hora de Ecuador)"
+"usuarios_direcciones","id","int","NO","PRI","auto_increment","10"
+"usuarios_direcciones","usuario_id","int","NO","MUL","","25"
+"usuarios_direcciones","direccion_id","int","NO","MUL","","12"
+"usuarios_direcciones","created_at","datetime","YES","","DEFAULT_GENERATED","Mon Aug 03 2026 08:36:09 GMT-0500 (hora de Ecuador)"
