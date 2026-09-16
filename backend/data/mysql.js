@@ -3264,7 +3264,7 @@ export async function getActividadesByVersion(versionId, listaRapida = false) {
     const placeholders = procesosIds.map(() => '?').join(',');
     const etapasData = await query(
       `SELECT DISTINCT ep.id, ep.proceso_id, ep.etapa_id, ep.fecha_planificada,
-              ec.nombre AS etapa_nombre, ec.clasificacion, ec.descripcion,
+              ec.nombre AS etapa_nombre, ec.clasificacion,
               sg.estado, sg.fecha_real, sg.observaciones, ep.aplica
        FROM etapas_proceso ep
        JOIN etapas_catalogo ec ON ec.id = ep.etapa_id
