@@ -2327,7 +2327,6 @@ export async function updateSubtareaVersion(id, data) {
   const fieldMap = {
     codigoOlympo: 'codigo_olympo',
     codigoUnicoProceso: 'codigo_unico_proceso',
-    estado: 'estado',
     partidaPresupuestaria: 'partida_presupuestaria',
     presupuesto: 'presupuesto_con_reformas',
     tipoPlan: 'pac_no_pac',
@@ -3103,24 +3102,13 @@ export async function deleteSeguimientoDiario(id) {
 // ========== VERSIONES Y REFORMAS ==========
 
 export async function getAllVersiones() {
-  const rows = await query(`
-    SELECT id, anio, numero_reforma, nombre, descripcion, estado, activa,
-           usuario_creacion, fecha_creacion, usuario_aprobacion, fecha_aprobacion,
-           usuario_activacion, fecha_activacion,
-           presupuesto_total, total_procesos, activos_count, inactivos_count
-    FROM versiones
-    ORDER BY anio DESC, numero_reforma DESC
-  `);
+  const rows = await query(`SELECT * FROM versiones ORDER BY id DESC`);
   return rows.map(toCamelRow);
 }
 
 export async function getVersionById(id) {
   const rows = await query(
-    `SELECT id, anio, numero_reforma, nombre, descripcion, estado, activa,
-            usuario_creacion, fecha_creacion, usuario_aprobacion, fecha_aprobacion,
-            usuario_activacion, fecha_activacion,
-            presupuesto_total, total_procesos, activos_count, inactivos_count
-     FROM versiones WHERE id = ?`,
+    `SELECT * FROM versiones WHERE id = ?`,
     [id]
   );
 
@@ -3144,11 +3132,7 @@ export async function getVersionById(id) {
 
 export async function getVersionActual() {
   const rows = await query(
-    `SELECT id, anio, numero_reforma, nombre, descripcion, estado, activa,
-            usuario_creacion, fecha_creacion, usuario_aprobacion, fecha_aprobacion,
-            usuario_activacion, fecha_activacion,
-            presupuesto_total, total_procesos, activos_count, inactivos_count
-     FROM versiones WHERE activa = 1 LIMIT 1`
+    `SELECT * FROM versiones WHERE activo = 1 ORDER BY id DESC LIMIT 1`
   );
 
   return rows.length > 0 ? toCamelRow(rows[0]) : null;
@@ -3161,7 +3145,7 @@ export async function getActividadesByVersion(versionId, listaRapida = false) {
       `SELECT p.id, p.version_id, p.codigo_olympo, p.subtarea, p.direccion,
               p.presupuesto_2026_inicial, p.pac_no_pac, p.activo, p.proceso_en_riesgo,
               p.tipo_contratacion,
-              v.numero_reforma, v.nombre as version_nombre
+              v.numero AS numero_reforma, v.nombre as version_nombre
        FROM procesos p
        LEFT JOIN versiones v ON v.id = p.version_id
        WHERE p.version_id = ? AND p.activo = 1
@@ -3247,7 +3231,7 @@ export async function getActividadesByVersion(versionId, listaRapida = false) {
 
   // Query completa: todos los campos del proceso
   const rows = await query(
-    `SELECT p.*, v.numero_reforma, v.nombre as version_nombre
+    `SELECT p.*, v.numero AS numero_reforma, v.nombre as version_nombre
      FROM procesos p
      LEFT JOIN versiones v ON v.id = p.version_id
      WHERE p.version_id = ? AND p.activo = 1
@@ -3376,7 +3360,7 @@ export async function reactivarVersion(versionId, usuarioActivacion) {
 
     // Obtener versión a activar
     const [version] = await connection.query(
-      'SELECT id, estado FROM versiones WHERE id = ?',
+      'SELECT id FROM versiones WHERE id = ?',
       [versionId]
     );
 
@@ -3384,21 +3368,15 @@ export async function reactivarVersion(versionId, usuarioActivacion) {
       throw new Error('Versión no encontrada');
     }
 
-    if (version[0].estado !== 'aprobado' && version[0].estado !== 'historico') {
-      throw new Error('Solo se pueden activar versiones aprobadas o históricas');
-    }
-
     // Desactivar versión anterior
     await connection.query(
-      'UPDATE versiones SET activa = 0 WHERE activa = 1'
+      'UPDATE versiones SET activo = 0 WHERE activo = 1'
     );
 
     // Activar esta versión
     await connection.query(
-      `UPDATE versiones SET activa = 1,
-              usuario_activacion = ?, fecha_activacion = NOW()
-       WHERE id = ?`,
-      [usuarioActivacion, versionId]
+      'UPDATE versiones SET activo = 1 WHERE id = ?',
+      [versionId]
     );
 
     // Registrar cambio (tabla legacy, tolerar ausencia en la nueva estructura)
@@ -3435,19 +3413,15 @@ export async function crearNuevaReforma(anio, descripcion = '', usuario = 'SISTE
 
     // Obtener el siguiente número de reforma
     const [result] = await connection.query(
-      'SELECT MAX(numero_reforma) as max_num FROM versiones WHERE anio = ?',
-      [anio]
+      'SELECT MAX(numero) as max_num FROM versiones'
     );
     const numeroReforma = (result[0]?.max_num || 0) + 1;
 
     // Crear nueva reforma
     const [insertResult] = await connection.query(
-      `INSERT INTO versiones (
-        anio, numero_reforma, nombre, descripcion, estado, activa,
-        usuario_creacion, fecha_creacion,
-        presupuesto_total, total_procesos, activos_count, inactivos_count
-      ) VALUES (?, ?, ?, ?, 'borrador', 0, ?, NOW(), 0, 0, 0, 0)`,
-      [anio, numeroReforma, `Reforma ${numeroReforma} ${anio}`, descripcion, usuario]
+      `INSERT INTO versiones (numero, nombre, descripcion, activo)
+       VALUES (?, ?, ?, 0)`,
+      [numeroReforma, `Reforma ${numeroReforma} ${anio}`, descripcion]
     );
 
     const versionId = insertResult.insertId;
@@ -3483,10 +3457,10 @@ export async function duplicarProcesos(versionIdDestino, versionIdOrigen) {
 
     // Obtener procesos de la versión origen (DE TABLA PROCESOS)
     const [procesosOrigen] = await connection.query(
-      `SELECT id, codigo_olympo, subtarea, direccion, responsable, responsable_id,
-              fecha_inicio, fecha_fin, plazo_contrato, pac_no_pac, procedimiento_sugerido,
-              presupuesto_2026_inicial, costo_2026, partida_presupuestaria,
-              activo, proceso_en_riesgo, riesgo_comentario, observaciones, tipo_contratacion
+      `SELECT id, codigo_olympo, codigo_unico_proceso, subtarea, direccion, responsable_id,
+              pac_no_pac, tipo_contratacion, cpc, fuente_financiamiento,
+              presupuesto_con_reformas, partida_presupuestaria, cuatrimestre,
+              activo, proceso_en_riesgo, riesgo_comentario
        FROM procesos WHERE version_id = ?`,
       [versionIdOrigen]
     );
@@ -3496,44 +3470,21 @@ export async function duplicarProcesos(versionIdDestino, versionIdOrigen) {
     for (const proceso of procesosOrigen) {
       await connection.query(
         `INSERT INTO procesos (
-          version_id, codigo_olympo, subtarea, direccion, responsable, responsable_id,
-          fecha_inicio, fecha_fin, plazo_contrato, pac_no_pac, procedimiento_sugerido,
-          presupuesto_2026_inicial, costo_2026, partida_presupuestaria,
-          activo, proceso_en_riesgo, riesgo_comentario, observaciones, tipo_contratacion
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          version_id, codigo_olympo, codigo_unico_proceso, subtarea, direccion, responsable_id,
+          pac_no_pac, tipo_contratacion, cpc, fuente_financiamiento,
+          presupuesto_con_reformas, partida_presupuestaria, cuatrimestre,
+          activo, proceso_en_riesgo, riesgo_comentario
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          versionIdDestino, proceso.codigo_olympo, proceso.subtarea, proceso.direccion,
-          proceso.responsable, proceso.responsable_id, proceso.fecha_inicio, proceso.fecha_fin,
-          proceso.plazo_contrato, proceso.pac_no_pac, proceso.procedimiento_sugerido,
-          proceso.presupuesto_2026_inicial, proceso.costo_2026, proceso.partida_presupuestaria,
-          proceso.activo, proceso.proceso_en_riesgo, proceso.riesgo_comentario,
-          proceso.observaciones, proceso.tipo_contratacion
+          versionIdDestino, proceso.codigo_olympo, proceso.codigo_unico_proceso, proceso.subtarea,
+          proceso.direccion, proceso.responsable_id, proceso.pac_no_pac, proceso.tipo_contratacion,
+          proceso.cpc, proceso.fuente_financiamiento, proceso.presupuesto_con_reformas,
+          proceso.partida_presupuestaria, proceso.cuatrimestre,
+          proceso.activo, proceso.proceso_en_riesgo, proceso.riesgo_comentario
         ]
       );
       cantInsertados++;
     }
-
-    // Actualizar totales de versión destino (DE TABLA PROCESOS)
-    const [stats] = await connection.query(
-      `SELECT COUNT(*) as total, SUM(CASE WHEN activo = 1 THEN 1 ELSE 0 END) as activos,
-              SUM(CASE WHEN activo = 0 THEN 1 ELSE 0 END) as inactivos,
-              SUM(presupuesto_2026_inicial) as presupuesto
-       FROM procesos WHERE version_id = ?`,
-      [versionIdDestino]
-    );
-
-    await connection.query(
-      `UPDATE versiones SET total_procesos = ?, activos_count = ?,
-              inactivos_count = ?, presupuesto_total = ?
-       WHERE id = ?`,
-      [
-        stats[0].total || 0,
-        stats[0].activos || 0,
-        stats[0].inactivos || 0,
-        stats[0].presupuesto || 0,
-        versionIdDestino
-      ]
-    );
 
     // Registrar cambio (tabla legacy, tolerar ausencia en la nueva estructura)
     try {
@@ -3563,12 +3514,11 @@ export async function copiarSeguimientoDeReformaAnterior(versionIdDestino) {
   try {
     await connection.beginTransaction();
 
-    // Obtener la versión anterior (historico o aprobado)
+    // Obtener la versión anterior (la más reciente distinta a la actual)
     const [versionAnterior] = await connection.query(
       `SELECT id FROM versiones
-       WHERE estado IN ('historico', 'aprobado')
-       AND id != ?
-       ORDER BY fecha_creacion DESC LIMIT 1`,
+       WHERE id != ?
+       ORDER BY created_at DESC LIMIT 1`,
       [versionIdDestino]
     );
 
@@ -3715,8 +3665,8 @@ export async function cargarExcelVersion(versionId, datosProcesos, usuario = 'SI
             version_id, codigo_olympo, codigo_unico_proceso, subtarea,
             direccion, partida_presupuestaria, presupuesto_con_reformas,
             pac_no_pac, tipo_contratacion, fuente_financiamiento,
-            estado, activo, proceso_en_riesgo, riesgo_comentario
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, NULL)`,
+            activo, proceso_en_riesgo, riesgo_comentario
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, NULL)`,
           [
             versionId,
             codigoFinal,
@@ -3727,8 +3677,7 @@ export async function cargarExcelVersion(versionId, datosProcesos, usuario = 'SI
             parseNumber(proceso.presupuesto_con_reformas),
             proceso.pac_no_pac || 'PAC',
             truncate(proceso.tipo_contratacion, 100),
-            proceso.fuente_financiamiento || null,
-            proceso.estado || 'Precontractual'
+            proceso.fuente_financiamiento || null
           ]
         );
 
@@ -3739,26 +3688,6 @@ export async function cargarExcelVersion(versionId, datosProcesos, usuario = 'SI
         continue;
       }
     }
-
-    const [stats] = await connection.query(
-      `SELECT COUNT(*) as total, COUNT(CASE WHEN activo=1 THEN 1 END) as activos,
-              SUM(presupuesto_con_reformas) as presupuesto
-       FROM procesos WHERE version_id = ?`,
-      [versionId]
-    );
-
-    await connection.query(
-      `UPDATE versiones SET total_procesos = ?, activos_count = ?,
-              inactivos_count = ?, presupuesto_total = ?
-       WHERE id = ?`,
-      [
-        stats[0].total || 0,
-        stats[0].activos || 0,
-        (stats[0].total || 0) - (stats[0].activos || 0),
-        stats[0].presupuesto || 0,
-        versionId
-      ]
-    );
 
     await connection.commit();
     return {
@@ -3790,25 +3719,16 @@ export async function aprobarVersion(versionId, usuarioAprobacion) {
       throw new Error('Versión no encontrada');
     }
 
-    const v = version[0];
-    if (v.estado !== 'borrador') {
-      throw new Error('Solo se pueden aprobar versiones en estado borrador');
-    }
-
-    // Marcar versiones anteriores como histórico
+    // Desactivar cualquier otra versión activa (solo una versión activa a la vez)
     await connection.query(
-      `UPDATE versiones SET estado = 'historico', activa = 0
-       WHERE anio = ? AND numero_reforma < ? AND estado = 'aprobado'`,
-      [v.anio, v.numero_reforma]
+      `UPDATE versiones SET activo = 0 WHERE id != ?`,
+      [versionId]
     );
 
     // Aprobar esta versión y hacerla activa
     await connection.query(
-      `UPDATE versiones SET estado = 'aprobado', activa = 1,
-              usuario_aprobacion = ?, fecha_aprobacion = NOW(),
-              usuario_activacion = ?, fecha_activacion = NOW()
-       WHERE id = ?`,
-      [usuarioAprobacion, usuarioAprobacion, versionId]
+      `UPDATE versiones SET activo = 1 WHERE id = ?`,
+      [versionId]
     );
 
     // Registrar cambio (tabla legacy, tolerar ausencia en la nueva estructura)
@@ -3856,7 +3776,7 @@ export async function deleteVersion(versionId) {
 
     // Verificar estado
     const [version] = await connection.query(
-      'SELECT estado FROM versiones WHERE id = ?',
+      'SELECT activo FROM versiones WHERE id = ?',
       [versionId]
     );
 
@@ -3864,8 +3784,8 @@ export async function deleteVersion(versionId) {
       throw new Error('Versión no encontrada');
     }
 
-    if (version[0].estado !== 'borrador') {
-      throw new Error('Solo se pueden eliminar versiones en estado borrador');
+    if (Number(version[0].activo) === 1) {
+      throw new Error('No se puede eliminar la versión activa');
     }
 
     // Eliminar procesos
