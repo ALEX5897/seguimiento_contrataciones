@@ -160,7 +160,7 @@
               </select>
             </div>
             <div class="form-grupo">
-              <label for="presupuesto">Presupuesto *</label>
+              <label for="presupuesto">Presupuesto</label>
               <input
                 id="presupuesto"
                 v-model="presupuestoTexto"
@@ -171,7 +171,6 @@
                 @input="onPresupuestoInput"
                 @focus="onPresupuestoFocus"
                 @blur="onPresupuestoBlur"
-                required
               />
             </div>
           </div>
@@ -189,12 +188,11 @@
               />
             </div>
             <div class="form-grupo">
-              <label for="partidaPresupuestaria">Partida Presupuestaria *</label>
+              <label for="partidaPresupuestaria">Partida Presupuestaria</label>
               <input
                 id="partidaPresupuestaria"
                 v-model="formulario.partidaPresupuestaria"
                 type="text"
-                required
                 placeholder="Ej: 840107"
               />
             </div>
@@ -224,8 +222,8 @@
 
           <!-- Contratación -->
           <div class="form-grupo">
-            <label for="tipoContratacion">Tipo de Contratación *</label>
-            <select id="tipoContratacion" v-model="formulario.tipoContratacion" required>
+            <label for="tipoContratacion">Tipo de Contratación</label>
+            <select id="tipoContratacion" v-model="formulario.tipoContratacion">
               <option value="">Seleccionar...</option>
               <option value="Compra de Bienes">Compra de Bienes</option>
               <option value="Prestación de Servicios">Prestación de Servicios</option>
@@ -1184,24 +1182,12 @@ async function guardarActividad() {
       mostrarNotificacion('⚠️ El tipo de plan es requerido', 'error');
       return;
     }
-    if (formulario.value.presupuesto === undefined && formulario.value.presupuesto !== 0) {
-      mostrarNotificacion('⚠️ El presupuesto es requerido', 'error');
-      return;
-    }
     if (!formulario.value.cpc || !formulario.value.cpc.trim()) {
       mostrarNotificacion('⚠️ El CPC es requerido', 'error');
       return;
     }
-    if (!formulario.value.partidaPresupuestaria || !formulario.value.partidaPresupuestaria.trim()) {
-      mostrarNotificacion('⚠️ La partida presupuestaria es requerida', 'error');
-      return;
-    }
     if (!formulario.value.cuatrimestre) {
       mostrarNotificacion('⚠️ El cuatrimestre es requerido', 'error');
-      return;
-    }
-    if (!formulario.value.tipoContratacion) {
-      mostrarNotificacion('⚠️ El tipo de contratación es requerido', 'error');
       return;
     }
 
