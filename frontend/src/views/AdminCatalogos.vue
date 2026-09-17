@@ -250,6 +250,79 @@
     <div v-if="tabActiva === 'catalogo-etapas'" class="tab-content">
       <AdminCatalogoEtapas />
     </div>
+
+    <!-- TAB: Tipos de Contratación -->
+    <div v-if="tabActiva === 'tipos-contratacion'" class="tab-content">
+      <section class="card">
+        <div class="section-header">
+          <h2>Tipos de Contratación</h2>
+          <button type="button" class="btn-crear" @click="mostrarModalTipoContratacion = true">
+            ➕ Crear Tipo de Contratación
+          </button>
+        </div>
+
+        <!-- Modal Crear Tipo de Contratación -->
+        <div v-if="mostrarModalTipoContratacion" class="modal-overlay" @click.self="mostrarModalTipoContratacion = false">
+          <div class="modal-content" @click.stop>
+            <div class="modal-header">
+              <h3>Crear Nuevo Tipo de Contratación</h3>
+              <button type="button" class="btn-close" @click="mostrarModalTipoContratacion = false">✕</button>
+            </div>
+            <form @submit.prevent="crearTipoContratacion" class="form-modal">
+              <div class="form-group">
+                <label>Nombre *</label>
+                <input v-model="nuevoTipoContratacion" type="text" placeholder="Ej: Subasta Inversa Electrónica" required />
+              </div>
+              <div class="modal-actions">
+                <button type="submit" :disabled="guardando" class="btn-primary">
+                  {{ guardando ? 'Creando...' : '✓ Crear' }}
+                </button>
+                <button type="button" class="btn-secondary" @click="mostrarModalTipoContratacion = false">
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th width="60%">Nombre</th>
+              <th width="20%">Activo</th>
+              <th width="20%">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="tiposContratacion.length === 0">
+              <td colspan="3" class="sin-datos">No hay tipos de contratación</td>
+            </tr>
+            <tr v-for="t in tiposContratacion" :key="t.id">
+              <td><input v-model="t.nombre" :disabled="t.id !== editandoTipoContratacion" class="input-tabla" /></td>
+              <td style="text-align: center">
+                <input type="checkbox" v-model="t.activo" :disabled="t.id !== editandoTipoContratacion" />
+              </td>
+              <td class="acciones-celda">
+                <button v-if="t.id !== editandoTipoContratacion" type="button" class="btn-editar-inline" @click="editandoTipoContratacion = t.id" :disabled="guardando">
+                  ✏️ Editar
+                </button>
+                <div v-else class="acciones-grupo">
+                  <button type="button" class="btn-guardar-inline" @click="guardarTipoContratacion(t)" :disabled="guardando">
+                    ✓ Guardar
+                  </button>
+                  <button type="button" class="btn-cancelar-inline" @click="editandoTipoContratacion = null" :disabled="guardando">
+                    ✗ Cancelar
+                  </button>
+                </div>
+                <button v-if="t.id === editandoTipoContratacion" type="button" class="btn-eliminar-inline" @click="eliminarTipoContratacion(t)" :disabled="guardando">
+                  🗑️
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -267,18 +340,23 @@ const responsablesSeleccionados = ref<number[]>([]);
 
 const mostrarModalDireccion = ref(false);
 const mostrarModalResponsable = ref(false);
+const mostrarModalTipoContratacion = ref(false);
 const editandoDireccion = ref<number | null>(null);
 const editandoResponsable = ref<number | null>(null);
+const editandoTipoContratacion = ref<number | null>(null);
 
 const tabs = [
   { id: 'direcciones-responsables', label: '📋 Direcciones y Responsables' },
-  { id: 'catalogo-etapas', label: '📊 Catálogo de Etapas' }
+  { id: 'catalogo-etapas', label: '📊 Catálogo de Etapas' },
+  { id: 'tipos-contratacion', label: '📄 Tipos de Contratación' }
 ];
 
 const direcciones = ref<any[]>([]);
 const responsables = ref<any[]>([]);
+const tiposContratacion = ref<any[]>([]);
 
 const nuevaDireccion = ref('');
+const nuevoTipoContratacion = ref('');
 const nuevoResponsable = ref({
   nombre: '',
   email: '',
@@ -307,9 +385,10 @@ function normalizarActivo(valor: unknown, porDefecto = true): boolean {
 
 async function cargarCatalogos() {
   try {
-    const [dirs, reps] = await Promise.all([
+    const [dirs, reps, tiposCont] = await Promise.all([
       api.get('/catalogos/direcciones'),
-      api.get('/catalogos/responsables')
+      api.get('/catalogos/responsables'),
+      api.get('/catalogos/tipos-contratacion')
     ]);
     direcciones.value = (dirs.data || []).map((d: any) => ({
       ...d,
@@ -320,9 +399,70 @@ async function cargarCatalogos() {
       direccionId: r.direccionId ?? r.direccion_id ?? null,
       activo: normalizarActivo(r?.activo, true)
     }));
+    tiposContratacion.value = (tiposCont.data || []).map((t: any) => ({
+      ...t,
+      activo: normalizarActivo(t?.activo, true)
+    }));
   } catch (e: any) {
     tipoMensaje.value = 'error';
     mensaje.value = 'Error al cargar catálogos';
+  }
+}
+
+async function crearTipoContratacion() {
+  if (!nuevoTipoContratacion.value.trim()) return;
+  guardando.value = true;
+  mensaje.value = '';
+  try {
+    await api.post('/catalogos/tipos-contratacion', { nombre: nuevoTipoContratacion.value.trim(), activo: true });
+    nuevoTipoContratacion.value = '';
+    mostrarModalTipoContratacion.value = false;
+    tipoMensaje.value = 'success';
+    mensaje.value = 'Tipo de contratación creado correctamente';
+    await cargarCatalogos();
+  } catch (e: any) {
+    tipoMensaje.value = 'error';
+    mensaje.value = e?.response?.data?.error || 'Error al crear tipo de contratación';
+  } finally {
+    guardando.value = false;
+  }
+}
+
+async function guardarTipoContratacion(tipo: any) {
+  guardando.value = true;
+  mensaje.value = '';
+  try {
+    await api.put(`/catalogos/tipos-contratacion/${tipo.id}`, {
+      nombre: tipo.nombre,
+      activo: normalizarActivo(tipo.activo, true)
+    });
+    editandoTipoContratacion.value = null;
+    tipoMensaje.value = 'success';
+    mensaje.value = 'Tipo de contratación actualizado correctamente';
+    await cargarCatalogos();
+  } catch (e: any) {
+    tipoMensaje.value = 'error';
+    mensaje.value = e?.response?.data?.error || 'Error al actualizar tipo de contratación';
+  } finally {
+    guardando.value = false;
+  }
+}
+
+async function eliminarTipoContratacion(tipo: any) {
+  if (!confirm(`¿Eliminar tipo de contratación "${tipo.nombre}"?`)) return;
+  guardando.value = true;
+  mensaje.value = '';
+  try {
+    await api.delete(`/catalogos/tipos-contratacion/${tipo.id}`);
+    editandoTipoContratacion.value = null;
+    tipoMensaje.value = 'success';
+    mensaje.value = 'Tipo de contratación eliminado correctamente';
+    await cargarCatalogos();
+  } catch (e: any) {
+    tipoMensaje.value = 'error';
+    mensaje.value = e?.response?.data?.error || 'Error al eliminar tipo de contratación';
+  } finally {
+    guardando.value = false;
   }
 }
 

@@ -634,6 +634,16 @@ async function createSchema() {
   `);
 
   await query(`
+    CREATE TABLE IF NOT EXISTS tipos_contratacion_catalogo (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      nombre VARCHAR(255) NOT NULL UNIQUE,
+      activo BOOLEAN NOT NULL DEFAULT true,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB;
+  `);
+
+  await query(`
     CREATE TABLE IF NOT EXISTS responsables_catalogo (
       id INT AUTO_INCREMENT PRIMARY KEY,
       nombre VARCHAR(255) NOT NULL,
@@ -2111,6 +2121,76 @@ export async function deleteDireccionCatalogo(id) {
     throw new Error('No se puede eliminar una dirección con responsables asociados');
   }
   const result = await query('DELETE FROM direcciones_catalogo WHERE id = ?', [id]);
+  return result.affectedRows > 0;
+}
+
+export async function getTiposContratacionCatalogo() {
+  const rows = await query(
+    `SELECT id, nombre, activo, created_at, updated_at
+     FROM tipos_contratacion_catalogo
+     ORDER BY nombre`
+  );
+  return rows.map((row) => {
+    const item = toCamelRow(row);
+    item.activo = normalizeActivo(item.activo, true);
+    return item;
+  });
+}
+
+export async function createTipoContratacionCatalogo(data = {}) {
+  const nombre = String(data.nombre || '').trim();
+  if (!nombre) throw new Error('El nombre del tipo de contratación es requerido');
+
+  const result = await query(
+    `INSERT INTO tipos_contratacion_catalogo (nombre, activo)
+     VALUES (?, ?)`,
+    [nombre, normalizeActivo(data.activo, true)]
+  );
+
+  const rows = await query(
+    'SELECT id, nombre, activo, created_at, updated_at FROM tipos_contratacion_catalogo WHERE id = ? LIMIT 1',
+    [result.insertId]
+  );
+  if (!rows[0]) return null;
+  const item = toCamelRow(rows[0]);
+  item.activo = normalizeActivo(item.activo, true);
+  return item;
+}
+
+export async function updateTipoContratacionCatalogo(id, data = {}) {
+  const sets = [];
+  const values = [];
+
+  if (data.nombre !== undefined) {
+    const nombre = String(data.nombre || '').trim();
+    if (!nombre) throw new Error('El nombre del tipo de contratación es requerido');
+    sets.push('nombre = ?');
+    values.push(nombre);
+  }
+  if (data.activo !== undefined) {
+    sets.push('activo = ?');
+    values.push(normalizeActivo(data.activo, true));
+  }
+
+  if (!sets.length) {
+    const rows = await query('SELECT id, nombre, activo, created_at, updated_at FROM tipos_contratacion_catalogo WHERE id = ? LIMIT 1', [id]);
+    if (!rows[0]) return null;
+    const item = toCamelRow(rows[0]);
+    item.activo = normalizeActivo(item.activo, true);
+    return item;
+  }
+
+  values.push(id);
+  await query(`UPDATE tipos_contratacion_catalogo SET ${sets.join(', ')} WHERE id = ?`, values);
+  const rows = await query('SELECT id, nombre, activo, created_at, updated_at FROM tipos_contratacion_catalogo WHERE id = ? LIMIT 1', [id]);
+  if (!rows[0]) return null;
+  const item = toCamelRow(rows[0]);
+  item.activo = normalizeActivo(item.activo, true);
+  return item;
+}
+
+export async function deleteTipoContratacionCatalogo(id) {
+  const result = await query('DELETE FROM tipos_contratacion_catalogo WHERE id = ?', [id]);
   return result.affectedRows > 0;
 }
 

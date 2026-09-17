@@ -225,11 +225,19 @@
             <label for="tipoContratacion">Tipo de Contratación</label>
             <select id="tipoContratacion" v-model="formulario.tipoContratacion">
               <option value="">Seleccionar...</option>
-              <option value="Compra de Bienes">Compra de Bienes</option>
-              <option value="Prestación de Servicios">Prestación de Servicios</option>
-              <option value="Ejecución de Obras">Ejecución de Obras</option>
-              <option value="Consultoría">Consultoría</option>
-              <option value="Arrendamiento">Arrendamiento</option>
+              <option
+                v-for="tc in tiposContratacionCatalogo"
+                :key="tc.id"
+                :value="tc.nombre"
+              >
+                {{ tc.nombre }}
+              </option>
+              <option
+                v-if="formulario.tipoContratacion && !tiposContratacionCatalogo.some((tc) => tc.nombre === formulario.tipoContratacion)"
+                :value="formulario.tipoContratacion"
+              >
+                {{ formulario.tipoContratacion }} (no está en el catálogo)
+              </option>
             </select>
           </div>
 
@@ -730,6 +738,7 @@ const acordeoneAbiertos = ref({
 });
 const responsables = ref<Responsable[]>([]);
 const direccionesCatalogo = ref<DireccionCatalogo[]>([]);
+const tiposContratacionCatalogo = ref<{ id: number; nombre: string; activo?: boolean }[]>([]);
 const errorCargaCatalogos = ref('');
 const busquedaEtapas = ref('');
 const responsableBusqueda = ref('');
@@ -1021,7 +1030,7 @@ async function cargarConfiguracion() {
 onMounted(async () => {
   window.addEventListener('keydown', manejarEscapeModales);
   console.log('AdminActividades: montada');
-  await Promise.all([cargarActividades(), cargarResponsables(), cargarDireccionesCatalogo(), cargarConfiguracion()]);
+  await Promise.all([cargarActividades(), cargarResponsables(), cargarDireccionesCatalogo(), cargarTiposContratacionCatalogo(), cargarConfiguracion()]);
 });
 
 onBeforeUnmount(() => {
@@ -1097,6 +1106,21 @@ async function cargarDireccionesCatalogo() {
       errorCargaCatalogos.value = 'No tienes permisos para ver el catálogo de direcciones.';
     } else {
       mostrarNotificacion('Error al cargar direcciones', 'error');
+    }
+  }
+}
+
+async function cargarTiposContratacionCatalogo() {
+  try {
+    const response = await api.get('/catalogos/tipos-contratacion');
+    const rows = Array.isArray(response.data) ? response.data : (response.data.value || []);
+    tiposContratacionCatalogo.value = rows.filter((item: any) => item.activo !== false);
+  } catch (error: any) {
+    console.error('Error al cargar tipos de contratación del catálogo:', error);
+    if (error?.response?.status === 403) {
+      errorCargaCatalogos.value = 'No tienes permisos para ver el catálogo de tipos de contratación.';
+    } else {
+      mostrarNotificacion('Error al cargar tipos de contratación', 'error');
     }
   }
 }

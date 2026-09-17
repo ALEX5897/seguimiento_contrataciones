@@ -90,6 +90,50 @@ router.delete('/responsables/:id', async (req, res) => {
   }
 });
 
+// ========== CATÁLOGO DE TIPOS DE CONTRATACIÓN ==========
+
+router.get('/tipos-contratacion', async (req, res) => {
+  try {
+    const items = await mysql.getTiposContratacionCatalogo();
+    res.json(items);
+  } catch (error) {
+    console.error('Error en GET /api/catalogos/tipos-contratacion:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/tipos-contratacion', async (req, res) => {
+  try {
+    const item = await mysql.createTipoContratacionCatalogo(req.body || {});
+    res.status(201).json(item);
+  } catch (error) {
+    console.error('Error en POST /api/catalogos/tipos-contratacion:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.put('/tipos-contratacion/:id', async (req, res) => {
+  try {
+    const item = await mysql.updateTipoContratacionCatalogo(Number(req.params.id), req.body || {});
+    if (!item) return res.status(404).json({ error: 'Tipo de contratación no encontrado' });
+    res.json(item);
+  } catch (error) {
+    console.error(`Error en PUT /api/catalogos/tipos-contratacion/${req.params.id}:`, error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete('/tipos-contratacion/:id', async (req, res) => {
+  try {
+    const ok = await mysql.deleteTipoContratacionCatalogo(Number(req.params.id));
+    if (!ok) return res.status(404).json({ error: 'Tipo de contratación no encontrado' });
+    res.json({ success: true });
+  } catch (error) {
+    console.error(`Error en DELETE /api/catalogos/tipos-contratacion/${req.params.id}:`, error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
 // ========== CATÁLOGO DE ETAPAS ==========
 
 router.get('/etapas', async (req, res) => {
