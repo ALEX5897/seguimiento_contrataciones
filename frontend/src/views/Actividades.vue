@@ -3156,7 +3156,7 @@ function obtenerEtiquetaClasificacion(etapa: any): string {
 }
 
 .professional-kpi-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   align-items: stretch;
 }
 
@@ -5528,10 +5528,6 @@ h1 {
 }
 
 @media (max-width: 1100px) {
-  .professional-kpi-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .dashboard-toolbar-filtros {
     justify-content: center;
   }
