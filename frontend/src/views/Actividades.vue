@@ -371,7 +371,7 @@
               </label>
 
               <button
-                v-if="auth.isAdmin"
+                v-if="puedeHabilitarEtapas || puedeCrearEtapaPersonalizada"
                 type="button"
                 class="btn-editar-etapas"
                 @click="abrirEditorEtapas"
@@ -615,13 +615,13 @@
           </div>
 
           <div class="acciones-etapas-editor">
-            <button type="button" class="btn-toolbar-small" @click="habilitarMultiples" :disabled="etapasSeleccionadas.size === 0">
+            <button v-if="puedeHabilitarEtapas" type="button" class="btn-toolbar-small" @click="habilitarMultiples" :disabled="etapasSeleccionadas.size === 0">
               ✅ Habilitar ({{ etapasSeleccionadas.size }})
             </button>
-            <button type="button" class="btn-toolbar-small" @click="deshabilitarMultiples" :disabled="etapasSeleccionadas.size === 0">
+            <button v-if="puedeHabilitarEtapas" type="button" class="btn-toolbar-small" @click="deshabilitarMultiples" :disabled="etapasSeleccionadas.size === 0">
               ❌ Deshabilitar ({{ etapasSeleccionadas.size }})
             </button>
-            <button type="button" class="btn-toolbar-small" @click="abrirFormularioNuevaEtapa">
+            <button v-if="puedeCrearEtapaPersonalizada" type="button" class="btn-toolbar-small" @click="abrirFormularioNuevaEtapa">
               ➕ Nueva Etapa
             </button>
           </div>
@@ -666,10 +666,11 @@
                     v-model="etapa.fechaPlanificada"
                     type="date"
                     class="input-fecha-tabla"
+                    :disabled="!editarFechaReforma"
                   />
                 </td>
                 <td class="etapa-estado-col">
-                  <select v-model.number="etapa.aplica" class="select-aplica">
+                  <select v-model.number="etapa.aplica" class="select-aplica" :disabled="!puedeHabilitarEtapas">
                     <option :value="1">Habilitado</option>
                     <option :value="0">Deshabilitado</option>
                   </select>
@@ -1114,14 +1115,16 @@ const subtareaIdActiva = computed(() =>
 
 const verFechaLimite = computed(() => false); // Oculta
 
-const verFechaReforma = computed(() => true); // Siempre visible - fecha base planificada para comparación
-
-const puedeEditarFechaPlani = ref(false); // Cargado desde configuración del servidor
+const verFechaReforma = computed(() => {
+  if (auth.isAdmin) return true;
+  const campos = auth.permisos?.campos || {};
+  return campos.fecha_planificada?.ver !== false;
+});
 
 const editarFechaReforma = computed(() => {
   if (auth.isAdmin) return true;
-  if (auth.role === 'direccion') return puedeEditarFechaPlani.value;
-  return false;
+  const campos = auth.permisos?.campos || {};
+  return campos.fecha_planificada?.editar === true;
 });
 
 const verFechaReforma3 = computed(() => false); // Siempre oculta
@@ -1150,6 +1153,18 @@ const editarEstadoEtapa = computed(() => {
   if (auth.isAdmin) return true;
   const campos = auth.permisos?.campos || {};
   return campos.estado_etapa?.editar !== false;
+});
+
+const puedeHabilitarEtapas = computed(() => {
+  if (auth.isAdmin) return true;
+  const campos = auth.permisos?.campos || {};
+  return campos.aplica_etapa?.editar === true;
+});
+
+const puedeCrearEtapaPersonalizada = computed(() => {
+  if (auth.isAdmin) return true;
+  const campos = auth.permisos?.campos || {};
+  return campos.crear_etapa?.editar === true;
 });
 
 const etapasOrdenadas = computed(() => {
@@ -1273,22 +1288,6 @@ onMounted(async () => {
     } catch (err) {
       console.warn('⚠️ No se pudo cargar el catálogo de etapas');
       catalogoEtapas.value = {};
-    }
-
-    // Cargar configuración de edición de fecha planificada (cacheada)
-    try {
-      const cached = localStorage.getItem('configFechaPlanificada');
-      if (cached) {
-        puedeEditarFechaPlani.value = cached === 'true';
-      } else {
-        const configResponse = await api.get('/configuracion/editar_fecha_planificada_direcciones');
-        const valor = configResponse.data?.valor;
-        puedeEditarFechaPlani.value = valor === true || valor === '1' || valor === 1;
-        localStorage.setItem('configFechaPlanificada', String(puedeEditarFechaPlani.value));
-      }
-    } catch (err) {
-      console.warn('⚠️  No se pudo cargar configuración de edición de fecha planificada');
-      puedeEditarFechaPlani.value = false;
     }
 
     // Cargar todos los procesos (hasta 500)

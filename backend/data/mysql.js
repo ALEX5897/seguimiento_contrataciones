@@ -29,10 +29,11 @@ const DEFAULT_UNASSIGNED_PASSWORD = process.env.DEFAULT_UNASSIGNED_PASSWORD || '
 const CORE_ROLES = ['admin', 'direccion', 'reporteria'];
 
 const CAMPOS_ETAPAS_CATALOGO = [
-  { clave: 'fecha_reforma', nombre: 'Fecha reforma', orden: 1 },
-  { clave: 'fecha_reforma_3', nombre: 'Fecha reforma 3', orden: 2 },
-  { clave: 'fecha_completo', nombre: 'Fecha de completo', orden: 3 },
-  { clave: 'estado_etapa', nombre: 'Estado', orden: 4 }
+  { clave: 'fecha_planificada', nombre: 'Fecha planificada', orden: 1 },
+  { clave: 'fecha_completo', nombre: 'Fecha de completo', orden: 2 },
+  { clave: 'estado_etapa', nombre: 'Estado de la etapa', orden: 3 },
+  { clave: 'aplica_etapa', nombre: 'Habilitar/deshabilitar etapas del proceso', orden: 4 },
+  { clave: 'crear_etapa', nombre: 'Crear etapas personalizadas', orden: 5 }
 ];
 
 let pool;
