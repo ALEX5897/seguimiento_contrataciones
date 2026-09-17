@@ -246,6 +246,47 @@
             />
           </div>
 
+          <!-- Responsable (correo de seguimiento) -->
+          <div class="form-grupo responsable-buscador">
+            <label for="responsable">Responsable</label>
+            <input
+              id="responsable"
+              v-model="responsableBusqueda"
+              type="text"
+              autocomplete="off"
+              placeholder="Escribe para buscar un responsable..."
+              @input="onResponsableBusquedaInput"
+              @focus="mostrarSugerenciasResponsable = true"
+              @blur="ocultarSugerenciasResponsableConDelay"
+            />
+            <button
+              v-if="responsableBusqueda"
+              type="button"
+              class="btn-limpiar-responsable"
+              @click="limpiarResponsable"
+              title="Quitar responsable"
+            >✕</button>
+            <ul
+              v-if="mostrarSugerenciasResponsable && responsableBusqueda && responsablesFiltrados.length > 0"
+              class="lista-sugerencias-responsable"
+            >
+              <li
+                v-for="r in responsablesFiltrados"
+                :key="r.id"
+                @mousedown.prevent="seleccionarResponsable(r)"
+              >
+                <span class="sugerencia-nombre">{{ r.nombre }}</span>
+                <span v-if="r.email" class="sugerencia-email">{{ r.email }}</span>
+              </li>
+            </ul>
+            <ul
+              v-else-if="mostrarSugerenciasResponsable && responsableBusqueda && responsablesFiltrados.length === 0"
+              class="lista-sugerencias-responsable"
+            >
+              <li class="sin-resultados">Sin coincidencias</li>
+            </ul>
+            <small class="field-help">A este responsable se le enviarán los correos de seguimiento del proceso.</small>
+          </div>
 
           <!-- Botones -->
           <div class="botones-modal">
@@ -618,7 +659,9 @@ interface Actividad {
   subtarea?: string;
   direccion?: string;
   direccionNombre?: string;
-  responsableId?: number;
+  responsableId?: number | null;
+  responsableNombre?: string;
+  responsableEmail?: string;
   codigoOlympo?: string;
   tipoPlan?: string;
   pacNoPac?: string;
@@ -691,6 +734,8 @@ const responsables = ref<Responsable[]>([]);
 const direccionesCatalogo = ref<DireccionCatalogo[]>([]);
 const errorCargaCatalogos = ref('');
 const busquedaEtapas = ref('');
+const responsableBusqueda = ref('');
+const mostrarSugerenciasResponsable = ref(false);
 
 // Pestañas del modal
 // Seguimientos diarios
@@ -747,11 +792,42 @@ function getFormularioVacio(): Partial<Actividad> {
     fuenteFinanciamiento: '',
     cuatrimestre: null,
     tipoContratacion: '',
-    versionId: null
+    versionId: null,
+    responsableId: null
   };
 }
 
 const formulario = ref<Partial<Actividad>>(getFormularioVacio());
+
+const responsablesFiltrados = computed(() => {
+  const texto = normalizarTextoBusqueda(responsableBusqueda.value.trim());
+  if (!texto) return responsables.value.slice(0, 20);
+  return responsables.value
+    .filter((r) => normalizarTextoBusqueda(r.nombre || '').includes(texto))
+    .slice(0, 20);
+});
+
+function seleccionarResponsable(r: Responsable) {
+  formulario.value.responsableId = r.id;
+  responsableBusqueda.value = r.nombre;
+  mostrarSugerenciasResponsable.value = false;
+}
+
+function limpiarResponsable() {
+  formulario.value.responsableId = null;
+  responsableBusqueda.value = '';
+  mostrarSugerenciasResponsable.value = false;
+}
+
+function onResponsableBusquedaInput() {
+  // Si el texto ya no coincide con el responsable seleccionado, invalidar la selección
+  formulario.value.responsableId = null;
+  mostrarSugerenciasResponsable.value = true;
+}
+
+function ocultarSugerenciasResponsableConDelay() {
+  setTimeout(() => { mostrarSugerenciasResponsable.value = false; }, 150);
+}
 const presupuestoTexto = ref('0,00');
 
 const notificacion = ref<{ mensaje: string; tipo: 'success' | 'error' }>({ mensaje: '', tipo: 'success' });
@@ -999,10 +1075,9 @@ async function cargarActividades() {
 
 async function cargarResponsables() {
   try {
-    const response = await api.get('/subtareas/admin/responsables');
-    responsables.value = Array.isArray(response.data)
-      ? response.data
-      : (response.data.value || []);
+    const response = await api.get('/catalogos/responsables');
+    const rows = Array.isArray(response.data) ? response.data : (response.data.value || []);
+    responsables.value = rows.filter((item: any) => item.activo !== false);
   } catch (error: any) {
     console.error('Error al cargar responsables:', error);
     if (error?.response?.status === 403) {
@@ -1031,6 +1106,7 @@ async function cargarDireccionesCatalogo() {
 function abrirFormularioNueva() {
   modoEdicion.value = false;
   formulario.value = getFormularioVacio();
+  responsableBusqueda.value = '';
   sincronizarPresupuestoTexto(formulario.value.presupuesto);
   mostrarFormulario.value = true;
 }
@@ -1065,12 +1141,14 @@ async function abrirFormularioEdicion(actividad: Actividad) {
       cuatrimestre: actividadCompleta.cuatrimestre ? Number(actividadCompleta.cuatrimestre) : null,
       tipoContratacion: String(actividadCompleta.tipoContratacion || ''),
       activo: actividadCompleta.activo ? Number(actividadCompleta.activo) : 1,
-      versionId: actividadCompleta.versionId || undefined
+      versionId: actividadCompleta.versionId || undefined,
+      responsableId: actividadCompleta.responsableId || null
     };
 
     console.log('📝 Formulario normalizado:', actividadNormalizada);
 
     formulario.value = actividadNormalizada;
+    responsableBusqueda.value = actividadCompleta.responsableId ? (actividadCompleta.responsableNombre || '') : '';
     sincronizarPresupuestoTexto(formulario.value.presupuesto);
     mostrarFormulario.value = true;
   } catch (error: any) {
@@ -1083,6 +1161,7 @@ async function abrirFormularioEdicion(actividad: Actividad) {
 function cerrarFormulario() {
   mostrarFormulario.value = false;
   formulario.value = getFormularioVacio();
+  responsableBusqueda.value = '';
   sincronizarPresupuestoTexto(0);
 }
 
@@ -1143,7 +1222,8 @@ async function guardarActividad() {
       cuatrimestre: formulario.value.cuatrimestre ? Number(formulario.value.cuatrimestre) : null,
       tipoContratacion: formulario.value.tipoContratacion,
       activo: formulario.value.activo ? 1 : 0,
-      versionId: formulario.value.versionId || null
+      versionId: formulario.value.versionId || null,
+      responsableId: formulario.value.responsableId || null
     };
 
     console.log('📤 Payload enviado:', {
@@ -1223,6 +1303,9 @@ function mapearDatosDelBackend(data: any): Actividad {
     tipoContratacion: String(data.tipoContratacion || ''),
     activo: data.activo ? 1 : 0,
     versionId: data.versionId ? Number(data.versionId) : null,
+    responsableId: data.responsableId ? Number(data.responsableId) : null,
+    responsableNombre: data.responsableNombre || '',
+    responsableEmail: data.responsableEmail || '',
     procesoEnRiesgo: data.procesoEnRiesgo ? 1 : 0,
     riesgoComentario: data.riesgoComentario || '',
     createdAt: data.createdAt || data.created_at,
@@ -2819,6 +2902,79 @@ function indicadorOrdenamiento(campo: string): string {
         color: #64748b;
         font-size: 0.82rem;
         line-height: 1.35;
+      }
+
+      &.responsable-buscador {
+        position: relative;
+
+        .btn-limpiar-responsable {
+          position: absolute;
+          right: 0.6rem;
+          top: 2.55rem;
+          background: none;
+          border: none;
+          color: #94a3b8;
+          cursor: pointer;
+          font-size: 0.95rem;
+          line-height: 1;
+          padding: 0.2rem;
+
+          &:hover {
+            color: #ef4444;
+          }
+        }
+
+        .lista-sugerencias-responsable {
+          position: absolute;
+          left: 0;
+          right: 0;
+          top: 100%;
+          z-index: 30;
+          margin: 0.25rem 0 0;
+          padding: 0.25rem 0;
+          list-style: none;
+          background: #fff;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+          max-height: 220px;
+          overflow-y: auto;
+
+          li {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 0.75rem;
+            padding: 0.5rem 0.85rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+
+            &:hover {
+              background: #f0f4ff;
+            }
+
+            &.sin-resultados {
+              color: #94a3b8;
+              cursor: default;
+              font-style: italic;
+
+              &:hover {
+                background: none;
+              }
+            }
+          }
+
+          .sugerencia-nombre {
+            color: #1e293b;
+            font-weight: 500;
+          }
+
+          .sugerencia-email {
+            color: #94a3b8;
+            font-size: 0.78rem;
+            white-space: nowrap;
+          }
+        }
       }
 
       &.form-checkbox label {

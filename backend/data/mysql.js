@@ -912,6 +912,7 @@ export async function getAllSubtareas() {
       codigoUnicoProceso: row.codigo_unico_proceso,
       direccionNombre: row.direccion || 'Sin dirección',
       direccion: row.direccion || 'Sin dirección',
+      responsableId: row.responsable_id ? Number(row.responsable_id) : null,
       responsableNombre: row.responsableNombre || 'N/A',
       responsableEmail: row.responsableEmail || '',
       pacNoPac: row.pac_no_pac || 'PAC',
@@ -2339,7 +2340,8 @@ export async function updateSubtareaVersion(id, data) {
     direccion: 'direccion',
     cpc: 'cpc',
     versionId: 'version_id',
-    cuatrimestre: 'cuatrimestre'
+    cuatrimestre: 'cuatrimestre',
+    responsableId: 'responsable_id'
   };
 
   const fields = [];
