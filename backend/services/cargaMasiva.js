@@ -151,7 +151,7 @@ export async function leerYValidarExcel(filePath) {
         pac_no_pac: toString(row[findCol('pac_no_pac')]),
         tipo_contratacion: toString(row[findCol('tipo_contratacion')]),
         cpc: toString(row[findCol('cpc')]),
-        cuatrimestre: toString(row[findCol('cuatrimeste')])
+        cuatrimestre: toString(row[findCol('cuatrimestre')])
       };
 
       resultados.procesos.push(procesoData);
@@ -185,18 +185,13 @@ export async function cargarProcesosMasivo(procesos, versionId, conn, opciones =
   };
 
   try {
-    // Limpiar datos si se indica
+    // Limpiar datos si se indica (etapas_proceso, seguimiento_etapas y
+    // comentarios_etapa se eliminan en cascada por FK ON DELETE CASCADE)
     if (limpiarDatos) {
-      await conn.query('SET FOREIGN_KEY_CHECKS=0');
-      await conn.query(
-        'DELETE FROM procesos_contexto WHERE proceso_id IN (SELECT id FROM procesos WHERE version_id = ?)',
-        [versionId]
-      );
       await conn.query(
         'DELETE FROM procesos WHERE version_id = ?',
         [versionId]
       );
-      await conn.query('SET FOREIGN_KEY_CHECKS=1');
     }
 
     // Procesar cada proceso

@@ -97,7 +97,7 @@ router.post('/ejecutar', requireAuth, async (req, res) => {
 
   try {
     // Verificar que la versión existe
-    const [versiones] = await mysql.query('SELECT id FROM versiones WHERE id = ? LIMIT 1', [versionId]);
+    const versiones = await mysql.query('SELECT id FROM versiones WHERE id = ? LIMIT 1', [versionId]);
     if (versiones.length === 0) {
       return res.status(404).json({ error: 'Versión no encontrada' });
     }
@@ -143,14 +143,9 @@ router.post('/ejecutar', requireAuth, async (req, res) => {
 // GET /api/carga-masiva/versiones
 router.get('/versiones', requireAuth, async (req, res) => {
   try {
-    const resultado = await mysql.query(
+    const versiones = await mysql.query(
       'SELECT id, nombre, numero FROM versiones ORDER BY id DESC LIMIT 1'
     );
-    let versiones = Array.isArray(resultado[0]) ? resultado[0] : [];
-    // Si es un objeto único, convertir a array
-    if (!Array.isArray(versiones) && versiones && versiones.id) {
-      versiones = [versiones];
-    }
     res.json(versiones);
   } catch (error) {
     console.error('Error al obtener versiones:', error);
